@@ -609,3 +609,38 @@ halt path can learn and execute early exit with donor-assisted residual
 generation. It is not yet proof that step-1 latent reasoning is sufficient on
 hard reasoning tasks; the next gate is comparing halted vs full-depth answers
 on the MemoryOS hard probe.
+
+## [2026-04-29] eval | Core halt MemoryOS depth gate
+
+Added `--core-halt-mode {config,enabled,disabled}` to
+`scripts/95_eval_memory_retrieval.py` and recorded prompt-level `core_halt`
+telemetry in each MemoryOS eval record. This lets the same checkpoint be
+evaluated in full-depth mode (`enable_core_halt=False`) and early-exit mode
+(`enable_core_halt=True`).
+
+Ran the teacher-depth halt checkpoint with `--qtrm-logits-scale 0.5`,
+Harrier retrieval, Qwen3-Reranker-0.6B, and top-5 evidence.
+
+9-case hard probe:
+
+- Full depth: `runs/eval/memory_reasoning_corehalt_full_depth_32tok.jsonl`
+- Halted: `runs/eval/memory_reasoning_corehalt_enabled_32tok.jsonl`
+- Result: full-depth `5/9` with `core_steps={3:9}`; halted `5/9` with
+  `core_steps={1:9}`; hit changes `0`.
+
+12-case held-out probe:
+
+- Full depth:
+  `runs/eval/memory_reasoning_heldout_corehalt_full_depth_32tok.jsonl`
+- Halted:
+  `runs/eval/memory_reasoning_heldout_corehalt_enabled_32tok.jsonl`
+- Result: full-depth `7/12` with `core_steps={3:12}`; halted `7/12` with
+  `core_steps={1:12}`; hit changes `0`.
+
+Interpretation: early exit did not add answer-level regressions in these two
+MemoryOS gates, and it reduced recursive outer depth from 3 to 1. However, the
+core-halt fine-tune checkpoint is weaker than the earlier synthetic MemoryOS
+checkpoint on held-out accuracy (`7/12` here versus prior `9/12`). The next
+training pass should preserve MemoryOS behavior while teaching halting, either
+by training halt targets on MemoryOS traces or by freezing most residual-path
+weights and training the halt head/coda gate more narrowly.

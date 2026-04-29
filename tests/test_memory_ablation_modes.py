@@ -52,6 +52,56 @@ class MemoryAblationModeTests(unittest.TestCase):
             {"disable_workspace": False, "disable_core": True},
         )
 
+    def test_mode_forward_kwargs_can_force_core_halt_mode(self):
+        self.assertEqual(
+            self.module.mode_forward_kwargs(
+                "qtrm_residual_with_evidence",
+                core_halt_mode="enabled",
+            ),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "enable_core_halt": True,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs(
+                "qtrm_residual_with_evidence",
+                core_halt_mode="disabled",
+            ),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "enable_core_halt": False,
+            },
+        )
+
+    def test_cli_exposes_core_halt_mode(self):
+        parser = self.module.build_arg_parser()
+
+        args = parser.parse_args(["--core-halt-mode", "disabled"])
+
+        self.assertEqual(args.core_halt_mode, "disabled")
+
+    def test_core_halt_telemetry_serializes_prompt_forward_outputs(self):
+        import torch
+
+        record = self.module.core_halt_telemetry(
+            {
+                "core_q_halt_logits": torch.tensor([[0.1, 0.7]]),
+                "core_q_continue_logits": torch.tensor([[0.9, 0.3]]),
+                "core_steps": torch.tensor([2]),
+                "core_halted": torch.tensor([False]),
+            },
+            core_halt_mode="disabled",
+        )
+
+        self.assertEqual(record["mode"], "disabled")
+        self.assertEqual(record["core_steps"], [2])
+        self.assertEqual(record["core_halted"], [False])
+        self.assertEqual(record["q_halt_steps"], 2)
+        self.assertAlmostEqual(record["q_halt_last_mean"], 0.7, places=6)
+
     def test_default_modes_include_causal_component_ablations(self):
         self.assertIn("qtrm_workspace_off_with_evidence", self.module.DEFAULT_MODES)
         self.assertIn("qtrm_core_off_with_evidence", self.module.DEFAULT_MODES)

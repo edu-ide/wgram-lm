@@ -73,6 +73,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
     ap.add_argument("--qtrm-logits-scale", type=float, default=None)
     ap.add_argument("--donor-logits-scale", type=float, default=1.0)
+    ap.add_argument(
+        "--core-halt-mode",
+        default="config",
+        choices=["config", "enabled", "disabled"],
+        help=(
+            "Control recursive-core early halt during eval. config preserves the "
+            "checkpoint config default, enabled forces early halt, disabled forces full depth."
+        ),
+    )
     ap.add_argument("--no-logit-shift", action="store_true")
     ap.add_argument("--jsonl-out", default="runs/eval/memory_retrieval_probe.jsonl")
     ap.add_argument("--print-completions", action="store_true")
@@ -162,11 +171,48 @@ def mode_settings(mode: str, *, qtrm_scale: float, donor_scale: float) -> tuple[
     raise ValueError(f"unknown mode: {mode}")
 
 
-def mode_forward_kwargs(mode: str) -> dict[str, bool]:
-    return {
+def mode_forward_kwargs(mode: str, *, core_halt_mode: str = "config") -> dict[str, bool]:
+    kwargs = {
         "disable_workspace": mode.startswith("qtrm_workspace_off_"),
         "disable_core": mode.startswith("qtrm_core_off_"),
     }
+    if core_halt_mode == "enabled":
+        kwargs["enable_core_halt"] = True
+    elif core_halt_mode == "disabled":
+        kwargs["enable_core_halt"] = False
+    elif core_halt_mode != "config":
+        raise ValueError(f"unknown core_halt_mode: {core_halt_mode}")
+    return kwargs
+
+
+def core_halt_telemetry(outputs: dict[str, torch.Tensor], *, core_halt_mode: str) -> dict[str, Any]:
+    q_halt = outputs.get("core_q_halt_logits")
+    q_continue = outputs.get("core_q_continue_logits")
+    core_steps = outputs.get("core_steps")
+    core_halted = outputs.get("core_halted")
+
+    record: dict[str, Any] = {
+        "mode": core_halt_mode,
+        "core_steps": None,
+        "core_halted": None,
+        "q_halt_steps": 0,
+        "q_halt_last_mean": None,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": None,
+    }
+    if core_steps is not None:
+        record["core_steps"] = core_steps.detach().cpu().tolist()
+    if core_halted is not None:
+        record["core_halted"] = core_halted.detach().cpu().tolist()
+    if q_halt is not None and q_halt.numel() > 0:
+        record["q_halt_steps"] = int(q_halt.shape[1]) if q_halt.ndim >= 2 else int(q_halt.numel())
+        q_halt_last = q_halt[:, -1] if q_halt.ndim >= 2 else q_halt[-1:]
+        record["q_halt_last_mean"] = float(q_halt_last.float().mean().detach().cpu().item())
+    if q_continue is not None and q_continue.numel() > 0:
+        record["q_continue_steps"] = int(q_continue.shape[1]) if q_continue.ndim >= 2 else int(q_continue.numel())
+        q_continue_last = q_continue[:, -1] if q_continue.ndim >= 2 else q_continue[-1:]
+        record["q_continue_last_mean"] = float(q_continue_last.float().mean().detach().cpu().item())
+    return record
 
 
 @torch.no_grad()
@@ -225,7 +271,12 @@ def first_step_logit_shift(
         model.cfg.donor_logits_scale = donor_scale
         model.cfg.qtrm_logits_scale = 0.0
         with torch.amp.autocast("cuda", enabled=(device == "cuda"), dtype=torch.bfloat16):
-            donor_only = model(input_ids, attention_mask=attention_mask, **extra)["logits"][0, -1].float()
+            donor_only = model(
+                input_ids,
+                attention_mask=attention_mask,
+                **extra,
+                **forward_kwargs,
+            )["logits"][0, -1].float()
 
         model.cfg.qtrm_logits_scale = qtrm_scale
         with torch.amp.autocast("cuda", enabled=(device == "cuda"), dtype=torch.bfloat16):
@@ -264,6 +315,29 @@ def first_step_logit_shift(
     }
 
 
+@torch.no_grad()
+def prompt_core_halt_telemetry(
+    model: QTRMMultimodalModel,
+    donor: QwenDonorAdapter,
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor,
+    *,
+    device: str,
+    forward_kwargs: dict[str, bool] | None = None,
+    core_halt_mode: str = "config",
+) -> dict[str, Any]:
+    extra = donor_kwargs(donor, input_ids, attention_mask, device)
+    forward_kwargs = forward_kwargs or {}
+    with torch.amp.autocast("cuda", enabled=(device == "cuda"), dtype=torch.bfloat16):
+        outputs = model(
+            input_ids,
+            attention_mask=attention_mask,
+            **extra,
+            **forward_kwargs,
+        )
+    return core_halt_telemetry(outputs, core_halt_mode=core_halt_mode)
+
+
 def evaluate_case(
     *,
     case: dict[str, Any],
@@ -289,13 +363,14 @@ def evaluate_case(
     base_qtrm_scale: float,
     donor_logits_scale: float,
     measure_logit_shift: bool,
+    core_halt_mode: str,
 ) -> dict[str, Any]:
     include_evidence, qtrm_scale, donor_scale = mode_settings(
         mode,
         qtrm_scale=base_qtrm_scale,
         donor_scale=donor_logits_scale,
     )
-    forward_kwargs = mode_forward_kwargs(mode)
+    forward_kwargs = mode_forward_kwargs(mode, core_halt_mode=core_halt_mode)
     model.cfg.qtrm_logits_scale = qtrm_scale
     model.cfg.donor_logits_scale = donor_scale
 
@@ -355,6 +430,15 @@ def evaluate_case(
         donor_scale=donor_logits_scale,
         forward_kwargs=forward_kwargs,
     ) if measure_logit_shift else None
+    core_halt = prompt_core_halt_telemetry(
+        model,
+        donor,
+        input_ids,
+        attention_mask,
+        device=device,
+        forward_kwargs=forward_kwargs,
+        core_halt_mode=core_halt_mode,
+    )
     completion, full_text, completion_ids = greedy_completion(
         model,
         donor,
@@ -403,6 +487,7 @@ def evaluate_case(
         "qtrm_logits_scale": qtrm_scale,
         "donor_logits_scale": donor_scale,
         "forward_ablation": forward_kwargs,
+        "core_halt": core_halt,
         "first_step_logit_shift": logit_shift,
         "full_text": full_text,
     }
@@ -472,15 +557,19 @@ def main() -> None:
                 base_qtrm_scale=base_qtrm_scale,
                 donor_logits_scale=args.donor_logits_scale,
                 measure_logit_shift=not args.no_logit_shift,
+                core_halt_mode=args.core_halt_mode,
             )
             records.append(record)
             status = "hit" if record["hit"] else "miss"
             retrieval_status = "retrieved" if record["retrieved_target"] else "no-target"
             shift = record.get("first_step_logit_shift") or {}
             shift_text = f" delta={shift.get('max_abs_delta', 0.0):.3f}" if shift else ""
+            core_halt = record.get("core_halt") or {}
+            core_steps = core_halt.get("core_steps")
+            halt_text = f" core_steps={core_steps}" if core_steps is not None else ""
             print(
                 f"{status:4s} {record['mode']:28s} {record['id']:22s} "
-                f"{retrieval_status:10s}{shift_text} -> {record['completion']!r}"
+                f"{retrieval_status:10s}{shift_text}{halt_text} -> {record['completion']!r}"
             )
 
     summary = summarize_records(records)

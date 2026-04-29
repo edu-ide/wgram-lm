@@ -153,5 +153,15 @@ Before claiming latent reasoning:
 - latent distillation beats trace-SFT-only at equal token budget;
 - adversarial/distractor tests do not show shortcut dependence.
 
+Current halt gate status:
+
+- 9-case hard MemoryOS probe: full-depth `5/9`, halted `5/9`, with recursive
+  outer steps reduced from 3 to 1.
+- 12-case held-out MemoryOS probe: full-depth `7/12`, halted `7/12`, with
+  recursive outer steps reduced from 3 to 1.
+- This passes the narrow "no additional answer regression from halting" check,
+  but the halt checkpoint still underperforms the earlier non-halt synthetic
+  MemoryOS checkpoint on held-out accuracy.
+
 If these fail, the correct conclusion is that QTRM has useful engineering
 hooks, not proven latent reasoning.

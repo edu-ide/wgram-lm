@@ -378,3 +378,32 @@ Decision:
   evidence plus one English multi-hop all-target retrieval/selection failure.
 - Do not scale MemoryOS to larger corpora until this held-out gate reaches at
   least 11/12 with no UNKNOWN repetition artifacts.
+
+## Core-Halt Depth Gate
+
+Added a direct halted versus full-depth comparison to the MemoryOS evaluator:
+
+```bash
+--core-halt-mode disabled  # force full recursive depth
+--core-halt-mode enabled   # force learned early exit
+```
+
+Using `runs/qwen35_2b_4090_core_halt_probe/last.pt` with
+`--qtrm-logits-scale 0.5`:
+
+| Eval | Full-depth hits | Halted hits | Full steps | Halted steps | Hit changes |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 9-case hard probe | 5/9 | 5/9 | 3 x 9 | 1 x 9 | 0 |
+| 12-case held-out probe | 7/12 | 7/12 | 3 x 12 | 1 x 12 | 0 |
+
+Interpretation:
+
+- The learned halt head can reduce the recursive loop from 3 outer steps to 1
+  on these MemoryOS probes without changing answer-level hit/miss labels.
+- This does not prove step-1 latent reasoning is enough in general; it only
+  shows that the current final answers are already determined by the first
+  recursive state under this checkpoint and decoding setup.
+- The core-halt checkpoint regresses from the earlier synthetic MemoryOS
+  checkpoint's held-out `9/12` result to `7/12`. The next training gate should
+  combine MemoryOS trace preservation with halt supervision instead of training
+  the halt probe on clean-pilot LM text alone.
