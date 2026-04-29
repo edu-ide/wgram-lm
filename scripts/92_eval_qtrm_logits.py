@@ -156,6 +156,20 @@ def core_halt_telemetry(outputs: dict[str, torch.Tensor], *, enabled: bool) -> d
     return record
 
 
+def residual_gate_telemetry(outputs: dict[str, torch.Tensor]) -> dict:
+    gate = outputs.get("qtrm_residual_gate")
+    if gate is None:
+        return {"enabled": False, "values": None, "mean": None}
+    gate = gate.detach().float().cpu()
+    return {
+        "enabled": True,
+        "values": gate.tolist(),
+        "mean": float(gate.mean().item()),
+        "min": float(gate.min().item()),
+        "max": float(gate.max().item()),
+    }
+
+
 def load_qtrm(config_path: str, checkpoint_path: str, device: str) -> QTRMMultimodalModel:
     cfg = load_config(config_path)
     model = QTRMMultimodalModel(cfg.model)
@@ -369,10 +383,12 @@ def main() -> None:
         )
         rep = repetition_stats(generated, prompt_len=input_ids.shape[1])
         core_halt = core_halt_telemetry(outputs, enabled=args.enable_core_halt)
+        residual_gate = residual_gate_telemetry(outputs)
         record = {
             "sample": idx,
             "ablation_mode": args.ablation_mode,
             "core_halt": core_halt,
+            "residual_gate": residual_gate,
             "text": text,
             "input_tokens": int(input_ids.shape[1]),
             "offset": int(offset),
@@ -411,6 +427,13 @@ def main() -> None:
                 f"res_l2={residual_telemetry['residual_l2_norm']:.3f} "
                 f"res_linf={residual_telemetry['residual_linf_norm']:.3f}"
             )
+        print(
+            "residual gate: "
+            f"enabled={residual_gate['enabled']} "
+            f"mean={residual_gate['mean']} "
+            f"min={residual_gate.get('min')} "
+            f"max={residual_gate.get('max')}"
+        )
         print(
             "core halt: "
             f"enabled={core_halt['enabled']} "

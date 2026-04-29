@@ -49,6 +49,9 @@ class QTRMMultimodalModel(nn.Module):
             cfg.d_model, cfg.visual_dim, cfg.max_visual_tokens, cfg.n_heads,
         )
         self.ctrl = ControllerHeads(cfg.d_model, cfg.num_actions)
+        self.residual_gate = nn.Linear(cfg.d_model, 1)
+        nn.init.zeros_(self.residual_gate.weight)
+        nn.init.constant_(self.residual_gate.bias, float(cfg.qtrm_residual_gate_init_bias))
         self.jepa = JepaWorldModelHead(
             d_model=cfg.d_model,
             n_heads=cfg.n_heads,
@@ -141,6 +144,14 @@ class QTRMMultimodalModel(nn.Module):
         seq = self.coda(seq, attention_mask=attention_mask)
         seq = self.norm(seq)
         qtrm_logits = self.lm_head(seq) * float(self.cfg.qtrm_logits_scale)
+        qtrm_residual_logits = qtrm_logits
+        if self.cfg.qtrm_residual_clamp is not None:
+            clamp = abs(float(self.cfg.qtrm_residual_clamp))
+            qtrm_residual_logits = qtrm_residual_logits.clamp(min=-clamp, max=clamp)
+        residual_gate = qtrm_logits.new_ones((b,))
+        if self.cfg.qtrm_residual_gate_enabled:
+            residual_gate = torch.sigmoid(self.residual_gate(z_h[:, -1, :]).squeeze(-1))
+            qtrm_residual_logits = qtrm_residual_logits * residual_gate[:, None, None]
         logits = qtrm_logits
         if donor_logits is not None and self.cfg.donor_logits_scale != 0.0:
             if donor_logits.shape[:2] != (b, s):
@@ -150,7 +161,7 @@ class QTRMMultimodalModel(nn.Module):
             if donor_logits.shape[-1] != self.cfg.vocab_size:
                 raise ValueError("donor_logits vocab size must match model vocab_size")
             text_offset = logits.shape[1] - s
-            logits = qtrm_logits.clone()
+            logits = qtrm_residual_logits.clone()
             logits[:, text_offset:, :] = (
                 logits[:, text_offset:, :]
                 + donor_logits.to(device=logits.device, dtype=logits.dtype)
@@ -163,6 +174,8 @@ class QTRMMultimodalModel(nn.Module):
         return {
             "logits": logits,
             "qtrm_logits": qtrm_logits,
+            "qtrm_residual_logits": qtrm_residual_logits,
+            "qtrm_residual_gate": residual_gate,
             "z_l": z_l,
             "z_h": z_h,
             "pooled": pooled,

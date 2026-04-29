@@ -122,6 +122,10 @@ Implementation status:
 - The 500-step fixed-donor probe showed residual amplitude matters: QTRM scale
   `0.5` damaged donor-backed generation, while `0.1` stayed fluent at donor
   scales `1.0`, `0.5`, and `0.25` on the Korean smoke prompt.
+- `QTRMMultimodalModel` supports bounded residual fusion with
+  `qtrm_residual_clamp`, `qtrm_residual_gate_enabled`, and
+  `qtrm_residual_gate_init_bias`. The eval script records `residual_gate`
+  telemetry so the gate can be inspected.
 - `tests/test_residual_telemetry.py` covers argmax shifts, donor scaling, and
   eval-script integration.
 - `tests/test_eval_ablation_modes.py` and `tests/test_model_config.py` cover
@@ -180,8 +184,8 @@ Reject or roll back a QTRM change when:
    collapse range.
 6. Keep residual amplitude small during mixed inference; default probe sweeps
    should include `qtrm_logits_scale=0.1`.
-7. Add gated residual behind a config flag.
-8. Re-run the current hard MemoryOS held-out probes.
+7. Done: add bounded/gated residual behind config flags.
+8. Re-run the current hard MemoryOS held-out probes with bounded residual.
 9. Only then resume JEPA/world-model losses or broader annealing.
 
 ## Ablation Commands

@@ -25,6 +25,21 @@ damages even donor-backed output. With `qtrm_logits_scale=0.1`, donor scales
 Conclusion: keep donor attached, train student longer, and cap/gate residual
 amplitude before lowering donor logits further.
 
+## [2026-04-29] implementation | bounded residual gate
+
+Added bounded residual fusion behind config flags:
+`qtrm_residual_clamp`, `qtrm_residual_gate_enabled`, and
+`qtrm_residual_gate_init_bias`. The model now exposes `qtrm_residual_logits`
+and `qtrm_residual_gate` for telemetry. The eval script records
+`residual_gate`, and `scripts/90_infer_with_donor.sh` can sweep the bounded
+residual settings through `QTRM_RESIDUAL_CLAMP`, `QTRM_RESIDUAL_GATE`, and
+`QTRM_RESIDUAL_GATE_BIAS`.
+
+Smoke result on the 500-step student LM pretrain checkpoint: the previously
+bad setting `donor_logits_scale=0.5`, `qtrm_logits_scale=0.5` collapsed into
+number repetition without bounds, but became fluent with clamp `1.0` and the
+gate enabled. The same bounded setting stayed fluent at donor scale `0.25`.
+
 ## [2026-04-29] implementation | donor annealing references and KL hook
 
 Downloaded donor-annealing/distillation papers under

@@ -49,6 +49,9 @@ class QTRMConfig:
     jepa_sigreg_num_proj: int = 1024
     qtrm_logits_scale: float = 1.0
     donor_logits_scale: float = 0.0
+    qtrm_residual_clamp: Optional[float] = None
+    qtrm_residual_gate_enabled: bool = False
+    qtrm_residual_gate_init_bias: float = -2.0
 
 
 @dataclass

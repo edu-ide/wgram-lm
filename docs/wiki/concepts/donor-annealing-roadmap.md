@@ -125,11 +125,26 @@ Generation after this 500-step checkpoint:
 | 1.0 | 0.1 | fluent; residual does not visibly damage donor |
 | 0.5 | 0.1 | fluent |
 | 0.25 | 0.1 | fluent |
+| 0.5 | 0.5 + clamp/gate | fluent |
+| 0.25 | 0.5 + clamp/gate | fluent |
 
 Decision: do not run full detach yet. Run longer student-only LM pretraining
-with donor logits fixed as a safety rail, keep QTRM residual amplitude small
-(`qtrm_logits_scale ~= 0.1`) during mixed inference, then anneal donor only
-after student LM loss and donor-scale sweep gates improve.
+with donor logits fixed as a safety rail, keep QTRM residual amplitude bounded,
+then anneal donor only after student LM loss and donor-scale sweep gates
+improve.
+
+Bounded residual support:
+
+```yaml
+model:
+  qtrm_residual_clamp: 1.0
+  qtrm_residual_gate_enabled: true
+  qtrm_residual_gate_init_bias: -2.0
+```
+
+The gate is initialized to a conservative sigmoid(-2) value, so the first
+bounded run behaves like a safe residual adapter until task training teaches the
+gate when to open.
 
 Reference map:
 

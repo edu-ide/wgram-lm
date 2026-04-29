@@ -38,6 +38,15 @@ class ResidualTelemetryTests(unittest.TestCase):
         self.assertIn("residual_logit_telemetry", text)
         self.assertIn('"residual_telemetry"', text)
 
+    def test_eval_script_emits_residual_gate_telemetry_records(self):
+        from pathlib import Path
+
+        text = Path("scripts/92_eval_qtrm_logits.py").read_text(encoding="utf-8")
+
+        self.assertIn("residual_gate_telemetry", text)
+        self.assertIn('"residual_gate"', text)
+        self.assertIn("qtrm_residual_gate", text)
+
 
 if __name__ == "__main__":
     unittest.main()
