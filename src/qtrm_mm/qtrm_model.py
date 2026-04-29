@@ -150,7 +150,7 @@ class QTRMMultimodalModel(nn.Module):
             qtrm_residual_logits = qtrm_residual_logits.clamp(min=-clamp, max=clamp)
         residual_gate = qtrm_logits.new_ones((b,))
         if self.cfg.qtrm_residual_gate_enabled:
-            residual_gate = torch.sigmoid(self.residual_gate(z_h[:, -1, :]).squeeze(-1))
+            residual_gate = self._compute_residual_gate(z_h)
             qtrm_residual_logits = qtrm_residual_logits * residual_gate[:, None, None]
         logits = qtrm_logits
         if donor_logits is not None and self.cfg.donor_logits_scale != 0.0:
@@ -193,6 +193,18 @@ class QTRMMultimodalModel(nn.Module):
             "core_depth_last_logits": core_depth_last_logits,
             **ctrl,
         }
+
+    def _compute_residual_gate(self, z_h: torch.Tensor) -> torch.Tensor:
+        gate_input = z_h[:, -1, :]
+        if self.cfg.qtrm_residual_gate_normalize:
+            gate_input = gate_input * torch.rsqrt(
+                gate_input.pow(2).mean(dim=-1, keepdim=True).clamp_min(1e-6)
+            )
+        gate = torch.sigmoid(self.residual_gate(gate_input).squeeze(-1))
+        gate_min = min(max(float(self.cfg.qtrm_residual_gate_min), 0.0), 1.0)
+        if gate_min != 0.0:
+            gate = gate_min + (1.0 - gate_min) * gate
+        return gate
 
     @staticmethod
     def _empty_core_halt_info(workspace: torch.Tensor) -> dict[str, torch.Tensor]:

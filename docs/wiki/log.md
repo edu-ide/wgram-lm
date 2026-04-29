@@ -40,6 +40,22 @@ bad setting `donor_logits_scale=0.5`, `qtrm_logits_scale=0.5` collapsed into
 number repetition without bounds, but became fluent with clamp `1.0` and the
 gate enabled. The same bounded setting stayed fluent at donor scale `0.25`.
 
+Ran `configs/qwen35_2b_4090_bounded_residual_probe.yaml` for 500 steps. The
+QTRM-only student LM signal improved from `12.42` to `10.98`, but the learned
+gate saturated closed at about `3.3e-6`. Root cause: the gate linear layer was
+fed unnormalized latent states, so a small learned weight still produced a
+large negative pre-sigmoid value. Clamp-only evaluation proved the opposite
+failure mode: full residual strength preserved some prompts but damaged low
+donor-scale generation.
+
+Patched the gate to RMS-normalize its latent input and added
+`qtrm_residual_gate_min`. With a `0.05` floor and `qtrm_logits_scale=0.5`, the
+corrected 500-step checkpoint reached `student_lm=10.98` and keeps donor scales
+`1.0`, `0.5`, and `0.25` fluent on Korean and English smoke prompts. The final
+sweep had gate mean about `0.061`, residual L-infinity about `0.0625`, no donor
+argmax shift, and repeated 2/3-gram rates at `0.0`. Donor `0.0` still
+collapses to `,, and`, so this is not yet donor replacement.
+
 ## [2026-04-29] implementation | donor annealing references and KL hook
 
 Downloaded donor-annealing/distillation papers under

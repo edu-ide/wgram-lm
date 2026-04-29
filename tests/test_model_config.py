@@ -278,6 +278,72 @@ class ModelConfigTests(unittest.TestCase):
             places=5,
         )
 
+    def test_residual_gate_normalizes_large_latents_before_linear(self):
+        import math
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=32,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            qtrm_residual_gate_enabled=True,
+            qtrm_residual_gate_init_bias=-2.0,
+            qtrm_residual_gate_normalize=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+        model.residual_gate.weight.data.fill_(0.001)
+        model.residual_gate.bias.data.fill_(-2.0)
+        z_h = torch.full((1, 3, cfg.d_model), 1000.0)
+
+        gate = model._compute_residual_gate(z_h)
+
+        expected = 1.0 / (1.0 + math.exp(-(-2.0 + cfg.d_model * 0.001)))
+        self.assertAlmostEqual(float(gate.item()), expected, places=5)
+        self.assertLess(float(gate.item()), 0.2)
+
+    def test_residual_gate_minimum_floor_prevents_total_closure(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=32,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            qtrm_residual_gate_enabled=True,
+            qtrm_residual_gate_init_bias=-100.0,
+            qtrm_residual_gate_min=0.05,
+        )
+        model = QTRMMultimodalModel(cfg)
+        model.residual_gate.weight.data.zero_()
+        z_h = torch.zeros((1, 3, cfg.d_model))
+
+        gate = model._compute_residual_gate(z_h)
+
+        self.assertAlmostEqual(float(gate.item()), 0.05, places=5)
+
     def test_workspace_can_use_perceiver_style_depth(self):
         import torch
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel

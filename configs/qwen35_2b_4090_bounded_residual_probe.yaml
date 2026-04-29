@@ -35,6 +35,8 @@ model:
   qtrm_residual_clamp: 1.0
   qtrm_residual_gate_enabled: true
   qtrm_residual_gate_init_bias: -2.0
+  qtrm_residual_gate_normalize: true
+  qtrm_residual_gate_min: 0.05
 
 train:
   batch_size: 1

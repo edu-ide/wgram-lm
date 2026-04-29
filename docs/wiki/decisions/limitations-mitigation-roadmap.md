@@ -126,6 +126,11 @@ Implementation status:
   `qtrm_residual_clamp`, `qtrm_residual_gate_enabled`, and
   `qtrm_residual_gate_init_bias`. The eval script records `residual_gate`
   telemetry so the gate can be inspected.
+- The first bounded residual training probe exposed a gate saturation failure:
+  unnormalized latent inputs drove the gate to about `3.3e-6`. Gate input RMS
+  normalization plus `qtrm_residual_gate_min` fixes the collapse. The corrected
+  checkpoint keeps donor-scale `0.25` smoke generations fluent with gate mean
+  about `0.061` and no donor argmax shift.
 - `tests/test_residual_telemetry.py` covers argmax shifts, donor scaling, and
   eval-script integration.
 - `tests/test_eval_ablation_modes.py` and `tests/test_model_config.py` cover

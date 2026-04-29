@@ -52,6 +52,8 @@ class QTRMConfig:
     qtrm_residual_clamp: Optional[float] = None
     qtrm_residual_gate_enabled: bool = False
     qtrm_residual_gate_init_bias: float = -2.0
+    qtrm_residual_gate_normalize: bool = True
+    qtrm_residual_gate_min: float = 0.0
 
 
 @dataclass

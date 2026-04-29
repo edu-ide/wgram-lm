@@ -128,6 +128,17 @@ Generation after this 500-step checkpoint:
 | 0.5 | 0.5 + clamp/gate | fluent |
 | 0.25 | 0.5 + clamp/gate | fluent |
 
+Bounded residual 500-step probe:
+
+| Setting | Observation |
+| --- | --- |
+| initial student_lm | `12.42` |
+| final student_lm | `10.98` |
+| learned unnormalized gate | collapsed to about `3.3e-6` |
+| clamp-only, donor `0.25`, QTRM `0.5` | Korean smoke prompt repeated `1. **` |
+| normalized gate + `0.05` floor, donor `0.25`, QTRM `0.5` | fluent smoke generations, gate about `0.061`, no argmax shift, repeated 2/3-gram rate `0.0` |
+| normalized gate + `0.05` floor, donor `0.0`, QTRM `0.5` | still collapses to `,, and` repetition |
+
 Decision: do not run full detach yet. Run longer student-only LM pretraining
 with donor logits fixed as a safety rail, keep QTRM residual amplitude bounded,
 then anneal donor only after student LM loss and donor-scale sweep gates
@@ -140,11 +151,14 @@ model:
   qtrm_residual_clamp: 1.0
   qtrm_residual_gate_enabled: true
   qtrm_residual_gate_init_bias: -2.0
+  qtrm_residual_gate_normalize: true
+  qtrm_residual_gate_min: 0.05
 ```
 
-The gate is initialized to a conservative sigmoid(-2) value, so the first
-bounded run behaves like a safe residual adapter until task training teaches the
-gate when to open.
+The gate input must be normalized before the gate linear layer. Without this,
+the gate can saturate even when the learned bias remains close to its safe
+initial value. The small minimum floor prevents the donor-preservation objective
+from solving the task by closing the QTRM residual completely.
 
 Reference map:
 
