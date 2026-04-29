@@ -9,7 +9,12 @@ from typing import Iterable
 import torch
 
 from qtrm_mm.config import load_config
-from qtrm_mm.diagnostics import next_token_diagnostics, repetition_stats, topk_token_report
+from qtrm_mm.diagnostics import (
+    next_token_diagnostics,
+    repetition_stats,
+    residual_logit_telemetry,
+    topk_token_report,
+)
 from qtrm_mm.qtrm_model import QTRMMultimodalModel
 from qtrm_mm.qwen_donor import QwenDonorAdapter
 
@@ -249,6 +254,14 @@ def main() -> None:
         )
         last_logits = outputs["logits"][0, -1].float()
         top = topk_token_report(last_logits, tokenizer=tokenizer, k=args.top_k)
+        residual_telemetry = None
+        if use_donor_logits and extra.get("donor_logits") is not None:
+            residual_telemetry = residual_logit_telemetry(
+                extra["donor_logits"][0, -1],
+                last_logits,
+                tokenizer=tokenizer,
+                donor_logits_scale=cfg.model.donor_logits_scale,
+            )
         generated, steps = greedy_generate(
             model,
             donor,
@@ -268,6 +281,7 @@ def main() -> None:
             "offset": int(offset),
             "teacher_forced": metrics,
             "next_token_topk": top,
+            "residual_telemetry": residual_telemetry,
             "greedy_text": tokenizer.decode(generated, skip_special_tokens=True),
             "greedy_repetition": rep,
             "greedy_steps": steps[: min(5, len(steps))],
@@ -288,6 +302,18 @@ def main() -> None:
         print("next top-k:")
         for item in top:
             print(f"  id={item['token_id']:>6} prob={item['prob']:.4f} token={item['token']!r}")
+        if residual_telemetry is not None:
+            print(
+                "residual telemetry: "
+                f"argmax_changed={residual_telemetry['argmax_changed']} "
+                f"donor_top={residual_telemetry['donor_top_token']!r}/"
+                f"{residual_telemetry['donor_top_prob']:.3f} "
+                f"fused_top={residual_telemetry['fused_top_token']!r}/"
+                f"{residual_telemetry['fused_top_prob']:.3f} "
+                f"kl_fd={residual_telemetry['kl_fused_to_donor']:.4f} "
+                f"res_l2={residual_telemetry['residual_l2_norm']:.3f} "
+                f"res_linf={residual_telemetry['residual_linf_norm']:.3f}"
+            )
         print(
             "greedy repetition: "
             f"completion_tokens={rep['completion_tokens']} max_run={rep['max_token_run']} "

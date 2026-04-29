@@ -45,6 +45,67 @@ def topk_token_report(
     return out
 
 
+def residual_logit_telemetry(
+    donor_logits: torch.Tensor,
+    fused_logits: torch.Tensor,
+    *,
+    tokenizer: Any = None,
+    donor_logits_scale: float = 1.0,
+) -> dict[str, float | int | bool | str]:
+    """Compare donor-only logits with fused donor-plus-residual logits.
+
+    The QTRM residual path fuses donor logits inside the model. This helper
+    treats the scaled donor distribution as the reference policy and reports how
+    much the final fused distribution moved.
+    """
+    if donor_logits.ndim != 1:
+        donor_logits = donor_logits.reshape(-1, donor_logits.shape[-1])[-1]
+    if fused_logits.ndim != 1:
+        fused_logits = fused_logits.reshape(-1, fused_logits.shape[-1])[-1]
+    if donor_logits.shape != fused_logits.shape:
+        raise ValueError(
+            "donor_logits and fused_logits must have the same final vocab shape"
+        )
+
+    donor_scaled = donor_logits.float() * float(donor_logits_scale)
+    fused = fused_logits.float()
+    residual = fused - donor_scaled
+
+    donor_log_probs = torch.log_softmax(donor_scaled, dim=-1)
+    fused_log_probs = torch.log_softmax(fused, dim=-1)
+    donor_probs = torch.softmax(donor_scaled, dim=-1)
+    fused_probs = torch.softmax(fused, dim=-1)
+
+    donor_top = int(donor_scaled.argmax(dim=-1).detach().cpu().item())
+    fused_top = int(fused.argmax(dim=-1).detach().cpu().item())
+    residual_top = int(residual.argmax(dim=-1).detach().cpu().item())
+    residual_bottom = int(residual.argmin(dim=-1).detach().cpu().item())
+    kl_fused_to_donor = (fused_probs * (fused_log_probs - donor_log_probs)).sum()
+    kl_donor_to_fused = (donor_probs * (donor_log_probs - fused_log_probs)).sum()
+
+    return {
+        "donor_logits_scale": float(donor_logits_scale),
+        "donor_top_id": donor_top,
+        "donor_top_token": token_text(tokenizer, donor_top),
+        "donor_top_prob": _as_float(donor_probs[donor_top]),
+        "fused_top_id": fused_top,
+        "fused_top_token": token_text(tokenizer, fused_top),
+        "fused_top_prob": _as_float(fused_probs[fused_top]),
+        "argmax_changed": bool(donor_top != fused_top),
+        "kl_fused_to_donor": _as_float(kl_fused_to_donor),
+        "kl_donor_to_fused": _as_float(kl_donor_to_fused),
+        "residual_l2_norm": _as_float(torch.linalg.vector_norm(residual, ord=2)),
+        "residual_linf_norm": _as_float(residual.abs().max()),
+        "residual_mean_abs": _as_float(residual.abs().mean()),
+        "residual_top_id": residual_top,
+        "residual_top_token": token_text(tokenizer, residual_top),
+        "residual_top_value": _as_float(residual[residual_top]),
+        "residual_bottom_id": residual_bottom,
+        "residual_bottom_token": token_text(tokenizer, residual_bottom),
+        "residual_bottom_value": _as_float(residual[residual_bottom]),
+    }
+
+
 def next_token_diagnostics(
     logits: torch.Tensor,
     input_ids: torch.Tensor,

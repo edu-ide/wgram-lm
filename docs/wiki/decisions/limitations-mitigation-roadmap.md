@@ -65,6 +65,14 @@ Every residual experiment should log:
 - entropy, repeated n-gram rate, and max token run
 - answer-level correctness under donor-only and donor+QTRM
 
+Implementation status:
+
+- `src/qtrm_mm/diagnostics.py` provides `residual_logit_telemetry`.
+- `scripts/92_eval_qtrm_logits.py` emits `residual_telemetry` in JSON records
+  and prints a compact text summary when donor logits are available.
+- `tests/test_residual_telemetry.py` covers argmax shifts, donor scaling, and
+  eval-script integration.
+
 ## Evaluation Matrix
 
 Minimum modes:
@@ -110,7 +118,7 @@ Reject or roll back a QTRM change when:
 
 ## Next Engineering Order
 
-1. Add residual telemetry to the eval script.
+1. Done: add residual telemetry to the eval script.
 2. Add fixed ablation modes for donor-only, residual, workspace-off, and core-off.
 3. Add gated residual behind a config flag.
 4. Add KL-to-donor loss behind a config flag.

@@ -1,5 +1,12 @@
 # QTRM LLM Wiki Log
 
+## [2026-04-29] implementation | residual telemetry
+
+Added residual-logit telemetry as the first mitigation-roadmap implementation
+step. `residual_logit_telemetry` compares scaled donor logits with fused logits
+and reports argmax changes, KL divergence, and residual norms. `92_eval_qtrm_logits.py`
+now includes this in JSON/text eval output when donor logits are available.
+
 ## [2026-04-29] decision | limitations and mitigation roadmap
 
 Added `decisions/limitations-mitigation-roadmap.md` to keep the current QTRM
