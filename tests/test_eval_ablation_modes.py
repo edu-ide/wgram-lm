@@ -56,6 +56,41 @@ class EvalAblationModeTests(unittest.TestCase):
         self.assertIn("disable_workspace", text)
         self.assertIn("disable_core", text)
 
+    def test_cli_can_enable_core_halt_for_eval(self):
+        parser = self.module.build_arg_parser()
+
+        args = parser.parse_args(["--enable-core-halt"])
+
+        self.assertTrue(args.enable_core_halt)
+
+    def test_eval_script_records_core_halt_telemetry(self):
+        text = Path("scripts/92_eval_qtrm_logits.py").read_text(encoding="utf-8")
+
+        self.assertIn("enable_core_halt", text)
+        self.assertIn('"core_halt"', text)
+        self.assertIn('"core_steps"', text)
+        self.assertIn('"core_halted"', text)
+
+    def test_core_halt_telemetry_serializes_tensor_outputs(self):
+        import torch
+
+        record = self.module.core_halt_telemetry(
+            {
+                "core_q_halt_logits": torch.tensor([[0.1, 0.7], [0.2, 0.8]]),
+                "core_q_continue_logits": torch.tensor([[0.9, 0.3], [0.8, 0.2]]),
+                "core_steps": torch.tensor([2, 1]),
+                "core_halted": torch.tensor([True, False]),
+            },
+            enabled=True,
+        )
+
+        self.assertTrue(record["enabled"])
+        self.assertEqual(record["core_steps"], [2, 1])
+        self.assertEqual(record["core_halted"], [True, False])
+        self.assertEqual(record["q_halt_steps"], 2)
+        self.assertAlmostEqual(record["q_halt_last_mean"], 0.75, places=6)
+        self.assertEqual(record["q_continue_steps"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

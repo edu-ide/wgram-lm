@@ -1,5 +1,19 @@
 # QTRM LLM Wiki Log
 
+## [2026-04-29] probe | core halt training gate
+
+Added `configs/qwen35_2b_4090_core_halt_probe.yaml` and
+`scripts/107_run_core_halt_probe.sh`. This is the first executable gate for
+the latent-loop early-exit idea: train with `core_halt_auto_targets=true`,
+`loss_core_halt_weight>0`, `outer_steps=3`, and Qwen donor logits preserved as
+the base language policy.
+
+Extended `scripts/92_eval_qtrm_logits.py` with `--enable-core-halt` and
+`core_halt` JSON/text telemetry. The post-eval artifacts now expose
+`core_steps`, `core_halted`, and halt-head logit summaries, so we can check
+whether a trained checkpoint actually exits early instead of only having a
+halt loss in code.
+
 ## [2026-04-29] implementation | CoT-to-latent halting hook
 
 Added `core_halt_loss` and `TrainConfig.loss_core_halt_weight` so the QTRM

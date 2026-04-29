@@ -58,6 +58,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Keep initial prompt donor states fixed during greedy generation.",
     )
+    ap.add_argument(
+        "--enable-core-halt",
+        action="store_true",
+        help="Enable the learned recursive-core halt decision during forward/eval generation.",
+    )
     ap.add_argument("--json", action="store_true", help="Emit JSON records instead of pretty text.")
     return ap
 
@@ -117,6 +122,36 @@ def select_device(cfg_device: str, requested: str) -> str:
             raise RuntimeError("CUDA requested but not available")
         return "cuda"
     return "cuda" if torch.cuda.is_available() and cfg_device in {"auto", "cuda"} else "cpu"
+
+
+def core_halt_telemetry(outputs: dict[str, torch.Tensor], *, enabled: bool) -> dict:
+    q_halt = outputs.get("core_q_halt_logits")
+    q_continue = outputs.get("core_q_continue_logits")
+    core_steps = outputs.get("core_steps")
+    core_halted = outputs.get("core_halted")
+
+    record = {
+        "enabled": bool(enabled),
+        "core_steps": None,
+        "core_halted": None,
+        "q_halt_steps": 0,
+        "q_halt_last_mean": None,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": None,
+    }
+    if core_steps is not None:
+        record["core_steps"] = core_steps.detach().cpu().tolist()
+    if core_halted is not None:
+        record["core_halted"] = core_halted.detach().cpu().tolist()
+    if q_halt is not None and q_halt.numel() > 0:
+        record["q_halt_steps"] = int(q_halt.shape[1]) if q_halt.ndim >= 2 else int(q_halt.numel())
+        q_halt_last = q_halt[:, -1] if q_halt.ndim >= 2 else q_halt[-1:]
+        record["q_halt_last_mean"] = float(q_halt_last.float().mean().detach().cpu().item())
+    if q_continue is not None and q_continue.numel() > 0:
+        record["q_continue_steps"] = int(q_continue.shape[1]) if q_continue.ndim >= 2 else int(q_continue.numel())
+        q_continue_last = q_continue[:, -1] if q_continue.ndim >= 2 else q_continue[-1:]
+        record["q_continue_last_mean"] = float(q_continue_last.float().mean().detach().cpu().item())
+    return record
 
 
 def load_qtrm(config_path: str, checkpoint_path: str, device: str) -> QTRMMultimodalModel:
@@ -180,6 +215,7 @@ def greedy_generate(
     refresh_donor_each_step: bool,
     return_donor_logits: bool,
     ablation_mode: str,
+    enable_core_halt: bool,
 ) -> tuple[list[int], list[dict]]:
     generated = input_ids[0].detach().cpu().tolist()
     prompt_len = len(generated)
@@ -211,6 +247,7 @@ def greedy_generate(
                 attention_mask=cur_mask,
                 **extra,
                 **forward_ablation_kwargs(ablation_mode),
+                enable_core_halt=enable_core_halt,
             )
         last_logits = outputs["logits"][0, -1].float()
         next_id = int(last_logits.argmax(dim=-1).detach().cpu().item())
@@ -220,6 +257,7 @@ def greedy_generate(
                 "next_id": next_id,
                 "next_token": tokenizer.decode([next_id], skip_special_tokens=False),
                 "top": topk_token_report(last_logits, tokenizer=tokenizer, k=5),
+                "core_halt": core_halt_telemetry(outputs, enabled=enable_core_halt),
             }
         )
         if tokenizer.eos_token_id is not None and next_id == tokenizer.eos_token_id:
@@ -262,6 +300,7 @@ def main() -> None:
             f"device={device}, donor={'off' if donor is None else 'on'}, "
             f"max_length={max_length}, refresh_donor_each_step={refresh_donor_each_step}, "
             f"ablation_mode={args.ablation_mode}, "
+            f"enable_core_halt={args.enable_core_halt}, "
             f"donor_logits_scale={model.cfg.donor_logits_scale}, "
             f"qtrm_logits_scale={model.cfg.qtrm_logits_scale}"
         )
@@ -285,6 +324,7 @@ def main() -> None:
                 attention_mask=attention_mask,
                 **extra,
                 **fwd_ablation,
+                enable_core_halt=args.enable_core_halt,
             )
         offset = outputs["logits"].shape[1] - input_ids.shape[1]
         metrics = next_token_diagnostics(
@@ -314,11 +354,14 @@ def main() -> None:
             refresh_donor_each_step=refresh_donor_each_step,
             return_donor_logits=use_donor_logits,
             ablation_mode=args.ablation_mode,
+            enable_core_halt=args.enable_core_halt,
         )
         rep = repetition_stats(generated, prompt_len=input_ids.shape[1])
+        core_halt = core_halt_telemetry(outputs, enabled=args.enable_core_halt)
         record = {
             "sample": idx,
             "ablation_mode": args.ablation_mode,
+            "core_halt": core_halt,
             "text": text,
             "input_tokens": int(input_ids.shape[1]),
             "offset": int(offset),
@@ -357,6 +400,14 @@ def main() -> None:
                 f"res_l2={residual_telemetry['residual_l2_norm']:.3f} "
                 f"res_linf={residual_telemetry['residual_linf_norm']:.3f}"
             )
+        print(
+            "core halt: "
+            f"enabled={core_halt['enabled']} "
+            f"steps={core_halt['core_steps']} "
+            f"halted={core_halt['core_halted']} "
+            f"q_halt_steps={core_halt['q_halt_steps']} "
+            f"q_halt_last_mean={core_halt['q_halt_last_mean']}"
+        )
         print(
             "greedy repetition: "
             f"completion_tokens={rep['completion_tokens']} max_run={rep['max_token_run']} "
