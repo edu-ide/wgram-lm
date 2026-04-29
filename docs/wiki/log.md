@@ -2,6 +2,11 @@
 
 ## [2026-04-29] implementation | CoT-to-latent halting hook
 
+Added `core_halt_loss` and `TrainConfig.loss_core_halt_weight` so the QTRM
+halt head can be trained when a future dataset supplies `core_halt_targets`.
+The loss is wired into `qtrm_smoke_loss` without changing default training
+behavior because the weight defaults to `0.0`.
+
 Downloaded and indexed the CoT-to-latent reference set: Coconut, CODI,
 HybridCoT, and Do Latent Tokens Think. Cloned CODI at `2c23146`. Added source
 and concept wiki pages for using explicit CoT as teacher supervision while QTRM

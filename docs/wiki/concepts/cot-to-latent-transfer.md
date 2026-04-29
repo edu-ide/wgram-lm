@@ -53,6 +53,8 @@ Implemented in code:
 - `QTRMConfig.core_halt_min_steps`
 - `QTRMConfig.core_halt_use_continue`
 - `QTRMRecursiveCore.halt_head`
+- `TrainConfig.loss_core_halt_weight`
+- `core_halt_loss`
 - model outputs:
   - `core_q_halt_logits`
   - `core_q_continue_logits`
@@ -66,12 +68,15 @@ Current behavior:
 - If `core_halt_enabled=True`, the core records halt/continue telemetry.
 - If `enable_core_halt=True`, the current batch can stop early when all samples
   satisfy the halt decision.
+- If training data supplies `core_halt_targets`, `qtrm_smoke_loss` can train
+  `core_q_halt_logits` through `loss_core_halt_weight`.
 
 Important limitation:
 
 The current implementation is not full TRM ACT. It does not yet have persistent
-carry, per-sequence halt/reset, halt exploration, or a trained halt loss. It is
-only the first architectural hook.
+carry, per-sequence halt/reset, halt exploration, or automatic target
+construction from verifier/answer correctness. The halt loss is available, but
+the dataset/teacher signal that should drive it is still a separate step.
 
 ## Why CoT Is Not Removed
 

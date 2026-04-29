@@ -77,16 +77,54 @@ def controller_aux_loss(outputs: dict[str, torch.Tensor]) -> torch.Tensor:
     return loss
 
 
+def _expand_halt_target(target: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
+    target = target.to(device=logits.device, dtype=logits.dtype)
+    if target.ndim == 1:
+        target = target[:, None].expand_as(logits)
+    if target.shape != logits.shape:
+        raise ValueError("halt target must have shape [batch] or match halt logits")
+    return target
+
+
+def core_halt_loss(
+    outputs: dict[str, torch.Tensor],
+    target_halt: Optional[torch.Tensor] = None,
+    target_continue: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    q_halt = outputs.get("core_q_halt_logits")
+    if q_halt is None:
+        anchor = outputs["logits"]
+        return anchor.sum() * 0.0
+    if q_halt.numel() == 0 or target_halt is None:
+        return q_halt.sum() * 0.0
+
+    halt_target = _expand_halt_target(target_halt, q_halt)
+    loss = F.binary_cross_entropy_with_logits(q_halt.float(), halt_target.float())
+
+    q_continue = outputs.get("core_q_continue_logits")
+    if target_continue is not None and q_continue is not None and q_continue.numel() > 0:
+        continue_target = _expand_halt_target(target_continue, q_continue)
+        loss = loss + F.binary_cross_entropy_with_logits(
+            q_continue.float(),
+            continue_target.float(),
+        )
+    return loss
+
+
 def qtrm_smoke_loss(
     model,
     input_ids: torch.Tensor,
     *,
     jepa_weight: float = 0.1,
     aux_weight: float = 1.0,
+    core_halt_weight: float = 0.0,
     **kwargs,
 ):
     labels = kwargs.get("labels")
-    model_kwargs = {k: v for k, v in kwargs.items() if k != "labels"}
+    core_halt_targets = kwargs.get("core_halt_targets")
+    core_continue_targets = kwargs.get("core_continue_targets")
+    private_keys = {"labels", "core_halt_targets", "core_continue_targets"}
+    model_kwargs = {k: v for k, v in kwargs.items() if k not in private_keys}
     outputs = model(input_ids=input_ids, **model_kwargs)
     offset = outputs["logits"].shape[1] - input_ids.shape[1]
     lm = next_token_lm_loss(
@@ -106,5 +144,25 @@ def qtrm_smoke_loss(
         sigreg_weight=getattr(getattr(model, "cfg", None), "jepa_sigreg_weight", 0.09),
     )
     aux = controller_aux_loss(outputs)
-    loss = lm + float(jepa_weight) * jepa + float(aux_weight) * aux
-    return loss, {"loss": loss.detach(), "lm": lm.detach(), "jepa": jepa.detach(), "aux": aux.detach()}, outputs
+    core_halt = core_halt_loss(
+        outputs,
+        target_halt=core_halt_targets,
+        target_continue=core_continue_targets,
+    )
+    loss = (
+        lm
+        + float(jepa_weight) * jepa
+        + float(aux_weight) * aux
+        + float(core_halt_weight) * core_halt
+    )
+    return (
+        loss,
+        {
+            "loss": loss.detach(),
+            "lm": lm.detach(),
+            "jepa": jepa.detach(),
+            "aux": aux.detach(),
+            "core_halt": core_halt.detach(),
+        },
+        outputs,
+    )

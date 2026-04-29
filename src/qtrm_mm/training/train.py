@@ -236,6 +236,7 @@ def main():
                 **model_batch,
                 jepa_weight=cfg.train.loss_jepa_weight,
                 aux_weight=cfg.train.loss_aux_weight,
+                core_halt_weight=cfg.train.loss_core_halt_weight,
             )
         scaler.scale(loss).backward()
         scaler.unscale_(opt)

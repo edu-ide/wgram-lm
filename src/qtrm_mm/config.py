@@ -67,6 +67,7 @@ class TrainConfig:
     lr: float = 3e-4
     loss_jepa_weight: float = 0.1
     loss_aux_weight: float = 1.0
+    loss_core_halt_weight: float = 0.0
     device: str = "auto"
     use_amp: bool = True
     log_every: int = 10

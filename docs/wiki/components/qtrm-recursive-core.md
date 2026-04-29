@@ -21,6 +21,7 @@ Current overlap:
 - has optional truncation/detach
 - has an optional halt head that emits `core_q_halt_logits` and
   `core_q_continue_logits`
+- has a generic `core_halt_loss` hook when `core_halt_targets` are supplied
 - uses `StableInject` with spectral normalization, gating, and learned loop
   embedding, which overlaps with recurrent-depth stable input-injection ideas
 
@@ -31,7 +32,7 @@ Missing versus TRM:
 - no no-grad H_cycles-1 schedule
 - no detached carry returned for continuation across calls
 - no halt exploration schedule
-- no halt-head training loss against answer correctness
+- no automatic halt-target construction from answer correctness/verifier state
 - current halt is batch-level, not per-sequence ACT
 
 Missing versus Parcae/OpenMythos recurrent-depth references:
