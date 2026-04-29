@@ -840,3 +840,18 @@ be promoted again.
 
 Next action: rerun MemoryOS hard/held-out ablation with donor-only versus QTRM
 residual, plus workspace/core disabled modes where applicable.
+
+## [2026-04-29] research | LM2 memory reference added
+
+Added LM2 as a memory-architecture reference:
+
+- Paper: `https://arxiv.org/abs/2502.06049`
+- Repo: `https://github.com/convergence-ai/lm2`
+
+Interpretation: LM2 is relevant to QTRM, but not as the direct fix for
+`donor_logits_scale=0.0` language collapse. It supports the residual-adapter
+memory direction: keep the base Transformer path intact, add a complementary
+memory pathway, connect it through cross-attention and gates, and verify that
+general ability is not degraded. This maps well to QTRM's near-term goal as a
+donor-backed residual cognitive adapter with explicit MemoryOS/workspace
+ablation gates.

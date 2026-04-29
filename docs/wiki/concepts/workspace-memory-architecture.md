@@ -86,3 +86,7 @@ Next ablations:
   stable.
 - Later: MSA-style document-wise sparse latent memory after retrieval/rerank and
   abstention gates pass.
+- Later: LM2-style explicit memory module as a bounded adapter lane. The useful
+  idea is not to replace the base LM path, but to preserve it and add a
+  complementary cross-attended, gated memory pathway whose contribution can be
+  ablated.

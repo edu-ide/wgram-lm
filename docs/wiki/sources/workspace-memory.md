@@ -23,6 +23,11 @@ Downloaded references:
 - `references/papers/memory_workspace/recurrent_memory_transformer_2207.06881.pdf`
 - `references/papers/memory_workspace/associative_recurrent_memory_transformer_2407.04841.pdf`
 
+References to fetch next:
+
+- LM2: Large Memory Models, `https://arxiv.org/abs/2502.06049`
+- Official LM2 implementation, `https://github.com/convergence-ai/lm2`
+
 Key implementation notes:
 
 - Perceiver maps large inputs into a compact latent bottleneck and then performs
@@ -34,6 +39,11 @@ Key implementation notes:
 - RMT/ARMT append memory tokens to base model inputs and carry or update memory
   across segments. This is closer to persistent/long-context memory than QTRM's
   current in-context workspace.
+- LM2 adds an auxiliary memory module to a decoder-only Transformer. The memory
+  acts as a contextual representation repository, interacts with input tokens
+  through cross-attention, and updates through gating. It deliberately preserves
+  the original Transformer information flow while adding a complementary memory
+  pathway.
 
 QTRM implication:
 
@@ -42,3 +52,17 @@ is only a sketch of a workspace. The production direction should use a
 Perceiver/Q-Former-style repeated query adapter for in-context working memory,
 and separately evaluate RMT/ARMT-style memory tokens for persistent or
 segment-level memory.
+
+LM2 is relevant to the explicit-memory axis because it validates a design
+principle close to the current QTRM adapter stance:
+
+```text
+preserve the base Transformer path
+add a separate memory pathway
+fuse memory information through cross-attention/gates
+verify that general ability is not degraded
+```
+
+This should be treated as memory-architecture evidence, not as an immediate
+donor-free language-policy fix. LM2 helps answer "how should QTRM memory be
+attached?" more than "how does QTRM become a standalone LM?"
