@@ -15,6 +15,7 @@ from qtrm_mm.eval.memory_retrieval import (
     case_task_family,
     expected_unknown_case,
     filter_results_for_case,
+    expand_linked_evidence_results,
     load_cases,
     select_evidence_results,
     summarize_records,
@@ -57,6 +58,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     ap.add_argument("--retrieval-top-k", type=int, default=3)
+    ap.add_argument(
+        "--memory-link-expansion",
+        type=int,
+        default=0,
+        help="Append up to N case-scoped records named by already selected evidence.",
+    )
     ap.add_argument("--memory-index", default=None)
     ap.add_argument("--memory-model-id", default=None)
     ap.add_argument("--memory-backend", default=None)
@@ -351,6 +358,7 @@ def evaluate_case(
     memory_max_chars: int,
     evidence_mode: str,
     retrieval_top_k: int,
+    memory_link_expansion: int,
     memory_index: str | None,
     memory_model_id: str | None,
     memory_backend: str | None,
@@ -395,15 +403,25 @@ def evaluate_case(
                 else retrieval_top_k,
                 reranker_device=reranker_device,
             )
-            evidence_results = (
-                filter_results_for_case(
+            if memoryos_case_filter:
+                case_candidates = filter_results_for_case(
                     raw_results,
                     case_id=str(case.get("id", "")),
-                    top_k=retrieval_top_k,
+                    top_k=retrieve_top_n or max(retrieval_top_k * 8, retrieval_top_k),
                 )
-                if memoryos_case_filter
-                else raw_results[:retrieval_top_k]
-            )
+                evidence_results = case_candidates[:retrieval_top_k]
+                evidence_results = expand_linked_evidence_results(
+                    evidence_results,
+                    case_candidates,
+                    max_extra=memory_link_expansion,
+                )
+            else:
+                evidence_results = raw_results[:retrieval_top_k]
+                evidence_results = expand_linked_evidence_results(
+                    evidence_results,
+                    raw_results,
+                    max_extra=memory_link_expansion,
+                )
         else:
             evidence_results = select_evidence_results(
                 case,
@@ -545,6 +563,7 @@ def main() -> None:
                 memory_max_chars=args.memory_max_chars,
                 evidence_mode=args.evidence_mode,
                 retrieval_top_k=args.retrieval_top_k,
+                memory_link_expansion=args.memory_link_expansion,
                 memory_index=args.memory_index,
                 memory_model_id=args.memory_model_id,
                 memory_backend=args.memory_backend,

@@ -1,5 +1,23 @@
 # QTRM LLM Wiki Log
 
+## [2026-04-29] implementation | donor annealing references and KL hook
+
+Downloaded donor-annealing/distillation papers under
+`references/papers/donor_annealing`: foundational KD, sequence-level KD,
+Annealing-KD, Pro-KD, Distilling step-by-step, MiniLLM, GKD/on-policy
+distillation, Universal Logit Distillation, and Multi-Level OT.
+
+Cloned implementation references under `references/official`: TRL
+GKD/MiniLLM, Microsoft LMOps MiniLLM, Google distilling-step-by-step,
+EasyDistill, MiniPLM, Multi-Level OT, and Teacher Assistant KD. Added
+`docs/wiki/sources/donor-annealing-distillation.md` and linked it from the
+donor annealing roadmap.
+
+Added the first implementation hook beyond static scaling:
+`loss_donor_kl_weight`, `donor_kl_beta`, and `donor_kl_temperature`. The loss
+uses generalized donor-logit distillation so the QTRM/fused policy can be
+trained against Qwen donor logits while `donor_logits_scale` is annealed down.
+
 ## [2026-04-29] probe | core halt training gate
 
 Added `configs/qwen35_2b_4090_core_halt_probe.yaml` and

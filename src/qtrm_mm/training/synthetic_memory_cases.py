@@ -35,6 +35,9 @@ def build_synthetic_memory_reasoning_cases(
     people = ["Nora Vale", "Ilya Moon", "Ren Park", "Mira Han", "Tao Lin", "Sena Cho"]
     korean_people = ["윤서아", "민재원", "강하준", "이도현", "최라온", "박서윤"]
     korean_codes = ["새벽-14", "바다-26", "구름-39", "초원-52", "호수-63", "별빛-75"]
+    korean_directions = ["북쪽", "남쪽", "동쪽", "서쪽", "중앙", "외곽"]
+    korean_facilities = ["격납고", "통신실", "관제실", "자료실", "보관실", "중계실"]
+    bays = ["Neon", "Opal", "Cobalt", "Quartz", "Silver", "Amber", "Harbor", "Orchid"]
 
     for i in range(num_sets):
         color = _pick(colors, i)
@@ -47,6 +50,12 @@ def build_synthetic_memory_reasoning_cases(
         ko_person = _pick(korean_people, i)
         ko_code = _pick(korean_codes, i)
         wrong_ko_code = _pick(korean_codes, i + 2)
+        ko_direction = _pick(korean_directions, i)
+        ko_other_direction = _pick(korean_directions, i + 1)
+        ko_facility = _pick(korean_facilities, i)
+        ko_other_facility = _pick(korean_facilities, i + 1)
+        bay = _pick(bays, i)
+        wrong_bay = _pick(bays, i + 1)
 
         cases.extend(
             [
@@ -158,6 +167,61 @@ def build_synthetic_memory_reasoning_cases(
                     ],
                 },
                 {
+                    "id": _case_id("synthetic-temporal-ko-location", i, blocked),
+                    "category": "temporal_location_ko_synth",
+                    "instruction": "날짜가 충돌하면 가장 최신 날짜의 증거를 우선하세요.",
+                    "question": f"현재 {ko_direction} {ko_facility}의 확인 코드는 무엇인가요?",
+                    "answer_aliases": [ko_code, ko_code.replace("-", " ")],
+                    "evidence": [
+                        {
+                            "source": f"{color.lower()}_{ko_facility}_2026_ko.md",
+                            "chunk_id": 0,
+                            "text": (
+                                f"2026-04-29 공지: 현재 {ko_direction} {ko_facility}의 확인 코드는 "
+                                f"{ko_code}이다. 이전 코드는 모두 폐기되었다."
+                            ),
+                        }
+                    ],
+                    "distractors": [
+                        {
+                            "source": f"{color.lower()}_{ko_facility}_2025_ko.md",
+                            "chunk_id": 1,
+                            "text": f"2025-04-02 공지: {ko_direction} {ko_facility}의 확인 코드는 {wrong_ko_code}이다.",
+                        },
+                        {
+                            "source": f"{color.lower()}_other_{ko_facility}_ko.md",
+                            "chunk_id": 2,
+                            "text": f"{ko_other_direction} {ko_facility}의 확인 코드는 {_pick(korean_codes, i + 3)}이다.",
+                        },
+                    ],
+                },
+                {
+                    "id": _case_id("synthetic-authority-ko-location", i, blocked),
+                    "category": "authority_location_ko_synth",
+                    "instruction": "기록이 충돌하면 서명된 운영 공지를 익명 메모보다 우선하세요.",
+                    "question": f"{ko_direction} {ko_other_facility}의 현재 인증 문구는 무엇인가요?",
+                    "answer_aliases": [ko_code, ko_code.replace("-", " ")],
+                    "evidence": [
+                        {
+                            "source": f"signed_{color.lower()}_{ko_other_facility}_ko.md",
+                            "chunk_id": 0,
+                            "text": f"서명된 운영 공지: {ko_direction} {ko_other_facility}의 현재 인증 문구는 {ko_code}이다.",
+                        }
+                    ],
+                    "distractors": [
+                        {
+                            "source": f"anonymous_{color.lower()}_{ko_other_facility}_ko.md",
+                            "chunk_id": 1,
+                            "text": f"익명 메모: {ko_direction} {ko_other_facility}의 인증 문구는 {wrong_ko_code}이다.",
+                        },
+                        {
+                            "source": f"{color.lower()}_other_{ko_other_facility}_ko.md",
+                            "chunk_id": 2,
+                            "text": f"{ko_other_direction} {ko_other_facility}의 인증 문구는 {wrong_ko_code}이다.",
+                        },
+                    ],
+                },
+                {
                     "id": _case_id("synthetic-multihop-badge", i, blocked),
                     "category": "multi_hop_synth",
                     "instruction": "Use all relevant evidence records and follow aliases across records.",
@@ -221,6 +285,83 @@ def build_synthetic_memory_reasoning_cases(
                             "source": f"project_other_{color.lower()}.md",
                             "chunk_id": 4,
                             "text": f"Project Other-{color} is assigned to crate C-{i + 50}.",
+                        },
+                    ],
+                },
+                {
+                    "id": _case_id("synthetic-multihop-maintainer-3hop", i, blocked),
+                    "category": "multi_hop_maintainer_3hop_synth",
+                    "instruction": "Use all relevant evidence records and follow aliases across records.",
+                    "question": f"Who maintains the crate assigned to Project {color}?",
+                    "answer_aliases": [person, person.split()[0]],
+                    "evidence": [
+                        {
+                            "source": f"project_{color.lower()}_3hop.md",
+                            "chunk_id": 0,
+                            "text": f"Project {color} is assigned to crate K-{i + 42}.",
+                        },
+                        {
+                            "source": f"crate_k{i + 42}.md",
+                            "chunk_id": 1,
+                            "text": f"Crate K-{i + 42} is stored in Bay {bay}.",
+                        },
+                        {
+                            "source": f"bay_{bay.lower()}.md",
+                            "chunk_id": 2,
+                            "text": f"Bay {bay} is maintained by {person}.",
+                        },
+                    ],
+                    "distractors": [
+                        {
+                            "source": f"project_decoy_{color.lower()}_3hop.md",
+                            "chunk_id": 3,
+                            "text": f"Project Decoy-{color} is assigned to crate K-{i + 70}.",
+                        },
+                        {
+                            "source": f"crate_k{i + 70}.md",
+                            "chunk_id": 4,
+                            "text": f"Crate K-{i + 70} is stored in Bay {wrong_bay}.",
+                        },
+                        {
+                            "source": f"bay_{wrong_bay.lower()}.md",
+                            "chunk_id": 5,
+                            "text": f"Bay {wrong_bay} is maintained by {wrong_person}.",
+                        },
+                    ],
+                },
+                {
+                    "id": _case_id("synthetic-multihop-ko-location-3hop", i, blocked),
+                    "category": "multi_hop_location_ko_synth",
+                    "instruction": "관련 증거를 모두 사용해서 별칭을 따라가세요.",
+                    "question": f"{color} 임무에 배정된 상자가 보관된 {ko_facility}의 담당자는 누구인가요?",
+                    "answer_aliases": [ko_person],
+                    "evidence": [
+                        {
+                            "source": f"{color.lower()}_mission_box_ko.md",
+                            "chunk_id": 0,
+                            "text": f"{color} 임무에는 상자 K-{i + 80}이 배정되었다.",
+                        },
+                        {
+                            "source": f"box_k{i + 80}_facility_ko.md",
+                            "chunk_id": 1,
+                            "text": f"상자 K-{i + 80}은 {ko_direction} {ko_facility}에 보관된다.",
+                        },
+                        {
+                            "source": f"{color.lower()}_{ko_facility}_owner_ko.md",
+                            "chunk_id": 2,
+                            "text": f"{ko_direction} {ko_facility}의 담당자는 {ko_person}이다.",
+                        },
+                    ],
+                    "distractors": [
+                        {
+                            "source": f"box_k{i + 81}_facility_ko.md",
+                            "chunk_id": 3,
+                            "text": f"상자 K-{i + 81}은 {ko_other_direction} {ko_facility}에 보관된다.",
+                        },
+                        {
+                            "source": f"{color.lower()}_other_{ko_facility}_owner_ko.md",
+                            "chunk_id": 4,
+                            "text": f"{ko_other_direction} {ko_facility}의 담당자는 {_pick(korean_people, i + 3)}이다.",
                         },
                     ],
                 },
@@ -331,6 +472,58 @@ def build_synthetic_memory_reasoning_cases(
                             "chunk_id": 2,
                             "text": f"{color} 동쪽 격납고의 확인 코드는 {wrong_ko_code}이다.",
                         }
+                    ],
+                },
+                {
+                    "id": _case_id("synthetic-negative-temporal-ko-location", i, blocked),
+                    "category": "negative_temporal_location_ko_synth",
+                    "instruction": "가장 최신 날짜의 증거에 요청한 현재 답이 없으면 UNKNOWN만 답하세요.",
+                    "question": f"현재 {ko_direction} {ko_facility}의 책임자는 누구인가요?",
+                    "answer_aliases": ["UNKNOWN", "unknown"],
+                    "evidence": [
+                        {
+                            "source": f"{color.lower()}_{ko_facility}_2024_owner_ko.md",
+                            "chunk_id": 0,
+                            "text": f"2024-03-14 공지: {ko_direction} {ko_facility}의 책임자는 {ko_person}이었다.",
+                        },
+                        {
+                            "source": f"{color.lower()}_{ko_facility}_2026_owner_ko.md",
+                            "chunk_id": 1,
+                            "text": f"2026-04-29 공지: {ko_person}은 {ko_direction} {ko_facility}에서 떠났다. 새 책임자는 이 기록에 없다.",
+                        },
+                    ],
+                    "distractors": [
+                        {
+                            "source": f"{color.lower()}_other_{ko_facility}_2026_owner_ko.md",
+                            "chunk_id": 2,
+                            "text": f"2026-04-29 공지: {ko_other_direction} {ko_facility}의 책임자는 {_pick(korean_people, i + 2)}이다.",
+                        }
+                    ],
+                },
+                {
+                    "id": _case_id("synthetic-negative-authority-ko-location", i, blocked),
+                    "category": "negative_authority_location_ko_synth",
+                    "instruction": "서명된 운영 공지를 우선하세요. 서명된 공지에서 요청한 답이 비공개이면 UNKNOWN만 답하세요.",
+                    "question": f"{ko_direction} {ko_other_facility}의 현재 비상 암구호는 무엇인가요?",
+                    "answer_aliases": ["UNKNOWN", "unknown"],
+                    "evidence": [
+                        {
+                            "source": f"signed_{color.lower()}_{ko_other_facility}_redacted_ko.md",
+                            "chunk_id": 0,
+                            "text": f"서명된 운영 공지: {ko_direction} {ko_other_facility}의 현재 비상 암구호는 비공개이며 이 기록에 없다.",
+                        }
+                    ],
+                    "distractors": [
+                        {
+                            "source": f"anonymous_{color.lower()}_{ko_other_facility}_override_ko.md",
+                            "chunk_id": 1,
+                            "text": f"익명 메모: {ko_direction} {ko_other_facility}의 비상 암구호는 {wrong_ko_code}이다.",
+                        },
+                        {
+                            "source": f"old_{color.lower()}_{ko_other_facility}_override_ko.md",
+                            "chunk_id": 2,
+                            "text": f"2024년 메모: {ko_direction} {ko_other_facility}의 비상 암구호는 {_pick(korean_codes, i + 4)}였다.",
+                        },
                     ],
                 },
                 {

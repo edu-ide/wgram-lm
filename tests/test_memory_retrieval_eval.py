@@ -152,6 +152,69 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0][1]["source"], "target.md")
 
+    def test_link_expansion_adds_records_named_by_selected_multihop_evidence(self):
+        from qtrm_mm.eval.memory_retrieval import expand_linked_evidence_results
+
+        selected = [
+            (
+                10.0,
+                {
+                    "case_id": "project-ember",
+                    "source": "project_ember.md",
+                    "chunk_id": 0,
+                    "text": "Project Ember is assigned to crate K-42.",
+                    "is_target": True,
+                },
+            ),
+            (
+                8.0,
+                {
+                    "case_id": "project-ember",
+                    "source": "crate_k42.md",
+                    "chunk_id": 1,
+                    "text": "Crate K-42 is stored in Bay Neon.",
+                    "is_target": True,
+                },
+            ),
+            (
+                7.0,
+                {
+                    "case_id": "project-ember",
+                    "source": "bay_opal.md",
+                    "chunk_id": 4,
+                    "text": "Bay Opal is maintained by Mira Sol.",
+                    "is_target": False,
+                },
+            ),
+        ]
+        candidates = selected + [
+            (
+                1.0,
+                {
+                    "case_id": "project-ember",
+                    "source": "bay_neon.md",
+                    "chunk_id": 2,
+                    "text": "Bay Neon is maintained by Ilya Chen.",
+                    "is_target": True,
+                },
+            ),
+            (
+                0.5,
+                {
+                    "case_id": "project-ember",
+                    "source": "unrelated.md",
+                    "chunk_id": 5,
+                    "text": "Bay Silver is maintained by Nara Cho.",
+                    "is_target": False,
+                },
+            ),
+        ]
+
+        expanded = expand_linked_evidence_results(selected, candidates, max_extra=1)
+
+        self.assertEqual([rec["source"] for _, rec in expanded][-1], "bay_neon.md")
+        self.assertEqual(sum(1 for _, rec in expanded if rec.get("is_target")), 3)
+
     def test_target_retrieval_stats_counts_multihop_targets(self):
         from qtrm_mm.eval.memory_retrieval import evidence_records, target_retrieval_stats
 

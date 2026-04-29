@@ -69,6 +69,9 @@ class TrainConfig:
     loss_jepa_weight: float = 0.1
     loss_aux_weight: float = 1.0
     loss_core_halt_weight: float = 0.0
+    loss_donor_kl_weight: float = 0.0
+    donor_kl_beta: float = 0.0
+    donor_kl_temperature: float = 1.0
     core_halt_auto_targets: bool = False
     core_halt_target_mode: str = "exact"
     core_halt_donor_kl_threshold: Optional[float] = None
@@ -76,6 +79,8 @@ class TrainConfig:
     core_halt_teacher_depth_logit_kl_threshold: float = 0.05
     core_halt_teacher_depth_min_step: int = 1
     trainable_param_policy: str = "all"
+    donor_logits_scale_start: Optional[float] = None
+    donor_logits_scale_end: Optional[float] = None
     device: str = "auto"
     use_amp: bool = True
     log_every: int = 10

@@ -112,6 +112,9 @@ Implementation status:
   modes.
 - `scripts/106_run_ablation_proof.sh` runs the held-out proof matrix for
   donor-only, residual, workspace-off, core-off, and no-evidence controls.
+- `src/qtrm_mm/losses.py` provides `donor_logit_distillation_loss`, gated by
+  `loss_donor_kl_weight`, `donor_kl_beta`, and `donor_kl_temperature`, so donor
+  preservation/distillation can be enabled without changing default training.
 - `tests/test_residual_telemetry.py` covers argmax shifts, donor scaling, and
   eval-script integration.
 - `tests/test_eval_ablation_modes.py` and `tests/test_model_config.py` cover
@@ -164,8 +167,8 @@ Reject or roll back a QTRM change when:
 
 1. Done: add residual telemetry to the eval script.
 2. Done: add fixed ablation modes for donor-only, residual, workspace-off, and core-off.
-3. Add gated residual behind a config flag.
-4. Add KL-to-donor loss behind a config flag.
+3. Done: add KL-to-donor distillation loss behind a config flag.
+4. Add gated residual behind a config flag.
 5. Re-run the current hard MemoryOS held-out probes.
 6. Only then resume longer training or JEPA/world-model losses.
 

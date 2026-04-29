@@ -23,6 +23,7 @@ MAX_LENGTH=${MAX_LENGTH:-384}
 MAX_NEW_TOKENS=${MAX_NEW_TOKENS:-32}
 RETRIEVE_TOP_N=${RETRIEVE_TOP_N:-20}
 RERANK_TOP_K=${RERANK_TOP_K:-5}
+MEMORY_LINK_EXPANSION=${MEMORY_LINK_EXPANSION:-2}
 RERANK_BACKEND=${RERANK_BACKEND:-cross_encoder}
 RERANKER_MODEL_ID=${RERANKER_MODEL_ID:-Qwen/Qwen3-Reranker-0.6B}
 QTRM_LOGITS_SCALE=${QTRM_LOGITS_SCALE:-0.5}
@@ -64,6 +65,7 @@ eval_gate() {
     --memory-index "$index" \
     --retrieve-top-n "$RETRIEVE_TOP_N" \
     --retrieval-top-k "$RERANK_TOP_K" \
+    --memory-link-expansion "$MEMORY_LINK_EXPANSION" \
     --rerank-backend "$RERANK_BACKEND" \
     --reranker-model-id "$RERANKER_MODEL_ID" \
     --max-length "$MAX_LENGTH" \

@@ -185,6 +185,55 @@ def filter_results_for_case(
     return filtered[:top_k]
 
 
+def _linked_record_key(rec: dict[str, Any]) -> tuple[Any, Any, Any]:
+    return (rec.get("case_id"), rec.get("source"), rec.get("chunk_id"))
+
+
+def _link_normalize(text: str) -> str:
+    return " ".join("".join(ch if ch.isalnum() else " " for ch in text.casefold()).split())
+
+
+def _link_terms(rec: dict[str, Any]) -> set[str]:
+    text = _link_normalize(f"{rec.get('source', '')} {rec.get('text', '')}")
+    tokens = [token for token in text.split() if len(token) > 1 and token not in _STOPWORDS]
+    terms: set[str] = set()
+    for width in (2, 3):
+        for idx in range(0, max(0, len(tokens) - width + 1)):
+            term = " ".join(tokens[idx : idx + width])
+            if len(term) >= 5:
+                terms.add(term)
+    return terms
+
+
+def expand_linked_evidence_results(
+    selected: Iterable[tuple[float, dict[str, Any]]],
+    candidates: Iterable[tuple[float, dict[str, Any]]],
+    *,
+    max_extra: int = 0,
+) -> list[tuple[float, dict[str, Any]]]:
+    selected_list = list(selected)
+    if max_extra <= 0:
+        return selected_list
+
+    selected_keys = {_linked_record_key(rec) for _, rec in selected_list}
+    terms: set[str] = set()
+    for _, rec in selected_list:
+        terms.update(_link_terms(rec))
+    if not terms:
+        return selected_list
+
+    scored: list[tuple[int, float, tuple[float, dict[str, Any]]]] = []
+    for score, rec in candidates:
+        if _linked_record_key(rec) in selected_keys:
+            continue
+        haystack = _link_normalize(f"{rec.get('source', '')} {rec.get('text', '')}")
+        link_score = sum(1 for term in terms if term in haystack)
+        if link_score > 0:
+            scored.append((link_score, float(score), (score, rec)))
+    scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return selected_list + [item for _, _, item in scored[:max_extra]]
+
+
 def select_evidence_results(
     case: dict[str, Any],
     *,

@@ -48,6 +48,24 @@ def trainable_parameters(model):
     return [param for param in model.parameters() if param.requires_grad]
 
 
+def scheduled_donor_logits_scale(
+    *,
+    config_scale: float,
+    start: float | None,
+    end: float | None,
+    step: int,
+    total_steps: int,
+) -> float:
+    start_scale = float(config_scale if start is None else start)
+    end_scale = float(start_scale if end is None else end)
+    total_steps = max(1, int(total_steps))
+    step = min(max(0, int(step)), total_steps - 1)
+    if total_steps == 1:
+        return end_scale
+    ratio = step / float(total_steps - 1)
+    return start_scale + (end_scale - start_scale) * ratio
+
+
 def build_arg_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
@@ -254,6 +272,14 @@ def main():
     it = iter(loader)
     use_donor_logits = bool(cfg.model.donor_logits_scale != 0.0)
     for step in pbar:
+        model.cfg.donor_logits_scale = scheduled_donor_logits_scale(
+            config_scale=cfg.model.donor_logits_scale,
+            start=cfg.train.donor_logits_scale_start,
+            end=cfg.train.donor_logits_scale_end,
+            step=step,
+            total_steps=cfg.train.steps,
+        )
+        use_donor_logits = bool(model.cfg.donor_logits_scale != 0.0)
         batch = next(it)
         batch = {k: v.to(device) for k, v in batch.items()}
         opt.zero_grad(set_to_none=True)
@@ -279,6 +305,9 @@ def main():
                 core_halt_teacher_depth_threshold=cfg.train.core_halt_teacher_depth_threshold,
                 core_halt_teacher_depth_logit_kl_threshold=cfg.train.core_halt_teacher_depth_logit_kl_threshold,
                 core_halt_teacher_depth_min_step=cfg.train.core_halt_teacher_depth_min_step,
+                donor_kl_weight=cfg.train.loss_donor_kl_weight,
+                donor_kl_beta=cfg.train.donor_kl_beta,
+                donor_kl_temperature=cfg.train.donor_kl_temperature,
             )
         scaler.scale(loss).backward()
         scaler.unscale_(opt)
@@ -287,6 +316,10 @@ def main():
         scaler.update()
         step_idx = step + 1
         if step % cfg.train.log_every == 0:
+            metrics["donor_scale"] = torch.tensor(
+                model.cfg.donor_logits_scale,
+                device=loss.device,
+            )
             pbar.set_description(" ".join(f"{k}={float(v):.4f}" for k, v in metrics.items()))
         if diag_prompts and args.diag_every > 0 and step_idx % args.diag_every == 0:
             run_prompt_diagnostics(

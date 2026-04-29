@@ -14,6 +14,7 @@
 - [Architecture Search](sources/architecture-search.md): design-space, NAS, transformer modification transfer, and composition-risk references.
 - [CoT To Latent Reasoning](sources/cot-to-latent-reasoning.md): Coconut, CODI, HybridCoT, looped latent thoughts, latent-token reliability, and TRM/ACT halting references.
 - [Donor-Logit Sidecar Prior Art](sources/donor-logit-sidecar-prior-art.md): DExperts, FUDGE, GeDi, Proxy-Tuning, Side-Tuning, Ladder Side-Tuning, and AdapterFusion mapping for QTRM donor-logit residual design.
+- [Donor Annealing And Distillation](sources/donor-annealing-distillation.md): Annealing-KD, Pro-KD, MiniLLM, GKD, Distilling step-by-step, EasyDistill, MiniPLM, and cross-tokenizer KD references.
 - [Test-Time Training](sources/test-time-training.md): In-Place TTT and donor-side fast-weight adaptation references.
 - [Self-Improvement And Hallucination](sources/self-improvement-and-hallucination.md): latest self-improvement, preference learning, self-correction, and hallucination-control references.
 - [Fact Verification And Fake Info](sources/fact-verification-and-fake-info.md): FEVER, FActScore, SAFE, RAGTruth, conflict-aware RAG, and temporal fake-info verification references.
@@ -44,6 +45,7 @@
 - [CoT To Latent Transfer](concepts/cot-to-latent-transfer.md): QTRM plan for using explicit traces as supervision while running latent workspace loops with halt telemetry.
 - [Workspace Memory Architecture](concepts/workspace-memory-architecture.md): separates QTRM working memory, donor-logit residuals, and future persistent memory.
 - [Test-Time Adaptation](concepts/test-time-adaptation.md): separates donor base policy, QTRM residuals, and In-Place TTT donor adaptation.
+- [Donor Annealing Roadmap](concepts/donor-annealing-roadmap.md): staged path from Qwen donor-logit sidecar to low-donor-scale QTRM student behavior.
 - [Self-Improvement Loop](concepts/self-improvement-loop.md): verified trace, preference, NEEDS_SEARCH, and agentic search loop for hallucination control.
 - [Fact Verification Reasoning](concepts/fact-verification-reasoning.md): separates predictive intuition from evidence grounding, verification, conflict arbitration, and temporal/source judgment.
 - [Critical Synthesis Reasoning](concepts/critical-synthesis-reasoning.md): critique, preserve, risk-check, reframe, and positive conclusion loop for religion/value questions.

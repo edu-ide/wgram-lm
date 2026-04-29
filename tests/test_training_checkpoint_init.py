@@ -95,6 +95,36 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(cfg.train.loss_aux_weight, 0.0)
         self.assertIn("memory_halt_preserve", cfg.train.out_dir)
 
+    def test_scheduled_donor_logits_scale_linearly_anneals_to_student(self):
+        from qtrm_mm.training.train import scheduled_donor_logits_scale
+
+        values = [
+            scheduled_donor_logits_scale(
+                config_scale=1.0,
+                start=1.0,
+                end=0.0,
+                step=step,
+                total_steps=5,
+            )
+            for step in range(5)
+        ]
+
+        self.assertEqual(values, [1.0, 0.75, 0.5, 0.25, 0.0])
+
+    def test_scheduled_donor_logits_scale_defaults_to_config_scale(self):
+        from qtrm_mm.training.train import scheduled_donor_logits_scale
+
+        self.assertEqual(
+            scheduled_donor_logits_scale(
+                config_scale=0.7,
+                start=None,
+                end=None,
+                step=3,
+                total_steps=10,
+            ),
+            0.7,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

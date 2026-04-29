@@ -37,6 +37,81 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(masked), 0.01)
         self.assertGreater(float(unmasked), 3.0)
 
+    def test_donor_logit_distillation_loss_prefers_matching_teacher_distribution(self):
+        from qtrm_mm.losses import donor_logit_distillation_loss
+
+        donor_logits = torch.zeros(1, 3, 5)
+        donor_logits[0, 0, 2] = 8.0
+        donor_logits[0, 1, 3] = 8.0
+        matching_logits = donor_logits.clone()
+        mismatched_logits = torch.zeros(1, 3, 5)
+        mismatched_logits[0, 0, 4] = 8.0
+        mismatched_logits[0, 1, 4] = 8.0
+        input_ids = torch.tensor([[1, 2, 3]])
+
+        matching = donor_logit_distillation_loss(
+            matching_logits,
+            donor_logits,
+            input_ids,
+        )
+        mismatched = donor_logit_distillation_loss(
+            mismatched_logits,
+            donor_logits,
+            input_ids,
+        )
+
+        self.assertLess(float(matching), 0.01)
+        self.assertGreater(float(mismatched), 7.0)
+
+    def test_qtrm_smoke_loss_adds_donor_logit_distillation_metric(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+
+            def forward(self, input_ids, **kwargs):
+                donor_logits = kwargs["donor_logits"]
+                logits = torch.zeros_like(donor_logits)
+                logits[0, 0, 4] = 8.0
+                logits[0, 1, 4] = 8.0
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(1, 2, 4),
+                    "jepa_target": torch.zeros(1, 2, 4),
+                    "jepa_mask": torch.ones(1, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(1, 3, 4),
+                    "jepa_latent_mask": torch.ones(1, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(1, 1),
+                    "action_logits": torch.zeros(1, 3),
+                }
+
+        donor_logits = torch.zeros(1, 3, 5)
+        donor_logits[0, 0, 2] = 8.0
+        donor_logits[0, 1, 3] = 8.0
+        input_ids = torch.tensor([[1, 2, 3]])
+        lm_only, _, _ = qtrm_smoke_loss(
+            FakeModel(),
+            input_ids,
+            donor_logits=donor_logits,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            donor_kl_weight=0.0,
+        )
+        weighted, metrics, _ = qtrm_smoke_loss(
+            FakeModel(),
+            input_ids,
+            donor_logits=donor_logits,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            donor_kl_weight=1.0,
+        )
+
+        self.assertIn("donor_kl", metrics)
+        self.assertGreater(float(metrics["donor_kl"]), 7.0)
+        self.assertGreater(float(weighted), float(lm_only))
+
     def test_qtrm_smoke_loss_respects_component_weights(self):
         from qtrm_mm.losses import qtrm_smoke_loss
 

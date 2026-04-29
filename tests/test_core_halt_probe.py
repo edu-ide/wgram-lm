@@ -46,8 +46,21 @@ class CoreHaltProbeTests(unittest.TestCase):
         self.assertIn('eval_gate "$HARD_CASES" "$HARD_INDEX" enabled', text)
         self.assertIn('eval_gate "$HELDOUT_CASES" "$HELDOUT_INDEX" disabled', text)
         self.assertIn('eval_gate "$HELDOUT_CASES" "$HELDOUT_INDEX" enabled', text)
+        self.assertIn("--memory-link-expansion", text)
         self.assertIn("memory_reasoning_probe.jsonl", text)
         self.assertIn("memory_reasoning_heldout_probe.jsonl", text)
+
+    def test_donor_anneal_config_reduces_donor_logits_dependency(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config("configs/qwen35_2b_4090_donor_anneal_probe.yaml")
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertEqual(cfg.train.donor_logits_scale_start, 1.0)
+        self.assertEqual(cfg.train.donor_logits_scale_end, 0.0)
+        self.assertGreater(cfg.train.loss_donor_kl_weight, 0.0)
+        self.assertEqual(cfg.train.donor_kl_beta, 1.0)
+        self.assertIn("donor_anneal_probe", cfg.train.out_dir)
 
 
 if __name__ == "__main__":

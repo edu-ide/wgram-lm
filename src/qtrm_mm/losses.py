@@ -24,6 +24,62 @@ def next_token_lm_loss(
     )
 
 
+def donor_logit_distillation_loss(
+    student_logits: torch.Tensor,
+    donor_logits: Optional[torch.Tensor],
+    input_ids: torch.Tensor,
+    *,
+    offset: int = 0,
+    attention_mask: Optional[torch.Tensor] = None,
+    labels: Optional[torch.Tensor] = None,
+    beta: float = 0.0,
+    temperature: float = 1.0,
+) -> torch.Tensor:
+    """Generalized KD loss from donor logits to the fused/student policy.
+
+    `beta=0` matches ordinary teacher-to-student forward KL. `beta=1` matches
+    the reverse-KL direction used by MiniLLM/GKD-style variants.
+    """
+    if donor_logits is None:
+        return student_logits.sum() * 0.0
+    target_source = labels if labels is not None else input_ids
+    valid = _valid_next_token_mask(target_source, attention_mask=attention_mask)
+    if not valid.any():
+        return student_logits.sum() * 0.0
+
+    student = student_logits[:, offset:-1]
+    donor = donor_logits[:, : student.shape[1]].to(device=student.device, dtype=student.dtype)
+    if student.shape != donor.shape:
+        raise ValueError("student logits and donor logits must align for distillation")
+
+    temperature = max(float(temperature), 1e-6)
+    beta_value = min(max(float(beta), 0.0), 1.0)
+    student_log_probs = F.log_softmax(student.float() / temperature, dim=-1)
+    donor_log_probs = F.log_softmax(donor.float() / temperature, dim=-1)
+
+    if beta_value == 0.0:
+        per_vocab = F.kl_div(student_log_probs, donor_log_probs, reduction="none", log_target=True)
+    elif beta_value == 1.0:
+        per_vocab = F.kl_div(donor_log_probs, student_log_probs, reduction="none", log_target=True)
+    else:
+        beta_tensor = torch.tensor(beta_value, dtype=student_log_probs.dtype, device=student_log_probs.device)
+        mixture_log_probs = torch.logsumexp(
+            torch.stack(
+                [
+                    student_log_probs + torch.log1p(-beta_tensor),
+                    donor_log_probs + torch.log(beta_tensor),
+                ]
+            ),
+            dim=0,
+        )
+        kl_donor = F.kl_div(mixture_log_probs, donor_log_probs, reduction="none", log_target=True)
+        kl_student = F.kl_div(mixture_log_probs, student_log_probs, reduction="none", log_target=True)
+        per_vocab = beta_tensor * kl_donor + (1.0 - beta_tensor) * kl_student
+
+    per_token = per_vocab.sum(dim=-1)
+    return per_token.masked_select(valid.to(device=per_token.device)).mean()
+
+
 def jepa_cosine_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     pred = F.normalize(pred.float(), dim=-1)
     target = F.normalize(target.float().detach(), dim=-1)
@@ -318,6 +374,9 @@ def qtrm_smoke_loss(
     core_halt_teacher_depth_threshold: float = 0.995,
     core_halt_teacher_depth_logit_kl_threshold: float = 0.05,
     core_halt_teacher_depth_min_step: int = 1,
+    donor_kl_weight: float = 0.0,
+    donor_kl_beta: float = 0.0,
+    donor_kl_temperature: float = 1.0,
     **kwargs,
 ):
     labels = kwargs.get("labels")
@@ -354,6 +413,16 @@ def qtrm_smoke_loss(
         sigreg_weight=getattr(getattr(model, "cfg", None), "jepa_sigreg_weight", 0.09),
     )
     aux = controller_aux_loss(outputs)
+    donor_kl = donor_logit_distillation_loss(
+        outputs["logits"],
+        model_kwargs.get("donor_logits"),
+        input_ids,
+        offset=offset,
+        attention_mask=model_kwargs.get("attention_mask"),
+        labels=labels,
+        beta=donor_kl_beta,
+        temperature=donor_kl_temperature,
+    )
     if core_halt_targets is None and core_halt_auto_targets:
         if core_halt_target_mode == "exact":
             core_halt_targets, core_halt_target_diagnostics = infer_core_halt_targets(
@@ -392,6 +461,7 @@ def qtrm_smoke_loss(
         + float(jepa_weight) * jepa
         + float(aux_weight) * aux
         + float(core_halt_weight) * core_halt
+        + float(donor_kl_weight) * donor_kl
     )
     metrics = {
         "loss": loss.detach(),
@@ -399,6 +469,7 @@ def qtrm_smoke_loss(
         "jepa": jepa.detach(),
         "aux": aux.detach(),
         "core_halt": core_halt.detach(),
+        "donor_kl": donor_kl.detach(),
     }
     metrics.update(core_halt_target_diagnostics)
     return loss, metrics, outputs
