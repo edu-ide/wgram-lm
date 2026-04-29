@@ -58,9 +58,10 @@ class CoreHaltProbeTests(unittest.TestCase):
         self.assertEqual(cfg.model.donor_logits_scale, 1.0)
         self.assertEqual(cfg.train.donor_logits_scale_start, 1.0)
         self.assertEqual(cfg.train.donor_logits_scale_end, 0.0)
+        self.assertGreater(cfg.train.loss_student_lm_weight, 0.0)
         self.assertGreater(cfg.train.loss_donor_kl_weight, 0.0)
         self.assertEqual(cfg.train.donor_kl_beta, 1.0)
-        self.assertIn("donor_anneal_probe", cfg.train.out_dir)
+        self.assertIn("donor_anneal", cfg.train.out_dir)
 
 
 if __name__ == "__main__":

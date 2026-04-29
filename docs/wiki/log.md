@@ -1,5 +1,30 @@
 # QTRM LLM Wiki Log
 
+## [2026-04-29] diagnosis | donor annealing needs student-only LM loss
+
+Ran the first donor-anneal probe and confirmed a failure mode: training CE on
+fused logits lets donor logits carry fluency while QTRM-only logits remain
+weak. The fused-loss-only checkpoint was coherent at donor scale `1.0` and
+`0.5`, but collapsed at `0.25` and `0.0`.
+
+Added `qtrm_logits` to `QTRMMultimodalModel` outputs before donor fusion, plus
+`TrainConfig.loss_student_lm_weight` and a `student_lm` metric. Donor KL now
+distills into QTRM-only logits when available. A 200-step patched probe exposed
+the real gap: `lm=2.22` while `student_lm=12.46` at start; by the end
+`student_lm` only reached `11.42`, and donor `0.0` still repeated. Added
+`configs/qwen35_2b_4090_student_lm_pretrain_probe.yaml` for the next gate:
+keep donor logits fixed while pretraining QTRM-only LM before attempting full
+donor detach.
+
+Ran the 500-step fixed-donor student pretrain probe. `student_lm` moved from
+`12.44` to the 8-ish range (`9.89` at step 200, `8.58` at step 300, `7.85` at
+step 400, noisy `8.00` at step 450), confirming the training signal works.
+Generation still collapses with donor `0.0`, and QTRM residual scale `0.5`
+damages even donor-backed output. With `qtrm_logits_scale=0.1`, donor scales
+`1.0`, `0.5`, and `0.25` stayed fluent on the Korean quantum-computing prompt.
+Conclusion: keep donor attached, train student longer, and cap/gate residual
+amplitude before lowering donor logits further.
+
 ## [2026-04-29] implementation | donor annealing references and KL hook
 
 Downloaded donor-annealing/distillation papers under

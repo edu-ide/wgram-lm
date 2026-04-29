@@ -140,7 +140,8 @@ class QTRMMultimodalModel(nn.Module):
             attention_mask = torch.cat([workspace_mask, attention_mask], dim=1)
         seq = self.coda(seq, attention_mask=attention_mask)
         seq = self.norm(seq)
-        logits = self.lm_head(seq) * float(self.cfg.qtrm_logits_scale)
+        qtrm_logits = self.lm_head(seq) * float(self.cfg.qtrm_logits_scale)
+        logits = qtrm_logits
         if donor_logits is not None and self.cfg.donor_logits_scale != 0.0:
             if donor_logits.shape[:2] != (b, s):
                 raise ValueError(
@@ -149,7 +150,7 @@ class QTRMMultimodalModel(nn.Module):
             if donor_logits.shape[-1] != self.cfg.vocab_size:
                 raise ValueError("donor_logits vocab size must match model vocab_size")
             text_offset = logits.shape[1] - s
-            logits = logits.clone()
+            logits = qtrm_logits.clone()
             logits[:, text_offset:, :] = (
                 logits[:, text_offset:, :]
                 + donor_logits.to(device=logits.device, dtype=logits.dtype)
@@ -161,6 +162,7 @@ class QTRMMultimodalModel(nn.Module):
 
         return {
             "logits": logits,
+            "qtrm_logits": qtrm_logits,
             "z_l": z_l,
             "z_h": z_h,
             "pooled": pooled,

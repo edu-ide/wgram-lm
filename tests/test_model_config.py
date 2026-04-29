@@ -169,6 +169,40 @@ class ModelConfigTests(unittest.TestCase):
 
         self.assertTrue(torch.allclose(out["logits"][:, offset:], donor_logits))
 
+    def test_model_returns_student_logits_before_donor_fusion(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=32,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            qtrm_logits_scale=1.0,
+            donor_logits_scale=1.0,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.tensor([[1, 2, 3, 4]])
+        text_states = torch.randn(1, 4, cfg.visual_dim)
+        donor_logits = torch.randn(1, 4, cfg.vocab_size)
+
+        without_donor = model(input_ids, text_states=text_states)
+        with_donor = model(input_ids, text_states=text_states, donor_logits=donor_logits)
+
+        self.assertIn("qtrm_logits", with_donor)
+        self.assertTrue(torch.allclose(with_donor["qtrm_logits"], without_donor["logits"], atol=1e-4))
+        self.assertFalse(torch.allclose(with_donor["logits"], with_donor["qtrm_logits"]))
+
     def test_workspace_can_use_perceiver_style_depth(self):
         import torch
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel

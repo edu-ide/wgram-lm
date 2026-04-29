@@ -69,6 +69,7 @@ class TrainConfig:
     loss_jepa_weight: float = 0.1
     loss_aux_weight: float = 1.0
     loss_core_halt_weight: float = 0.0
+    loss_student_lm_weight: float = 0.0
     loss_donor_kl_weight: float = 0.0
     donor_kl_beta: float = 0.0
     donor_kl_temperature: float = 1.0

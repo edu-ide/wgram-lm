@@ -115,6 +115,13 @@ Implementation status:
 - `src/qtrm_mm/losses.py` provides `donor_logit_distillation_loss`, gated by
   `loss_donor_kl_weight`, `donor_kl_beta`, and `donor_kl_temperature`, so donor
   preservation/distillation can be enabled without changing default training.
+- `QTRMMultimodalModel` returns `qtrm_logits` before donor fusion, and
+  `loss_student_lm_weight` can train QTRM-only next-token logits. This is
+  required before donor-logit annealing; otherwise fused CE can hide an
+  untrained QTRM language head.
+- The 500-step fixed-donor probe showed residual amplitude matters: QTRM scale
+  `0.5` damaged donor-backed generation, while `0.1` stayed fluent at donor
+  scales `1.0`, `0.5`, and `0.25` on the Korean smoke prompt.
 - `tests/test_residual_telemetry.py` covers argmax shifts, donor scaling, and
   eval-script integration.
 - `tests/test_eval_ablation_modes.py` and `tests/test_model_config.py` cover
@@ -168,9 +175,14 @@ Reject or roll back a QTRM change when:
 1. Done: add residual telemetry to the eval script.
 2. Done: add fixed ablation modes for donor-only, residual, workspace-off, and core-off.
 3. Done: add KL-to-donor distillation loss behind a config flag.
-4. Add gated residual behind a config flag.
-5. Re-run the current hard MemoryOS held-out probes.
-6. Only then resume longer training or JEPA/world-model losses.
+4. Done: expose and train student-only QTRM logits before donor fusion.
+5. Run fixed-donor student LM pretraining until `student_lm` is no longer in
+   collapse range.
+6. Keep residual amplitude small during mixed inference; default probe sweeps
+   should include `qtrm_logits_scale=0.1`.
+7. Add gated residual behind a config flag.
+8. Re-run the current hard MemoryOS held-out probes.
+9. Only then resume JEPA/world-model losses or broader annealing.
 
 ## Ablation Commands
 

@@ -112,6 +112,54 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(metrics["donor_kl"]), 7.0)
         self.assertGreater(float(weighted), float(lm_only))
 
+    def test_qtrm_smoke_loss_can_supervise_student_only_logits(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+
+            def forward(self, input_ids, **kwargs):
+                fused_logits = torch.zeros(1, 3, 5)
+                fused_logits[0, 0, 2] = 8.0
+                fused_logits[0, 1, 3] = 8.0
+                student_logits = torch.zeros(1, 3, 5)
+                student_logits[0, 0, 4] = 8.0
+                student_logits[0, 1, 4] = 8.0
+                return {
+                    "logits": fused_logits,
+                    "qtrm_logits": student_logits,
+                    "jepa_pred": torch.ones(1, 2, 4),
+                    "jepa_target": torch.zeros(1, 2, 4),
+                    "jepa_mask": torch.ones(1, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(1, 3, 4),
+                    "jepa_latent_mask": torch.ones(1, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(1, 1),
+                    "action_logits": torch.zeros(1, 3),
+                }
+
+        input_ids = torch.tensor([[1, 2, 3]])
+        fused_only, metrics, _ = qtrm_smoke_loss(
+            FakeModel(),
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            student_lm_weight=0.0,
+        )
+        with_student, metrics, _ = qtrm_smoke_loss(
+            FakeModel(),
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            student_lm_weight=1.0,
+        )
+
+        self.assertIn("student_lm", metrics)
+        self.assertLess(float(fused_only), 0.01)
+        self.assertGreater(float(metrics["student_lm"]), 7.0)
+        self.assertGreater(float(with_student), float(fused_only) + 7.0)
+
     def test_qtrm_smoke_loss_respects_component_weights(self):
         from qtrm_mm.losses import qtrm_smoke_loss
 

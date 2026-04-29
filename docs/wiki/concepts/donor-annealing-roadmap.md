@@ -56,6 +56,7 @@ that passes should we reduce donor hidden-state dependence.
 train:
   donor_logits_scale_start: 1.0
   donor_logits_scale_end: 0.0
+  loss_student_lm_weight: 1.0
   loss_donor_kl_weight: 0.05
   donor_kl_beta: 1.0
   donor_kl_temperature: 1.0
@@ -64,16 +65,71 @@ train:
 The training loop linearly updates `model.cfg.donor_logits_scale` during the
 run. If these fields are omitted, behavior is unchanged and the static
 `model.donor_logits_scale` is used. The optional donor KL loss distills donor
-logits into the fused/student policy while the donor scale is reduced.
+logits into the QTRM student policy while the donor scale is reduced. The
+student LM loss adds next-token CE on QTRM-only logits before donor-logit
+fusion.
 
 Probe config:
 
 - `configs/qwen35_2b_4090_donor_anneal_probe.yaml`
+- `configs/qwen35_2b_4090_student_lm_pretrain_probe.yaml`
 
 Code paths:
 
 - `src/qtrm_mm/training/train.py`: donor-logit schedule and train-loop wiring.
-- `src/qtrm_mm/losses.py`: generalized donor-logit distillation loss.
+- `src/qtrm_mm/qtrm_model.py`: returns `qtrm_logits` before donor fusion.
+- `src/qtrm_mm/losses.py`: student-only LM loss and generalized donor-logit
+  distillation loss.
+
+## Probe Result: Fused-Loss Failure Mode
+
+The first 200-step linear anneal probe (`1.0 -> 0.0`) was informative but
+failed:
+
+| Checkpoint | Eval donor scale | Observed behavior |
+| --- | --- | --- |
+| fused-loss-only probe | `1.0` / `0.5` | coherent Korean, carried by donor logits |
+| fused-loss-only probe | `0.25` | list/number pattern collapse |
+| fused-loss-only probe | `0.0` | punctuation repetition collapse |
+
+Root cause: the ordinary LM loss was computed on fused logits. At high donor
+scale, Qwen donor logits could satisfy CE while QTRM-only logits remained poor.
+When donor logits were reduced, the untrained student head was exposed.
+
+After adding `qtrm_logits` and `loss_student_lm_weight`, the 200-step probe
+started with `lm=2.22` but `student_lm=12.46`, confirming the diagnosis. By
+step 200 it only reached `student_lm=11.42`; donor `0.0` still collapsed into
+repetition, while donor `0.5` stayed fluent because the donor still carried the
+base language policy.
+
+The next fixed-donor student pretrain probe kept donor logits at `1.0`, used
+`loss_student_lm_weight=1.0`, and trained 500 steps:
+
+| Step | student_lm | Interpretation |
+| --- | --- | --- |
+| 0 | 12.44 | QTRM-only logits are mostly untrained |
+| 100 | 11.21 | learning signal is working |
+| 200 | 9.89 | fixed-donor pretrain beats full anneal at same step count |
+| 300 | 8.58 | QTRM head is improving but not standalone |
+| 400 | 7.85 | still above fluent standalone range |
+| 450 | 8.00 | noisy but still near 8 |
+
+Generation after this 500-step checkpoint:
+
+| donor_logits_scale | qtrm_logits_scale | Behavior |
+| --- | --- | --- |
+| 0.0 | 0.5 | `and` / comma repetition collapse |
+| 0.25 | 0.5 | `1.1.1...` repetition collapse |
+| 0.5 | 0.5 | `1. 1. 1...` repetition collapse |
+| 1.0 | 0.0 | fluent donor baseline |
+| 1.0 | 0.1 | fluent; residual does not visibly damage donor |
+| 0.5 | 0.1 | fluent |
+| 0.25 | 0.1 | fluent |
+
+Decision: do not run full detach yet. Run longer student-only LM pretraining
+with donor logits fixed as a safety rail, keep QTRM residual amplitude small
+(`qtrm_logits_scale ~= 0.1`) during mixed inference, then anneal donor only
+after student LM loss and donor-scale sweep gates improve.
 
 Reference map:
 

@@ -10,6 +10,8 @@ CHECKPOINT=${CHECKPOINT:-runs/qwen35_2b_4090/last.pt}
 CONFIG=${CONFIG:-configs/qwen35_2b_4090.yaml}
 PROMPT=${1:-"Explain quantum entanglement in simple terms."}
 MAX_NEW_TOKENS=${MAX_NEW_TOKENS:-64}
+DONOR_LOGITS_SCALE=${DONOR_LOGITS_SCALE:-}
+QTRM_LOGITS_SCALE=${QTRM_LOGITS_SCALE:-}
 
 echo "============================================================"
 echo "Inference: QTRM + Qwen3.5-2B Donor"
@@ -17,9 +19,11 @@ echo "============================================================"
 echo "Prompt: $PROMPT"
 echo "Checkpoint: $CHECKPOINT"
 echo "Max new tokens: $MAX_NEW_TOKENS"
+echo "Donor logits scale: ${DONOR_LOGITS_SCALE:-config}"
+echo "QTRM logits scale: ${QTRM_LOGITS_SCALE:-config}"
 echo "============================================================"
 
-python - "$CHECKPOINT" "$CONFIG" "$PROMPT" "$MAX_NEW_TOKENS" <<'PYEOF'
+python - "$CHECKPOINT" "$CONFIG" "$PROMPT" "$MAX_NEW_TOKENS" "$DONOR_LOGITS_SCALE" "$QTRM_LOGITS_SCALE" <<'PYEOF'
 import sys, torch
 from qtrm_mm.config import load_config
 from qtrm_mm.qtrm_model import QTRMMultimodalModel
@@ -30,8 +34,14 @@ checkpoint = sys.argv[1]
 config_path = sys.argv[2]
 prompt = sys.argv[3]
 max_new = int(sys.argv[4])
+donor_scale_override = sys.argv[5]
+qtrm_scale_override = sys.argv[6]
 
 cfg = load_config(config_path)
+if donor_scale_override:
+    cfg.model.donor_logits_scale = float(donor_scale_override)
+if qtrm_scale_override:
+    cfg.model.qtrm_logits_scale = float(qtrm_scale_override)
 device = "cuda"
 
 # Load donor
@@ -72,11 +82,17 @@ print(f"    donor output: text_states={prompt_extra['text_states'].shape}")
 # Load QTRM model
 print("[4] Loading QTRM model...")
 model = QTRMMultimodalModel(cfg.model)
+if donor_scale_override:
+    model.cfg.donor_logits_scale = float(donor_scale_override)
+if qtrm_scale_override:
+    model.cfg.qtrm_logits_scale = float(qtrm_scale_override)
 state = torch.load(checkpoint, map_location=device, weights_only=False)
 model.load_state_dict(state.get("model", state), strict=False)
 model = model.to(device)
 model.eval()
 print(f"    loaded from {checkpoint}")
+print(f"    qtrm_logits_scale={model.cfg.qtrm_logits_scale}")
+print(f"    donor_logits_scale={model.cfg.donor_logits_scale}")
 
 print("\n[5] Generating...")
 print("-" * 50)

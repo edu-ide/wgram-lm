@@ -36,8 +36,8 @@ model:
 train:
   batch_size: 1
   seq_len: 384
-  steps: 200
-  lr: 2.0e-5
+  steps: 500
+  lr: 5.0e-5
   loss_jepa_weight: 0.0
   loss_aux_weight: 0.0
   loss_student_lm_weight: 1.0
@@ -45,8 +45,8 @@ train:
   donor_kl_beta: 1.0
   donor_kl_temperature: 1.0
   donor_logits_scale_start: 1.0
-  donor_logits_scale_end: 0.0
+  donor_logits_scale_end: 1.0
   device: auto
   use_amp: true
-  log_every: 25
-  out_dir: runs/qwen35_2b_4090_donor_anneal_student_probe
+  log_every: 50
+  out_dir: runs/qwen35_2b_4090_student_lm_pretrain_probe

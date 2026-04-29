@@ -374,6 +374,7 @@ def qtrm_smoke_loss(
     core_halt_teacher_depth_threshold: float = 0.995,
     core_halt_teacher_depth_logit_kl_threshold: float = 0.05,
     core_halt_teacher_depth_min_step: int = 1,
+    student_lm_weight: float = 0.0,
     donor_kl_weight: float = 0.0,
     donor_kl_beta: float = 0.0,
     donor_kl_temperature: float = 1.0,
@@ -403,6 +404,13 @@ def qtrm_smoke_loss(
         attention_mask=model_kwargs.get("attention_mask"),
         labels=labels,
     )
+    student_lm = next_token_lm_loss(
+        outputs.get("qtrm_logits", outputs["logits"]),
+        input_ids,
+        offset=offset,
+        attention_mask=model_kwargs.get("attention_mask"),
+        labels=labels,
+    )
     jepa = jepa_world_model_loss(
         outputs["jepa_pred"],
         outputs["jepa_target"],
@@ -414,7 +422,7 @@ def qtrm_smoke_loss(
     )
     aux = controller_aux_loss(outputs)
     donor_kl = donor_logit_distillation_loss(
-        outputs["logits"],
+        outputs.get("qtrm_logits", outputs["logits"]),
         model_kwargs.get("donor_logits"),
         input_ids,
         offset=offset,
@@ -458,6 +466,7 @@ def qtrm_smoke_loss(
     )
     loss = (
         lm
+        + float(student_lm_weight) * student_lm
         + float(jepa_weight) * jepa
         + float(aux_weight) * aux
         + float(core_halt_weight) * core_halt
@@ -466,6 +475,7 @@ def qtrm_smoke_loss(
     metrics = {
         "loss": loss.detach(),
         "lm": lm.detach(),
+        "student_lm": student_lm.detach(),
         "jepa": jepa.detach(),
         "aux": aux.detach(),
         "core_halt": core_halt.detach(),

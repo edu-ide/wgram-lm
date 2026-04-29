@@ -305,6 +305,7 @@ def main():
                 core_halt_teacher_depth_threshold=cfg.train.core_halt_teacher_depth_threshold,
                 core_halt_teacher_depth_logit_kl_threshold=cfg.train.core_halt_teacher_depth_logit_kl_threshold,
                 core_halt_teacher_depth_min_step=cfg.train.core_halt_teacher_depth_min_step,
+                student_lm_weight=cfg.train.loss_student_lm_weight,
                 donor_kl_weight=cfg.train.loss_donor_kl_weight,
                 donor_kl_beta=cfg.train.donor_kl_beta,
                 donor_kl_temperature=cfg.train.donor_kl_temperature,
