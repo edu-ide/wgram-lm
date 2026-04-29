@@ -1,0 +1,46 @@
+donor:
+  model_id: Qwen/Qwen3.5-2B-Base
+  load_in_4bit: true
+  freeze_donor: true
+  train_lora: false
+
+model:
+  vocab_size: 248320
+  d_model: 512
+  n_heads: 8
+  n_kv_heads: 4
+  d_ff: 1536
+  max_seq_len: 2048
+  n_prelude_layers: 2
+  n_core_layers: 4
+  n_coda_layers: 2
+  attn_every: 4
+  workspace_tokens: 64
+  workspace_layers: 3
+  workspace_ff_mult: 2
+  workspace_include_latents_in_kv: true
+  h_cycles: 2
+  l_cycles: 2
+  outer_steps: 2
+  dropout: 0.0
+  rope_theta: 100000.0
+  delta_backend: torch_gated_delta
+  attention_backend: flash_attn
+  strict_backends: false
+  visual_dim: 2048
+  max_visual_tokens: 64
+  num_actions: 10
+  qtrm_logits_scale: 0.05
+  donor_logits_scale: 1.0
+
+train:
+  batch_size: 1
+  seq_len: 192
+  steps: 1000
+  lr: 5.0e-5
+  loss_jepa_weight: 0.0
+  loss_aux_weight: 0.0
+  device: auto
+  use_amp: true
+  log_every: 20
+  out_dir: runs/qwen35_2b_4090_donor_residual_s005_1000

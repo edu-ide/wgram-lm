@@ -1,0 +1,33 @@
+model:
+  vocab_size: 8192
+  d_model: 256
+  n_heads: 4
+  n_kv_heads: 2
+  d_ff: 768
+  max_seq_len: 512
+  n_prelude_layers: 2
+  n_core_layers: 2
+  n_coda_layers: 2
+  attn_every: 4
+  workspace_tokens: 32
+  h_cycles: 2
+  l_cycles: 2
+  outer_steps: 2
+  dropout: 0.0
+  rope_theta: 10000.0
+  delta_backend: torch_gated_delta
+  attention_backend: sdpa
+  strict_backends: false
+  visual_dim: 512
+  max_visual_tokens: 64
+  num_actions: 10
+
+train:
+  batch_size: 4
+  seq_len: 128
+  steps: 50
+  lr: 3.0e-4
+  device: auto
+  use_amp: true
+  log_every: 10
+  out_dir: runs/smoke_multimodal

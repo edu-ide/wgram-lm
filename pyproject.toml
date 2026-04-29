@@ -1,0 +1,11 @@
+[project]
+name = "qtrm-multimodal-memoryos"
+version = "0.1.0"
+description = "Multimodal QTRM MemoryOS research scaffold"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

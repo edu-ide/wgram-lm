@@ -1,0 +1,128 @@
+from __future__ import annotations
+from typing import Optional
+import torch
+from torch import nn
+
+from .config import QTRMConfig
+from .blocks import QTRMBlockStack
+from .workspace import LatentWorkspace
+from .multimodal_projector import MultimodalProjector
+from .core import QTRMRecursiveCore
+from .heads import ControllerHeads
+from .norm import RMSNorm
+from .world_model import JepaWorldModelHead, SIGReg
+
+
+class QTRMMultimodalModel(nn.Module):
+    """Standalone multimodal QTRM model."""
+
+    def __init__(self, cfg: QTRMConfig):
+        super().__init__()
+        self.cfg = cfg
+        self.text_embed = nn.Embedding(cfg.vocab_size, cfg.d_model)
+        nn.init.normal_(self.text_embed.weight, mean=0.0, std=0.02)
+        self.prelude = QTRMBlockStack(cfg, cfg.n_prelude_layers, causal=True, attn_every=cfg.attn_every)
+        self.jepa_encoder = QTRMBlockStack(cfg, cfg.jepa_encoder_layers, causal=True, attn_every=cfg.attn_every)
+        self.jepa_encoder_norm = RMSNorm(cfg.d_model)
+        self.core = QTRMRecursiveCore(cfg)
+        self.coda = QTRMBlockStack(cfg, cfg.n_coda_layers, causal=True, attn_every=cfg.attn_every)
+        self.norm = RMSNorm(cfg.d_model)
+        self.lm_head = nn.Linear(cfg.d_model, cfg.vocab_size, bias=False)
+        if cfg.tie_embeddings:
+            self.lm_head.weight = self.text_embed.weight
+        else:
+            nn.init.normal_(self.lm_head.weight, mean=0.0, std=0.02)
+        self.workspace = LatentWorkspace(
+            cfg.d_model,
+            cfg.workspace_tokens,
+            cfg.n_heads,
+            layers=cfg.workspace_layers,
+            ff_mult=cfg.workspace_ff_mult,
+            include_latents_in_kv=cfg.workspace_include_latents_in_kv,
+        )
+        self.projector = MultimodalProjector(
+            cfg.d_model, cfg.visual_dim, cfg.max_visual_tokens, cfg.n_heads,
+        )
+        self.ctrl = ControllerHeads(cfg.d_model, cfg.num_actions)
+        self.jepa = JepaWorldModelHead(
+            d_model=cfg.d_model,
+            n_heads=cfg.n_heads,
+            num_actions=cfg.num_actions,
+            predictor_layers=cfg.jepa_predictor_layers,
+            predictor_dim=cfg.jepa_predictor_dim,
+            max_seq_len=cfg.max_seq_len,
+            horizon=cfg.jepa_horizon,
+            dropout=cfg.dropout,
+        )
+        self.jepa_sigreg = SIGReg(knots=cfg.jepa_sigreg_knots, num_proj=cfg.jepa_sigreg_num_proj)
+
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        visual_features: Optional[torch.Tensor] = None,
+        text_states: Optional[torch.Tensor] = None,
+        donor_logits: Optional[torch.Tensor] = None,
+    ) -> dict:
+        b, s = input_ids.shape
+        if attention_mask is None:
+            attention_mask = torch.ones_like(input_ids)
+
+        text_seq = self.text_embed(input_ids)
+        jepa_latents = self.jepa_encoder(text_seq, attention_mask=attention_mask)
+        jepa_latents = self.jepa_encoder_norm(jepa_latents)
+        jepa_outputs = self.jepa(jepa_latents, attention_mask=attention_mask)
+
+        seq = text_seq
+
+        if text_states is not None:
+            seq, attention_mask = self.projector(seq, text_states, text_mask=attention_mask)
+
+        if visual_features is not None:
+            seq, attention_mask = self.projector(seq, visual_features, text_mask=attention_mask)
+
+        seq = self.prelude(seq, attention_mask=attention_mask)
+        workspace = self.workspace(seq, context_mask=attention_mask)
+        workspace_mask = torch.ones(
+            workspace.shape[:2],
+            device=workspace.device,
+            dtype=attention_mask.dtype,
+        )
+        z_l, z_h, trajectory = self.core(workspace, attention_mask=workspace_mask)
+
+        seq = torch.cat([z_h, seq], dim=1)
+        attention_mask = torch.cat([workspace_mask, attention_mask], dim=1)
+        seq = self.coda(seq, attention_mask=attention_mask)
+        seq = self.norm(seq)
+        logits = self.lm_head(seq) * float(self.cfg.qtrm_logits_scale)
+        if donor_logits is not None and self.cfg.donor_logits_scale != 0.0:
+            if donor_logits.shape[:2] != (b, s):
+                raise ValueError(
+                    "donor_logits must have shape [batch, input_seq_len, vocab_size]"
+                )
+            if donor_logits.shape[-1] != self.cfg.vocab_size:
+                raise ValueError("donor_logits vocab size must match model vocab_size")
+            text_offset = logits.shape[1] - s
+            logits = logits.clone()
+            logits[:, text_offset:, :] = (
+                logits[:, text_offset:, :]
+                + donor_logits.to(device=logits.device, dtype=logits.dtype)
+                * float(self.cfg.donor_logits_scale)
+            )
+
+        pooled = z_h[:, -1, :]
+        ctrl = self.ctrl(pooled)
+
+        return {
+            "logits": logits,
+            "z_l": z_l,
+            "z_h": z_h,
+            "pooled": pooled,
+            "jepa_pred": jepa_outputs["pred"],
+            "jepa_target": jepa_outputs["target"],
+            "jepa_latents": jepa_outputs["latents"],
+            "jepa_latent_mask": jepa_outputs["latent_mask"],
+            "jepa_mask": jepa_outputs["mask"],
+            "trajectory_len": torch.tensor(len(trajectory), device=seq.device),
+            **ctrl,
+        }

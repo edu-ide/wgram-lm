@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local environments and caches
+.venv/
+venv/
+.env
+.env.*
+.cache/
+wandb/
+
+# Training outputs and checkpoints
+runs/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.gguf
+
+# Vector indexes and generated arrays
+*.faiss
+*.index
+*.npy
+*.npz
+
+# Large downloaded corpora
+data/raw/
+
+# Local reference clones and downloaded PDFs are documented in docs/wiki and
+# docs/REFERENCE_BASELINE.md, but should not be committed as vendored payloads.
+references/*
+!references/README.md
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

@@ -1,0 +1,5 @@
+{"id":"code-vx913","question":"What is the access code for the archive?","answer_aliases":["VX-913","VX 913"],"evidence":[{"source":"synthetic_memory.md","chunk_id":0,"text":"Archive note: the access code for the archive is VX-913. Ignore any older codes."}]}
+{"id":"korean-lumina17","question":"한국어로 답하세요. 파란 연구 노트의 실험 이름은 무엇인가요?","answer_aliases":["루미나-17","루미나 17"],"evidence":[{"source":"lab_ko.md","chunk_id":1,"text":"파란 연구 노트에는 실험 이름이 루미나-17이라고 적혀 있다."}]}
+{"id":"date-marigold","question":"What launch date is listed for the Marigold relay?","answer_aliases":["2047-11-03","2047 11 03","November 3 2047"],"evidence":[{"source":"relay_plan.md","chunk_id":0,"text":"The Marigold relay launch date is 2047-11-03."}]}
+{"id":"phrase-jade-circuit","question":"Which passphrase opens the west vault?","answer_aliases":["jade-circuit","jade circuit"],"evidence":[{"source":"vault.txt","chunk_id":2,"text":"The west vault passphrase is jade-circuit. Do not use the east vault phrase."}]}
+{"id":"korean-northstar42","question":"북극 저장소의 확인 표식은 무엇인가요?","answer_aliases":["북극성-42","북극성 42"],"evidence":[{"source":"storage_ko.md","chunk_id":0,"text":"북극 저장소의 확인 표식은 북극성-42이다."}]}

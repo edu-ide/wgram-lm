@@ -1,0 +1,235 @@
+# Downloaded Dataset Seed Corpus
+
+
+## text_train.jsonl
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: In today's ever-evolving world, technology has become an integral part of our lives, shaping the way we learn, work, and communicate. The COVID-19 pandemic has only accelerated this trend, forcing educational institutions worldwide to adapt quickly to remote learning models. As such, social studies integration in elementary education can greatly benefit from incorporating digital tools like those offered by Ruangguru's Online School. Let's explore how educators can effectively leverage these res
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Introduction: In today's world, cooking has evolved beyond traditional methods such as gas or electric stovetops. Induction cooking using ceramic or glass surfaces has become increasingly popular due to its efficiency, speed, safety, and ease of cleaning. In this section, we will delve into the concept of induction cooking, specifically focusing on pan searing techniques that yield professional results at home. We will explore how these modern appliances function, their benefits, and provide ste
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Chapter: Cooking Up Comfort: Chemotheapy-Induced Nausea Relief Foods Introduction: Have you ever felt really queasy or sick to your stomach? Maybe after eating something that didn't agree with you, or when you were on a bumpy car ride? Imagine feeling like that all the time, even when you haven't eaten anything unusual. That's what some people going through chemotherapy treatment for cancer feel like. Chemotherapy is a type of medicine used to kill fast-growing cells in our body, such as cancer
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Chapter 7: Navigating Orphanage Life - A Safe Haven or a Space of Uncertainty? I. Introduction The concept of orphanages has been prevalent in societies across the globe for centuries. Often perceived as institutions providing shelter, care, and nurturing for children without parental support, these establishments also embody complexities that warrant critical examination. This chapter delves into the multifaceted nature of orphanage life by exploring historical contexts, contemporary developmen
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Once upon a time, there was a friendly agency called Gaudette Insurance Agency, Inc. They helped people in the beautiful part of the United States known as New England, which includes the states of Connecticut, Massachusetts, Maine, New Hampshire, Rhode Island, and Vermont. The agency had been around for almost 100 years, making sure everyone in these six states felt safe and secure! Now, little Emma wanted to go on a road trip adventure through New England with her family during summer vacation
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Course Unit: Understanding Jewish Writers and Their Impact Introduction: Have you ever read a book by a famous author and wondered what makes their stories unique? Well, one important factor can be their cultural background! Today, we're going to dive into the world of Jewish writers and learn how their experiences and heritage shaped their works. Now, don't worry if you haven't heard much about this before – we'll start with the basics and explore fascinating concepts together! Section 1: Who a
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: A couple of years ago, I was working as an extra on the set of a low-budget British film. It was one of those long shooting days where nothing much happens - standing around for hours, waiting for your scene, then rushing to get dressed, positioned, and ready, only to have the director decide to move on to something else. During a break, while we were all loitering around the catering table, I overheard two crew members talking excitedly about a special guest who would be joining them later that
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Course Unit: Family and Community Bonds during Ramadan Welcome to our fascinating journey through one of the most cherished traditions in Islamic culture - Ramadan! During this holy month, Muslims around the world come together to strengthen their faith, character, and relationships with loved ones. Today, we're going to focus on how families and communities bond during this special time while sharing delicious meals, especially through the tradition of the iftar barbecue. 🍖🔥 **The Magic of Ifta
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Course Unit: Understanding and Enjoying Films Welcome to our course unit all about films! Have you ever watched a movie that made you laugh, cry, or feel scared? That's because movies are a powerful way to tell stories and evoke emotions. But have you ever wondered how filmmakers create such magical experiences? Let's dive into the world of cinema and discover the art of storytelling through motion pictures. Section 1: What Makes a Movie Memorable? Imagine your favorite movie scene. How does it
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Introduction: The Art of Crafting Vegan Sandwich Delights Sandwiches occupy a unique space in culinary culture - they are versatile, convenient, and can cater to a wide range of dietary preferences and restrictions. In particular, creating delicious vegan sandwiches requires creativity, open-mindedness, and an appreciation for texture and flavor dynamics. This chapter delves into the art of crafting exceptional vegan sandwiches, with a special focus on grilled cheese variations. By exploring var
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Welcome to an exciting journey through the world of comic book heroes! Today, we're going to learn about a fantastic character named Fandral the Dashing. You might have heard of superheroes like Spider-Man or Iron Man before, but there are many other incredible characters out there waiting to be discovered. So let's dive right in and get to know our new hero! Once upon a time, in a magical realm known as Asgard, there lived a brave and daring warrior called Fandral. This regal fighter had some e
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Title: How to Make a Secret Shake Introduction: Creating a secret shake can be an enjoyable and creative process. It's an excellent way to surprise your friends or family with a unique blend of flavors. This tutorial will guide you through making a delicious secret shake that is sure to impress. The steps are simple yet crucial in achieving the perfect balance between taste and mystery. Materials Needed: 1. Blender 2. Measuring cups and spoons 3. Ingredients (to be discussed later) 4. A glass fo
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Chapter Title: Understanding Different Types of Thinkers: Intellectuals vs. Action-Oriented People Introduction: Have you ever wondered why some people spend a lot of time thinking and analyzing while others prefer taking immediate action? This chapter will help you understand two types of thinkers - intellectuals and action-oriented people. We’ll explore who they are, how they operate, and what makes them different. By the end of this chapter, you will appreciate these differences and learn whe
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Title: Discovering Alien Arithmetic: A Hilarious Adventure with Base Conversions It all started when my friend sent me a perplexing math problem out of the blue: find the value of $b$ that satisfies the equation $161_{b}+134_{b}=315_{b}$. At first glance, it looked simple enough—just some addition of numbers written in an unfamiliar base. But little did I know, solving this puzzle would lead me down a rabbit hole of alien arithmetic, niche interests, and hilarity. Being part of a small group of
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Meet Chris, a superhero of supplies! Just like how Batman protects Gotham City and Wonder Woman keeps peace in her homeland, Chris uses his skills as a supply chain professional to help people all around the world get what they need. From medicine in Kenya to airplane fuel in Africa, he works hard to ensure that important items are delivered on time and at a fair price. But what exactly does a "supply chain" mean? Well, imagine you want to buy your favorite candy bar. First, someone needs to gro
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Chapter 10: Music Business Aspects - Record Label Management I. Introduction A record label serves as both a creative platform and a business entity for musicians and bands. It acts as a mediator between artists and audiences by handling various aspects such as recording, marketing, distribution, promotion, and publishing. The role of a record label has evolved significantly with changing consumer behavior and technological advancements. This chapter delves into the intricacies of running a succ
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Course Unit: Exploring Coriander: A Tasty and Healthy Herb Introduction: Have you ever heard of coriander before? It's a delicious herb that adds flavor to many popular dishes around the world! But did you know that every part of the coriander plant can be eaten? That includes the leaves, stems, seeds, and even the roots! In this course unit, we will learn all about coriander, how it tastes, where it comes from, and why it's so good for us. So let's get started! What is Coriander? Coriander is a
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Chapter 10: Keeping Your Strings Singing - Instrument Maintenance and Repair Have you ever heard someone playing a beautifully sad song on a violin? Or maybe you've tapped your foot along with a catchy tune played on a double bass at a concert. Music created using string instruments can evoke powerful emotions and bring people together. To ensure these magnificent creations continue producing enchanting melodies, it's crucial to learn about maintaining and repairing them. This chapter will intro
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Course Unit: Themed Settings and Storytelling in Toy Restoration I. Introduction Toys are not merely objects of amusement; they serve as vessels of memory, nostalgia, and storytelling. This course unit will delve into the art of toy restoration, specifically exploring how to create themed settings and narratives within restored toys. By embracing the principles of craftsmanship, sustainability, and imagination, students will learn to repurpose beloved childhood possessions into captivating displ
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: ## Factorial Numbers and Factoradic Representation In mathematics, factorial of a number $$n$$, denoted as $$n!$$, is the product of all positive integers less than or equal to $$n$$. For example, the factorial of 5, denoted as $$5!$$ is calculated as: $$5! = 5 \times 4 \times 3 \times 2 \times 1 = 120$$ Factorial numbers are used in various mathematical and computational problems, especially in combinatorics and permutations. ## Factoradic Representation Factoradic is a way to represent numbers
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Title: How to Evaluate Competency to Stand Trial in Forensic Psychology Step 1: Understand the Concept of Competency to Stand Trial Competency to stand trial refers to a defendant's mental state and ability to understand and participate in legal proceedings. This assessment falls under forensic psychology, which involves applying psychological principles to legal issues. It is crucial to approach these evaluations with objectivity and impartiality while adhering to ethical standards. Step 2: Fam
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Chapter 14: Understanding Kolmogorov Complexity and How It Relates to Our Bodies Imagine you are telling a story using only numbers. You might use the number 10 to represent your age, or 3 to describe the number of siblings you have. But what if you wanted to tell a more complicated story? What if you wanted to explain something really complex, like how our bodies work? Could you do it with just numbers? This is where Kolmogorov complexity comes in! Named after the Russian mathematician Andrey K
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Title: How to Create a Beautiful Fall-Themed Wreath for Your Home Step 1: Gather Your Materials To create a stunning fall-themed wreath, you will need the following materials: * A wire wreath form (available at most craft stores) * Artificial fall foliage, such as leaves, berries, sunflowers, and pumpkins (consider buying these items from a store like Hobby Lobby during their fall season for the best selection) * Hot glue gun and hot glue sticks * Wire cutters * Ribbon or twine for hanging Step
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Chapter 10: Particle Detectors – Catching Tiny Particles in Action Have you ever imagined being able to see tiny particles that zoom around us at incredible speeds? Welcome to the world of particle physics! One of the most fascinating aspects of this field is using special tools called particle detectors to study these elusive building blocks of matter. Let's dive into how they work and what we can learn from them. Section 1: What are Particle Detectors? Imagine trying to catch a firefly in a ja
+
+- Source: HuggingFaceTB/smollm-corpus:cosmopedia-v2
+  Excerpt: Course Unit: Understanding International Religious Freedom through Interfaith Dialogue In today's globalized world, it has become increasingly important to understand the complex issues surrounding international religious freedom. This course unit will delve into this critical issue by exploring the concept of interfaith dialogue as a means of promoting mutual understanding and respect among different religions. By examining the role of sermons in shaping religious beliefs and practices, as well
+
+
+## math_train.jsonl
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Consider the terms of an arithmetic sequence: $-\frac{1}{3}, y+2, 4y, \ldots$. Solve for $y$. Solution: For an arithmetic sequence, the difference between consecutive terms must be equal. Therefore, we can set up the following equations based on the sequence given: \[ (y + 2) - \left(-\frac{1}{3}\right) = 4y - (y+2) \] Simplify and solve these equations: \[ y + 2 + \frac{1}{3} = 4y - y - 2 \] \[ y + \frac{7}{3} = 3y - 2 \] \[ \frac{7}{3} + 2 = 3y - y \] \[ \frac{13}{3} = 2y \] \[ y = \f
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Suppose that $g(x) = 5x - 3$. What is $g^{-1}(g^{-1}(14))$? Solution: First, we need to find the inverse function $g^{-1}(x)$. Given $g(x) = 5x - 3$, solve for $x$: \[ y = 5x - 3 \] \[ y + 3 = 5x \] \[ x = \frac{y + 3}{5} \] Thus, $g^{-1}(x) = \frac{x + 3}{5}$. Now, apply $g^{-1}$ twice to the given value $14$: \[ g^{-1}(14) = \frac{14 + 3}{5} = \frac{17}{5} \] \[ g^{-1}\left(\frac{17}{5}\right) = \frac{\frac{17}{5} + 3}{5} = \frac{\frac{17}{5} + \frac{15}{5}}{5} = \frac{32}{5 \times 5}
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: A farmer has a rectangular field with dimensions $3m+8$ and $m-3$ where $m$ is a positive integer. If the field has an area of 76 square meters, find the value of $m$. Solution: Using the given dimensions, we set up the area equation: \[ (3m+8)(m-3) = 76. \] Expanding this, we get: \[ 3m^2 - 9m + 8m - 24 = 76, \] \[ 3m^2 - m - 24 = 76, \] \[ 3m^2 - m - 100 = 0. \] Factoring the quadratic, we find: \[ (3m+25)(m-4) = 0. \] This gives two potential solutions for $m$: $m=-\frac{25}{3}$ and
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Given the functions $f(x) = \log_a(1+x)$ and $g(x) = \log_a(1-x)$, where $a>0$ and $a \neq 1$. 1. Find the domain of the function $f(x) - g(x)$. 2. Determine the parity of the function $f(x) - g(x)$. 3. Find the range of $x$ for which $f(x) - g(x) > 0$. Solution: 1. Since $f(x) = \log_a(1+x)$ and $g(x) = \log_a(1-x)$, where $a>0$ and $a \neq 1$, we have $f(x) - g(x) = \log_a(1+x) - \log_a(1-x)$, where $a>0$ and $a \neq 1$. To ensure the function $f(x) - g(x)$ is meaningful, we need $$ \
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Find all solutions to the equation $\displaystyle\sqrt[3]{3 - \frac{x}{3}} = -2$. Solution: Start by isolating the cube root: $$ \sqrt[3]{3 - \frac{x}{3}} = -2 $$ Cube both sides to eliminate the cube root: $$ 3 - \frac{x}{3} = (-2)^3 $$ $$ 3 - \frac{x}{3} = -8 $$ Solve for $x$: $$ 3 + 8 = \frac{x}{3} $$ $$ 11 = \frac{x}{3} $$ $$ x = 33 $$ Thus, the solution to the equation is: $$ \boxed{x = 33} $$
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: In $\triangle ABC$, the lengths of the sides opposite to angles $A$, $B$, and $C$ are $a$, $b$, and $c$ respectively. Given that $\cos \frac{C}{2} = \frac{\sqrt{5}}{3}$ and $a \cos B + b \cos A = 2$, find the maximum area of $\triangle ABC$. Solution: Since $\cos \frac{C}{2} = \frac{\sqrt{5}}{3}$, we have $\cos C = 2\cos^2 \frac{C}{2} - 1 = 2 \left(\frac{\sqrt{5}}{3}\right)^2 - 1 = \frac{1}{9}$. Using the cosine law, we have $a \cos B + b \cos A = 2$ can be written as $a \frac{a^2 + c^2
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Julian is writing a comic book. On average, his story has 280 frames per page. In his 25-page book, 10 pages have 305 frames, 7 pages have 250 frames, and the remaining pages have the average number of frames. How many frames will there be in total in his comic book? Solution: First, let's calculate the total number of frames for the pages that don't have the average number of frames. For the 10 pages with 305 frames each: 10 pages * 305 frames/page = 3050 frames For the 7 pages with 25
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: If an arc of $60^{\circ}$ on circle $C$ has the same length as an arc of $40^{\circ}$ on circle $D$, what is the ratio of the area of circle $C$ to the area of circle $D$? Express your answer as a common fraction. Solution: Let $C_C = 2\pi R_C$ be the circumference of circle $C$, and let $C_D = 2\pi R_D$ be the circumference of circle $D$. Let $L$ be the common length of the two arcs. Then, \[ \frac{60}{360}C_C = L = \frac{40}{360}C_D. \] This simplifies to: \[ \frac{1}{6}C_C = \frac{1}
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Given that $P$ is any point on the circle $C$: $(x-2)^{2}+(y-2)^{2}=1$, and $Q$ is any point on the line $l$: $x+y=1$, find the minimum value of $| \overrightarrow{OP}+ \overrightarrow{OQ}|$. Solution: The distance $d$ between the center of the circle $C(2,2)$ and the line $l$: $x+y=1$ is $d= \frac{|2+2-1|}{ \sqrt{2}}= \frac{3}{ \sqrt{2}} > 1$, hence the line $l$ and the circle $C$ are separate. Let the coordinates of $P$ be $(x,y)$, then $P$ is any point on the circle $C$: $(x-2)^{2}+(
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Compute $\cos 225^\circ$. Solution: Let $Q$ be the point on the unit circle that corresponds to $225^\circ$ measured counterclockwise from the positive $x$-axis. The angle $225^\circ$ is $180^\circ + 45^\circ$, placing $Q$ in the third quadrant of the unit circle. A point in the third quadrant has both negative $x$ and $y$ coordinates. Since the reference angle here (the acute angle with the $x$-axis) is $45^\circ$, we know from symmetry and the properties of $45^\circ-45^\circ-90^\circ
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Given that $b$ is a multiple of $2373$, find the greatest common divisor of $b^2 + 13b + 40$ and $b + 5$. Solution: We use the Euclidean Algorithm: \[ \text{gcd}(b^2 + 13b + 40, b + 5) \] We simplify the expression by substituting $b^2 + 13b + 40$ with a polynomial that is equivalent modulo $b + 5$: \[ b^2 + 13b + 40 - (b + 5)(b + 8) = b^2 + 13b + 40 - (b^2 + 13b + 40) = 0 \] \[ \text{gcd}(0, b + 5) = |b + 5| \] Since $b$ is a multiple of $2373$, $b + 5$ is not a multiple of any number
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Let \( a, b, c \) be positive real numbers. Prove that $$ \frac{1}{a(1+b)}+\frac{1}{b(1+c)}+\frac{1}{c(1+a)} \geq \frac{3}{1+abc}, $$ and that equality occurs if and only if \( a = b = c = 1 \). Solution: 1. Consider the given inequality: \[ \frac{1}{a(1+b)}+ \frac{1}{b(1+c)}+ \frac{1}{c(1+a)} \geq \frac{3}{1 + abc} \] To simplify, we add \( \frac{3}{1 + abc} \) to both sides. The new inequality becomes: \[ \frac{1}{a(1+b)} + \frac{1}{b(1+c)} + \frac{1}{c(1+a)} + \frac{3}{1 + abc} \geq
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: A set consists of five different odd positive integers, each greater than 2. When these five integers are multiplied together, their product is a five-digit integer of the form $AB0AB$, where $A$ and $B$ are digits with $A \neq 0$ and $A \neq B$. (The hundreds digit of the product is zero.) In total, how many different sets of five different odd positive integers have these properties? Solution: 1. **Observe the Structure of \( N \)**: Let \( N = AB0AB \) and let \( t \) be the two-digi
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Tom decides to open a theater. He knows it will cost $5 per square foot of space that he needs and he needs 12 square feet for every seat in his theater. He wants a 500 seat theater. He also realizes construction will cost twice as much as the land. He has a partner who covers a certain percentage of the cost. Tom spends $54,000. What percentage of the cost does his partner cover? Solution: First, let's calculate the total square footage Tom needs for his 500 seat theater: 12 square fee
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Given real numbers \( a, b, c \) and a positive number \( \lambda \) such that the polynomial \( f(x) = x^3 + a x^2 + b x + c \) has three real roots \( x_1, x_2, x_3 \), and the conditions \( x_2 - x_1 = \lambda \) and \( x_3 > \frac{1}{2}(x_1 + x_2) \) are satisfied, find the maximum value of \( \frac{2 a^3 + 27 c - 9 a b}{\lambda^3} \). Solution: We begin by analyzing the function \( f(x) = x^3 + a x^2 + b x + c \), which has three real roots \( x_1, x_2, x_3 \). We are given the fol
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Factorize: $x^{3}-6x^{2}+9x=\_\_\_\_\_\_.$ Solution: To factorize the given expression $x^{3}-6x^{2}+9x$, we start by identifying a common factor in all terms. Observing the expression, we see that each term has at least one factor of $x$. Thus, we can factor out $x$ from the expression: \[ x^{3}-6x^{2}+9x = x(x^{2}-6x+9). \] Next, we look at the quadratic expression inside the parentheses, $x^{2}-6x+9$. This expression can be factorized further by identifying it as a perfect square tri
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: In triangle $ABC$, $CA = CB$, and $D$ is the midpoint of $AB$. Line $EF$ passes through point $D$ such that triangles $ABC$ and $EFC$ share the same incenter. Prove that $DE \cdot DF = DA^2$. Solution: 1. **Identify Key Elements**: Consider \( \triangle ABC \) where \( CA = CB \) and \( D \) is the midpoint of \( AB \). Line \( \mathrm{EF} \) passes through \( D \) such that \( \triangle ABC \) and \( \triangle \mathrm{EFC} \) share the same incircle (inscribed circle). 2. **Given Commo
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Consider the product of $x^5$, $x^2 + \frac{1}{x^2}$, and $1 + \frac{2}{x} + \frac{3}{x^2}$. Determine the degree of the resulting polynomial. $\textbf{(A)}\ 3\qquad \textbf{(B)}\ 5\qquad \textbf{(C)}\ 6\qquad \textbf{(D)}\ 7\qquad \textbf{(E)}\ 8$ Solution: 1. **Multiply the first two expressions:** \[ x^5 \left(x^2 + \frac{1}{x^2}\right) = x^5 \cdot x^2 + x^5 \cdot \frac{1}{x^2} = x^7 + x^3 \] 2. **Multiply the result with the third expression:** \[ (x^7 + x^3) \left(1 + \frac{2}{x} +
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: The sum of three numbers $a$, $b$, and $c$ is 120. If we increase $a$ by 8, decrease $b$ by 3 and multiply $c$ by 3, the three resulting numbers are equal. What is the value of $b$? Solution: We start with the equations: 1. \(a + b + c = 120\) 2. \(a + 8 = b - 3 = 3c\) First, solve \(b - 3 = 3c\) for \(b\): \[ b = 3c + 3 \] Next, solve \(3c = a + 8\) for \(a\): \[ a = 3c - 8 \] Substitute both \(a\) and \(b\) in terms of \(c\) into the first equation: \[ (3c - 8) + (3c + 3) + c = 120 \]
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: A vessel of capacity 2 liters has a certain percentage of alcohol and another vessel of capacity 6 liters has 40% alcohol. The total liquid of 8 liters was poured out into a vessel of capacity 10 liters, and the rest of the vessel was filled with water. The new concentration of the mixture is 30.000000000000004%. What is the percentage of alcohol in the first vessel? Solution: Let's denote the percentage of alcohol in the first vessel (2 liters) as x%. From the second vessel (6 liters),
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Given that the sum of the first $n$ terms of a sequence $\{a\_n\}$ is $S\_n$, and $S\_n=2^{n}a\_n-1$, find the sum of the first $n$ terms of the sequence $\{\frac{a\_n}{a_{n+1}}\}$, denoted as $T\_n=$ `____`. Solution: Since $S\_n=2^{n}a\_n-1$, we have $S_{n-1}=2^{n-1}a_{n-1}-1 (n \geqslant 2)$. Subtracting the second equation from the first, we get: $a\_n=2^{n}a\_n-2^{n-1}a_{n-1} (n \geqslant 2)$. Simplifying, we obtain: $\frac{a\_n}{a_{n+1}}=\frac{2^{n+1}-1}{2^{n}}=2-\frac{1}{2^{n}}$.
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Find the value of $k$ such that all roots of the polynomial $x^4 - 4x^3 + 4x^2 + kx - 4$ are real. Solution: Let $p, q, r, s$ be the real roots of the polynomial. According to Vieta's formulas for a quartic equation: \[ p + q + r + s = 4, \] \[ pqr + pqs + prs + qrs = k, \] \[ pqrs = 4. \] Applying AM-GM inequality for four numbers, we get: \[ \frac{p + q + r + s}{4} \geq \sqrt[4]{pqrs}. \] Substituting the values from Vieta's relations: \[ \frac{4}{4} \geq \sqrt[4]{4}. \] Thus, we have
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: At its Grand Opening, the Guthrie Market distributed two different types of souvenirs. One type cost 20 cents each, and the other type cost a certain amount. One thousand souvenirs were distributed in all, and the cost of these souvenirs was 220 dollars. They distributed 400 of the souvenirs with the unknown cost. How much did this type of souvenir cost? Solution: Let's denote the cost of the unknown souvenir as \( x \) dollars each. We know that 400 souvenirs of the unknown type were d
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: Let \( p = 2^{3009}, q = 3^{2006}, \) and \( r = 5^{1003} \). Which of the following statements is true? (A) \( p < q < r \) (B) \( p < r < q \) (C) \( q < p < r \) (D) \( r < p < q \) (E) \( q < r < p \) Solution: Given the values: \[ p = 2^{3009}, \quad q = 3^{2006}, \quad r = 5^{1003} \] 1. Express \( p \) and \( q \) in terms of powers of the same base: \[ p = 2^{3009} = 2^{3 \times 1003} = (2^3)^{1003} = 8^{1003} \] \[ q = 3^{2006} = 3^{2 \times 1003} = (3^2)^{1003} = 9^{1003} \] N
+
+- Source: AI-MO/NuminaMath-CoT:default
+  Excerpt: Problem: When \( a < -1 \), the nature of the roots for the equation $$ \left(a^{3}+1\right) x^{2}+\left(a^{2}+1\right) x-(a+1)=0 $$ is: (A) Two negative roots. (B) One positive root and one negative root, with the absolute value of the negative root being larger. (C) One positive root and one negative root, with the absolute value of the negative root being smaller. (D) No real roots. Solution: Given the quadratic equation: \[ (a^3 + 1) x^2 + (a^2 + 1) x - (a + 1) = 0 \] where \( a < -1 \). 1.
+
+
+## mm_train.jsonl
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Maps have four cardinal directions, or main directions. Those directions are north, south, east, and west. A compass rose is a set of arrows that point to the cardinal directions. A compass rose usually shows only the first letter of each cardinal direction. The north arrow points to the North Pole. On most maps, north is at the top of the map. Question: Which of these states is farthest north? Choices: A. West Virginia B. Louisiana C. Arizona D. Oklahoma Answer with the letter.
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Experiments can be designed to answer specific questions. How can you identify the questions that a certain experiment can answer? In order to do this, you need to figure out what was tested and what was measured during the experiment. Imagine an experiment with two groups of daffodil plants. One group of plants was grown in sandy soil, and the other was grown in clay soil. Then, the height of each plant was measured. First, identify the part of the experiment that was tested. T
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Offspring genotypes: homozygous or heterozygous? How do you determine whether an organism is homozygous or heterozygous for a gene? Look at the alleles in the organism's genotype for that gene. An organism with two identical alleles for a gene is homozygous for that gene. If both alleles are dominant, the organism is homozygous dominant for the gene. If both alleles are recessive, the organism is homozygous recessive for the gene. An organism with two different alleles for a gen
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: The temperature of a substance depends on the average kinetic energy of the particles in the substance. The higher the average kinetic energy of the particles, the higher the temperature of the substance. The kinetic energy of a particle is determined by its mass and speed. For a pure substance, the greater the mass of each particle in the substance and the higher the average speed of the particles, the higher their average kinetic energy. Question: Compare the average kinetic e
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: A food web is a model. A food web shows where organisms in an ecosystem get their food. Models can make things in nature easier to understand because models can represent complex things in a simpler way. If a food web showed every organism in an ecosystem, the food web would be hard to understand. So, each food web shows how some organisms in an ecosystem can get their food. Arrows show how matter moves. A food web has arrows that point from one organism to another. Each arrow s
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: A solution is made up of two or more substances that are completely mixed. In a solution, solute particles are mixed into a solvent. The solute cannot be separated from the solvent by a filter. For example, if you stir a spoonful of salt into a cup of water, the salt will mix into the water to make a saltwater solution. In this case, the salt is the solute. The water is the solvent. The concentration of a solute in a solution is a measure of the ratio of solute to solvent. Conce
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Magnets can pull or push on each other without touching. When magnets attract, they pull together. When magnets repel, they push apart. These pulls and pushes between magnets are called magnetic forces. The stronger the magnetic force between two magnets, the more strongly the magnets attract or repel each other. You can change the strength of a magnetic force between two magnets by changing the distance between them. The magnetic force is stronger when the magnets are closer to
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Many plants have flowers. These plants can use their flowers to reproduce, or make new plants like themselves. How do plants use their flowers to reproduce? First, the male part of the flower makes pollen, and the female part makes eggs. Animals, wind, or water can move pollen. Pollination is what happens when pollen is moved to the female part of the flower. After pollination, sperm from the pollen can combine with the eggs. This is called fertilization. The fertilized eggs gro
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: An object has different properties. A property of an object can tell you how it looks, feels, tastes, or smells. Properties can also tell you how an object will behave when something happens to it. Question: Which property matches this object? Hint: Select the better answer. Choices: A. flexible B. sticky Answer with the letter. Answer: A
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Question: What is the capital of South Carolina? Choices: A. Columbia B. Montgomery C. Charleston D. Harrisburg Answer with the letter. Answer: A
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Offspring phenotypes: dominant or recessive? How do you determine an organism's phenotype for a trait? Look at the combination of alleles in the organism's genotype for the gene that affects that trait. Some alleles have types called dominant and recessive. These two types can cause different versions of the trait to appear as the organism's phenotype. If an organism's genotype has at least one dominant allele for a gene, the organism's phenotype will be the dominant allele's ve
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: An object has different properties. A property of an object can tell you how it looks, feels, tastes, or smells. Properties can also tell you how an object will behave when something happens to it. Different objects can have properties in common. You can use these properties to put objects into groups. Grouping objects by their properties is called classification. Question: Which property do these three objects have in common? Hint: Select the best answer. Choices: A. hard B. so
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Question: What is the capital of Colorado? Choices: A. Baton Rouge B. Denver C. Sacramento D. Spokane Answer with the letter. Answer: B
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Birds, mammals, fish, reptiles, and amphibians are groups of animals. The animals in each group have traits in common. Scientists sort animals into groups based on traits they have in common. This process is called classification. Question: Select the fish below. Hint: Fish live underwater. They have fins, not limbs. A tiger shark is an example of a fish. Choices: A. black howler B. cardinalfish Answer with the letter. Lecture: Birds, mammals, fish, reptiles, and amphibians are
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: There are more than 100 different chemical elements, or types of atoms. Chemical elements make up all of the substances around you. A substance may be composed of one chemical element or multiple chemical elements. Substances that are composed of only one chemical element are elementary substances. Substances that are composed of multiple chemical elements bonded together are compounds. Every chemical element is represented by its own atomic symbol. An atomic symbol may consist
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Question: What can Maureen and Kendrick trade to each get what they want? Hint: Trade happens when people agree to exchange goods and services. People give up something to get something else. Sometimes people barter, or directly exchange one good or service for another. Maureen and Kendrick open their lunch boxes in the school cafeteria. Neither Maureen nor Kendrick got everything that they wanted. The table below shows which items they each wanted: Look at the images of their lunches. T
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Offspring phenotypes: dominant or recessive? How do you determine an organism's phenotype for a trait? Look at the combination of alleles in the organism's genotype for the gene that affects that trait. Some alleles have types called dominant and recessive. These two types can cause different versions of the trait to appear as the organism's phenotype. If an organism's genotype has at least one dominant allele for a gene, the organism's phenotype will be the dominant allele's ve
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Experiments can be designed to answer specific questions. How can you identify the questions that a certain experiment can answer? In order to do this, you need to figure out what was tested and what was measured during the experiment. Imagine an experiment with two groups of daffodil plants. One group of plants was grown in sandy soil, and the other was grown in clay soil. Then, the height of each plant was measured. First, identify the part of the experiment that was tested. T
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Solid and liquid are states of matter. Matter is anything that takes up space. Matter can come in different states, or forms. When matter is a solid, it has a shape of its own. Some solids can be bent or broken easily. Others are hard to bend or break. A glass cup is a solid. A sock is also a solid. When matter is a liquid, it takes the shape of its container. Think about pouring a liquid from a cup into a bottle. The shape of the liquid is different in the cup than in the bottl
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: An adaptation is an inherited trait that helps an organism survive or reproduce. Adaptations can include both body parts and behaviors. The shape of an animal's feet is one example of an adaptation. Animals' feet can be adapted in different ways. For example, webbed feet might help an animal swim. Feet with thick fur might help an animal walk on cold, snowy ground. Question: Which animal is also adapted for climbing trees? Hint: s live in rain forests on the island of Sumatra in
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Experiments have variables, or parts that change. You can design an experiment to find out how one variable affects another variable. For example, imagine that you want to find out if fertilizer affects the number of tomatoes a tomato plant grows. To answer this question, you decide to set up two equal groups of tomato plants. Then, you add fertilizer to the soil of the plants in one group but not in the other group. Later, you measure the effect of the fertilizer by counting th
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Magnets can pull or push on each other without touching. When magnets attract, they pull together. When magnets repel, they push apart. These pulls and pushes between magnets are called magnetic forces. The strength of a force is called its magnitude. The greater the magnitude of the magnetic force between two magnets, the more strongly the magnets attract or repel each other. You can change the magnitude of a magnetic force between two magnets by changing the distance between t
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: Solid, liquid, and gas are states of matter. Matter is anything that takes up space. Matter can come in different states, or forms. When matter is a solid, it has a definite volume and a definite shape. So, a solid has a size and shape of its own. Some solids can be easily folded, bent, or broken. A piece of paper is a solid. Also, some solids are very small. A grain of sand is a solid. When matter is a liquid, it has a definite volume but not a definite shape. So, a liquid has
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: A solution is made up of two or more substances that are completely mixed. In a solution, solute particles are mixed into a solvent. The solute cannot be separated from the solvent by a filter. For example, if you stir a spoonful of salt into a cup of water, the salt will mix into the water to make a saltwater solution. In this case, the salt is the solute. The water is the solvent. The concentration of a solute in a solution is a measure of the ratio of solute to solvent. Conce
+
+- Source: HuggingFaceM4/the_cauldron:scienceqa
+  Excerpt: <image> Lecture: An adaptation is an inherited trait that helps an organism survive or reproduce. Adaptations can include both body parts and behaviors. The shape of an animal's feet is one example of an adaptation. Animals' feet can be adapted in different ways. For example, webbed feet might help an animal swim. Feet with thick fur might help an animal walk on cold, snowy ground. Question: Which animal's feet are also adapted for swimming? Hint: s spend much of their lives at sea. They eat mos
