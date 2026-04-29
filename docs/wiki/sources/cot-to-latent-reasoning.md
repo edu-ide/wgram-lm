@@ -56,7 +56,8 @@ From the local TinyRecursiveModels reference:
 - the loss includes task loss plus a halt-head loss against sequence
   correctness.
 
-QTRM has the first implementation steps: a core halt head, telemetry, and a
-generic halt loss that can train supplied `core_halt_targets`. It does not yet
-implement persistent carry, per-sequence reset, exploration, or automatic
-verifier-derived halt targets.
+QTRM has the first implementation steps: a core halt head, telemetry, generic
+halt loss, and conservative automatic halt targets from correctness,
+verifier-pass, and donor-KL stability. It does not yet implement persistent
+carry, per-sequence reset, exploration, or step-wise teacher labels for optimal
+latent depth.

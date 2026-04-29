@@ -7,6 +7,11 @@ halt head can be trained when a future dataset supplies `core_halt_targets`.
 The loss is wired into `qtrm_smoke_loss` without changing default training
 behavior because the weight defaults to `0.0`.
 
+Added `infer_core_halt_targets` plus `core_halt_auto_targets` and
+`core_halt_donor_kl_threshold`. The first automatic target rule is conservative:
+exact next-token correctness, optional verifier pass/fail, and optional
+fused-vs-donor KL stability must all pass before teaching the core to halt.
+
 Downloaded and indexed the CoT-to-latent reference set: Coconut, CODI,
 HybridCoT, and Do Latent Tokens Think. Cloned CODI at `2c23146`. Added source
 and concept wiki pages for using explicit CoT as teacher supervision while QTRM

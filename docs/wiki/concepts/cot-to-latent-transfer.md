@@ -54,7 +54,10 @@ Implemented in code:
 - `QTRMConfig.core_halt_use_continue`
 - `QTRMRecursiveCore.halt_head`
 - `TrainConfig.loss_core_halt_weight`
+- `TrainConfig.core_halt_auto_targets`
+- `TrainConfig.core_halt_donor_kl_threshold`
 - `core_halt_loss`
+- `infer_core_halt_targets`
 - model outputs:
   - `core_q_halt_logits`
   - `core_q_continue_logits`
@@ -70,13 +73,32 @@ Current behavior:
   satisfy the halt decision.
 - If training data supplies `core_halt_targets`, `qtrm_smoke_loss` can train
   `core_q_halt_logits` through `loss_core_halt_weight`.
+- If `core_halt_auto_targets=True`, `qtrm_smoke_loss` can infer halt targets
+  from exact token correctness, optional verifier pass/fail, and optional
+  fused-vs-donor KL stability.
 
 Important limitation:
 
 The current implementation is not full TRM ACT. It does not yet have persistent
-carry, per-sequence halt/reset, halt exploration, or automatic target
-construction from verifier/answer correctness. The halt loss is available, but
-the dataset/teacher signal that should drive it is still a separate step.
+carry, per-sequence halt/reset, or halt exploration. Automatic target
+construction exists, but it is a conservative proxy, not a proof that the latent
+loop has reasoned faithfully.
+
+## Automatic Halt Target Rule
+
+The current automatic halt target is:
+
+```text
+target_halt =
+  exact_next_token_correct
+  and optional verifier_passed
+  and optional KL(fused_logits || donor_logits) <= threshold
+```
+
+This is intentionally strict. It only tells the halt head "this state appears
+safe enough to stop"; it does not teach which intermediate latent step was
+semantically necessary. That stronger signal requires step-wise teacher runs or
+TRM-style exploration.
 
 ## Why CoT Is Not Removed
 

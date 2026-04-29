@@ -237,6 +237,8 @@ def main():
                 jepa_weight=cfg.train.loss_jepa_weight,
                 aux_weight=cfg.train.loss_aux_weight,
                 core_halt_weight=cfg.train.loss_core_halt_weight,
+                core_halt_auto_targets=cfg.train.core_halt_auto_targets,
+                core_halt_donor_kl_threshold=cfg.train.core_halt_donor_kl_threshold,
             )
         scaler.scale(loss).backward()
         scaler.unscale_(opt)

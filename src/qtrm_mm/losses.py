@@ -111,6 +111,63 @@ def core_halt_loss(
     return loss
 
 
+def _valid_next_token_mask(
+    target_source: torch.Tensor,
+    attention_mask: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    valid = target_source[:, 1:] != -100
+    if attention_mask is not None:
+        valid = valid & attention_mask[:, 1:].to(torch.bool)
+    return valid
+
+
+def _masked_mean_per_sample(values: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    masked = values.masked_fill(mask.logical_not(), 0.0)
+    denom = mask.sum(dim=-1).clamp_min(1).to(values.dtype)
+    return masked.sum(dim=-1) / denom
+
+
+def infer_core_halt_targets(
+    outputs: dict[str, torch.Tensor],
+    input_ids: torch.Tensor,
+    *,
+    labels: Optional[torch.Tensor] = None,
+    attention_mask: Optional[torch.Tensor] = None,
+    offset: int = 0,
+    verifier_passed: Optional[torch.Tensor] = None,
+    donor_logits: Optional[torch.Tensor] = None,
+    donor_logits_scale: float = 1.0,
+    donor_kl_threshold: Optional[float] = None,
+) -> torch.Tensor:
+    target_source = labels if labels is not None else input_ids
+    targets = target_source[:, 1:]
+    valid = _valid_next_token_mask(target_source, attention_mask=attention_mask)
+    logits = outputs["logits"][:, offset:-1]
+    if logits.shape[:2] != targets.shape:
+        raise ValueError("logits/text target shape mismatch while inferring core halt targets")
+
+    safe_targets = targets.masked_fill(valid.logical_not(), 0)
+    predicted = logits.argmax(dim=-1)
+    token_correct = (predicted == safe_targets) | valid.logical_not()
+    has_valid = valid.any(dim=-1)
+    exact_correct = token_correct.all(dim=-1) & has_valid
+
+    if verifier_passed is not None:
+        exact_correct = exact_correct & verifier_passed.to(device=exact_correct.device, dtype=torch.bool)
+
+    if donor_logits is not None and donor_kl_threshold is not None:
+        donor_slice = donor_logits[:, : logits.shape[1]].to(device=logits.device, dtype=logits.dtype)
+        donor_slice = donor_slice * float(donor_logits_scale)
+        fused_log_probs = logits.float().log_softmax(dim=-1)
+        donor_log_probs = donor_slice.float().log_softmax(dim=-1)
+        fused_probs = fused_log_probs.exp()
+        per_token_kl = (fused_probs * (fused_log_probs - donor_log_probs)).sum(dim=-1)
+        kl_per_sample = _masked_mean_per_sample(per_token_kl, valid)
+        exact_correct = exact_correct & (kl_per_sample <= float(donor_kl_threshold))
+
+    return exact_correct.to(dtype=torch.float32)
+
+
 def qtrm_smoke_loss(
     model,
     input_ids: torch.Tensor,
@@ -118,12 +175,20 @@ def qtrm_smoke_loss(
     jepa_weight: float = 0.1,
     aux_weight: float = 1.0,
     core_halt_weight: float = 0.0,
+    core_halt_auto_targets: bool = False,
+    core_halt_donor_kl_threshold: Optional[float] = None,
     **kwargs,
 ):
     labels = kwargs.get("labels")
     core_halt_targets = kwargs.get("core_halt_targets")
     core_continue_targets = kwargs.get("core_continue_targets")
-    private_keys = {"labels", "core_halt_targets", "core_continue_targets"}
+    verifier_passed = kwargs.get("verifier_passed")
+    private_keys = {
+        "labels",
+        "core_halt_targets",
+        "core_continue_targets",
+        "verifier_passed",
+    }
     model_kwargs = {k: v for k, v in kwargs.items() if k not in private_keys}
     outputs = model(input_ids=input_ids, **model_kwargs)
     offset = outputs["logits"].shape[1] - input_ids.shape[1]
@@ -144,6 +209,20 @@ def qtrm_smoke_loss(
         sigreg_weight=getattr(getattr(model, "cfg", None), "jepa_sigreg_weight", 0.09),
     )
     aux = controller_aux_loss(outputs)
+    if core_halt_targets is None and core_halt_auto_targets:
+        core_halt_targets = infer_core_halt_targets(
+            outputs,
+            input_ids,
+            labels=labels,
+            attention_mask=model_kwargs.get("attention_mask"),
+            offset=offset,
+            verifier_passed=verifier_passed,
+            donor_logits=model_kwargs.get("donor_logits"),
+            donor_logits_scale=getattr(getattr(model, "cfg", None), "donor_logits_scale", 1.0),
+            donor_kl_threshold=core_halt_donor_kl_threshold,
+        )
+        if core_continue_targets is None:
+            core_continue_targets = 1.0 - core_halt_targets
     core_halt = core_halt_loss(
         outputs,
         target_halt=core_halt_targets,
