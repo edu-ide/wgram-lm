@@ -17,6 +17,39 @@ The immediate objective is not to replace Qwen. It is to prove that QTRM can add
 measurable reasoning, memory, or verification behavior without regressing donor
 fluency.
 
+## Innovation Claim Boundary
+
+The intended novelty is not that a tiny core internally knows more than a large
+LLM. The claim is narrower: compared with donor-only Qwen, ordinary RAG, or a
+plain LoRA/SFT adapter, QTRM adds a small trainable cognitive sidecar that can
+learn when and how to modify the donor distribution using retrieved evidence,
+latent workspace state, recursive updates, and verification telemetry.
+
+Current component novelty:
+
+| Axis | Existing baseline | QTRM intended delta | Evidence required |
+| --- | --- | --- | --- |
+| Donor-only LLM | Qwen generates directly from prompt | QTRM changes logits only when a residual helps | donor-only vs residual held-out delta |
+| Ordinary RAG | Evidence is appended to context | MemoryOS evidence is routed through retrieval, reranking, verification, and residual correction | distractor/conflict eval improvement |
+| LoRA/SFT adapter | Weights are adapted inside the same model path | QTRM is a separate sidecar over frozen donor hidden states/logits | residual telemetry and donor fluency preservation |
+| Prompt/tool agent | Reasoning loop is mostly outside the model | QTRM learns compact stateful corrections inside the model path | workspace/core ablation advantage |
+| Long-context scaling | More tokens are pushed into attention | External memory keeps context compact and tests evidence selection | cost/latency plus answer accuracy |
+
+So the credible paper claim is:
+
+```text
+QTRM is a frozen-donor, trainable cognitive-sidecar architecture for
+evidence-sensitive residual correction.
+```
+
+The stronger claim:
+
+```text
+QTRM is a generally smarter tiny model that beats trillion-parameter LLMs.
+```
+
+is not supported by the current evidence and should not be used.
+
 ## Limitation Map
 
 | Limitation | Mitigation | Prior references | Required gate |

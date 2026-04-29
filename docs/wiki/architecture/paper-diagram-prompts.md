@@ -39,7 +39,14 @@ Diagram content:
 6. Bottom row: "Mitigation & Evidence Gates" with four small boxes:
    donor-only baseline, workspace-off ablation, core-off ablation, KL-to-donor
    preservation, repetition/entropy telemetry.
-7. Add a caption-like footer: "The donor provides fluency; the small QTRM core
+7. Add a right-side vertical panel titled "Limitations -> Mitigations" with
+   five compact rows:
+   - donor dependency -> donor-only baseline + residual delta scoring
+   - residual harms fluency -> gated residual + KL-to-donor preservation
+   - latent reasoning unproven -> workspace_off/core_off ablations
+   - retrieved evidence can mislead -> reranker + verifier + conflict tests
+   - long-context cost -> MemoryOS retrieval + compact evidence window
+8. Add a caption-like footer: "The donor provides fluency; the small QTRM core
    learns evidence-sensitive residual corrections. Claims require ablation
    evidence."
 
@@ -47,7 +54,67 @@ Important:
 - Do not draw QTRM as replacing Qwen.
 - Make the tiny cognitive core visually smaller than the donor.
 - Show that MemoryOS/retrieval is external, not a giant prompt context.
+- Make the "Limitations -> Mitigations" panel visible inside the figure, not
+  just implied by the architecture.
 - Avoid marketing style. Make it look like a serious ML systems paper figure.
+```
+
+## Figure 1B: Limitation-Mitigation Overlay
+
+```text
+Create a publication-quality overlay figure for the QTRM architecture showing
+how each known limitation is addressed by a concrete mitigation.
+
+Style:
+- academic ML paper figure, white background, crisp vector-like rendering,
+  readable 9-11 pt labels, thin black connector lines, restrained colors.
+- use red outline callouts for limitations and green outline callouts for
+  mitigations.
+- no marketing style, no glowing effects, no 3D, no abstract decoration.
+
+Main architecture:
+Prompt and retrieved evidence enter two paths:
+1. Frozen Qwen Donor -> hidden states + donor logits.
+2. Tiny QTRM Cognitive Core -> projector -> latent workspace -> recursive
+   z_L/z_H core -> residual LM head.
+Both paths merge in Bounded Residual Fusion:
+final logits = donor logits + gate * scale * residual.
+Output goes to Answer or NEEDS_SEARCH.
+
+Overlay five numbered limitation callouts directly on the architecture:
+L1 "Donor dependency": place near Frozen Qwen Donor.
+M1 "Mitigation: donor-only baseline; residual delta must improve held-out
+tasks without fluency loss."
+
+L2 "Residual may damage fluency": place near Bounded Residual Fusion.
+M2 "Mitigation: gated residual, residual clamp, KL-to-donor preservation,
+entropy/repetition telemetry."
+
+L3 "Latent reasoning not proven": place near Latent Workspace and Recursive
+Core.
+M3 "Mitigation: workspace_off and core_off ablations; depth sweeps; causal
+performance delta."
+
+L4 "Retrieved evidence may be wrong or distracting": place near MemoryOS
+Retrieval.
+M4 "Mitigation: reranker, verifier, source/time metadata, conflict and
+distractor tests."
+
+L5 "Long context and inference cost": place around the whole pipeline.
+M5 "Mitigation: external MemoryOS index, compact evidence window, donor-cache,
+run residual only on evidence-sensitive steps."
+
+Bottom footer:
+"Claim boundary: QTRM does not replace the donor. It aims to improve
+evidence-sensitive reasoning per compute through retrieval, verification, and
+bounded residual correction."
+
+Important:
+- The five L/M pairs must be visible as explicit text in the image.
+- Do not hide mitigations as tiny footnotes.
+- Keep QTRM visually smaller than the donor.
+- Make the diagram suitable for a paper section titled "Limitations and
+Mitigations".
 ```
 
 ## Figure 2: Ablation Matrix

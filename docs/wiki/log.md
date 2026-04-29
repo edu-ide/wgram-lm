@@ -1,5 +1,21 @@
 # QTRM LLM Wiki Log
 
+## [2026-04-29] decision | innovation claim boundary
+
+Clarified the innovation claim. QTRM should be framed as a frozen-donor,
+trainable cognitive-sidecar architecture for evidence-sensitive residual
+correction, not as a tiny standalone model that generally beats trillion-scale
+LLMs. The comparison target is donor-only Qwen, ordinary RAG, LoRA/SFT adapters,
+prompt/tool agents, and direct long-context scaling.
+
+## [2026-04-29] docs | limitation-mitigation diagram prompt
+
+Updated the paper-diagram prompt bank so limitation fixes are explicitly
+visible inside generated figures. The main architecture prompt now requires a
+`Limitations -> Mitigations` panel, and the new overlay prompt maps donor
+dependency, residual fluency risk, unproven latent reasoning, misleading
+retrieval, and long-context cost to concrete mitigation modules and eval gates.
+
 ## [2026-04-29] implementation | ablation modes and paper prompts
 
 Added fixed eval ablation modes for `donor_only`, `residual`, `workspace_off`,
