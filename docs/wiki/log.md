@@ -789,3 +789,32 @@ step should be on-policy distillation/GKD-style: sample low-donor or QTRM-only
 continuations, have the donor/teacher score or correct those continuations, and
 train on the actual student distribution instead of only teacher-forced clean
 text.
+
+## [2026-04-29] research | Donor-free collapse solution search
+
+Web search for the `donor_logits_scale=0.0` collapse pointed to a clear
+training-distribution problem, not just a step-count problem. The most relevant
+references are:
+
+- GKD / on-policy distillation: `https://arxiv.org/abs/2306.13649`
+- 2026 OPD failure/success recipe: `https://arxiv.org/abs/2604.13016`
+- OPD survey: `https://arxiv.org/abs/2604.00626`
+- DistiLLM: `https://arxiv.org/abs/2402.03898`
+- DistiLLM-2 contrastive distillation:
+  `https://arxiv.org/abs/2503.07067`
+- Residual KD: `https://openreview.net/forum?id=Dh6KxUxG20`
+- Concrete Score Distillation:
+  `https://openreview.net/forum?id=bZBJFrxH1H`
+- Distillation scaling laws: `https://arxiv.org/abs/2502.08606`
+- Capacity-gap law: `https://arxiv.org/abs/2311.07052`
+- Minitron / Sheared LLaMA as fallback compression paths:
+  `https://github.com/NVlabs/Minitron`,
+  `https://arxiv.org/abs/2310.06694`
+
+Decision: do not keep extending teacher-forced student-LM training as the only
+path. The next QTRM detach experiment should collect QTRM's own bad low-donor
+rollouts, score them with Qwen donor feedback, and train on those
+student-visited states. Use teacher/reference continuations as positives and
+collapsed QTRM continuations as negatives. Add repeated n-gram unlikelihood as
+a local anti-collapse auxiliary loss, but keep the main fix
+GKD/OPD/DistiLLM-style because the real failure is exposure bias.

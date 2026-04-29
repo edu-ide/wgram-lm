@@ -163,6 +163,57 @@ GKD/MiniLLM-style training: generate low-donor or QTRM-only continuations, let
 the donor/teacher score or correct those student trajectories, and train on
 that on-policy distribution instead of relying only on teacher-forced text.
 
+## Breakthrough Search Update
+
+The latest web search did not point to "more steps on the same objective" as
+the main fix. It pointed to a distribution-mismatch fix:
+
+```text
+teacher-forced text training
+  !=
+donor-free QTRM autoregressive generation
+```
+
+The current `donor_logits_scale=0.0` collapse is exactly the kind of exposure
+bias that GKD/OPD papers target. QTRM sees clean next-token contexts during
+training, but at inference it must recover from its own bad tokens. Once it
+enters a phrase such as `world of the world`, teacher-forced CE has not trained
+it to escape.
+
+The highest-priority paper-backed fix is therefore:
+
+```text
+collect QTRM failed rollouts
+-> score/correct them with Qwen donor
+-> train on student-visited states
+-> explicitly push down repeated/collapsed student text
+```
+
+Candidate methods:
+
+| Method | Core idea | QTRM use |
+| --- | --- | --- |
+| GKD / OPD | Train on student self-generated sequences with teacher feedback. | Use donor feedback on low-donor and donor-free QTRM rollouts. |
+| 2026 OPD recipe | OPD succeeds when teacher/student patterns are compatible and teacher feedback adds new capability; use off-policy cold start and teacher-aligned prompt selection when OPD fails. | Start from bounded donor-backed checkpoint, not from fully collapsed donor-free rollouts. |
+| DistiLLM | Skew-KL plus adaptive off-policy use of student outputs. | Cheaper route than full on-policy sampling every step. |
+| DistiLLM-2 | Increase teacher-response likelihood and decrease bad student-response likelihood. | Treat `world of the world` rollouts as negative examples. |
+| Residual KD | Distill compressed teacher representations and learn residual differences. | Strong fit for QTRM's donor-hidden residual architecture. |
+| Concrete Score Distillation | Match relative logit score geometry instead of only softmax probabilities. | Possible replacement for plain donor KL if KL is too weak. |
+| Unlikelihood / SimCTG | Penalize repeated tokens or anisotropic degenerate generation. | Add direct anti-repetition loss, but keep it secondary to OPD. |
+| Capacity-gap / Minitron / Sheared LLaMA | Reduce teacher-student gap by using intermediate/compressed language backbones. | Fallback if QTRM's randomly initialized language policy remains too weak. |
+
+Immediate implementation direction:
+
+1. Add a rollout-generation script that samples QTRM with
+   `donor_logits_scale=0.25` and `0.0`.
+2. Store prompt, generated tokens, repetition metrics, donor top-k logits, and
+   teacher/reference continuation.
+3. Add a training mode that mixes clean text with low-donor student rollouts.
+4. Add losses for teacher top-k skew/reverse KL, repeated n-gram unlikelihood,
+   and DistiLLM-2-style contrastive negative response training.
+5. Re-run the donor-scale sweep and require `donor=0.0` repeated 2/3-gram rates
+   to drop before claiming donor-detach progress.
+
 Bounded residual support:
 
 ```yaml
