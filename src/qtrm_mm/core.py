@@ -23,16 +23,22 @@ class QTRMRecursiveCore(nn.Module):
         self.z_h_init = nn.Parameter(torch.randn(1, 1, cfg.d_model) * 0.02)
         self.norm_l = RMSNorm(cfg.d_model)
         self.norm_h = RMSNorm(cfg.d_model)
+        self.halt_head = nn.Linear(cfg.d_model, 2) if cfg.core_halt_enabled else None
 
     def forward(
         self,
         workspace: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-    ) -> tuple[torch.Tensor, torch.Tensor, list[torch.Tensor]]:
+        enable_halt: Optional[bool] = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, list[torch.Tensor], dict[str, torch.Tensor]]:
         b, w, d = workspace.shape
         z_l = workspace + self.z_l_init
         z_h = workspace + self.z_h_init
         trajectory = []
+        q_halt_steps = []
+        q_continue_steps = []
+        halted = torch.zeros(b, device=workspace.device, dtype=torch.bool)
+        enable_halt = bool(self.cfg.core_halt_enabled if enable_halt is None else enable_halt)
         loop_id = 0
         for outer in range(self.cfg.outer_steps):
             for h in range(self.cfg.h_cycles):
@@ -50,7 +56,33 @@ class QTRMRecursiveCore(nn.Module):
                 z_h = self.slow_stack(z_h, attention_mask=attention_mask)
                 loop_id += 1
             trajectory.append(z_h)
+            if self.halt_head is not None:
+                q_logits = self.halt_head(z_h[:, 0, :]).to(torch.float32)
+                q_halt = q_logits[..., 0]
+                q_continue = q_logits[..., 1]
+                q_halt_steps.append(q_halt)
+                q_continue_steps.append(q_continue)
+                if enable_halt and (outer + 1) >= max(1, int(self.cfg.core_halt_min_steps)):
+                    if self.cfg.core_halt_use_continue:
+                        halted = q_halt > q_continue
+                    else:
+                        halted = q_halt > 0
+                    if bool(halted.all().detach().cpu().item()):
+                        break
             if self.cfg.truncated_recurrence and self.training:
                 z_l = z_l.detach()
                 z_h = z_h.detach()
-        return z_l, z_h, trajectory
+        steps = len(trajectory)
+        if q_halt_steps:
+            q_halt_logits = torch.stack(q_halt_steps, dim=1)
+            q_continue_logits = torch.stack(q_continue_steps, dim=1)
+        else:
+            q_halt_logits = workspace.new_empty((b, 0), dtype=torch.float32)
+            q_continue_logits = workspace.new_empty((b, 0), dtype=torch.float32)
+        halt_info = {
+            "q_halt_logits": q_halt_logits,
+            "q_continue_logits": q_continue_logits,
+            "halted": halted if enable_halt else torch.zeros_like(halted),
+            "steps": torch.full((b,), steps, device=workspace.device, dtype=torch.long),
+        }
+        return z_l, z_h, trajectory, halt_info

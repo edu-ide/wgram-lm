@@ -28,6 +28,8 @@ from qtrm_mm.qwen_donor import QwenDonorAdapter
 DEFAULT_MODES = [
     "donor_only_with_evidence",
     "qtrm_residual_with_evidence",
+    "qtrm_workspace_off_with_evidence",
+    "qtrm_core_off_with_evidence",
     "donor_only_no_evidence",
     "qtrm_residual_no_evidence",
 ]
@@ -151,9 +153,20 @@ def mode_settings(mode: str, *, qtrm_scale: float, donor_scale: float) -> tuple[
 
     if mode.startswith("donor_only_"):
         return include_evidence, 0.0, donor_scale
-    if mode.startswith("qtrm_residual_"):
+    if (
+        mode.startswith("qtrm_residual_")
+        or mode.startswith("qtrm_workspace_off_")
+        or mode.startswith("qtrm_core_off_")
+    ):
         return include_evidence, qtrm_scale, donor_scale
     raise ValueError(f"unknown mode: {mode}")
+
+
+def mode_forward_kwargs(mode: str) -> dict[str, bool]:
+    return {
+        "disable_workspace": mode.startswith("qtrm_workspace_off_"),
+        "disable_core": mode.startswith("qtrm_core_off_"),
+    }
 
 
 @torch.no_grad()
@@ -166,16 +179,18 @@ def greedy_completion(
     *,
     device: str,
     max_new_tokens: int,
+    forward_kwargs: dict[str, bool] | None = None,
 ) -> tuple[str, str, list[int]]:
     generated = input_ids[0].detach().cpu().tolist()
     prompt_len = len(generated)
+    forward_kwargs = forward_kwargs or {}
 
     for _ in range(max_new_tokens):
         cur_ids = torch.tensor([generated], dtype=torch.long, device=device)
         cur_mask = torch.ones_like(cur_ids)
         extra = donor_kwargs(donor, cur_ids, cur_mask, device)
         with torch.amp.autocast("cuda", enabled=(device == "cuda"), dtype=torch.bfloat16):
-            outputs = model(cur_ids, attention_mask=cur_mask, **extra)
+            outputs = model(cur_ids, attention_mask=cur_mask, **extra, **forward_kwargs)
         next_id = int(outputs["logits"][0, -1].float().argmax(dim=-1).detach().cpu().item())
         if tokenizer.eos_token_id is not None and next_id == tokenizer.eos_token_id:
             break
@@ -199,10 +214,12 @@ def first_step_logit_shift(
     qtrm_scale: float,
     donor_scale: float,
     top_k: int = 5,
+    forward_kwargs: dict[str, bool] | None = None,
 ) -> dict[str, Any]:
     original_qtrm_scale = float(model.cfg.qtrm_logits_scale)
     original_donor_scale = float(model.cfg.donor_logits_scale)
     extra = donor_kwargs(donor, input_ids, attention_mask, device)
+    forward_kwargs = forward_kwargs or {}
 
     try:
         model.cfg.donor_logits_scale = donor_scale
@@ -212,7 +229,12 @@ def first_step_logit_shift(
 
         model.cfg.qtrm_logits_scale = qtrm_scale
         with torch.amp.autocast("cuda", enabled=(device == "cuda"), dtype=torch.bfloat16):
-            residual = model(input_ids, attention_mask=attention_mask, **extra)["logits"][0, -1].float()
+            residual = model(
+                input_ids,
+                attention_mask=attention_mask,
+                **extra,
+                **forward_kwargs,
+            )["logits"][0, -1].float()
     finally:
         model.cfg.qtrm_logits_scale = original_qtrm_scale
         model.cfg.donor_logits_scale = original_donor_scale
@@ -273,6 +295,7 @@ def evaluate_case(
         qtrm_scale=base_qtrm_scale,
         donor_scale=donor_logits_scale,
     )
+    forward_kwargs = mode_forward_kwargs(mode)
     model.cfg.qtrm_logits_scale = qtrm_scale
     model.cfg.donor_logits_scale = donor_scale
 
@@ -330,6 +353,7 @@ def evaluate_case(
         device=device,
         qtrm_scale=base_qtrm_scale,
         donor_scale=donor_logits_scale,
+        forward_kwargs=forward_kwargs,
     ) if measure_logit_shift else None
     completion, full_text, completion_ids = greedy_completion(
         model,
@@ -339,6 +363,7 @@ def evaluate_case(
         attention_mask,
         device=device,
         max_new_tokens=max_new_tokens,
+        forward_kwargs=forward_kwargs,
     )
     hit = answer_hit(completion, case["answer_aliases"])
     retrieval_stats = (
@@ -377,6 +402,7 @@ def evaluate_case(
         "retrieved_retrieval_scores": [rec.get("retrieval_score", score) for score, rec in evidence_results],
         "qtrm_logits_scale": qtrm_scale,
         "donor_logits_scale": donor_scale,
+        "forward_ablation": forward_kwargs,
         "first_step_logit_shift": logit_shift,
         "full_text": full_text,
     }

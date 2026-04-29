@@ -12,6 +12,7 @@
 - [Transfer, Merge, Healing](sources/transfer-merge-healing.md): model merging, frankenmerge, continual pretraining, and post-merge tuning references.
 - [Training Diagnostics](sources/training-diagnostics.md): scaling laws, learning-curve extrapolation, gradient noise scale, and early stopping references.
 - [Architecture Search](sources/architecture-search.md): design-space, NAS, transformer modification transfer, and composition-risk references.
+- [CoT To Latent Reasoning](sources/cot-to-latent-reasoning.md): Coconut, CODI, HybridCoT, looped latent thoughts, latent-token reliability, and TRM/ACT halting references.
 - [Donor-Logit Sidecar Prior Art](sources/donor-logit-sidecar-prior-art.md): DExperts, FUDGE, GeDi, Proxy-Tuning, Side-Tuning, Ladder Side-Tuning, and AdapterFusion mapping for QTRM donor-logit residual design.
 - [Test-Time Training](sources/test-time-training.md): In-Place TTT and donor-side fast-weight adaptation references.
 - [Self-Improvement And Hallucination](sources/self-improvement-and-hallucination.md): latest self-improvement, preference learning, self-correction, and hallucination-control references.
@@ -40,6 +41,7 @@
 - [Training Diagnostics](concepts/training-diagnostics.md): quick probes for deciding whether QTRM training is learning or structurally failing.
 - [Compositional Architecture](concepts/compositional-architecture.md): how to combine Qwen, GatedDeltaNet, JEPA/world-model, and recursion without hiding interference.
 - [Recurrent-Depth Transformers](concepts/recurrent-depth-transformers.md): looped transformer design, stable injection, depth sweeps, and telemetry.
+- [CoT To Latent Transfer](concepts/cot-to-latent-transfer.md): QTRM plan for using explicit traces as supervision while running latent workspace loops with halt telemetry.
 - [Workspace Memory Architecture](concepts/workspace-memory-architecture.md): separates QTRM working memory, donor-logit residuals, and future persistent memory.
 - [Test-Time Adaptation](concepts/test-time-adaptation.md): separates donor base policy, QTRM residuals, and In-Place TTT donor adaptation.
 - [Self-Improvement Loop](concepts/self-improvement-loop.md): verified trace, preference, NEEDS_SEARCH, and agentic search loop for hallucination control.

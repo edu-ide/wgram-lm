@@ -107,6 +107,11 @@ Implementation status:
   `donor_only`, `workspace_off`, and `core_off` so the same checkpoint can be
   evaluated with the donor base policy, the full residual path, the latent
   workspace removed, or only the recursive core bypassed.
+- `scripts/95_eval_memory_retrieval.py` also supports MemoryOS answer-level
+  component ablations through `qtrm_workspace_off_*` and `qtrm_core_off_*`
+  modes.
+- `scripts/106_run_ablation_proof.sh` runs the held-out proof matrix for
+  donor-only, residual, workspace-off, core-off, and no-evidence controls.
 - `tests/test_residual_telemetry.py` covers argmax shifts, donor scaling, and
   eval-script integration.
 - `tests/test_eval_ablation_modes.py` and `tests/test_model_config.py` cover
@@ -191,3 +196,9 @@ Interpretation:
 - `residual`: normal donor-logit plus QTRM-residual path.
 - `workspace_off`: removes the latent workspace prefix from the residual path.
 - `core_off`: keeps workspace tokens but bypasses recursive z_L/z_H updates.
+
+For answer-level MemoryOS proof:
+
+```bash
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src bash scripts/106_run_ablation_proof.sh
+```

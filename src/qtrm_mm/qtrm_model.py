@@ -65,6 +65,7 @@ class QTRMMultimodalModel(nn.Module):
         donor_logits: Optional[torch.Tensor] = None,
         disable_workspace: bool = False,
         disable_core: bool = False,
+        enable_core_halt: Optional[bool] = None,
     ) -> dict:
         b, s = input_ids.shape
         if attention_mask is None:
@@ -94,6 +95,7 @@ class QTRMMultimodalModel(nn.Module):
             z_l = workspace
             z_h = workspace
             trajectory = []
+            core_halt_info = self._empty_core_halt_info(workspace)
         else:
             workspace = self.workspace(seq, context_mask=attention_mask)
             workspace_mask = torch.ones(
@@ -105,8 +107,13 @@ class QTRMMultimodalModel(nn.Module):
                 z_l = workspace
                 z_h = workspace
                 trajectory = []
+                core_halt_info = self._empty_core_halt_info(workspace)
             else:
-                z_l, z_h, trajectory = self.core(workspace, attention_mask=workspace_mask)
+                z_l, z_h, trajectory, core_halt_info = self.core(
+                    workspace,
+                    attention_mask=workspace_mask,
+                    enable_halt=enable_core_halt,
+                )
 
             seq = torch.cat([z_h, seq], dim=1)
             attention_mask = torch.cat([workspace_mask, attention_mask], dim=1)
@@ -142,5 +149,19 @@ class QTRMMultimodalModel(nn.Module):
             "jepa_latent_mask": jepa_outputs["latent_mask"],
             "jepa_mask": jepa_outputs["mask"],
             "trajectory_len": torch.tensor(len(trajectory), device=seq.device),
+            "core_q_halt_logits": core_halt_info["q_halt_logits"],
+            "core_q_continue_logits": core_halt_info["q_continue_logits"],
+            "core_halted": core_halt_info["halted"],
+            "core_steps": core_halt_info["steps"],
             **ctrl,
+        }
+
+    @staticmethod
+    def _empty_core_halt_info(workspace: torch.Tensor) -> dict[str, torch.Tensor]:
+        b = workspace.shape[0]
+        return {
+            "q_halt_logits": workspace.new_empty((b, 0), dtype=torch.float32),
+            "q_continue_logits": workspace.new_empty((b, 0), dtype=torch.float32),
+            "halted": torch.zeros(b, device=workspace.device, dtype=torch.bool),
+            "steps": torch.zeros(b, device=workspace.device, dtype=torch.long),
         }

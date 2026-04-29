@@ -19,6 +19,8 @@ Current overlap:
 - uses `z_l` and `z_h`
 - has H/L cycle loops
 - has optional truncation/detach
+- has an optional halt head that emits `core_q_halt_logits` and
+  `core_q_continue_logits`
 - uses `StableInject` with spectral normalization, gating, and learned loop
   embedding, which overlaps with recurrent-depth stable input-injection ideas
 
@@ -27,8 +29,10 @@ Missing versus TRM:
 - no persistent carry object
 - no reset-on-halt semantics
 - no no-grad H_cycles-1 schedule
-- no detached carry returned for continuation
-- controller heads are not ACT Q-head labels
+- no detached carry returned for continuation across calls
+- no halt exploration schedule
+- no halt-head training loss against answer correctness
+- current halt is batch-level, not per-sequence ACT
 
 Missing versus Parcae/OpenMythos recurrent-depth references:
 
@@ -41,8 +45,9 @@ Missing versus Parcae/OpenMythos recurrent-depth references:
 
 Gate before long training:
 
-- Decide whether QTRM needs true TRM carry/ACT behavior.
+- Decide whether the current batch-level halt hook is enough for the next
+  experiment or whether QTRM needs true TRM carry/ACT behavior.
 - If yes, refactor core around a carry object and add halting loss.
-- If no, document the recursion as QTRM-specific, not TRM-based.
+- If no, document the recursion as QTRM-specific, not TRM-faithful.
 - Add recurrent-depth diagnostics before using longer training to interpret
   repeated-token collapse.

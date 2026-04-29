@@ -36,6 +36,9 @@ class QTRMConfig:
     tie_embeddings: bool = True
     use_stable_inject: bool = True
     truncated_recurrence: bool = False
+    core_halt_enabled: bool = False
+    core_halt_min_steps: int = 1
+    core_halt_use_continue: bool = False
     jepa_encoder_layers: int = 1
     jepa_predictor_layers: int = 2
     jepa_predictor_dim: Optional[int] = None

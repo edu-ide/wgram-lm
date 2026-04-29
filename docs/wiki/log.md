@@ -1,5 +1,23 @@
 # QTRM LLM Wiki Log
 
+## [2026-04-29] implementation | CoT-to-latent halting hook
+
+Downloaded and indexed the CoT-to-latent reference set: Coconut, CODI,
+HybridCoT, and Do Latent Tokens Think. Cloned CODI at `2c23146`. Added source
+and concept wiki pages for using explicit CoT as teacher supervision while QTRM
+performs repeated latent workspace computation.
+
+Added the first TRM-style halting hook to `QTRMRecursiveCore`: optional
+`core_halt_enabled`, `core_halt_min_steps`, `core_halt_use_continue`,
+`halt_head`, `enable_core_halt`, and telemetry outputs. This is not full TRM
+ACT yet; persistent carry, per-sequence reset, exploration, and halt loss remain
+future work.
+
+Extended the MemoryOS answer-level eval with `qtrm_workspace_off_*` and
+`qtrm_core_off_*` modes plus `scripts/106_run_ablation_proof.sh`, because
+latent-reasoning claims require answer-level component ablations, not only
+next-token telemetry.
+
 ## [2026-04-29] decision | innovation claim boundary
 
 Clarified the innovation claim. QTRM should be framed as a frozen-donor,
