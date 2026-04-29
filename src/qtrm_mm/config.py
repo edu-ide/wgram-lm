@@ -18,6 +18,7 @@ class QTRMConfig:
     n_core_layers: int = 2
     n_coda_layers: int = 2
     attn_every: int = 4
+    coda_attn_every: Optional[int] = None
     workspace_tokens: int = 32
     workspace_layers: int = 1
     workspace_ff_mult: int = 0
@@ -69,7 +70,11 @@ class TrainConfig:
     loss_aux_weight: float = 1.0
     loss_core_halt_weight: float = 0.0
     core_halt_auto_targets: bool = False
+    core_halt_target_mode: str = "exact"
     core_halt_donor_kl_threshold: Optional[float] = None
+    core_halt_teacher_depth_threshold: float = 0.995
+    core_halt_teacher_depth_logit_kl_threshold: float = 0.05
+    core_halt_teacher_depth_min_step: int = 1
     device: str = "auto"
     use_amp: bool = True
     log_every: int = 10

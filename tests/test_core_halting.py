@@ -67,6 +67,57 @@ class CoreHaltingTests(unittest.TestCase):
         self.assertTrue(torch.equal(out["core_halted"], torch.tensor([False, False])))
         self.assertTrue(torch.equal(out["core_steps"], torch.tensor([cfg.outer_steps, cfg.outer_steps])))
 
+    def test_model_exposes_per_outer_step_core_depth_states_for_teacher_targets(self):
+        import torch
+        from qtrm_mm import QTRMMultimodalModel
+
+        cfg = self._cfg()
+        model = QTRMMultimodalModel(cfg)
+        out = model(
+            torch.randint(0, cfg.vocab_size, (2, 6)),
+            enable_core_halt=False,
+        )
+
+        self.assertEqual(out["core_depth_states"].shape, (2, cfg.outer_steps, cfg.d_model))
+
+    def test_model_can_expose_per_outer_step_last_token_logits_for_teacher_targets(self):
+        import torch
+        from qtrm_mm import QTRMMultimodalModel
+
+        cfg = self._cfg()
+        model = QTRMMultimodalModel(cfg)
+        out = model(
+            torch.randint(0, cfg.vocab_size, (2, 6)),
+            enable_core_halt=False,
+            return_core_depth_logits=True,
+        )
+
+        self.assertEqual(out["core_depth_last_logits"].shape, (2, cfg.outer_steps, cfg.vocab_size))
+
+    def test_core_depth_last_token_logits_do_not_include_depth_invariant_donor_logits(self):
+        import torch
+        from qtrm_mm import QTRMMultimodalModel
+
+        cfg = self._cfg()
+        cfg.donor_logits_scale = 1.0
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.randint(0, cfg.vocab_size, (2, 6))
+        donor_logits = torch.randn(2, 6, cfg.vocab_size)
+
+        without_donor = model(
+            input_ids,
+            enable_core_halt=False,
+            return_core_depth_logits=True,
+        )["core_depth_last_logits"]
+        with_donor = model(
+            input_ids,
+            donor_logits=donor_logits,
+            enable_core_halt=False,
+            return_core_depth_logits=True,
+        )["core_depth_last_logits"]
+
+        self.assertTrue(torch.allclose(with_donor, without_donor))
+
 
 if __name__ == "__main__":
     unittest.main()

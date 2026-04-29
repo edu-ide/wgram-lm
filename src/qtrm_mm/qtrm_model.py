@@ -25,7 +25,12 @@ class QTRMMultimodalModel(nn.Module):
         self.jepa_encoder = QTRMBlockStack(cfg, cfg.jepa_encoder_layers, causal=True, attn_every=cfg.attn_every)
         self.jepa_encoder_norm = RMSNorm(cfg.d_model)
         self.core = QTRMRecursiveCore(cfg)
-        self.coda = QTRMBlockStack(cfg, cfg.n_coda_layers, causal=True, attn_every=cfg.attn_every)
+        self.coda = QTRMBlockStack(
+            cfg,
+            cfg.n_coda_layers,
+            causal=True,
+            attn_every=cfg.coda_attn_every or cfg.attn_every,
+        )
         self.norm = RMSNorm(cfg.d_model)
         self.lm_head = nn.Linear(cfg.d_model, cfg.vocab_size, bias=False)
         if cfg.tie_embeddings:
@@ -66,6 +71,7 @@ class QTRMMultimodalModel(nn.Module):
         disable_workspace: bool = False,
         disable_core: bool = False,
         enable_core_halt: Optional[bool] = None,
+        return_core_depth_logits: bool = False,
     ) -> dict:
         b, s = input_ids.shape
         if attention_mask is None:
@@ -85,6 +91,8 @@ class QTRMMultimodalModel(nn.Module):
             seq, attention_mask = self.projector(seq, visual_features, text_mask=attention_mask)
 
         seq = self.prelude(seq, attention_mask=attention_mask)
+        text_context_seq = seq
+        text_context_mask = attention_mask
         if disable_workspace:
             workspace = seq.new_zeros((b, self.cfg.workspace_tokens, self.cfg.d_model))
             workspace_mask = torch.ones(
@@ -96,6 +104,8 @@ class QTRMMultimodalModel(nn.Module):
             z_h = workspace
             trajectory = []
             core_halt_info = self._empty_core_halt_info(workspace)
+            core_depth_states = self._empty_core_depth_states(workspace)
+            core_depth_last_logits = self._empty_core_depth_last_logits(workspace)
         else:
             workspace = self.workspace(seq, context_mask=attention_mask)
             workspace_mask = torch.ones(
@@ -114,6 +124,17 @@ class QTRMMultimodalModel(nn.Module):
                     attention_mask=workspace_mask,
                     enable_halt=enable_core_halt,
                 )
+            core_depth_states = self._core_depth_states(trajectory, workspace)
+            core_depth_last_logits = (
+                self._core_depth_last_logits(
+                    trajectory,
+                    text_context_seq=text_context_seq,
+                    text_context_mask=text_context_mask,
+                    workspace_mask=workspace_mask,
+                )
+                if return_core_depth_logits
+                else self._empty_core_depth_last_logits(workspace)
+            )
 
             seq = torch.cat([z_h, seq], dim=1)
             attention_mask = torch.cat([workspace_mask, attention_mask], dim=1)
@@ -153,6 +174,8 @@ class QTRMMultimodalModel(nn.Module):
             "core_q_continue_logits": core_halt_info["q_continue_logits"],
             "core_halted": core_halt_info["halted"],
             "core_steps": core_halt_info["steps"],
+            "core_depth_states": core_depth_states,
+            "core_depth_last_logits": core_depth_last_logits,
             **ctrl,
         }
 
@@ -165,3 +188,39 @@ class QTRMMultimodalModel(nn.Module):
             "halted": torch.zeros(b, device=workspace.device, dtype=torch.bool),
             "steps": torch.zeros(b, device=workspace.device, dtype=torch.long),
         }
+
+    @staticmethod
+    def _empty_core_depth_states(workspace: torch.Tensor) -> torch.Tensor:
+        b = workspace.shape[0]
+        d = workspace.shape[-1]
+        return workspace.new_empty((b, 0, d))
+
+    def _empty_core_depth_last_logits(self, workspace: torch.Tensor) -> torch.Tensor:
+        b = workspace.shape[0]
+        return workspace.new_empty((b, 0, self.cfg.vocab_size))
+
+    @staticmethod
+    def _core_depth_states(trajectory: list[torch.Tensor], workspace: torch.Tensor) -> torch.Tensor:
+        if not trajectory:
+            return QTRMMultimodalModel._empty_core_depth_states(workspace)
+        return torch.stack([state[:, 0, :] for state in trajectory], dim=1)
+
+    def _core_depth_last_logits(
+        self,
+        trajectory: list[torch.Tensor],
+        *,
+        text_context_seq: torch.Tensor,
+        text_context_mask: torch.Tensor,
+        workspace_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        if not trajectory:
+            return self._empty_core_depth_last_logits(text_context_seq)
+        depth_logits = []
+        for state in trajectory:
+            seq = torch.cat([state, text_context_seq], dim=1)
+            attention_mask = torch.cat([workspace_mask, text_context_mask], dim=1)
+            hidden = self.coda(seq, attention_mask=attention_mask)
+            hidden = self.norm(hidden)
+            last_logits = self.lm_head(hidden[:, -1, :]) * float(self.cfg.qtrm_logits_scale)
+            depth_logits.append(last_logits)
+        return torch.stack(depth_logits, dim=1)

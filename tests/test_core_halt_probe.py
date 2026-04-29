@@ -10,8 +10,13 @@ class CoreHaltProbeTests(unittest.TestCase):
 
         self.assertTrue(cfg.model.core_halt_enabled)
         self.assertGreaterEqual(cfg.model.outer_steps, 3)
+        self.assertEqual(cfg.model.coda_attn_every, 2)
         self.assertGreater(cfg.train.loss_core_halt_weight, 0.0)
         self.assertTrue(cfg.train.core_halt_auto_targets)
+        self.assertEqual(cfg.train.core_halt_target_mode, "teacher_depth")
+        self.assertGreater(cfg.train.core_halt_teacher_depth_threshold, 0.999)
+        self.assertLess(cfg.train.core_halt_teacher_depth_threshold, 1.0)
+        self.assertGreater(cfg.train.core_halt_teacher_depth_logit_kl_threshold, 0.0)
         self.assertIsNotNone(cfg.train.core_halt_donor_kl_threshold)
         self.assertEqual(cfg.train.loss_jepa_weight, 0.0)
         self.assertEqual(cfg.train.loss_aux_weight, 0.0)

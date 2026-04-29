@@ -184,6 +184,127 @@ def infer_core_halt_targets(
     return halt_targets
 
 
+def infer_core_halt_targets_from_teacher_depth(
+    outputs: dict[str, torch.Tensor],
+    *,
+    similarity_threshold: float = 0.995,
+    logit_kl_threshold: float = 0.05,
+    min_step: int = 1,
+    return_diagnostics: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor, torch.Tensor, dict[str, torch.Tensor]]:
+    depth_logits = outputs.get("core_depth_last_logits")
+    if depth_logits is not None and depth_logits.shape[1] > 0:
+        if depth_logits.ndim != 3:
+            raise ValueError("core_depth_last_logits must have shape [batch, steps, vocab_size]")
+        logits = depth_logits.detach().float()
+        b, steps, _ = logits.shape
+        step_log_probs = logits.log_softmax(dim=-1)
+        final_log_probs = step_log_probs[:, -1:, :]
+        step_probs = step_log_probs.exp()
+        kl_to_final = (step_probs * (step_log_probs - final_log_probs)).sum(dim=-1)
+        centered_logits = logits - logits.mean(dim=-1, keepdim=True)
+        logit_similarity = (
+            F.normalize(centered_logits, dim=-1)
+            * F.normalize(centered_logits[:, -1:, :], dim=-1)
+        ).sum(dim=-1)
+        top1_match = logits.argmax(dim=-1) == logits[:, -1:, :].argmax(dim=-1)
+        stable = (
+            top1_match
+            & (logit_similarity >= float(similarity_threshold))
+            & (kl_to_final <= float(logit_kl_threshold))
+        )
+        stable[:, -1] = True
+
+        halt, cont, first_stable = _teacher_depth_targets_from_stable(
+            stable,
+            anchor=depth_logits,
+            min_step=min_step,
+        )
+        diagnostics = {
+            "teacher_depth_halt_pos_rate": halt.float().mean().detach(),
+            "teacher_depth_halt_neg_rate": cont.float().mean().detach(),
+            "teacher_depth_earliest_step_mean": (first_stable.float() + 1.0).mean().detach(),
+            "teacher_depth_logit_kl_mean": kl_to_final.float().mean().detach(),
+            "teacher_depth_logit_similarity_mean": logit_similarity.float().mean().detach(),
+            "teacher_depth_top1_match_rate": top1_match.float().mean().detach(),
+            "teacher_depth_step1_stable_rate": stable[:, 0].float().mean().detach(),
+        }
+        if return_diagnostics:
+            return halt, cont, diagnostics
+        return halt, cont
+
+    depth_states = outputs.get("core_depth_states")
+    if depth_states is None:
+        raise ValueError("core_depth_states are required for teacher-depth halt targets")
+    if depth_states.ndim != 3:
+        raise ValueError("core_depth_states must have shape [batch, steps, d_model]")
+
+    b, steps, _ = depth_states.shape
+    if steps == 0:
+        q_halt = outputs.get("core_q_halt_logits")
+        if q_halt is None:
+            raise ValueError("empty core_depth_states require core_q_halt_logits for shape")
+        halt = q_halt.new_empty(q_halt.shape)
+        cont = q_halt.new_empty(q_halt.shape)
+        diagnostics = {
+            "teacher_depth_halt_pos_rate": halt.sum() * 0.0,
+            "teacher_depth_halt_neg_rate": halt.sum() * 0.0,
+            "teacher_depth_earliest_step_mean": halt.sum() * 0.0,
+        }
+        if return_diagnostics:
+            return halt, cont, diagnostics
+        return halt, cont
+
+    states = depth_states.detach().float()
+    final = F.normalize(states[:, -1:, :], dim=-1)
+    normalized = F.normalize(states, dim=-1)
+    similarity = (normalized * final).sum(dim=-1)
+    stable = similarity >= float(similarity_threshold)
+    stable[:, -1] = True
+    min_step = max(1, int(min_step))
+    if min_step > 1:
+        stable[:, : min(min_step - 1, steps)] = False
+
+    halt, cont, first_stable = _teacher_depth_targets_from_stable(
+        stable,
+        anchor=depth_states,
+        min_step=1,
+    )
+
+    diagnostics = {
+        "teacher_depth_halt_pos_rate": halt.float().mean().detach(),
+        "teacher_depth_halt_neg_rate": cont.float().mean().detach(),
+        "teacher_depth_earliest_step_mean": (first_stable.float() + 1.0).mean().detach(),
+        "teacher_depth_similarity_mean": similarity.float().mean().detach(),
+        "teacher_depth_step1_stable_rate": stable[:, 0].float().mean().detach(),
+    }
+    if return_diagnostics:
+        return halt, cont, diagnostics
+    return halt, cont
+
+
+def _teacher_depth_targets_from_stable(
+    stable: torch.Tensor,
+    *,
+    anchor: torch.Tensor,
+    min_step: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    b, steps = stable.shape
+    min_step = max(1, int(min_step))
+    if min_step > 1:
+        stable = stable.clone()
+        stable[:, : min(min_step - 1, steps)] = False
+    step_index = torch.arange(steps, device=anchor.device).view(1, steps).expand(b, steps)
+    first_stable = torch.where(
+        stable.to(device=anchor.device),
+        step_index,
+        step_index.new_full((b, steps), steps),
+    ).min(dim=1).values
+    halt = (step_index >= first_stable[:, None]).to(device=anchor.device, dtype=anchor.dtype)
+    cont = 1.0 - halt
+    return halt, cont, first_stable
+
+
 def qtrm_smoke_loss(
     model,
     input_ids: torch.Tensor,
@@ -192,7 +313,11 @@ def qtrm_smoke_loss(
     aux_weight: float = 1.0,
     core_halt_weight: float = 0.0,
     core_halt_auto_targets: bool = False,
+    core_halt_target_mode: str = "exact",
     core_halt_donor_kl_threshold: Optional[float] = None,
+    core_halt_teacher_depth_threshold: float = 0.995,
+    core_halt_teacher_depth_logit_kl_threshold: float = 0.05,
+    core_halt_teacher_depth_min_step: int = 1,
     **kwargs,
 ):
     labels = kwargs.get("labels")
@@ -207,6 +332,9 @@ def qtrm_smoke_loss(
         "verifier_passed",
     }
     model_kwargs = {k: v for k, v in kwargs.items() if k not in private_keys}
+    if core_halt_auto_targets and core_halt_target_mode == "teacher_depth":
+        model_kwargs.setdefault("enable_core_halt", False)
+        model_kwargs.setdefault("return_core_depth_logits", True)
     outputs = model(input_ids=input_ids, **model_kwargs)
     offset = outputs["logits"].shape[1] - input_ids.shape[1]
     lm = next_token_lm_loss(
@@ -227,20 +355,33 @@ def qtrm_smoke_loss(
     )
     aux = controller_aux_loss(outputs)
     if core_halt_targets is None and core_halt_auto_targets:
-        core_halt_targets, core_halt_target_diagnostics = infer_core_halt_targets(
-            outputs,
-            input_ids,
-            labels=labels,
-            attention_mask=model_kwargs.get("attention_mask"),
-            offset=offset,
-            verifier_passed=verifier_passed,
-            donor_logits=model_kwargs.get("donor_logits"),
-            donor_logits_scale=getattr(getattr(model, "cfg", None), "donor_logits_scale", 1.0),
-            donor_kl_threshold=core_halt_donor_kl_threshold,
-            return_diagnostics=True,
-        )
-        if core_continue_targets is None:
-            core_continue_targets = 1.0 - core_halt_targets
+        if core_halt_target_mode == "exact":
+            core_halt_targets, core_halt_target_diagnostics = infer_core_halt_targets(
+                outputs,
+                input_ids,
+                labels=labels,
+                attention_mask=model_kwargs.get("attention_mask"),
+                offset=offset,
+                verifier_passed=verifier_passed,
+                donor_logits=model_kwargs.get("donor_logits"),
+                donor_logits_scale=getattr(getattr(model, "cfg", None), "donor_logits_scale", 1.0),
+                donor_kl_threshold=core_halt_donor_kl_threshold,
+                return_diagnostics=True,
+            )
+            if core_continue_targets is None:
+                core_continue_targets = 1.0 - core_halt_targets
+        elif core_halt_target_mode == "teacher_depth":
+            core_halt_targets, core_continue_targets, core_halt_target_diagnostics = (
+                infer_core_halt_targets_from_teacher_depth(
+                    outputs,
+                    similarity_threshold=core_halt_teacher_depth_threshold,
+                    logit_kl_threshold=core_halt_teacher_depth_logit_kl_threshold,
+                    min_step=core_halt_teacher_depth_min_step,
+                    return_diagnostics=True,
+                )
+            )
+        else:
+            raise ValueError(f"unknown core_halt_target_mode: {core_halt_target_mode}")
     core_halt = core_halt_loss(
         outputs,
         target_halt=core_halt_targets,

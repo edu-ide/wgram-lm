@@ -52,17 +52,24 @@ Implemented in code:
 - `QTRMConfig.core_halt_enabled`
 - `QTRMConfig.core_halt_min_steps`
 - `QTRMConfig.core_halt_use_continue`
+- `QTRMConfig.coda_attn_every`
 - `QTRMRecursiveCore.halt_head`
 - `TrainConfig.loss_core_halt_weight`
 - `TrainConfig.core_halt_auto_targets`
 - `TrainConfig.core_halt_donor_kl_threshold`
+- `TrainConfig.core_halt_target_mode`
+- `TrainConfig.core_halt_teacher_depth_threshold`
+- `TrainConfig.core_halt_teacher_depth_logit_kl_threshold`
 - `core_halt_loss`
 - `infer_core_halt_targets`
+- `infer_core_halt_targets_from_teacher_depth`
 - model outputs:
   - `core_q_halt_logits`
   - `core_q_continue_logits`
   - `core_halted`
   - `core_steps`
+  - `core_depth_states`
+  - `core_depth_last_logits`
 - `enable_core_halt` forward flag
 
 Current behavior:
@@ -76,6 +83,14 @@ Current behavior:
 - If `core_halt_auto_targets=True`, `qtrm_smoke_loss` can infer halt targets
   from exact token correctness, optional verifier pass/fail, and optional
   fused-vs-donor KL stability.
+- If `core_halt_target_mode="teacher_depth"`, the model runs the full latent
+  depth with halting disabled, records per-depth residual last-token logits, and
+  trains the halt head to stop at the earliest depth that matches the final
+  depth.
+- `coda_attn_every` can be set separately from the core schedule. This matters
+  because `attn_every=4` with `n_coda_layers=2` leaves the coda with no
+  attention layer; the core prefix can then fail to reach text logits through an
+  explicit attention path.
 
 Important limitation:
 
@@ -99,6 +114,20 @@ This is intentionally strict. It only tells the halt head "this state appears
 safe enough to stop"; it does not teach which intermediate latent step was
 semantically necessary. That stronger signal requires step-wise teacher runs or
 TRM-style exploration.
+
+The teacher-depth halt target is:
+
+```text
+full_depth = run all core outer_steps with enable_core_halt=False
+target_halt[t] =
+  top1(qtrm_residual_logits[t]) == top1(qtrm_residual_logits[full_depth])
+  and cosine(centered_logits[t], centered_logits[full_depth]) >= threshold
+  and KL(logits[t] || logits[full_depth]) <= threshold
+```
+
+Donor logits are excluded from the teacher-depth comparison because donor logits
+are depth-invariant. Including them can make every depth look stable even when
+the QTRM core has not actually converged.
 
 ## Why CoT Is Not Removed
 

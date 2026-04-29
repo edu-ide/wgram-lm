@@ -315,6 +315,135 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(metrics["exact_next_token_pass_rate"]), 1.0, places=5)
         self.assertAlmostEqual(float(metrics["verifier_pass_rate"]), 0.5, places=5)
 
+    def test_teacher_depth_halt_targets_use_earliest_stable_core_state(self):
+        from qtrm_mm.losses import infer_core_halt_targets_from_teacher_depth
+
+        states = torch.tensor(
+            [
+                [[1.0, 0.0], [1.0, 0.0], [1.0, 0.0]],
+                [[0.0, 1.0], [1.0, 0.0], [1.0, 0.0]],
+                [[0.0, 1.0], [0.5, 0.5], [1.0, 0.0]],
+            ]
+        )
+        outputs = {"core_depth_states": states}
+
+        halt, cont, diag = infer_core_halt_targets_from_teacher_depth(
+            outputs,
+            similarity_threshold=0.99,
+            min_step=1,
+            return_diagnostics=True,
+        )
+
+        self.assertTrue(
+            torch.equal(
+                halt,
+                torch.tensor(
+                    [
+                        [1.0, 1.0, 1.0],
+                        [0.0, 1.0, 1.0],
+                        [0.0, 0.0, 1.0],
+                    ]
+                ),
+            )
+        )
+        self.assertTrue(torch.equal(cont, 1.0 - halt))
+        self.assertAlmostEqual(float(diag["teacher_depth_halt_pos_rate"]), 2.0 / 3.0, places=5)
+        self.assertAlmostEqual(float(diag["teacher_depth_earliest_step_mean"]), 2.0, places=5)
+
+    def test_teacher_depth_halt_targets_prefer_output_logit_stability(self):
+        from qtrm_mm.losses import infer_core_halt_targets_from_teacher_depth
+
+        logits = torch.zeros(2, 3, 5)
+        logits[0, :, 2] = 8.0
+        logits[1, 0, 3] = 8.0
+        logits[1, 1:, 2] = 8.0
+        outputs = {
+            "core_depth_last_logits": logits,
+            "core_depth_states": torch.zeros(2, 3, 4),
+        }
+
+        halt, cont, diag = infer_core_halt_targets_from_teacher_depth(
+            outputs,
+            logit_kl_threshold=0.01,
+            return_diagnostics=True,
+        )
+
+        self.assertTrue(
+            torch.equal(
+                halt,
+                torch.tensor(
+                    [
+                        [1.0, 1.0, 1.0],
+                        [0.0, 1.0, 1.0],
+                    ]
+                ),
+            )
+        )
+        self.assertTrue(torch.equal(cont, 1.0 - halt))
+        self.assertIn("teacher_depth_logit_kl_mean", diag)
+        self.assertIn("teacher_depth_top1_match_rate", diag)
+        self.assertAlmostEqual(float(diag["teacher_depth_earliest_step_mean"]), 1.5, places=5)
+
+    def test_qtrm_smoke_loss_can_use_teacher_depth_core_halt_targets(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+                self.saw_enable_core_halt = None
+                self.saw_return_core_depth_logits = None
+
+            def forward(self, input_ids, **kwargs):
+                self.saw_enable_core_halt = kwargs.get("enable_core_halt")
+                self.saw_return_core_depth_logits = kwargs.get("return_core_depth_logits")
+                logits = torch.zeros(2, 3, 5)
+                logits[:, 0, 2] = 8.0
+                logits[:, 1, 3] = 8.0
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(2, 2, 4),
+                    "jepa_target": torch.zeros(2, 2, 4),
+                    "jepa_mask": torch.ones(2, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(2, 3, 4),
+                    "jepa_latent_mask": torch.ones(2, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(2, 1),
+                    "action_logits": torch.zeros(2, 3),
+                    "core_q_halt_logits": torch.tensor([[3.0, 3.0, 3.0], [-3.0, 3.0, 3.0]]),
+                    "core_q_continue_logits": torch.empty(2, 0),
+                    "core_depth_last_logits": torch.tensor(
+                        [
+                            [[8.0, 0.0, 0.0, 0.0, 0.0]] * 3,
+                            [[0.0, 8.0, 0.0, 0.0, 0.0], [8.0, 0.0, 0.0, 0.0, 0.0], [8.0, 0.0, 0.0, 0.0, 0.0]],
+                        ]
+                    ),
+                    "core_depth_states": torch.tensor(
+                        [
+                            [[1.0, 0.0], [1.0, 0.0], [1.0, 0.0]],
+                            [[0.0, 1.0], [1.0, 0.0], [1.0, 0.0]],
+                        ]
+                    ),
+                }
+
+        model = FakeModel()
+        _, metrics, _ = qtrm_smoke_loss(
+            model,
+            torch.tensor([[0, 2, 3], [0, 2, 3]]),
+            labels=torch.tensor([[-100, 2, 3], [-100, 2, 3]]),
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_halt_weight=1.0,
+            core_halt_auto_targets=True,
+            core_halt_target_mode="teacher_depth",
+            core_halt_teacher_depth_threshold=0.99,
+        )
+
+        self.assertIn("teacher_depth_halt_pos_rate", metrics)
+        self.assertIn("teacher_depth_earliest_step_mean", metrics)
+        self.assertLess(float(metrics["core_halt"]), 0.1)
+        self.assertIs(model.saw_enable_core_halt, False)
+        self.assertIs(model.saw_return_core_depth_logits, True)
+
 
 if __name__ == "__main__":
     unittest.main()

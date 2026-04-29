@@ -15,6 +15,7 @@ model:
   n_core_layers: 4
   n_coda_layers: 2
   attn_every: 4
+  coda_attn_every: 2
   workspace_tokens: 64
   workspace_layers: 3
   workspace_ff_mult: 2
@@ -45,7 +46,11 @@ train:
   loss_aux_weight: 0.0
   loss_core_halt_weight: 0.1
   core_halt_auto_targets: true
+  core_halt_target_mode: teacher_depth
   core_halt_donor_kl_threshold: 0.5
+  core_halt_teacher_depth_threshold: 0.9995
+  core_halt_teacher_depth_logit_kl_threshold: 0.05
+  core_halt_teacher_depth_min_step: 1
   device: auto
   use_amp: true
   log_every: 25

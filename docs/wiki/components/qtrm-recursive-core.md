@@ -24,6 +24,9 @@ Current overlap:
 - has a generic `core_halt_loss` hook when `core_halt_targets` are supplied
 - can infer conservative halt targets from exact token correctness, optional
   verifier pass/fail, and optional donor-KL stability
+- can infer teacher-depth halt targets from per-depth residual logits, using
+  centered-logit similarity to the full-depth output
+- exposes `core_depth_states` and optional `core_depth_last_logits` telemetry
 - uses `StableInject` with spectral normalization, gating, and learned loop
   embedding, which overlaps with recurrent-depth stable input-injection ideas
 
@@ -34,12 +37,16 @@ Missing versus TRM:
 - no no-grad H_cycles-1 schedule
 - no detached carry returned for continuation across calls
 - no halt exploration schedule
-- no step-wise teacher target for which latent depth was actually necessary
+- teacher-depth targets are still proxy stability labels, not semantic proof of
+  which latent depth was actually necessary
 - current halt is batch-level, not per-sequence ACT
 
 Missing versus Parcae/OpenMythos recurrent-depth references:
 
 - no explicit prelude/recurrent/coda ablation around the recursive core
+- coda now supports a separate `coda_attn_every` schedule so the recursive
+  prefix can reach text logits through explicit attention even when the core
+  keeps a sparse attention schedule
 - no Parcae-style diagonal contraction update
 - no recurrent depth sweep in validation
 - no telemetry for contraction factor, recurrent state norm, recurrent residual,

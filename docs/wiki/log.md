@@ -579,3 +579,33 @@ donor-only `5/9`, QTRM residual `9/9`. QTRM residual task-family accuracy:
 conflict `4/4`, multi-hop `2/2`, abstention `3/3`. This fixes the current
 small-scale "retrieved but answered wrong" blocker, but it is not yet proof of
 general MemoryOS reasoning beyond this synthetic probe.
+
+## [2026-04-29] train | Teacher-depth core halt probe
+
+Found and fixed a wiring issue in the early-halt probe: the global
+`attn_every=4` combined with `n_coda_layers=2` left the coda with no attention
+layer, so the recursive core prefix could fail to affect text logits. Added
+`QTRMConfig.coda_attn_every` and set the probe config to `coda_attn_every=2`,
+leaving the core's 3:1 delta/attention schedule unchanged.
+
+Added teacher-depth halt targets based on per-depth QTRM residual last-token
+logits. The target compares each depth to the final depth with top-1 match,
+centered-logit cosine, and KL checks. Donor logits are deliberately excluded
+from this comparison because they are depth-invariant and can hide whether the
+QTRM core itself has stabilized.
+
+Probe run:
+
+- Config: `configs/qwen35_2b_4090_core_halt_probe.yaml`
+- Init: `runs/qwen35_2b_4090_memory_synth_generalization_s050/last.pt`
+- Output: `runs/qwen35_2b_4090_core_halt_probe/last.pt`
+- Eval: `runs/qwen35_2b_4090_core_halt_probe/post_eval_core_halt.jsonl`
+
+Result after 300 steps: post-eval on 8 clean-pilot samples reported
+`core_steps={1:8}` and `core_halted={true:8}`; greedy generation over 40
+generated steps also used `core_steps={1:40}`. Average teacher-forced loss was
+`1.934`, top-1 accuracy `0.527`, and repeated-2gram rate `0.0`. This proves the
+halt path can learn and execute early exit with donor-assisted residual
+generation. It is not yet proof that step-1 latent reasoning is sufficient on
+hard reasoning tasks; the next gate is comparing halted vs full-depth answers
+on the MemoryOS hard probe.

@@ -238,7 +238,11 @@ def main():
                 aux_weight=cfg.train.loss_aux_weight,
                 core_halt_weight=cfg.train.loss_core_halt_weight,
                 core_halt_auto_targets=cfg.train.core_halt_auto_targets,
+                core_halt_target_mode=cfg.train.core_halt_target_mode,
                 core_halt_donor_kl_threshold=cfg.train.core_halt_donor_kl_threshold,
+                core_halt_teacher_depth_threshold=cfg.train.core_halt_teacher_depth_threshold,
+                core_halt_teacher_depth_logit_kl_threshold=cfg.train.core_halt_teacher_depth_logit_kl_threshold,
+                core_halt_teacher_depth_min_step=cfg.train.core_halt_teacher_depth_min_step,
             )
         scaler.scale(loss).backward()
         scaler.unscale_(opt)

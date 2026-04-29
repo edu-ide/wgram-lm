@@ -47,6 +47,9 @@ QTRM can be described as looped and latent-space in the architectural sense:
 - `LatentWorkspace` creates learned latent slots over donor/text context.
 - `QTRMRecursiveCore` repeatedly updates `z_l` and `z_h` states.
 - `z_h` is fed into the coda and can influence residual logits.
+- `coda_attn_every` can override the global sparse-attention schedule so the
+  coda has at least one explicit attention layer from text tokens back to the
+  latent prefix.
 
 The precise label is:
 
