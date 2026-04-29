@@ -818,3 +818,25 @@ student-visited states. Use teacher/reference continuations as positives and
 collapsed QTRM continuations as negatives. Add repeated n-gram unlikelihood as
 a local anti-collapse auxiliary loss, but keep the main fix
 GKD/OPD/DistiLLM-style because the real failure is exposure bias.
+
+## [2026-04-29] decision | Residual adapter validation reset
+
+Clarified the current architecture name and validation order. The current QTRM
+should be treated as a donor-backed residual adapter, more specifically a
+donor-backed residual cognitive adapter:
+
+```text
+Qwen hidden states -> QTRM workspace/core/coda -> residual logits
+Qwen donor logits  -> base language policy
+fused logits       -> donor logits + bounded QTRM residual
+```
+
+The donor-free probes skipped ahead to a standalone-student claim. That was a
+useful stress test, but it is not the next required proof. The immediate proof
+is residual-adapter usefulness: with donor logits intact, QTRM residual should
+beat donor-only on evidence-sensitive MemoryOS tasks while preserving donor
+fluency. Only after that gate should low-donor and donor-free student behavior
+be promoted again.
+
+Next action: rerun MemoryOS hard/held-out ablation with donor-only versus QTRM
+residual, plus workspace/core disabled modes where applicable.

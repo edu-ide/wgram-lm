@@ -18,6 +18,50 @@ This is the safest stage because QTRM can learn evidence selection, MemoryOS
 behavior, latent recurrence, and halt control while Qwen preserves language
 fluency.
 
+More precise name:
+
+```text
+donor-backed residual adapter
+```
+
+or, when emphasizing the workspace/core path:
+
+```text
+donor-backed residual cognitive adapter
+```
+
+It is not a LoRA adapter because it does not update Qwen's internal weights.
+The role is still adapter-like: Qwen supplies the base tokenizer, hidden states,
+and language-policy logits; QTRM supplies bounded residual corrections on top.
+
+## Validation Reset
+
+The `donor_logits_scale=0.0` probes were useful stress tests, but they skipped
+ahead from adapter validation to standalone-student validation. These are
+different claims:
+
+| Claim | What it means | Current status |
+| --- | --- | --- |
+| Donor-only baseline works | Qwen can answer/generate coherently without QTRM. | established as baseline |
+| Residual adapter is safe | QTRM residual does not damage Qwen fluency. | mostly established with clamp/gate |
+| Residual adapter is useful | QTRM beats donor-only on evidence-sensitive MemoryOS tasks. | primary next gate |
+| Low-donor adapter is robust | QTRM remains stable when donor logits are reduced but nonzero. | partial, donor `0.25` remains fluent |
+| Donor-free student works | QTRM owns the language policy at `donor_logits_scale=0`. | not established; currently collapses |
+
+Near-term claims must stay at the residual-adapter level until the usefulness
+gate is passed. A donor-free collapse is not by itself proof that the residual
+adapter idea is wrong. It is proof that QTRM has not yet become a standalone
+language-policy student.
+
+Correct validation order:
+
+1. Donor-only Qwen baseline.
+2. Residual safety: no degradation in language fluency.
+3. Residual usefulness: better than donor-only on MemoryOS/evidence tasks.
+4. Component causality: workspace/core ablations explain the gain.
+5. Low-donor robustness.
+6. Donor-free student behavior after OPD/GKD/DistiLLM-style training.
+
 ## Target Direction
 
 The long-term target is not to delete the donor immediately. The target is a
