@@ -144,6 +144,25 @@ with donor logits fixed as a safety rail, keep QTRM residual amplitude bounded,
 then anneal donor only after student LM loss and donor-scale sweep gates
 improve.
 
+2K bounded student-LM continuation:
+
+| Setting | Observation |
+| --- | --- |
+| config | `configs/qwen35_2b_4090_bounded_residual_studentlm_2k.yaml` |
+| init | normalized-gate bounded 500-step checkpoint |
+| key change | `qtrm_logits_scale: 1.0` with donor logits fixed at `1.0` |
+| early loss signal | `student_lm` dropped from about `11.05` to the `5.7-6.2` range, much faster than the `qtrm_logits_scale: 0.1` probes |
+| donor `1.0`, `0.5`, `0.25` | fluent greedy generations; gate about `0.063`; no donor argmax shift |
+| donor `0.0` | still repeats `world of the world` / chapter-pattern text |
+
+Interpretation: raising QTRM logit scale made the student-only LM loss learn
+faster, but the bounded residual still behaves as a non-invasive sidecar when
+donor logits are present. This is useful for safety, but it does not yet train
+QTRM to own the language policy. The next detach attempt should move closer to
+GKD/MiniLLM-style training: generate low-donor or QTRM-only continuations, let
+the donor/teacher score or correct those student trajectories, and train on
+that on-policy distribution instead of relying only on teacher-forced text.
+
 Bounded residual support:
 
 ```yaml

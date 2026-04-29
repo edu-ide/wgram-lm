@@ -756,3 +756,36 @@ Interpretation: the previous regression was not caused by early halt itself; it
 was caused by fine-tuning the residual path on clean LM text. Freezing the
 residual path and training only the halt head preserves the 12-case held-out
 MemoryOS score (`9/12`) while reducing recursive outer depth from 2 to 1.
+
+## [2026-04-29] train | Bounded student-LM 2K continuation
+
+Added a longer bounded student-LM continuation config:
+
+- Config: `configs/qwen35_2b_4090_bounded_residual_studentlm_2k.yaml`
+- Init: `runs/qwen35_2b_4090_bounded_residual_probe/last.pt`
+- Output: `runs/qwen35_2b_4090_bounded_residual_studentlm_2k/last.pt`
+- Eval: `runs/qwen35_2b_4090_bounded_residual_studentlm_2k/evals/donor_scale_sweep_qtrm1p0_final.jsonl`
+
+The important change from earlier student-LM probes is
+`qtrm_logits_scale: 1.0`, while keeping donor logits fixed at `1.0` during
+training and retaining normalized residual gating with a `0.05` gate floor.
+This made the student-only loss move much faster: the run started around
+`student_lm=11.05` and reached the noisy `5.7-6.2` range by the second half of
+the 2K-step run.
+
+Final donor-scale sweep:
+
+| donor_logits_scale | Behavior |
+| --- | --- |
+| `1.0` | fluent Korean/English greedy text; residual gate about `0.063`; no donor argmax shift |
+| `0.5` | still fluent; no donor argmax shift |
+| `0.25` | still fluent; no donor argmax shift |
+| `0.0` | collapsed to `world of the world` / repeated chapter-pattern text |
+
+Interpretation: the residual safety rail now works at higher QTRM scale, but
+donor-logit detach is still not solved. Low-donor fluency is still carried by
+the donor logits, and QTRM-only generation remains unstable. The next training
+step should be on-policy distillation/GKD-style: sample low-donor or QTRM-only
+continuations, have the donor/teacher score or correct those continuations, and
+train on the actual student distribution instead of only teacher-forced clean
+text.
