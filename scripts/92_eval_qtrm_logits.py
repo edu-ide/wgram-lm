@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import redirect_stdout
 import json
 from pathlib import Path
+import sys
 from typing import Iterable
 
 import torch
@@ -160,9 +162,9 @@ def load_qtrm(config_path: str, checkpoint_path: str, device: str) -> QTRMMultim
     state = torch.load(checkpoint_path, map_location=device, weights_only=False)
     missing, unexpected = model.load_state_dict(state.get("model", state), strict=False)
     if missing:
-        print(f"[warn] missing keys: {len(missing)}")
+        print(f"[warn] missing keys: {len(missing)}", file=sys.stderr)
     if unexpected:
-        print(f"[warn] unexpected keys: {len(unexpected)}")
+        print(f"[warn] unexpected keys: {len(unexpected)}", file=sys.stderr)
     return model.to(device).eval()
 
 
@@ -200,6 +202,15 @@ def donor_kwargs(
     if return_logits and encoded.get("logits") is not None:
         out["donor_logits"] = encoded["logits"].to(device)
     return out
+
+
+def build_donor(cfg, *, no_donor: bool, json_mode: bool) -> QwenDonorAdapter | None:
+    if no_donor:
+        return None
+    if json_mode:
+        with redirect_stdout(sys.stderr):
+            return QwenDonorAdapter(cfg.donor)
+    return QwenDonorAdapter(cfg.donor)
 
 
 @torch.no_grad()
@@ -285,7 +296,7 @@ def main() -> None:
     max_length = args.max_length or cfg.train.seq_len
     model = load_qtrm(args.config, args.checkpoint, device)
     apply_ablation_mode(model, args.ablation_mode)
-    donor = None if args.no_donor else QwenDonorAdapter(cfg.donor)
+    donor = build_donor(cfg, no_donor=args.no_donor, json_mode=args.json)
     texts = collect_texts(args)
     refresh_donor_each_step = args.refresh_donor_each_step or not args.fixed_donor_during_generation
     use_donor_logits = bool(model.cfg.donor_logits_scale != 0.0)

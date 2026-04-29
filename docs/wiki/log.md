@@ -14,6 +14,13 @@ Extended `scripts/92_eval_qtrm_logits.py` with `--enable-core-halt` and
 whether a trained checkpoint actually exits early instead of only having a
 halt loss in code.
 
+Ran the 300-step probe from the memory-synth checkpoint. The training path is
+healthy, but the first automatic target rule is too conservative for early
+exit: `core_halt` loss collapsed to near zero, and post-eval on 16 samples
+reported `core_steps={3:16}` and `core_halted={False:16}`. This means the next
+gate needs balanced positive halt labels, teacher-depth labels, or a target
+availability report before expecting runtime savings.
+
 ## [2026-04-29] implementation | CoT-to-latent halting hook
 
 Added `core_halt_loss` and `TrainConfig.loss_core_halt_weight` so the QTRM

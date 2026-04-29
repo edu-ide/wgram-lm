@@ -1,6 +1,8 @@
 import importlib.util
+import io
 import types
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 
@@ -90,6 +92,28 @@ class EvalAblationModeTests(unittest.TestCase):
         self.assertEqual(record["q_halt_steps"], 2)
         self.assertAlmostEqual(record["q_halt_last_mean"], 0.75, places=6)
         self.assertEqual(record["q_continue_steps"], 2)
+
+    def test_json_mode_redirects_donor_init_stdout_to_stderr(self):
+        original = self.module.QwenDonorAdapter
+
+        class FakeDonor:
+            def __init__(self, cfg):
+                print(f"donor log for {cfg}")
+
+        self.module.QwenDonorAdapter = FakeDonor
+        try:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            cfg = types.SimpleNamespace(donor="fake-donor-cfg")
+
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                donor = self.module.build_donor(cfg, no_donor=False, json_mode=True)
+
+            self.assertIsInstance(donor, FakeDonor)
+            self.assertEqual(stdout.getvalue(), "")
+            self.assertIn("donor log for fake-donor-cfg", stderr.getvalue())
+        finally:
+            self.module.QwenDonorAdapter = original
 
 
 if __name__ == "__main__":
