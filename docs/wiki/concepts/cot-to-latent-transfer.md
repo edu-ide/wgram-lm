@@ -155,13 +155,17 @@ Before claiming latent reasoning:
 
 Current halt gate status:
 
-- 9-case hard MemoryOS probe: full-depth `5/9`, halted `5/9`, with recursive
-  outer steps reduced from 3 to 1.
-- 12-case held-out MemoryOS probe: full-depth `7/12`, halted `7/12`, with
-  recursive outer steps reduced from 3 to 1.
-- This passes the narrow "no additional answer regression from halting" check,
-  but the halt checkpoint still underperforms the earlier non-halt synthetic
-  MemoryOS checkpoint on held-out accuracy.
+- Clean-LM halt checkpoint: 9-case hard `5/9 -> 5/9`, 12-case held-out
+  `7/12 -> 7/12`, with recursive outer steps reduced from 3 to 1. This proved
+  the early-exit path but regressed from the synthetic MemoryOS checkpoint.
+- MemoryOS-preserving halt-only checkpoint:
+  `configs/qwen35_2b_4090_memory_halt_preserve_s050.yaml` freezes every QTRM
+  tensor except `core.halt_head.*`.
+- MemoryOS-preserving result: 9-case hard `6/9 -> 6/9`, 12-case held-out
+  `9/12 -> 9/12`, with recursive outer steps reduced from 2 to 1.
+- Current conclusion: early halt is acceptable only behind the halt-only
+  preservation policy. Full residual-path fine-tuning for halting is too risky
+  until it passes the same held-out MemoryOS gate.
 
 If these fail, the correct conclusion is that QTRM has useful engineering
 hooks, not proven latent reasoning.

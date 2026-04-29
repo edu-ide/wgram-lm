@@ -644,3 +644,41 @@ checkpoint on held-out accuracy (`7/12` here versus prior `9/12`). The next
 training pass should preserve MemoryOS behavior while teaching halting, either
 by training halt targets on MemoryOS traces or by freezing most residual-path
 weights and training the halt head/coda gate more narrowly.
+
+## [2026-04-29] train | MemoryOS-preserving halt-only probe
+
+Added `TrainConfig.trainable_param_policy` and
+`configure_trainable_parameters`. The first narrow policy is
+`core_halt_only`, which freezes the full QTRM residual path and trains only
+`core.halt_head.weight` and `core.halt_head.bias`. This lets halt behavior be
+learned without changing full-depth MemoryOS logits.
+
+Run:
+
+- Config: `configs/qwen35_2b_4090_memory_halt_preserve_s050.yaml`
+- Script: `scripts/108_run_memory_halt_preserve.sh`
+- Init: `runs/qwen35_2b_4090_memory_synth_generalization_s050/last.pt`
+- Data: `data/filtered/memory_reasoning_synth_traces.jsonl`
+- Trainable tensors: 2
+- Trainable params: 1,026
+- Output: `runs/qwen35_2b_4090_memory_halt_preserve_s050/last.pt`
+
+The checkpoint kept the synthetic MemoryOS generalization result while adding
+early exit:
+
+| Eval | Full-depth hits | Halted hits | Full steps | Halted steps | Hit changes |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 9-case hard probe | 6/9 | 6/9 | 2 x 9 | 1 x 9 | 0 |
+| 12-case held-out probe | 9/12 | 9/12 | 2 x 12 | 1 x 12 | 0 |
+
+Outputs:
+
+- `runs/eval/memory_reasoning_halt_preserve_full_depth_32tok.jsonl`
+- `runs/eval/memory_reasoning_halt_preserve_enabled_32tok.jsonl`
+- `runs/eval/memory_reasoning_heldout_halt_preserve_full_depth_32tok.jsonl`
+- `runs/eval/memory_reasoning_heldout_halt_preserve_enabled_32tok.jsonl`
+
+Interpretation: the previous regression was not caused by early halt itself; it
+was caused by fine-tuning the residual path on clean LM text. Freezing the
+residual path and training only the halt head preserves the 12-case held-out
+MemoryOS score (`9/12`) while reducing recursive outer depth from 2 to 1.

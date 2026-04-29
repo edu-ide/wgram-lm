@@ -33,6 +33,22 @@ class CoreHaltProbeTests(unittest.TestCase):
         self.assertIn("post_eval_core_halt.jsonl", text)
         self.assertIn("scripts/92_eval_qtrm_logits.py", text)
 
+    def test_memory_halt_preserve_script_trains_halt_only_and_runs_memoryos_gates(self):
+        script = Path("scripts/108_run_memory_halt_preserve.sh")
+        text = script.read_text(encoding="utf-8")
+
+        self.assertIn("configs/qwen35_2b_4090_memory_halt_preserve_s050.yaml", text)
+        self.assertIn("memory_reasoning_synth_traces.jsonl", text)
+        self.assertIn("qwen35_2b_4090_memory_synth_generalization_s050/last.pt", text)
+        self.assertIn("--init-checkpoint", text)
+        self.assertIn('--core-halt-mode "$mode"', text)
+        self.assertIn('eval_gate "$HARD_CASES" "$HARD_INDEX" disabled', text)
+        self.assertIn('eval_gate "$HARD_CASES" "$HARD_INDEX" enabled', text)
+        self.assertIn('eval_gate "$HELDOUT_CASES" "$HELDOUT_INDEX" disabled', text)
+        self.assertIn('eval_gate "$HELDOUT_CASES" "$HELDOUT_INDEX" enabled', text)
+        self.assertIn("memory_reasoning_probe.jsonl", text)
+        self.assertIn("memory_reasoning_heldout_probe.jsonl", text)
+
 
 if __name__ == "__main__":
     unittest.main()

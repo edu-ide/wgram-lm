@@ -75,6 +75,7 @@ class TrainConfig:
     core_halt_teacher_depth_threshold: float = 0.995
     core_halt_teacher_depth_logit_kl_threshold: float = 0.05
     core_halt_teacher_depth_min_step: int = 1
+    trainable_param_policy: str = "all"
     device: str = "auto"
     use_amp: bool = True
     log_every: int = 10

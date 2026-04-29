@@ -407,3 +407,38 @@ Interpretation:
   checkpoint's held-out `9/12` result to `7/12`. The next training gate should
   combine MemoryOS trace preservation with halt supervision instead of training
   the halt probe on clean-pilot LM text alone.
+
+## MemoryOS-Preserving Halt-Only Gate
+
+Added a narrow training policy:
+
+```yaml
+train:
+  trainable_param_policy: core_halt_only
+```
+
+This freezes every QTRM tensor except:
+
+- `core.halt_head.weight`
+- `core.halt_head.bias`
+
+Using `configs/qwen35_2b_4090_memory_halt_preserve_s050.yaml`, the run starts
+from `runs/qwen35_2b_4090_memory_synth_generalization_s050/last.pt`, trains on
+`data/filtered/memory_reasoning_synth_traces.jsonl`, and writes
+`runs/qwen35_2b_4090_memory_halt_preserve_s050/last.pt`.
+
+Result with Harrier retrieval, Qwen3-Reranker-0.6B, top-5 evidence,
+`--qtrm-logits-scale 0.5`, and `--no-logit-shift`:
+
+| Eval | Full-depth hits | Halted hits | Full steps | Halted steps | Hit changes |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 9-case hard probe | 6/9 | 6/9 | 2 x 9 | 1 x 9 | 0 |
+| 12-case held-out probe | 9/12 | 9/12 | 2 x 12 | 1 x 12 | 0 |
+
+Decision:
+
+- This is the preferred halt training path for now.
+- Early halt can be added without losing the held-out MemoryOS gain when the
+  residual path is frozen.
+- The remaining blocker is not halt; it is answer quality on the three held-out
+  failures: two Korean conflict cases and one English multi-hop maintainer case.

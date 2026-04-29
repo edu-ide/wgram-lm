@@ -21,6 +21,33 @@ def load_initial_checkpoint(model, checkpoint_path: str, map_location):
     return list(missing), list(unexpected)
 
 
+def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
+    policy = (policy or "all").strip().lower()
+    if policy == "all":
+        for param in model.parameters():
+            param.requires_grad_(True)
+        return [name for name, param in model.named_parameters() if param.requires_grad]
+
+    if policy == "core_halt_only":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith("core.halt_head.")
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError(
+                "trainable_param_policy=core_halt_only requires model.core_halt_enabled=true"
+            )
+        return trainable_names
+
+    raise ValueError(f"unknown trainable_param_policy: {policy}")
+
+
+def trainable_parameters(model):
+    return [param for param in model.parameters() if param.requires_grad]
+
+
 def build_arg_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
@@ -198,7 +225,16 @@ def main():
         )
         loader = DataLoader(ds, batch_size=cfg.train.batch_size, collate_fn=collate)
 
-    opt = torch.optim.AdamW(model.parameters(), lr=cfg.train.lr, betas=(0.9, 0.95), weight_decay=0.1)
+    trainable_names = configure_trainable_parameters(model, cfg.train.trainable_param_policy)
+    trainable_params = trainable_parameters(model)
+    if not trainable_params:
+        raise ValueError("no trainable parameters selected")
+    print(
+        f"[trainable] policy={cfg.train.trainable_param_policy} "
+        f"params={sum(p.numel() for p in trainable_params):,} "
+        f"tensors={len(trainable_names)}"
+    )
+    opt = torch.optim.AdamW(trainable_params, lr=cfg.train.lr, betas=(0.9, 0.95), weight_decay=0.1)
     scaler = torch.amp.GradScaler("cuda", enabled=(cfg.train.use_amp and device == "cuda"))
     out_dir = Path(cfg.train.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
