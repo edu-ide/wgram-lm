@@ -138,7 +138,8 @@ def infer_core_halt_targets(
     donor_logits: Optional[torch.Tensor] = None,
     donor_logits_scale: float = 1.0,
     donor_kl_threshold: Optional[float] = None,
-) -> torch.Tensor:
+    return_diagnostics: bool = False,
+) -> torch.Tensor | tuple[torch.Tensor, dict[str, torch.Tensor]]:
     target_source = labels if labels is not None else input_ids
     targets = target_source[:, 1:]
     valid = _valid_next_token_mask(target_source, attention_mask=attention_mask)
@@ -150,10 +151,17 @@ def infer_core_halt_targets(
     predicted = logits.argmax(dim=-1)
     token_correct = (predicted == safe_targets) | valid.logical_not()
     has_valid = valid.any(dim=-1)
-    exact_correct = token_correct.all(dim=-1) & has_valid
+    exact_next_token_pass = token_correct.all(dim=-1) & has_valid
+    halt_pass = exact_next_token_pass
+    diagnostics = {
+        "valid_sample_rate": has_valid.float().mean().detach(),
+        "exact_next_token_pass_rate": exact_next_token_pass.float().mean().detach(),
+    }
 
     if verifier_passed is not None:
-        exact_correct = exact_correct & verifier_passed.to(device=exact_correct.device, dtype=torch.bool)
+        verifier_mask = verifier_passed.to(device=halt_pass.device, dtype=torch.bool)
+        diagnostics["verifier_pass_rate"] = verifier_mask.float().mean().detach()
+        halt_pass = halt_pass & verifier_mask
 
     if donor_logits is not None and donor_kl_threshold is not None:
         donor_slice = donor_logits[:, : logits.shape[1]].to(device=logits.device, dtype=logits.dtype)
@@ -163,9 +171,17 @@ def infer_core_halt_targets(
         fused_probs = fused_log_probs.exp()
         per_token_kl = (fused_probs * (fused_log_probs - donor_log_probs)).sum(dim=-1)
         kl_per_sample = _masked_mean_per_sample(per_token_kl, valid)
-        exact_correct = exact_correct & (kl_per_sample <= float(donor_kl_threshold))
+        donor_kl_pass = kl_per_sample <= float(donor_kl_threshold)
+        diagnostics["donor_kl_pass_rate"] = donor_kl_pass.float().mean().detach()
+        diagnostics["donor_kl_mean"] = kl_per_sample.float().mean().detach()
+        halt_pass = halt_pass & donor_kl_pass
 
-    return exact_correct.to(dtype=torch.float32)
+    halt_targets = halt_pass.to(dtype=torch.float32)
+    diagnostics["halt_target_pos_rate"] = halt_targets.mean().detach()
+    diagnostics["halt_target_neg_rate"] = (1.0 - halt_targets).mean().detach()
+    if return_diagnostics:
+        return halt_targets, diagnostics
+    return halt_targets
 
 
 def qtrm_smoke_loss(
@@ -183,6 +199,7 @@ def qtrm_smoke_loss(
     core_halt_targets = kwargs.get("core_halt_targets")
     core_continue_targets = kwargs.get("core_continue_targets")
     verifier_passed = kwargs.get("verifier_passed")
+    core_halt_target_diagnostics = {}
     private_keys = {
         "labels",
         "core_halt_targets",
@@ -210,7 +227,7 @@ def qtrm_smoke_loss(
     )
     aux = controller_aux_loss(outputs)
     if core_halt_targets is None and core_halt_auto_targets:
-        core_halt_targets = infer_core_halt_targets(
+        core_halt_targets, core_halt_target_diagnostics = infer_core_halt_targets(
             outputs,
             input_ids,
             labels=labels,
@@ -220,6 +237,7 @@ def qtrm_smoke_loss(
             donor_logits=model_kwargs.get("donor_logits"),
             donor_logits_scale=getattr(getattr(model, "cfg", None), "donor_logits_scale", 1.0),
             donor_kl_threshold=core_halt_donor_kl_threshold,
+            return_diagnostics=True,
         )
         if core_continue_targets is None:
             core_continue_targets = 1.0 - core_halt_targets
@@ -234,14 +252,12 @@ def qtrm_smoke_loss(
         + float(aux_weight) * aux
         + float(core_halt_weight) * core_halt
     )
-    return (
-        loss,
-        {
-            "loss": loss.detach(),
-            "lm": lm.detach(),
-            "jepa": jepa.detach(),
-            "aux": aux.detach(),
-            "core_halt": core_halt.detach(),
-        },
-        outputs,
-    )
+    metrics = {
+        "loss": loss.detach(),
+        "lm": lm.detach(),
+        "jepa": jepa.detach(),
+        "aux": aux.detach(),
+        "core_halt": core_halt.detach(),
+    }
+    metrics.update(core_halt_target_diagnostics)
+    return loss, metrics, outputs

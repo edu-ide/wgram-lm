@@ -195,6 +195,37 @@ class LossTests(unittest.TestCase):
 
         self.assertTrue(torch.equal(targets, torch.tensor([1.0, 0.0])))
 
+    def test_infer_core_halt_targets_can_report_availability_diagnostics(self):
+        from qtrm_mm.losses import infer_core_halt_targets
+
+        logits = torch.zeros(3, 3, 5)
+        logits[:, 0, 2] = 8.0
+        logits[:, 1, 3] = 8.0
+        logits[1, 1] = 0.0
+        logits[1, 1, 4] = 8.0
+        labels = torch.tensor([[-100, 2, 3], [-100, 2, 3], [-100, 2, 3]])
+        donor_logits = logits.clone()
+        donor_logits[2, 0] = 0.0
+        donor_logits[2, 0, 4] = 8.0
+        donor_logits[2, 1] = 0.0
+        donor_logits[2, 1, 4] = 8.0
+        outputs = {"logits": logits}
+
+        targets, diag = infer_core_halt_targets(
+            outputs,
+            input_ids=torch.tensor([[0, 2, 3], [0, 2, 3], [0, 2, 3]]),
+            labels=labels,
+            donor_logits=donor_logits,
+            donor_kl_threshold=0.1,
+            return_diagnostics=True,
+        )
+
+        self.assertTrue(torch.equal(targets, torch.tensor([1.0, 0.0, 0.0])))
+        self.assertAlmostEqual(float(diag["exact_next_token_pass_rate"]), 2.0 / 3.0, places=5)
+        self.assertAlmostEqual(float(diag["donor_kl_pass_rate"]), 2.0 / 3.0, places=5)
+        self.assertAlmostEqual(float(diag["halt_target_pos_rate"]), 1.0 / 3.0, places=5)
+        self.assertAlmostEqual(float(diag["halt_target_neg_rate"]), 2.0 / 3.0, places=5)
+
     def test_qtrm_smoke_loss_can_infer_core_halt_targets_from_batch(self):
         from qtrm_mm.losses import qtrm_smoke_loss
 
@@ -238,6 +269,51 @@ class LossTests(unittest.TestCase):
         self.assertIn("core_halt", metrics)
         self.assertLess(float(metrics["core_halt"]), 0.1)
         self.assertGreater(float(loss), 0.0)
+
+    def test_qtrm_smoke_loss_reports_auto_core_halt_target_rates(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+
+            def forward(self, input_ids, **kwargs):
+                logits = torch.zeros(2, 3, 5)
+                logits[:, 0, 2] = 8.0
+                logits[:, 1, 3] = 8.0
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(2, 2, 4),
+                    "jepa_target": torch.zeros(2, 2, 4),
+                    "jepa_mask": torch.ones(2, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(2, 3, 4),
+                    "jepa_latent_mask": torch.ones(2, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(2, 1),
+                    "action_logits": torch.zeros(2, 3),
+                    "core_q_halt_logits": torch.tensor([[3.0, 3.0], [-3.0, -3.0]]),
+                    "core_q_continue_logits": torch.empty(2, 0),
+                }
+
+        _, metrics, _ = qtrm_smoke_loss(
+            FakeModel(),
+            torch.tensor([[0, 2, 3], [0, 2, 3]]),
+            labels=torch.tensor([[-100, 2, 3], [-100, 2, 3]]),
+            verifier_passed=torch.tensor([True, False]),
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_halt_weight=1.0,
+            core_halt_auto_targets=True,
+        )
+
+        self.assertIn("halt_target_pos_rate", metrics)
+        self.assertIn("halt_target_neg_rate", metrics)
+        self.assertIn("exact_next_token_pass_rate", metrics)
+        self.assertIn("verifier_pass_rate", metrics)
+        self.assertAlmostEqual(float(metrics["halt_target_pos_rate"]), 0.5, places=5)
+        self.assertAlmostEqual(float(metrics["halt_target_neg_rate"]), 0.5, places=5)
+        self.assertAlmostEqual(float(metrics["exact_next_token_pass_rate"]), 1.0, places=5)
+        self.assertAlmostEqual(float(metrics["verifier_pass_rate"]), 0.5, places=5)
 
 
 if __name__ == "__main__":

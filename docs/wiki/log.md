@@ -21,6 +21,13 @@ reported `core_steps={3:16}` and `core_halted={False:16}`. This means the next
 gate needs balanced positive halt labels, teacher-depth labels, or a target
 availability report before expecting runtime savings.
 
+Added halt target availability diagnostics to `qtrm_smoke_loss`. Auto-target
+runs now report `halt_target_pos_rate`, `halt_target_neg_rate`,
+`exact_next_token_pass_rate`, and donor KL gate stats. A one-batch check on the
+core-halt probe checkpoint reported `halt_target_pos_rate=0.0`,
+`exact_next_token_pass_rate=0.0`, and `donor_kl_pass_rate=1.0`, confirming that
+the exact next-token gate, not the KL gate, is blocking early-exit positives.
+
 ## [2026-04-29] implementation | CoT-to-latent halting hook
 
 Added `core_halt_loss` and `TrainConfig.loss_core_halt_weight` so the QTRM
