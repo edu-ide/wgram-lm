@@ -51,6 +51,7 @@
 ## Architecture
 
 - [QTRM Forward Pass](architecture/qtrm-forward-pass.md): Mermaid diagrams and tensor-shape ledger for the current donor-backed residual forward path.
+- [Paper Diagram Prompts](architecture/paper-diagram-prompts.md): prompt bank for paper-style architecture and ablation figures.
 
 ## Components
 

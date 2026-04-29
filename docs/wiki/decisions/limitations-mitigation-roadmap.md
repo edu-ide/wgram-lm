@@ -70,8 +70,14 @@ Implementation status:
 - `src/qtrm_mm/diagnostics.py` provides `residual_logit_telemetry`.
 - `scripts/92_eval_qtrm_logits.py` emits `residual_telemetry` in JSON records
   and prints a compact text summary when donor logits are available.
+- `scripts/92_eval_qtrm_logits.py` supports `--ablation-mode residual`,
+  `donor_only`, `workspace_off`, and `core_off` so the same checkpoint can be
+  evaluated with the donor base policy, the full residual path, the latent
+  workspace removed, or only the recursive core bypassed.
 - `tests/test_residual_telemetry.py` covers argmax shifts, donor scaling, and
   eval-script integration.
+- `tests/test_eval_ablation_modes.py` and `tests/test_model_config.py` cover
+  the eval CLI contract plus workspace/core forward ablations.
 
 ## Evaluation Matrix
 
@@ -119,8 +125,36 @@ Reject or roll back a QTRM change when:
 ## Next Engineering Order
 
 1. Done: add residual telemetry to the eval script.
-2. Add fixed ablation modes for donor-only, residual, workspace-off, and core-off.
+2. Done: add fixed ablation modes for donor-only, residual, workspace-off, and core-off.
 3. Add gated residual behind a config flag.
 4. Add KL-to-donor loss behind a config flag.
 5. Re-run the current hard MemoryOS held-out probes.
 6. Only then resume longer training or JEPA/world-model losses.
+
+## Ablation Commands
+
+Use the same prompt, checkpoint, and token budget across all modes:
+
+```bash
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src .venv/bin/python scripts/92_eval_qtrm_logits.py \
+  --config configs/qwen35_2b_4090_current_arch_pretrain_probe.yaml \
+  --checkpoint runs/qwen35_2b_4090_current_arch_pretrain_probe/last.pt \
+  --prompt "양자 컴퓨팅이란 무엇인가요?" \
+  --max-new-tokens 32 \
+  --ablation-mode donor_only
+```
+
+Repeat with:
+
+```text
+--ablation-mode residual
+--ablation-mode workspace_off
+--ablation-mode core_off
+```
+
+Interpretation:
+
+- `donor_only`: verifies the frozen Qwen base policy without QTRM logits.
+- `residual`: normal donor-logit plus QTRM-residual path.
+- `workspace_off`: removes the latent workspace prefix from the residual path.
+- `core_off`: keeps workspace tokens but bypasses recursive z_L/z_H updates.

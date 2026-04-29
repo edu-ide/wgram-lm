@@ -39,6 +39,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
     ap.add_argument("--no-donor", action="store_true", help="Do not pass donor hidden states into QTRM.")
     ap.add_argument(
+        "--ablation-mode",
+        default="residual",
+        choices=["residual", "donor_only", "workspace_off", "core_off"],
+        help=(
+            "Evaluation mode: residual uses configured scales; donor_only forces "
+            "QTRM logits off and donor logits on; workspace_off removes latent "
+            "workspace prefix; core_off bypasses recursive core updates."
+        ),
+    )
+    ap.add_argument(
         "--refresh-donor-each-step",
         action="store_true",
         help="Deprecated compatibility flag; donor states are refreshed by default.",
@@ -84,6 +94,19 @@ def collect_texts(args: argparse.Namespace) -> list[str]:
         if texts:
             return texts
     return DEFAULT_PROMPTS[: args.max_samples]
+
+
+def apply_ablation_mode(model: QTRMMultimodalModel, mode: str) -> None:
+    if mode == "donor_only":
+        model.cfg.qtrm_logits_scale = 0.0
+        model.cfg.donor_logits_scale = 1.0
+
+
+def forward_ablation_kwargs(mode: str) -> dict[str, bool]:
+    return {
+        "disable_workspace": mode == "workspace_off",
+        "disable_core": mode == "core_off",
+    }
 
 
 def select_device(cfg_device: str, requested: str) -> str:
@@ -156,6 +179,7 @@ def greedy_generate(
     max_new_tokens: int,
     refresh_donor_each_step: bool,
     return_donor_logits: bool,
+    ablation_mode: str,
 ) -> tuple[list[int], list[dict]]:
     generated = input_ids[0].detach().cpu().tolist()
     prompt_len = len(generated)
@@ -182,7 +206,12 @@ def greedy_generate(
             else fixed_donor
         )
         with torch.amp.autocast("cuda", enabled=(device == "cuda"), dtype=torch.bfloat16):
-            outputs = model(cur_ids, attention_mask=cur_mask, **extra)
+            outputs = model(
+                cur_ids,
+                attention_mask=cur_mask,
+                **extra,
+                **forward_ablation_kwargs(ablation_mode),
+            )
         last_logits = outputs["logits"][0, -1].float()
         next_id = int(last_logits.argmax(dim=-1).detach().cpu().item())
         steps.append(
@@ -201,6 +230,9 @@ def greedy_generate(
 
 def main() -> None:
     args = build_arg_parser().parse_args()
+    if args.no_donor and args.ablation_mode == "donor_only":
+        raise SystemExit("--ablation-mode donor_only requires donor logits; remove --no-donor.")
+
     cfg = load_config(args.config)
     device = select_device(cfg.train.device, args.device)
     if not cfg.donor.model_id:
@@ -214,10 +246,12 @@ def main() -> None:
 
     max_length = args.max_length or cfg.train.seq_len
     model = load_qtrm(args.config, args.checkpoint, device)
+    apply_ablation_mode(model, args.ablation_mode)
     donor = None if args.no_donor else QwenDonorAdapter(cfg.donor)
     texts = collect_texts(args)
     refresh_donor_each_step = args.refresh_donor_each_step or not args.fixed_donor_during_generation
-    use_donor_logits = bool(cfg.model.donor_logits_scale != 0.0)
+    use_donor_logits = bool(model.cfg.donor_logits_scale != 0.0)
+    fwd_ablation = forward_ablation_kwargs(args.ablation_mode)
 
     if not args.json:
         print("=" * 72)
@@ -227,7 +261,9 @@ def main() -> None:
         print(
             f"device={device}, donor={'off' if donor is None else 'on'}, "
             f"max_length={max_length}, refresh_donor_each_step={refresh_donor_each_step}, "
-            f"donor_logits_scale={cfg.model.donor_logits_scale}"
+            f"ablation_mode={args.ablation_mode}, "
+            f"donor_logits_scale={model.cfg.donor_logits_scale}, "
+            f"qtrm_logits_scale={model.cfg.qtrm_logits_scale}"
         )
         print("=" * 72)
 
@@ -244,7 +280,12 @@ def main() -> None:
         )
 
         with torch.amp.autocast("cuda", enabled=(device == "cuda"), dtype=torch.bfloat16):
-            outputs = model(input_ids, attention_mask=attention_mask, **extra)
+            outputs = model(
+                input_ids,
+                attention_mask=attention_mask,
+                **extra,
+                **fwd_ablation,
+            )
         offset = outputs["logits"].shape[1] - input_ids.shape[1]
         metrics = next_token_diagnostics(
             outputs["logits"],
@@ -260,7 +301,7 @@ def main() -> None:
                 extra["donor_logits"][0, -1],
                 last_logits,
                 tokenizer=tokenizer,
-                donor_logits_scale=cfg.model.donor_logits_scale,
+                donor_logits_scale=model.cfg.donor_logits_scale,
             )
         generated, steps = greedy_generate(
             model,
@@ -272,10 +313,12 @@ def main() -> None:
             max_new_tokens=args.max_new_tokens,
             refresh_donor_each_step=refresh_donor_each_step,
             return_donor_logits=use_donor_logits,
+            ablation_mode=args.ablation_mode,
         )
         rep = repetition_stats(generated, prompt_len=input_ids.shape[1])
         record = {
             "sample": idx,
+            "ablation_mode": args.ablation_mode,
             "text": text,
             "input_tokens": int(input_ids.shape[1]),
             "offset": int(offset),

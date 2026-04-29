@@ -170,6 +170,65 @@ class ModelConfigTests(unittest.TestCase):
         self.assertEqual(len(model.workspace.layers), 3)
         self.assertEqual(out["z_h"].shape, (2, cfg.workspace_tokens, cfg.d_model))
 
+    def test_workspace_ablation_removes_latent_prefix_from_logits(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=5,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.randint(0, cfg.vocab_size, (2, 7))
+
+        baseline = model(input_ids)
+        ablated = model(input_ids, disable_workspace=True)
+
+        self.assertEqual(baseline["logits"].shape[1], cfg.workspace_tokens + input_ids.shape[1])
+        self.assertEqual(ablated["logits"].shape[1], input_ids.shape[1])
+        self.assertEqual(int(ablated["trajectory_len"].item()), 0)
+
+    def test_core_ablation_keeps_workspace_prefix_without_recursive_steps(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=5,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.randint(0, cfg.vocab_size, (2, 7))
+
+        out = model(input_ids, disable_core=True)
+
+        self.assertEqual(out["logits"].shape[1], cfg.workspace_tokens + input_ids.shape[1])
+        self.assertEqual(out["z_h"].shape, (2, cfg.workspace_tokens, cfg.d_model))
+        self.assertEqual(int(out["trajectory_len"].item()), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

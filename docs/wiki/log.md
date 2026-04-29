@@ -1,5 +1,13 @@
 # QTRM LLM Wiki Log
 
+## [2026-04-29] implementation | ablation modes and paper prompts
+
+Added fixed eval ablation modes for `donor_only`, `residual`, `workspace_off`,
+and `core_off`. The same checkpoint can now isolate donor policy, full residual
+path, latent workspace contribution, and recursive-core contribution. Added a
+paper-diagram prompt bank for QTRM limitation mitigation, ablation lanes, and
+the realistic claim boundary for a tiny cognitive core.
+
 ## [2026-04-29] implementation | residual telemetry
 
 Added residual-logit telemetry as the first mitigation-roadmap implementation

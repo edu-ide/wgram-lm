@@ -63,6 +63,8 @@ class QTRMMultimodalModel(nn.Module):
         visual_features: Optional[torch.Tensor] = None,
         text_states: Optional[torch.Tensor] = None,
         donor_logits: Optional[torch.Tensor] = None,
+        disable_workspace: bool = False,
+        disable_core: bool = False,
     ) -> dict:
         b, s = input_ids.shape
         if attention_mask is None:
@@ -82,16 +84,32 @@ class QTRMMultimodalModel(nn.Module):
             seq, attention_mask = self.projector(seq, visual_features, text_mask=attention_mask)
 
         seq = self.prelude(seq, attention_mask=attention_mask)
-        workspace = self.workspace(seq, context_mask=attention_mask)
-        workspace_mask = torch.ones(
-            workspace.shape[:2],
-            device=workspace.device,
-            dtype=attention_mask.dtype,
-        )
-        z_l, z_h, trajectory = self.core(workspace, attention_mask=workspace_mask)
+        if disable_workspace:
+            workspace = seq.new_zeros((b, self.cfg.workspace_tokens, self.cfg.d_model))
+            workspace_mask = torch.ones(
+                workspace.shape[:2],
+                device=workspace.device,
+                dtype=attention_mask.dtype,
+            )
+            z_l = workspace
+            z_h = workspace
+            trajectory = []
+        else:
+            workspace = self.workspace(seq, context_mask=attention_mask)
+            workspace_mask = torch.ones(
+                workspace.shape[:2],
+                device=workspace.device,
+                dtype=attention_mask.dtype,
+            )
+            if disable_core:
+                z_l = workspace
+                z_h = workspace
+                trajectory = []
+            else:
+                z_l, z_h, trajectory = self.core(workspace, attention_mask=workspace_mask)
 
-        seq = torch.cat([z_h, seq], dim=1)
-        attention_mask = torch.cat([workspace_mask, attention_mask], dim=1)
+            seq = torch.cat([z_h, seq], dim=1)
+            attention_mask = torch.cat([workspace_mask, attention_mask], dim=1)
         seq = self.coda(seq, attention_mask=attention_mask)
         seq = self.norm(seq)
         logits = self.lm_head(seq) * float(self.cfg.qtrm_logits_scale)
