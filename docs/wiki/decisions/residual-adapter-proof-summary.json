@@ -1,0 +1,374 @@
+{
+  "claim": "QTRM is a donor-backed residual adapter that improves selected MemoryOS evidence tasks over donor-only.",
+  "donor_mode": "donor_only_with_evidence",
+  "residual_mode": "qtrm_residual_with_evidence",
+  "evals": [
+    {
+      "donor": {
+        "count": 9,
+        "hits": 5,
+        "accuracy": 0.5555555555555556,
+        "retrieved_target_count": 9,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 9,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "residual": {
+        "count": 9,
+        "hits": 9,
+        "accuracy": 1.0,
+        "retrieved_target_count": 9,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 9,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "delta_hits": 4,
+      "delta_accuracy": 0.4444444444444444,
+      "name": "hard memory probe",
+      "path": "runs/eval/memory_reasoning_qwen3_rerank_32tok_trace_s050_ft.jsonl",
+      "donor_mode": "donor_only_with_evidence",
+      "residual_mode": "qtrm_residual_with_evidence",
+      "by_task_family": {
+        "abstention": {
+          "donor": {
+            "count": 3,
+            "hits": 0,
+            "accuracy": 0.0,
+            "retrieved_target_count": 3,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 3,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "residual": {
+            "count": 3,
+            "hits": 3,
+            "accuracy": 1.0,
+            "retrieved_target_count": 3,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 3,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "delta_hits": 3,
+          "delta_accuracy": 1.0
+        },
+        "conflict": {
+          "donor": {
+            "count": 4,
+            "hits": 3,
+            "accuracy": 0.75,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 4,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "residual": {
+            "count": 4,
+            "hits": 4,
+            "accuracy": 1.0,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 4,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "delta_hits": 1,
+          "delta_accuracy": 0.25
+        },
+        "multi_hop": {
+          "donor": {
+            "count": 2,
+            "hits": 2,
+            "accuracy": 1.0,
+            "retrieved_target_count": 2,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 2,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "residual": {
+            "count": 2,
+            "hits": 2,
+            "accuracy": 1.0,
+            "retrieved_target_count": 2,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 2,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "delta_hits": 0,
+          "delta_accuracy": 0.0
+        }
+      },
+      "changed_cases": {
+        "improvements": [
+          {
+            "id": "authority-signed-vault",
+            "task_family": "conflict",
+            "donor_completion": "Answer: amber-harbor\nQuestion: What is the passphrase for the east vault?\nAnswer: amber-harbor\nQuestion: What is the",
+            "residual_completion": "Answer: jade-circuit"
+          },
+          {
+            "id": "negative-missing-east-vault",
+            "task_family": "abstention",
+            "donor_completion": "Answer: amber-harbor\nQuestion: Which passphrase opens the east vault?\nAnswer: amber-harbor\nQuestion: Which passphrase opens the west",
+            "residual_completion": "Answer: UNKNOWN"
+          },
+          {
+            "id": "negative-missing-korean-vault",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n북극성-42\nSOURCE=north_storage_ko.md CHUNK=2 SCORE=-3.0625\n북쪽",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "temporal-missing-current-lab-chief",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n\nDr. Mina Vale",
+            "residual_completion": "Answer: UNKNOWN."
+          }
+        ],
+        "regressions": []
+      }
+    },
+    {
+      "donor": {
+        "count": 12,
+        "hits": 6,
+        "accuracy": 0.5,
+        "retrieved_target_count": 12,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 11,
+        "all_targets_retrieved_rate": 0.9166666666666666,
+        "target_recall_mean": 0.9722222222222223
+      },
+      "residual": {
+        "count": 12,
+        "hits": 9,
+        "accuracy": 0.75,
+        "retrieved_target_count": 12,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 11,
+        "all_targets_retrieved_rate": 0.9166666666666666,
+        "target_recall_mean": 0.9722222222222223
+      },
+      "delta_hits": 3,
+      "delta_accuracy": 0.25,
+      "name": "held-out memory probe",
+      "path": "runs/eval/memory_reasoning_heldout_qwen3_rerank_32tok_synth_generalization_s050.jsonl",
+      "donor_mode": "donor_only_with_evidence",
+      "residual_mode": "qtrm_residual_with_evidence",
+      "by_task_family": {
+        "abstention": {
+          "donor": {
+            "count": 4,
+            "hits": 0,
+            "accuracy": 0.0,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 4,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "residual": {
+            "count": 4,
+            "hits": 4,
+            "accuracy": 1.0,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 4,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "delta_hits": 4,
+          "delta_accuracy": 1.0
+        },
+        "conflict": {
+          "donor": {
+            "count": 4,
+            "hits": 3,
+            "accuracy": 0.75,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 4,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "residual": {
+            "count": 4,
+            "hits": 2,
+            "accuracy": 0.5,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 4,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "delta_hits": -1,
+          "delta_accuracy": -0.25
+        },
+        "multi_hop": {
+          "donor": {
+            "count": 4,
+            "hits": 3,
+            "accuracy": 0.75,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 3,
+            "all_targets_retrieved_rate": 0.75,
+            "target_recall_mean": 0.9166666666666666
+          },
+          "residual": {
+            "count": 4,
+            "hits": 3,
+            "accuracy": 0.75,
+            "retrieved_target_count": 4,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 3,
+            "all_targets_retrieved_rate": 0.75,
+            "target_recall_mean": 0.9166666666666666
+          },
+          "delta_hits": 0,
+          "delta_accuracy": 0.0
+        }
+      },
+      "changed_cases": {
+        "improvements": [
+          {
+            "id": "heldout-negative-authority-redacted-override",
+            "task_family": "abstention",
+            "donor_completion": "Answer: copper-moon",
+            "residual_completion": "Answer: UNKNOWN. UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN"
+          },
+          {
+            "id": "heldout-negative-korean-east-vault",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\nSOURCE=east_hangar_2026_ko.md CHUNK=3 SCORE=3.3750\n동쪽",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "heldout-negative-missing-south-vault",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\nThe south storage marker is Sunset-90.\nSOURCE=east_vault_heldout.md CHUNK=1 SCORE=4.8",
+            "residual_completion": "Answer: UNKNOWN. UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN"
+          },
+          {
+            "id": "heldout-temporal-missing-team-quartz",
+            "task_family": "abstention",
+            "donor_completion": "Answer: Dr. Alan Pike\nQuestion: Who is the current lead for Team Opal?\nAnswer: Dr. Nia Park\nQuestion: Who is",
+            "residual_completion": "Answer: UNKNOWN."
+          }
+        ],
+        "regressions": [
+          {
+            "id": "heldout-authority-korean-comms-room",
+            "task_family": "conflict",
+            "donor_completion": "Answer:\n서쪽 통신실의 현재 인증 문구는 바람문-27이다.\nSOURCE=signed_ops_ko.md CHUNK=0 SCORE",
+            "residual_completion": "Answer: 구름-27"
+          }
+        ]
+      }
+    }
+  ],
+  "aggregate": {
+    "donor": {
+      "count": 21,
+      "hits": 11,
+      "accuracy": 0.5238095238095238,
+      "retrieved_target_count": 21,
+      "retrieved_target_rate": 1.0,
+      "all_targets_retrieved_count": 20,
+      "all_targets_retrieved_rate": 0.9523809523809523,
+      "target_recall_mean": 0.984126984126984
+    },
+    "residual": {
+      "count": 21,
+      "hits": 18,
+      "accuracy": 0.8571428571428571,
+      "retrieved_target_count": 21,
+      "retrieved_target_rate": 1.0,
+      "all_targets_retrieved_count": 20,
+      "all_targets_retrieved_rate": 0.9523809523809523,
+      "target_recall_mean": 0.984126984126984
+    },
+    "delta_hits": 7,
+    "delta_accuracy": 0.33333333333333326,
+    "by_task_family": {
+      "abstention": {
+        "donor": {
+          "count": 7,
+          "hits": 0,
+          "accuracy": 0.0,
+          "retrieved_target_count": 7,
+          "retrieved_target_rate": 1.0,
+          "all_targets_retrieved_count": 7,
+          "all_targets_retrieved_rate": 1.0,
+          "target_recall_mean": 1.0
+        },
+        "residual": {
+          "count": 7,
+          "hits": 7,
+          "accuracy": 1.0,
+          "retrieved_target_count": 7,
+          "retrieved_target_rate": 1.0,
+          "all_targets_retrieved_count": 7,
+          "all_targets_retrieved_rate": 1.0,
+          "target_recall_mean": 1.0
+        },
+        "delta_hits": 7,
+        "delta_accuracy": 1.0
+      },
+      "conflict": {
+        "donor": {
+          "count": 8,
+          "hits": 6,
+          "accuracy": 0.75,
+          "retrieved_target_count": 8,
+          "retrieved_target_rate": 1.0,
+          "all_targets_retrieved_count": 8,
+          "all_targets_retrieved_rate": 1.0,
+          "target_recall_mean": 1.0
+        },
+        "residual": {
+          "count": 8,
+          "hits": 6,
+          "accuracy": 0.75,
+          "retrieved_target_count": 8,
+          "retrieved_target_rate": 1.0,
+          "all_targets_retrieved_count": 8,
+          "all_targets_retrieved_rate": 1.0,
+          "target_recall_mean": 1.0
+        },
+        "delta_hits": 0,
+        "delta_accuracy": 0.0
+      },
+      "multi_hop": {
+        "donor": {
+          "count": 6,
+          "hits": 5,
+          "accuracy": 0.8333333333333334,
+          "retrieved_target_count": 6,
+          "retrieved_target_rate": 1.0,
+          "all_targets_retrieved_count": 5,
+          "all_targets_retrieved_rate": 0.8333333333333334,
+          "target_recall_mean": 0.9444444444444443
+        },
+        "residual": {
+          "count": 6,
+          "hits": 5,
+          "accuracy": 0.8333333333333334,
+          "retrieved_target_count": 6,
+          "retrieved_target_rate": 1.0,
+          "all_targets_retrieved_count": 5,
+          "all_targets_retrieved_rate": 0.8333333333333334,
+          "target_recall_mean": 0.9444444444444443
+        },
+        "delta_hits": 0,
+        "delta_accuracy": 0.0
+      }
+    }
+  }
+}

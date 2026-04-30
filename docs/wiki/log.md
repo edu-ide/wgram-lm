@@ -855,3 +855,25 @@ memory pathway, connect it through cross-attention and gates, and verify that
 general ability is not degraded. This maps well to QTRM's near-term goal as a
 donor-backed residual cognitive adapter with explicit MemoryOS/workspace
 ablation gates.
+
+## [2026-04-29] eval | Residual adapter proof package
+
+Added a fixed proof package for the current near-term claim:
+
+- Script: `scripts/109_build_residual_adapter_proof.py`
+- Module: `src/qtrm_mm/eval/residual_adapter_proof.py`
+- Markdown: `docs/wiki/decisions/residual-adapter-proof.md`
+- JSON: `docs/wiki/decisions/residual-adapter-proof-summary.json`
+
+The package summarizes existing eval JSONL files instead of rerunning training:
+
+| Eval | Donor-only | QTRM residual | Delta |
+| --- | ---: | ---: | ---: |
+| hard memory probe | 5/9 | 9/9 | +4 |
+| held-out memory probe | 6/12 | 9/12 | +3 |
+| aggregate | 11/21 | 18/21 | +7 |
+
+The aggregate task-family delta shows the current gain is concentrated in
+abstention: donor-only `0/7`, QTRM residual `7/7`. Conflict and multi-hop are
+currently tied. This supports the residual-adapter usefulness claim on current
+MemoryOS probes, not a donor-free standalone-LM claim.

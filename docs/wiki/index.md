@@ -71,4 +71,5 @@
 - [QTRM Goal And Scope](decisions/qtrm-goal-and-scope.md): defines QTRM as a Qwen-backed cognitive/memory adapter and sets the next priority order.
 - [QTRM Limitations And Mitigation Roadmap](decisions/limitations-mitigation-roadmap.md): maps current architecture limits to prior research, telemetry, ablations, and gated residual next steps.
 - [Residual Ablation Plan](decisions/residual-ablation-plan.md): current donor-logit residual experiment matrix and go/no-go criteria.
+- [Residual Adapter Proof](decisions/residual-adapter-proof.md): fixed proof package showing donor-only versus QTRM residual gains on current MemoryOS probes.
 - [MemoryOS 100M Scale Plan](decisions/memoryos-100m-scale-plan.md): treats 100M+ tokens as external memory, not direct prompt context.
