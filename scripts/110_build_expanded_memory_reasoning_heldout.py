@@ -8,17 +8,20 @@ from qtrm_mm.training.synthetic_memory_cases import write_synthetic_memory_cases
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build synthetic MemoryOS reasoning train cases.")
-    parser.add_argument("--out", default="data/filtered/memory_reasoning_synth_train_cases.jsonl")
-    parser.add_argument("--num-sets", type=int, default=8)
-    parser.add_argument("--seed", type=int, default=13)
-    parser.add_argument("--start-index", type=int, default=0)
+    parser = argparse.ArgumentParser(
+        description="Build a balanced expanded held-out MemoryOS reasoning gate."
+    )
+    parser.add_argument("--out", default="data/eval/memory_reasoning_heldout_expanded_72.jsonl")
+    parser.add_argument("--num-sets", type=int, default=4)
+    parser.add_argument("--seed", type=int, default=101)
+    parser.add_argument("--start-index", type=int, default=100)
     parser.add_argument(
         "--avoid-cases",
         action="append",
         default=[
             "data/eval/memory_reasoning_probe.jsonl",
             "data/eval/memory_reasoning_heldout_probe.jsonl",
+            "data/filtered/memory_reasoning_synth_train_cases.jsonl",
         ],
     )
     args = parser.parse_args()

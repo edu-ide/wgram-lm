@@ -24,6 +24,7 @@ def build_synthetic_memory_reasoning_cases(
     num_sets: int = 6,
     seed: int = 13,
     avoid_ids: Iterable[str] = (),
+    start_index: int = 0,
 ) -> list[dict]:
     rng = random.Random(seed)
     blocked = set(avoid_ids)
@@ -39,7 +40,8 @@ def build_synthetic_memory_reasoning_cases(
     korean_facilities = ["격납고", "통신실", "관제실", "자료실", "보관실", "중계실"]
     bays = ["Neon", "Opal", "Cobalt", "Quartz", "Silver", "Amber", "Harbor", "Orchid"]
 
-    for i in range(num_sets):
+    for offset in range(num_sets):
+        i = start_index + offset
         color = _pick(colors, i)
         old_code = _pick(codes, i + 1)
         new_code = _pick(codes, i + 3)
@@ -591,8 +593,14 @@ def write_synthetic_memory_cases_jsonl(
     num_sets: int = 6,
     seed: int = 13,
     avoid_ids: Iterable[str] = (),
+    start_index: int = 0,
 ) -> int:
-    cases = build_synthetic_memory_reasoning_cases(num_sets=num_sets, seed=seed, avoid_ids=avoid_ids)
+    cases = build_synthetic_memory_reasoning_cases(
+        num_sets=num_sets,
+        seed=seed,
+        avoid_ids=avoid_ids,
+        start_index=start_index,
+    )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as f:

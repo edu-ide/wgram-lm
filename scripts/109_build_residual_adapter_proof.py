@@ -17,6 +17,10 @@ DEFAULT_EVALS = [
         "held-out memory probe",
         "runs/eval/memory_reasoning_heldout_qwen3_rerank_32tok_synth_generalization_s050.jsonl",
     ),
+    (
+        "expanded held-out memory probe",
+        "runs/eval/memory_reasoning_heldout_expanded_qwen3_rerank_32tok_synth_generalization_s050.jsonl",
+    ),
 ]
 
 
@@ -38,7 +42,7 @@ def main() -> None:
         action="append",
         type=parse_eval_spec,
         default=None,
-        help="Eval JSONL as NAME=PATH. Can be repeated. Defaults to hard and held-out MemoryOS probes.",
+        help="Eval JSONL as NAME=PATH. Can be repeated. Defaults to hard, held-out, and expanded MemoryOS probes.",
     )
     parser.add_argument(
         "--markdown-out",

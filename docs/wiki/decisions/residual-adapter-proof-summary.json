@@ -271,103 +271,373 @@
           }
         ]
       }
+    },
+    {
+      "donor": {
+        "count": 72,
+        "hits": 26,
+        "accuracy": 0.3611111111111111,
+        "retrieved_target_count": 72,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 58,
+        "all_targets_retrieved_rate": 0.8055555555555556,
+        "target_recall_mean": 0.9074074074074076
+      },
+      "residual": {
+        "count": 72,
+        "hits": 49,
+        "accuracy": 0.6805555555555556,
+        "retrieved_target_count": 72,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 58,
+        "all_targets_retrieved_rate": 0.8055555555555556,
+        "target_recall_mean": 0.9074074074074076
+      },
+      "delta_hits": 23,
+      "delta_accuracy": 0.3194444444444445,
+      "name": "expanded held-out memory probe",
+      "path": "runs/eval/memory_reasoning_heldout_expanded_qwen3_rerank_32tok_synth_generalization_s050.jsonl",
+      "donor_mode": "donor_only_with_evidence",
+      "residual_mode": "qtrm_residual_with_evidence",
+      "by_task_family": {
+        "abstention": {
+          "donor": {
+            "count": 24,
+            "hits": 1,
+            "accuracy": 0.041666666666666664,
+            "retrieved_target_count": 24,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 24,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "residual": {
+            "count": 24,
+            "hits": 18,
+            "accuracy": 0.75,
+            "retrieved_target_count": 24,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 24,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "delta_hits": 17,
+          "delta_accuracy": 0.7083333333333334
+        },
+        "conflict": {
+          "donor": {
+            "count": 24,
+            "hits": 19,
+            "accuracy": 0.7916666666666666,
+            "retrieved_target_count": 24,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 24,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "residual": {
+            "count": 24,
+            "hits": 20,
+            "accuracy": 0.8333333333333334,
+            "retrieved_target_count": 24,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 24,
+            "all_targets_retrieved_rate": 1.0,
+            "target_recall_mean": 1.0
+          },
+          "delta_hits": 1,
+          "delta_accuracy": 0.04166666666666674
+        },
+        "multi_hop": {
+          "donor": {
+            "count": 24,
+            "hits": 6,
+            "accuracy": 0.25,
+            "retrieved_target_count": 24,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 10,
+            "all_targets_retrieved_rate": 0.4166666666666667,
+            "target_recall_mean": 0.7222222222222222
+          },
+          "residual": {
+            "count": 24,
+            "hits": 11,
+            "accuracy": 0.4583333333333333,
+            "retrieved_target_count": 24,
+            "retrieved_target_rate": 1.0,
+            "all_targets_retrieved_count": 10,
+            "all_targets_retrieved_rate": 0.4166666666666667,
+            "target_recall_mean": 0.7222222222222222
+          },
+          "delta_hits": 5,
+          "delta_accuracy": 0.20833333333333331
+        }
+      },
+      "changed_cases": {
+        "improvements": [
+          {
+            "id": "synthetic-authority-vault-0102",
+            "task_family": "conflict",
+            "donor_completion": "Answer: cedar-gate",
+            "residual_completion": "What is the passphrase?Answer: cedar-gateAnswer: stone-archAnswer: cedar-gateAnswer: stone-archAnswer: cedar-gateAnswer:"
+          },
+          {
+            "id": "synthetic-multihop-badge-0100",
+            "task_family": "multi_hop",
+            "donor_completion": "Answer: Decoy-Badge-140",
+            "residual_completion": "Answer: Ember-Badge-110: UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN"
+          },
+          {
+            "id": "synthetic-multihop-ko-location-3hop-0102",
+            "task_family": "multi_hop",
+            "donor_completion": "Answer:\nGarnet 임무에는 상자 K-182이 배정되었다.\nSOURCE=garnet_격납고_owner_k",
+            "residual_completion": "Answer: 윤서아."
+          },
+          {
+            "id": "synthetic-multihop-ko-location-3hop-0103",
+            "task_family": "multi_hop",
+            "donor_completion": "Answer:\nSOURCE=iris_mission_box_ko.md CHUNK=0 SCORE=9.4375\nIris 임무에는 상자 K",
+            "residual_completion": "Answer: 민재원"
+          },
+          {
+            "id": "synthetic-multihop-ko-owner-0100",
+            "task_family": "multi_hop",
+            "donor_completion": "Answer:\nEmber-가짜-120 실험의 책임자는 민재원이다.\nEmber-실험-",
+            "residual_completion": "Answer: 최라온."
+          },
+          {
+            "id": "synthetic-multihop-maintainer-0103",
+            "task_family": "multi_hop",
+            "donor_completion": "Answer: Bay Iris.",
+            "residual_completion": "Answer: Ilya Moon"
+          },
+          {
+            "id": "synthetic-negative-authority-ko-location-0100",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n비공개",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-authority-ko-location-0101",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n비공개이며 이 기록에 없다.",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-authority-ko-location-0102",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n비공개",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-authority-ko-location-0103",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n비공개",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-authority-redacted-0100",
+            "task_family": "abstention",
+            "donor_completion": "Answer: opal-river",
+            "residual_completion": "Answer: UNKNOWN. UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN"
+          },
+          {
+            "id": "synthetic-negative-authority-redacted-0101",
+            "task_family": "abstention",
+            "donor_completion": "Answer: amber-field",
+            "residual_completion": "Answer: UNKNOWN\n\nAnswer: UNKNOWN"
+          },
+          {
+            "id": "synthetic-negative-authority-redacted-0102",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n\nredacted",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-authority-redacted-0103",
+            "task_family": "abstention",
+            "donor_completion": "Answer: violet-harbor",
+            "residual_completion": "Answer: UNKNOWN. UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN"
+          },
+          {
+            "id": "synthetic-negative-ko-vault-0100",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n 새벽-14\nSOURCE=ember_east_hangar_ko.md CHUNK=2 SCORE=4.8750",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-ko-vault-0101",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\nFrost 동쪽 금고의 암구호는 바다-26이다.\nSOURCE=frost_east_hangar_ko.md",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-ko-vault-0102",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE=garnet_east_hangar",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-ko-vault-0103",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\nIris 동쪽 금고의 암구호는 초원-52이다.",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-temporal-lead-0100",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n\n<think>\nHmm, the user is asking for the current lead of Team Ember. Let me look at the provided evidence. The first memo mentions",
+            "residual_completion": "Answer: UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-temporal-lead-0101",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\n\nSena Cho",
+            "residual_completion": "Answer: UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-vault-0101",
+            "task_family": "abstention",
+            "donor_completion": "Answer: LX-21\nQuestion: What is the passphrase for the south Frost vault?\nAnswer: LX-21\nQuestion: What is",
+            "residual_completion": "UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN UNKNOWN"
+          },
+          {
+            "id": "synthetic-negative-vault-0102",
+            "task_family": "abstention",
+            "donor_completion": "Answer: cedar-gate\nQuestion: What is the passphrase for the south Garnet vault?\nAnswer: cedar-gate\nQuestion: What is the",
+            "residual_completion": "Answer: UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN."
+          },
+          {
+            "id": "synthetic-negative-vault-0103",
+            "task_family": "abstention",
+            "donor_completion": "Answer:\nThe south Iris storage marker is RM-88.\nQuestion: What is the passphrase for the south Iris vault?\nAnswer:",
+            "residual_completion": "Answer: UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN. UNKNOWN."
+          },
+          {
+            "id": "synthetic-temporal-ko-code-0103",
+            "task_family": "conflict",
+            "donor_completion": "Answer:\n\n2026-04-29",
+            "residual_completion": "Answer: 바다-26이다. 이전 코드는 모두 폐기되었다."
+          },
+          {
+            "id": "synthetic-temporal-ko-location-0102",
+            "task_family": "conflict",
+            "donor_completion": "Answer:\n\n2026-04-29",
+            "residual_completion": "Answer: 새벽-14."
+          }
+        ],
+        "regressions": [
+          {
+            "id": "synthetic-authority-vault-0100",
+            "task_family": "conflict",
+            "donor_completion": "Answer: opal-river",
+            "residual_completion": "What is the passphrase?Answer: stone-arch."
+          },
+          {
+            "id": "synthetic-authority-vault-0101",
+            "task_family": "conflict",
+            "donor_completion": "Answer: amber-field",
+            "residual_completion": "What is the passphrase?Answer: UNKNOWN."
+          }
+        ]
+      }
     }
   ],
   "aggregate": {
     "donor": {
-      "count": 21,
-      "hits": 11,
-      "accuracy": 0.5238095238095238,
-      "retrieved_target_count": 21,
+      "count": 93,
+      "hits": 37,
+      "accuracy": 0.3978494623655914,
+      "retrieved_target_count": 93,
       "retrieved_target_rate": 1.0,
-      "all_targets_retrieved_count": 20,
-      "all_targets_retrieved_rate": 0.9523809523809523,
-      "target_recall_mean": 0.984126984126984
+      "all_targets_retrieved_count": 78,
+      "all_targets_retrieved_rate": 0.8387096774193549,
+      "target_recall_mean": 0.9247311827956988
     },
     "residual": {
-      "count": 21,
-      "hits": 18,
-      "accuracy": 0.8571428571428571,
-      "retrieved_target_count": 21,
+      "count": 93,
+      "hits": 67,
+      "accuracy": 0.7204301075268817,
+      "retrieved_target_count": 93,
       "retrieved_target_rate": 1.0,
-      "all_targets_retrieved_count": 20,
-      "all_targets_retrieved_rate": 0.9523809523809523,
-      "target_recall_mean": 0.984126984126984
+      "all_targets_retrieved_count": 78,
+      "all_targets_retrieved_rate": 0.8387096774193549,
+      "target_recall_mean": 0.9247311827956988
     },
-    "delta_hits": 7,
-    "delta_accuracy": 0.33333333333333326,
+    "delta_hits": 30,
+    "delta_accuracy": 0.32258064516129037,
     "by_task_family": {
       "abstention": {
         "donor": {
-          "count": 7,
-          "hits": 0,
-          "accuracy": 0.0,
-          "retrieved_target_count": 7,
+          "count": 31,
+          "hits": 1,
+          "accuracy": 0.03225806451612903,
+          "retrieved_target_count": 31,
           "retrieved_target_rate": 1.0,
-          "all_targets_retrieved_count": 7,
+          "all_targets_retrieved_count": 31,
           "all_targets_retrieved_rate": 1.0,
           "target_recall_mean": 1.0
         },
         "residual": {
-          "count": 7,
-          "hits": 7,
-          "accuracy": 1.0,
-          "retrieved_target_count": 7,
+          "count": 31,
+          "hits": 25,
+          "accuracy": 0.8064516129032258,
+          "retrieved_target_count": 31,
           "retrieved_target_rate": 1.0,
-          "all_targets_retrieved_count": 7,
+          "all_targets_retrieved_count": 31,
           "all_targets_retrieved_rate": 1.0,
           "target_recall_mean": 1.0
         },
-        "delta_hits": 7,
-        "delta_accuracy": 1.0
+        "delta_hits": 24,
+        "delta_accuracy": 0.7741935483870968
       },
       "conflict": {
         "donor": {
-          "count": 8,
-          "hits": 6,
-          "accuracy": 0.75,
-          "retrieved_target_count": 8,
+          "count": 32,
+          "hits": 25,
+          "accuracy": 0.78125,
+          "retrieved_target_count": 32,
           "retrieved_target_rate": 1.0,
-          "all_targets_retrieved_count": 8,
+          "all_targets_retrieved_count": 32,
           "all_targets_retrieved_rate": 1.0,
           "target_recall_mean": 1.0
         },
         "residual": {
-          "count": 8,
-          "hits": 6,
-          "accuracy": 0.75,
-          "retrieved_target_count": 8,
+          "count": 32,
+          "hits": 26,
+          "accuracy": 0.8125,
+          "retrieved_target_count": 32,
           "retrieved_target_rate": 1.0,
-          "all_targets_retrieved_count": 8,
+          "all_targets_retrieved_count": 32,
           "all_targets_retrieved_rate": 1.0,
           "target_recall_mean": 1.0
         },
-        "delta_hits": 0,
-        "delta_accuracy": 0.0
+        "delta_hits": 1,
+        "delta_accuracy": 0.03125
       },
       "multi_hop": {
         "donor": {
-          "count": 6,
-          "hits": 5,
-          "accuracy": 0.8333333333333334,
-          "retrieved_target_count": 6,
+          "count": 30,
+          "hits": 11,
+          "accuracy": 0.36666666666666664,
+          "retrieved_target_count": 30,
           "retrieved_target_rate": 1.0,
-          "all_targets_retrieved_count": 5,
-          "all_targets_retrieved_rate": 0.8333333333333334,
-          "target_recall_mean": 0.9444444444444443
+          "all_targets_retrieved_count": 15,
+          "all_targets_retrieved_rate": 0.5,
+          "target_recall_mean": 0.7666666666666665
         },
         "residual": {
-          "count": 6,
-          "hits": 5,
-          "accuracy": 0.8333333333333334,
-          "retrieved_target_count": 6,
+          "count": 30,
+          "hits": 16,
+          "accuracy": 0.5333333333333333,
+          "retrieved_target_count": 30,
           "retrieved_target_rate": 1.0,
-          "all_targets_retrieved_count": 5,
-          "all_targets_retrieved_rate": 0.8333333333333334,
-          "target_recall_mean": 0.9444444444444443
+          "all_targets_retrieved_count": 15,
+          "all_targets_retrieved_rate": 0.5,
+          "target_recall_mean": 0.7666666666666665
         },
-        "delta_hits": 0,
-        "delta_accuracy": 0.0
+        "delta_hits": 5,
+        "delta_accuracy": 0.16666666666666669
       }
     }
   }

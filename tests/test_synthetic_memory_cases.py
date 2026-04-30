@@ -40,6 +40,20 @@ class SyntheticMemoryCasesTests(unittest.TestCase):
 
         self.assertFalse(blocked & {case["id"] for case in cases})
 
+    def test_build_synthetic_memory_reasoning_cases_supports_start_index_for_expanded_heldout(self):
+        from qtrm_mm.training.synthetic_memory_cases import build_synthetic_memory_reasoning_cases
+
+        baseline = build_synthetic_memory_reasoning_cases(num_sets=1, seed=7)
+        expanded = build_synthetic_memory_reasoning_cases(num_sets=1, seed=7, start_index=100)
+
+        self.assertEqual(len(expanded), 18)
+        self.assertFalse({case["id"] for case in baseline} & {case["id"] for case in expanded})
+        self.assertTrue(any("-0100" in case["id"] for case in expanded))
+        self.assertNotEqual(
+            {case["question"] for case in baseline},
+            {case["question"] for case in expanded},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

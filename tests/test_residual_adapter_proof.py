@@ -128,6 +128,15 @@ class ResidualAdapterProofTests(unittest.TestCase):
         self.assertIn("| hard probe | runs/eval/hard.jsonl | 0/1 | 1/1 | +1 | +1.000 |", markdown)
         self.assertIn("This is not a donor-free standalone-LM claim.", markdown)
 
+    def test_proof_script_defaults_include_expanded_heldout_gate(self):
+        script = Path("scripts/109_build_residual_adapter_proof.py").read_text(encoding="utf-8")
+
+        self.assertIn("expanded held-out memory probe", script)
+        self.assertIn(
+            "memory_reasoning_heldout_expanded_qwen3_rerank_32tok_synth_generalization_s050.jsonl",
+            script,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

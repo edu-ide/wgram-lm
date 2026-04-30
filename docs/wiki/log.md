@@ -877,3 +877,31 @@ The aggregate task-family delta shows the current gain is concentrated in
 abstention: donor-only `0/7`, QTRM residual `7/7`. Conflict and multi-hop are
 currently tied. This supports the residual-adapter usefulness claim on current
 MemoryOS probes, not a donor-free standalone-LM claim.
+
+## [2026-04-30] eval | Expanded residual adapter gate
+
+Added and ran the 72-case expanded held-out MemoryOS gate:
+
+- Cases: `data/eval/memory_reasoning_heldout_expanded_72.jsonl`
+- Builder: `scripts/110_build_expanded_memory_reasoning_heldout.py`
+- Runner: `scripts/111_run_residual_adapter_expanded_gate.sh`
+- Eval output:
+  `runs/eval/memory_reasoning_heldout_expanded_qwen3_rerank_32tok_synth_generalization_s050.jsonl`
+
+The expanded gate is balanced: 24 conflict, 24 multi-hop, and 24 abstention
+cases. It is ID-disjoint from the hard probe, original held-out probe, and
+synthetic training cases. The actual MemoryOS retrieval/rerank path retrieved a
+target for every case, with all-target retrieval on 58/72 cases per mode.
+
+Result:
+
+| Eval | Donor-only | QTRM residual | Delta |
+| --- | ---: | ---: | ---: |
+| expanded held-out memory probe | 26/72 | 49/72 | +23 |
+
+Updated the residual-adapter proof package to include this gate. Aggregate proof
+is now donor-only `37/93`, QTRM residual `67/93`, delta `+30`. The gain is still
+largest on abstention (`1/31 -> 25/31`), but the expanded gate also shows
+nonzero multi-hop improvement (`11/30 -> 16/30`). The remaining weakness is
+multi-hop retrieval/answer composition, especially cases where not all linked
+targets were retrieved.
