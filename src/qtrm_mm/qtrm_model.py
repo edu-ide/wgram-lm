@@ -73,6 +73,10 @@ class QTRMMultimodalModel(nn.Module):
         donor_logits: Optional[torch.Tensor] = None,
         disable_workspace: bool = False,
         disable_core: bool = False,
+        disable_coda: bool = False,
+        disable_qtrm_residual: bool = False,
+        disable_donor_context: bool = False,
+        workspace_only_context: bool = False,
         enable_core_halt: Optional[bool] = None,
         return_core_depth_logits: bool = False,
     ) -> dict:
@@ -81,21 +85,31 @@ class QTRMMultimodalModel(nn.Module):
             attention_mask = torch.ones_like(input_ids)
 
         text_seq = self.text_embed(input_ids)
+        input_text_seq = text_seq
+        input_text_mask = attention_mask
         jepa_latents = self.jepa_encoder(text_seq, attention_mask=attention_mask)
         jepa_latents = self.jepa_encoder_norm(jepa_latents)
         jepa_outputs = self.jepa(jepa_latents, attention_mask=attention_mask)
 
         seq = text_seq
 
-        if text_states is not None:
+        if text_states is not None and not disable_donor_context:
             seq, attention_mask = self.projector(seq, text_states, text_mask=attention_mask)
 
-        if visual_features is not None:
+        if visual_features is not None and not disable_donor_context:
             seq, attention_mask = self.projector(seq, visual_features, text_mask=attention_mask)
 
-        seq = self.prelude(seq, attention_mask=attention_mask)
-        text_context_seq = seq
-        text_context_mask = attention_mask
+        if workspace_only_context and not disable_workspace:
+            workspace_seq = self.prelude(seq, attention_mask=attention_mask)
+            workspace_mask_input = attention_mask
+            text_context_seq = self.prelude(input_text_seq, attention_mask=input_text_mask)
+            text_context_mask = input_text_mask
+            seq = workspace_seq
+            attention_mask = workspace_mask_input
+        else:
+            seq = self.prelude(seq, attention_mask=attention_mask)
+            text_context_seq = seq
+            text_context_mask = attention_mask
         if disable_workspace:
             workspace = seq.new_zeros((b, self.cfg.workspace_tokens, self.cfg.d_model))
             workspace_mask = torch.ones(
@@ -139,9 +153,10 @@ class QTRMMultimodalModel(nn.Module):
                 else self._empty_core_depth_last_logits(workspace)
             )
 
-            seq = torch.cat([z_h, seq], dim=1)
-            attention_mask = torch.cat([workspace_mask, attention_mask], dim=1)
-        seq = self.coda(seq, attention_mask=attention_mask)
+            seq = torch.cat([z_h, text_context_seq], dim=1)
+            attention_mask = torch.cat([workspace_mask, text_context_mask], dim=1)
+        if not disable_coda:
+            seq = self.coda(seq, attention_mask=attention_mask)
         seq = self.norm(seq)
         qtrm_logits = self.lm_head(seq) * float(self.cfg.qtrm_logits_scale)
         qtrm_residual_logits = qtrm_logits
@@ -152,6 +167,8 @@ class QTRMMultimodalModel(nn.Module):
         if self.cfg.qtrm_residual_gate_enabled:
             residual_gate = self._compute_residual_gate(z_h)
             qtrm_residual_logits = qtrm_residual_logits * residual_gate[:, None, None]
+        if disable_qtrm_residual:
+            qtrm_residual_logits = torch.zeros_like(qtrm_residual_logits)
         logits = qtrm_logits
         if donor_logits is not None and self.cfg.donor_logits_scale != 0.0:
             if donor_logits.shape[:2] != (b, s):

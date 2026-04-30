@@ -12,6 +12,10 @@ DEFAULT_MODES = [
     "qtrm_residual_with_evidence",
     "qtrm_workspace_off_with_evidence",
     "qtrm_core_off_with_evidence",
+    "qtrm_coda_off_with_evidence",
+    "qtrm_residual_head_off_with_evidence",
+    "qtrm_donor_hidden_off_with_evidence",
+    "qtrm_workspace_only_with_evidence",
 ]
 
 
@@ -207,6 +211,30 @@ def render_markdown(proof: dict[str, Any]) -> str:
                     paired=int(drop["paired_completion_count"]),
                     rate=float(drop["same_completion_rate"]),
                 )
+            )
+
+    drops = proof.get("drop_from_residual", {})
+    if drops:
+        lines.extend(["", "## Current Interpretation", ""])
+        residual_head = drops.get("qtrm_residual_head_off_with_evidence")
+        if residual_head is not None and int(residual_head["hit_drop"]) > 0:
+            lines.append(
+                "- Turning off QTRM residual logits causes a large drop, so the measured gain is genuinely in the residual head rather than donor-only generation."
+            )
+        coda = drops.get("qtrm_coda_off_with_evidence")
+        if coda is not None and int(coda["hit_drop"]) > 0:
+            lines.append(
+                "- Turning off coda causes a smaller but real drop, so coda contributes to the residual behavior."
+            )
+        donor_hidden = drops.get("qtrm_donor_hidden_off_with_evidence")
+        if donor_hidden is not None and int(donor_hidden["hit_drop"]) == 0:
+            lines.append(
+                "- Removing projected donor hidden states does not change this gate, so the current gain is not caused by direct donor-hidden prefix tokens."
+            )
+        workspace_only = drops.get("qtrm_workspace_only_with_evidence")
+        if workspace_only is not None and int(workspace_only["hit_drop"]) == 0:
+            lines.append(
+                "- Workspace-only context matches full residual, but workspace-off also matches full residual; this gate still does not prove latent-workspace causality."
             )
 
     lines.extend(

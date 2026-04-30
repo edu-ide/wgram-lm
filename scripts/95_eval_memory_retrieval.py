@@ -31,6 +31,10 @@ DEFAULT_MODES = [
     "qtrm_residual_with_evidence",
     "qtrm_workspace_off_with_evidence",
     "qtrm_core_off_with_evidence",
+    "qtrm_coda_off_with_evidence",
+    "qtrm_residual_head_off_with_evidence",
+    "qtrm_donor_hidden_off_with_evidence",
+    "qtrm_workspace_only_with_evidence",
     "donor_only_no_evidence",
     "qtrm_residual_no_evidence",
 ]
@@ -173,6 +177,10 @@ def mode_settings(mode: str, *, qtrm_scale: float, donor_scale: float) -> tuple[
         mode.startswith("qtrm_residual_")
         or mode.startswith("qtrm_workspace_off_")
         or mode.startswith("qtrm_core_off_")
+        or mode.startswith("qtrm_coda_off_")
+        or mode.startswith("qtrm_residual_head_off_")
+        or mode.startswith("qtrm_donor_hidden_off_")
+        or mode.startswith("qtrm_workspace_only_")
     ):
         return include_evidence, qtrm_scale, donor_scale
     raise ValueError(f"unknown mode: {mode}")
@@ -183,6 +191,20 @@ def mode_forward_kwargs(mode: str, *, core_halt_mode: str = "config") -> dict[st
         "disable_workspace": mode.startswith("qtrm_workspace_off_"),
         "disable_core": mode.startswith("qtrm_core_off_"),
     }
+    if (
+        mode.startswith("qtrm_coda_off_")
+        or mode.startswith("qtrm_residual_head_off_")
+        or mode.startswith("qtrm_donor_hidden_off_")
+        or mode.startswith("qtrm_workspace_only_")
+    ):
+        kwargs.update(
+            {
+                "disable_coda": mode.startswith("qtrm_coda_off_"),
+                "disable_qtrm_residual": mode.startswith("qtrm_residual_head_off_"),
+                "disable_donor_context": mode.startswith("qtrm_donor_hidden_off_"),
+                "workspace_only_context": mode.startswith("qtrm_workspace_only_"),
+            }
+        )
     if core_halt_mode == "enabled":
         kwargs["enable_core_halt"] = True
     elif core_halt_mode == "disabled":

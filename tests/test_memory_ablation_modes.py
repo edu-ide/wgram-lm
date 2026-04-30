@@ -18,15 +18,22 @@ class MemoryAblationModeTests(unittest.TestCase):
         cls.module = load_memory_eval_module()
 
     def test_mode_settings_accept_workspace_and_core_ablations(self):
-        include_evidence, qtrm_scale, donor_scale = self.module.mode_settings(
+        for mode in (
             "qtrm_workspace_off_with_evidence",
-            qtrm_scale=0.1,
-            donor_scale=1.0,
-        )
+            "qtrm_coda_off_with_evidence",
+            "qtrm_residual_head_off_with_evidence",
+            "qtrm_donor_hidden_off_with_evidence",
+            "qtrm_workspace_only_with_evidence",
+        ):
+            include_evidence, qtrm_scale, donor_scale = self.module.mode_settings(
+                mode,
+                qtrm_scale=0.1,
+                donor_scale=1.0,
+            )
 
-        self.assertTrue(include_evidence)
-        self.assertEqual(qtrm_scale, 0.1)
-        self.assertEqual(donor_scale, 1.0)
+            self.assertTrue(include_evidence)
+            self.assertEqual(qtrm_scale, 0.1)
+            self.assertEqual(donor_scale, 1.0)
 
         include_evidence, qtrm_scale, donor_scale = self.module.mode_settings(
             "qtrm_core_off_no_evidence",
@@ -50,6 +57,50 @@ class MemoryAblationModeTests(unittest.TestCase):
         self.assertEqual(
             self.module.mode_forward_kwargs("qtrm_core_off_with_evidence"),
             {"disable_workspace": False, "disable_core": True},
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_coda_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": True,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_residual_head_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": True,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_donor_hidden_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": True,
+                "workspace_only_context": False,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_workspace_only_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": True,
+            },
         )
 
     def test_mode_forward_kwargs_can_force_core_halt_mode(self):
@@ -105,6 +156,10 @@ class MemoryAblationModeTests(unittest.TestCase):
     def test_default_modes_include_causal_component_ablations(self):
         self.assertIn("qtrm_workspace_off_with_evidence", self.module.DEFAULT_MODES)
         self.assertIn("qtrm_core_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_coda_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_residual_head_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_donor_hidden_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_workspace_only_with_evidence", self.module.DEFAULT_MODES)
 
 
 if __name__ == "__main__":

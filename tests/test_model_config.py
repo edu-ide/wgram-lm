@@ -432,6 +432,135 @@ class ModelConfigTests(unittest.TestCase):
         self.assertEqual(out["z_h"].shape, (2, cfg.workspace_tokens, cfg.d_model))
         self.assertEqual(int(out["trajectory_len"].item()), 0)
 
+    def test_residual_head_ablation_zeros_qtrm_contribution_before_donor_fusion(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=32,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            qtrm_logits_scale=1.0,
+            donor_logits_scale=1.0,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.tensor([[1, 2, 3, 4]])
+        donor_logits = torch.randn(1, 4, cfg.vocab_size)
+
+        out = model(input_ids, donor_logits=donor_logits, disable_qtrm_residual=True)
+        offset = out["logits"].shape[1] - input_ids.shape[1]
+
+        self.assertTrue(torch.allclose(out["qtrm_residual_logits"], torch.zeros_like(out["qtrm_residual_logits"])))
+        self.assertTrue(torch.allclose(out["logits"][:, offset:], donor_logits))
+
+    def test_coda_ablation_skips_coda_module(self):
+        import torch
+        from torch import nn
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        class FailingCoda(nn.Module):
+            def forward(self, *args, **kwargs):
+                raise AssertionError("coda should be skipped")
+
+        cfg = QTRMConfig(
+            vocab_size=32,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+        model.coda = FailingCoda()
+
+        out = model(torch.randint(0, cfg.vocab_size, (1, 4)), disable_coda=True)
+
+        self.assertEqual(out["logits"].shape[1], cfg.workspace_tokens + 4)
+
+    def test_donor_context_ablation_removes_projected_donor_prefix(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=32,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.tensor([[1, 2, 3, 4]])
+        text_states = torch.randn(1, 4, cfg.visual_dim)
+
+        with_context = model(input_ids, text_states=text_states, disable_workspace=True)
+        without_context = model(
+            input_ids,
+            text_states=text_states,
+            disable_workspace=True,
+            disable_donor_context=True,
+        )
+
+        self.assertEqual(with_context["logits"].shape[1], 8)
+        self.assertEqual(without_context["logits"].shape[1], 4)
+
+    def test_workspace_only_context_removes_direct_donor_prefix_from_coda(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=32,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.tensor([[1, 2, 3, 4]])
+        text_states = torch.randn(1, 4, cfg.visual_dim)
+
+        direct_context = model(input_ids, text_states=text_states)
+        workspace_only = model(input_ids, text_states=text_states, workspace_only_context=True)
+
+        self.assertEqual(direct_context["logits"].shape[1], cfg.workspace_tokens + 8)
+        self.assertEqual(workspace_only["logits"].shape[1], cfg.workspace_tokens + 4)
+
 
 if __name__ == "__main__":
     unittest.main()

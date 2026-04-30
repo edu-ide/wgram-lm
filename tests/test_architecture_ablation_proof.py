@@ -128,9 +128,15 @@ class ArchitectureAblationProofTests(unittest.TestCase):
 
     def test_render_markdown_includes_ablation_tables(self):
         from qtrm_mm.eval.architecture_ablation_proof import (
+            DEFAULT_MODES,
             build_ablation_summary,
             render_markdown,
         )
+
+        self.assertIn("qtrm_coda_off_with_evidence", DEFAULT_MODES)
+        self.assertIn("qtrm_residual_head_off_with_evidence", DEFAULT_MODES)
+        self.assertIn("qtrm_donor_hidden_off_with_evidence", DEFAULT_MODES)
+        self.assertIn("qtrm_workspace_only_with_evidence", DEFAULT_MODES)
 
         proof = build_ablation_summary(
             [
@@ -150,6 +156,12 @@ class ArchitectureAblationProofTests(unittest.TestCase):
                             "task_family": "abstention",
                             "hit": False,
                         },
+                        {
+                            "id": "case-a",
+                            "mode": "qtrm_coda_off_with_evidence",
+                            "task_family": "abstention",
+                            "hit": False,
+                        },
                     ],
                 }
             ]
@@ -166,6 +178,9 @@ class ArchitectureAblationProofTests(unittest.TestCase):
         runner = Path("scripts/112_run_expanded_workspace_core_ablation.sh").read_text(
             encoding="utf-8"
         )
+        strict_runner = Path("scripts/114_run_expanded_strict_causality_ablation.sh").read_text(
+            encoding="utf-8"
+        )
         builder = Path("scripts/113_build_expanded_ablation_proof.py").read_text(
             encoding="utf-8"
         )
@@ -173,8 +188,14 @@ class ArchitectureAblationProofTests(unittest.TestCase):
         self.assertIn("--mode qtrm_workspace_off_with_evidence", runner)
         self.assertIn("--mode qtrm_core_off_with_evidence", runner)
         self.assertIn("memory_reasoning_heldout_expanded_workspace_core_ablation", runner)
+        self.assertIn("--mode qtrm_coda_off_with_evidence", strict_runner)
+        self.assertIn("--mode qtrm_residual_head_off_with_evidence", strict_runner)
+        self.assertIn("--mode qtrm_donor_hidden_off_with_evidence", strict_runner)
+        self.assertIn("--mode qtrm_workspace_only_with_evidence", strict_runner)
+        self.assertIn("memory_reasoning_heldout_expanded_strict_causality_ablation", strict_runner)
         self.assertIn("expanded-workspace-core-ablation.md", builder)
         self.assertIn("memory_reasoning_heldout_expanded_qwen3_rerank_32tok", builder)
+        self.assertIn("memory_reasoning_heldout_expanded_strict_causality_ablation", builder)
 
 
 if __name__ == "__main__":

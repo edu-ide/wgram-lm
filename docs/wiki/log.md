@@ -939,3 +939,35 @@ next architecture task is to add a stricter causality gate: workspace-only
 memory injection, coda-off/residual-head ablations, and training losses that
 force evidence into workspace/core states before claiming latent workspace or
 recursive-core reasoning.
+
+## [2026-04-30] eval | Strict causality ablation
+
+Added strict causality ablation modes and ran them on the same expanded 72-case
+MemoryOS gate:
+
+- `qtrm_coda_off_with_evidence`
+- `qtrm_residual_head_off_with_evidence`
+- `qtrm_donor_hidden_off_with_evidence`
+- `qtrm_workspace_only_with_evidence`
+- Runner: `scripts/114_run_expanded_strict_causality_ablation.sh`
+- Eval output:
+  `runs/eval/memory_reasoning_heldout_expanded_strict_causality_ablation_32tok_synth_generalization_s050.jsonl`
+
+Result:
+
+| Mode | Hits | Drop vs full residual |
+| --- | ---: | ---: |
+| `qtrm_residual_with_evidence` | 49/72 | 0 |
+| `qtrm_coda_off_with_evidence` | 39/72 | +10 |
+| `qtrm_residual_head_off_with_evidence` | 26/72 | +23 |
+| `qtrm_donor_hidden_off_with_evidence` | 49/72 | 0 |
+| `qtrm_workspace_only_with_evidence` | 49/72 | 0 |
+
+Interpretation: the residual head is the main measured source of the current
+gain over donor-only, and coda contributes. Direct projected donor hidden states
+are not the cause on this gate: removing them keeps `49/72` and identical
+completions. `workspace_only` also keeps `49/72`, but because `workspace_off`
+also keeps `49/72`, this still does not prove latent-workspace causality. The
+next proof must make the task impossible without workspace state, for example
+by putting evidence only into workspace-side memory tokens while hiding it from
+the normal prompt/donor path.

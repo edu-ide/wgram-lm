@@ -18,6 +18,10 @@ DEFAULT_EVALS = [
         "name": "expanded workspace/core ablation gate",
         "path": "runs/eval/memory_reasoning_heldout_expanded_workspace_core_ablation_32tok_synth_generalization_s050.jsonl",
     },
+    {
+        "name": "expanded strict causality ablation gate",
+        "path": "runs/eval/memory_reasoning_heldout_expanded_strict_causality_ablation_32tok_synth_generalization_s050.jsonl",
+    },
 ]
 
 
