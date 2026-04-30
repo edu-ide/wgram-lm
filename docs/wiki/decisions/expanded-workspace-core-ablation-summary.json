@@ -1,0 +1,178 @@
+{
+  "claim": "Expanded MemoryOS ablation separates full QTRM residual behavior from workspace-off and core-off paths.",
+  "baseline_mode": "qtrm_residual_with_evidence",
+  "modes": {
+    "qtrm_residual_with_evidence": {
+      "count": 72,
+      "hits": 49,
+      "accuracy": 0.6805555555555556,
+      "retrieved_target_count": 72,
+      "retrieved_target_rate": 1.0,
+      "all_targets_retrieved_count": 58,
+      "all_targets_retrieved_rate": 0.8055555555555556,
+      "target_recall_mean": 0.9074074074074076
+    },
+    "qtrm_workspace_off_with_evidence": {
+      "count": 72,
+      "hits": 49,
+      "accuracy": 0.6805555555555556,
+      "retrieved_target_count": 72,
+      "retrieved_target_rate": 1.0,
+      "all_targets_retrieved_count": 58,
+      "all_targets_retrieved_rate": 0.8055555555555556,
+      "target_recall_mean": 0.9074074074074076
+    },
+    "qtrm_core_off_with_evidence": {
+      "count": 72,
+      "hits": 49,
+      "accuracy": 0.6805555555555556,
+      "retrieved_target_count": 72,
+      "retrieved_target_rate": 1.0,
+      "all_targets_retrieved_count": 58,
+      "all_targets_retrieved_rate": 0.8055555555555556,
+      "target_recall_mean": 0.9074074074074076
+    }
+  },
+  "drop_from_residual": {
+    "qtrm_workspace_off_with_evidence": {
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 72,
+      "same_completion_count": 72,
+      "same_completion_rate": 1.0
+    },
+    "qtrm_core_off_with_evidence": {
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 72,
+      "same_completion_count": 72,
+      "same_completion_rate": 1.0
+    }
+  },
+  "by_task_family": {
+    "abstention": {
+      "qtrm_residual_with_evidence": {
+        "count": 24,
+        "hits": 18,
+        "accuracy": 0.75,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 24,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      },
+      "qtrm_workspace_off_with_evidence": {
+        "count": 24,
+        "hits": 18,
+        "accuracy": 0.75,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 24,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      },
+      "qtrm_core_off_with_evidence": {
+        "count": 24,
+        "hits": 18,
+        "accuracy": 0.75,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 24,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      }
+    },
+    "conflict": {
+      "qtrm_residual_with_evidence": {
+        "count": 24,
+        "hits": 20,
+        "accuracy": 0.8333333333333334,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 24,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      },
+      "qtrm_workspace_off_with_evidence": {
+        "count": 24,
+        "hits": 20,
+        "accuracy": 0.8333333333333334,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 24,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      },
+      "qtrm_core_off_with_evidence": {
+        "count": 24,
+        "hits": 20,
+        "accuracy": 0.8333333333333334,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 24,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      }
+    },
+    "multi_hop": {
+      "qtrm_residual_with_evidence": {
+        "count": 24,
+        "hits": 11,
+        "accuracy": 0.4583333333333333,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 10,
+        "all_targets_retrieved_rate": 0.4166666666666667,
+        "target_recall_mean": 0.7222222222222222,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      },
+      "qtrm_workspace_off_with_evidence": {
+        "count": 24,
+        "hits": 11,
+        "accuracy": 0.4583333333333333,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 10,
+        "all_targets_retrieved_rate": 0.4166666666666667,
+        "target_recall_mean": 0.7222222222222222,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      },
+      "qtrm_core_off_with_evidence": {
+        "count": 24,
+        "hits": 11,
+        "accuracy": 0.4583333333333333,
+        "retrieved_target_count": 24,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 10,
+        "all_targets_retrieved_rate": 0.4166666666666667,
+        "target_recall_mean": 0.7222222222222222,
+        "hit_drop": 0,
+        "accuracy_drop": 0.0
+      }
+    }
+  },
+  "sources": [
+    {
+      "name": "expanded donor/residual gate",
+      "path": "runs/eval/memory_reasoning_heldout_expanded_qwen3_rerank_32tok_synth_generalization_s050.jsonl"
+    },
+    {
+      "name": "expanded workspace/core ablation gate",
+      "path": "runs/eval/memory_reasoning_heldout_expanded_workspace_core_ablation_32tok_synth_generalization_s050.jsonl"
+    }
+  ]
+}

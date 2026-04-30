@@ -905,3 +905,37 @@ largest on abstention (`1/31 -> 25/31`), but the expanded gate also shows
 nonzero multi-hop improvement (`11/30 -> 16/30`). The remaining weakness is
 multi-hop retrieval/answer composition, especially cases where not all linked
 targets were retrieved.
+
+## [2026-04-30] eval | Expanded workspace/core ablation
+
+Added and ran the expanded workspace/core ablation gate:
+
+- Runner: `scripts/112_run_expanded_workspace_core_ablation.sh`
+- Proof builder: `scripts/113_build_expanded_ablation_proof.py`
+- Module: `src/qtrm_mm/eval/architecture_ablation_proof.py`
+- Markdown: `docs/wiki/decisions/expanded-workspace-core-ablation.md`
+- JSON: `docs/wiki/decisions/expanded-workspace-core-ablation-summary.json`
+- Eval output:
+  `runs/eval/memory_reasoning_heldout_expanded_workspace_core_ablation_32tok_synth_generalization_s050.jsonl`
+
+Result on the same 72-case expanded MemoryOS gate:
+
+| Mode | Hits | Drop vs full residual |
+| --- | ---: | ---: |
+| `qtrm_residual_with_evidence` | 49/72 | 0 |
+| `qtrm_workspace_off_with_evidence` | 49/72 | 0 |
+| `qtrm_core_off_with_evidence` | 49/72 | 0 |
+
+Task-family drops are also zero: abstention `18/24`, conflict `20/24`, and
+multi-hop `11/24` for all three modes.
+
+The generated completions are also identical across full residual,
+workspace-off, and core-off for all 72 cases. Interpretation: the current
+expanded-gate gain is real versus donor-only, but this ablation does not
+localize the gain to the latent workspace or recursive core. The measured
+behavior is currently consistent with a donor-hidden residual side path that can
+solve the synthetic MemoryOS prompts even when workspace/core are disabled. The
+next architecture task is to add a stricter causality gate: workspace-only
+memory injection, coda-off/residual-head ablations, and training losses that
+force evidence into workspace/core states before claiming latent workspace or
+recursive-core reasoning.

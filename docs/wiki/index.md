@@ -72,4 +72,5 @@
 - [QTRM Limitations And Mitigation Roadmap](decisions/limitations-mitigation-roadmap.md): maps current architecture limits to prior research, telemetry, ablations, and gated residual next steps.
 - [Residual Ablation Plan](decisions/residual-ablation-plan.md): current donor-logit residual experiment matrix and go/no-go criteria.
 - [Residual Adapter Proof](decisions/residual-adapter-proof.md): fixed proof package showing donor-only versus QTRM residual gains on current MemoryOS probes.
+- [Expanded Workspace/Core Ablation](decisions/expanded-workspace-core-ablation.md): expanded 72-case ablation showing workspace/core-disabled paths currently match full residual.
 - [MemoryOS 100M Scale Plan](decisions/memoryos-100m-scale-plan.md): treats 100M+ tokens as external memory, not direct prompt context.
