@@ -513,6 +513,30 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
 
         self.assertTrue(torch.equal(targets, torch.tensor([[11, 22, -100, 44, -100]])))
 
+    def test_staged_internal_first_token_targets_can_use_content_token(self):
+        import torch
+
+        module = _load_module()
+
+        class FakeTokenizer:
+            def encode(self, text, add_special_tokens=False):
+                return {
+                    " 123": [220, 1001],
+                    "123": [1001],
+                }[text]
+
+        row = {"depth_targets": {"1": "123"}}
+
+        targets = module.staged_internal_first_token_targets(
+            FakeTokenizer(),
+            row,
+            num_depths=1,
+            device="cpu",
+            content_token=True,
+        )
+
+        self.assertTrue(torch.equal(targets, torch.tensor([[1001]])))
+
     def test_staged_internal_first_token_ce_loss_masks_unlabelled_depths(self):
         import torch
 

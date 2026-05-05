@@ -33,6 +33,16 @@ def answer_first_token_id(tokenizer: Any, answer: str) -> int:
     return int(token_ids[0])
 
 
+def answer_content_first_token_id(tokenizer: Any, answer: str) -> int:
+    stripped = str(answer).strip()
+    token_ids = tokenizer.encode(stripped, add_special_tokens=False)
+    if not token_ids:
+        token_ids = answer_token_ids(tokenizer, answer)
+    if not token_ids:
+        raise ValueError(f"answer produced no content tokens: {answer!r}")
+    return int(token_ids[0])
+
+
 def answer_token_ids(tokenizer: Any, answer: str) -> list[int]:
     token_ids = tokenizer.encode(f" {answer}", add_special_tokens=False)
     if not token_ids:
@@ -704,6 +714,7 @@ def staged_internal_first_token_targets(
     num_depths: int,
     device: str,
     target_mode: str = "staged",
+    content_token: bool = False,
 ):
     import torch
 
@@ -722,7 +733,10 @@ def staged_internal_first_token_targets(
         if target_text is None:
             target_ids.append(-100)
             continue
-        target_ids.append(answer_first_token_id(tokenizer, target_text))
+        if bool(content_token):
+            target_ids.append(answer_content_first_token_id(tokenizer, target_text))
+        else:
+            target_ids.append(answer_first_token_id(tokenizer, target_text))
     return torch.tensor([target_ids], dtype=torch.long, device=device)
 
 
@@ -1799,6 +1813,7 @@ def main() -> None:
                         num_depths=int(outputs["transition_state_text_logits"].shape[1]),
                         device=device,
                         target_mode=args.target_mode,
+                        content_token=True,
                     )
                     transition_ce, transition_metrics = transition_state_first_token_ce_loss(
                         outputs["transition_state_text_logits"],
