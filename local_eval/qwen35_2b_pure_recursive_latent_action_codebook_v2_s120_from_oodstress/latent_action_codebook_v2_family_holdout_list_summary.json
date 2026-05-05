@@ -1,0 +1,87 @@
+{
+  "architecture_note": "This Stage 1 diagnostic replaces operation-string targets with family-agnostic latent action roles. It makes list-family holdout structurally feasible for the transition-state code path, but it does not yet prove neural execution or open-ended reasoning.",
+  "cases_per_family": 8,
+  "codebook_version": "terminal_v2",
+  "drop_solver_operation_names": true,
+  "eval_count": 64,
+  "eval_families": [
+    "list_transform"
+  ],
+  "eval_latent_action_codes": [
+    0,
+    1,
+    4
+  ],
+  "eval_latent_action_names": [
+    "compose_from_previous_terminal",
+    "extract_or_unary_nonterminal",
+    "hold_final"
+  ],
+  "eval_operations": [
+    "double_filtered",
+    "filter_even",
+    "hold_final"
+  ],
+  "holdout_family": "list_transform",
+  "interpretation": "latent_action_transfer_feasible",
+  "latent_action_codebook": {
+    "compose_from_previous_nonterminal": 2,
+    "compose_from_previous_terminal": 1,
+    "extract_or_unary_nonterminal": 0,
+    "final_compose_from_previous_terminal": 3,
+    "hold_final": 4
+  },
+  "latent_action_codebook_size": 5,
+  "operation_to_latent_action": {
+    "add_operands": "extract_or_unary_nonterminal",
+    "and_with_p": "compose_from_previous_nonterminal",
+    "double_filtered": "compose_from_previous_terminal",
+    "filter_even": "extract_or_unary_nonterminal",
+    "first_mapping": "extract_or_unary_nonterminal",
+    "hold_final": "hold_final",
+    "multiply_sum": "compose_from_previous_nonterminal",
+    "not_q": "extract_or_unary_nonterminal",
+    "or_with_r": "final_compose_from_previous_terminal",
+    "second_mapping": "compose_from_previous_terminal",
+    "subtract_offset": "final_compose_from_previous_terminal"
+  },
+  "start_index": 14000,
+  "stress_variants_per_case": 8,
+  "train_count": 192,
+  "train_families": [
+    "arithmetic_chain",
+    "boolean_logic",
+    "symbolic_binding"
+  ],
+  "train_latent_action_codes": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "train_latent_action_names": [
+    "compose_from_previous_nonterminal",
+    "compose_from_previous_terminal",
+    "extract_or_unary_nonterminal",
+    "final_compose_from_previous_terminal",
+    "hold_final"
+  ],
+  "train_operations": [
+    "add_operands",
+    "and_with_p",
+    "first_mapping",
+    "hold_final",
+    "multiply_sum",
+    "not_q",
+    "or_with_r",
+    "second_mapping",
+    "subtract_offset"
+  ],
+  "unseen_eval_latent_action_codes": [],
+  "unseen_eval_latent_action_names": [],
+  "unseen_eval_operations": [
+    "double_filtered",
+    "filter_even"
+  ]
+}

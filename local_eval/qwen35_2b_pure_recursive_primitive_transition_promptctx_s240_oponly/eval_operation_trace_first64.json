@@ -1,0 +1,299 @@
+{
+  "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptctx_s240_oponly/last.pt",
+  "train_first64": {
+    "path": "data/filtered/pure_recursive_primitive_transition_preferences.jsonl",
+    "rows": 64,
+    "hits": 209,
+    "total": 256,
+    "accuracy": 0.81640625,
+    "mean_ce": 0.44504411169327796,
+    "by_family": {
+      "arithmetic_chain": [
+        32,
+        64
+      ],
+      "symbolic_binding": [
+        64,
+        64
+      ],
+      "boolean_logic": [
+        64,
+        64
+      ],
+      "list_transform": [
+        49,
+        64
+      ]
+    },
+    "examples": [
+      {
+        "family": "arithmetic_chain",
+        "target": [
+          "add_operands",
+          "multiply_sum",
+          "subtract_offset",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "subtract_offset",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "symbolic_binding",
+        "target": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "boolean_logic",
+        "target": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "arithmetic_chain",
+        "target": [
+          "add_operands",
+          "multiply_sum",
+          "subtract_offset",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "subtract_offset",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "symbolic_binding",
+        "target": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "boolean_logic",
+        "target": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      }
+    ]
+  },
+  "heldout_first64": {
+    "path": "data/eval/pure_recursive_primitive_transition_heldout_preferences.jsonl",
+    "rows": 64,
+    "hits": 210,
+    "total": 256,
+    "accuracy": 0.8203125,
+    "mean_ce": 0.4406746730674058,
+    "by_family": {
+      "arithmetic_chain": [
+        32,
+        64
+      ],
+      "symbolic_binding": [
+        64,
+        64
+      ],
+      "boolean_logic": [
+        64,
+        64
+      ],
+      "list_transform": [
+        50,
+        64
+      ]
+    },
+    "examples": [
+      {
+        "family": "arithmetic_chain",
+        "target": [
+          "add_operands",
+          "multiply_sum",
+          "subtract_offset",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "subtract_offset",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "symbolic_binding",
+        "target": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "boolean_logic",
+        "target": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "arithmetic_chain",
+        "target": [
+          "add_operands",
+          "multiply_sum",
+          "subtract_offset",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "subtract_offset",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "symbolic_binding",
+        "target": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "first_mapping",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "boolean_logic",
+        "target": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ],
+        "pred": [
+          "not_q",
+          "and_with_p",
+          "or_with_r",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      }
+    ]
+  }
+}

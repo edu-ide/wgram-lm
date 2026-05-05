@@ -1,0 +1,19 @@
+{
+  "status": "complete",
+  "last_loss": 0.024972867220640182,
+  "train_metrics": {
+    "rows": 128,
+    "cases": 32,
+    "teacher_forced_state_exact": 0.9453125,
+    "rollout_state_exact": 0.890625,
+    "rollout_final_exact": 0.90625
+  },
+  "eval_metrics": {
+    "rows": 32,
+    "cases": 8,
+    "teacher_forced_state_exact": 0.0,
+    "rollout_state_exact": 0.0,
+    "rollout_final_exact": 0.0
+  },
+  "checkpoint": "local_eval/pure_recursive_solver_state_machine_s240_compact_input/last.pt"
+}

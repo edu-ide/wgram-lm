@@ -1,0 +1,118 @@
+{
+  "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptctx_s720_oponly/last.pt",
+  "path": "data/eval/pure_recursive_primitive_transition_heldout7000_preferences.jsonl",
+  "rows": 128,
+  "hits": 507,
+  "total": 512,
+  "accuracy": 0.990234375,
+  "mean_ce": 0.07199040359046194,
+  "by_family": {
+    "arithmetic_chain": [
+      128,
+      128
+    ],
+    "symbolic_binding": [
+      128,
+      128
+    ],
+    "boolean_logic": [
+      128,
+      128
+    ],
+    "list_transform": [
+      123,
+      128
+    ]
+  },
+  "top_confusion": {
+    "hold_final->hold_final": 192,
+    "add_operands->add_operands": 32,
+    "multiply_sum->multiply_sum": 32,
+    "subtract_offset->subtract_offset": 32,
+    "first_mapping->first_mapping": 32,
+    "second_mapping->second_mapping": 32,
+    "not_q->not_q": 32,
+    "and_with_p->and_with_p": 32,
+    "or_with_r->or_with_r": 32,
+    "filter_even->filter_even": 32,
+    "double_filtered->double_filtered": 27,
+    "double_filtered->second_mapping": 5
+  },
+  "mismatch_examples": [
+    {
+      "family": "list_transform",
+      "target": [
+        "filter_even",
+        "double_filtered",
+        "hold_final",
+        "hold_final"
+      ],
+      "pred": [
+        "filter_even",
+        "second_mapping",
+        "hold_final",
+        "hold_final"
+      ]
+    },
+    {
+      "family": "list_transform",
+      "target": [
+        "filter_even",
+        "double_filtered",
+        "hold_final",
+        "hold_final"
+      ],
+      "pred": [
+        "filter_even",
+        "second_mapping",
+        "hold_final",
+        "hold_final"
+      ]
+    },
+    {
+      "family": "list_transform",
+      "target": [
+        "filter_even",
+        "double_filtered",
+        "hold_final",
+        "hold_final"
+      ],
+      "pred": [
+        "filter_even",
+        "second_mapping",
+        "hold_final",
+        "hold_final"
+      ]
+    },
+    {
+      "family": "list_transform",
+      "target": [
+        "filter_even",
+        "double_filtered",
+        "hold_final",
+        "hold_final"
+      ],
+      "pred": [
+        "filter_even",
+        "second_mapping",
+        "hold_final",
+        "hold_final"
+      ]
+    },
+    {
+      "family": "list_transform",
+      "target": [
+        "filter_even",
+        "double_filtered",
+        "hold_final",
+        "hold_final"
+      ],
+      "pred": [
+        "filter_even",
+        "second_mapping",
+        "hold_final",
+        "hold_final"
+      ]
+    }
+  ]
+}

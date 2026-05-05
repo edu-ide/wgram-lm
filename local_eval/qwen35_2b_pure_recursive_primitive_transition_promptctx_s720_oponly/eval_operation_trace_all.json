@@ -1,0 +1,175 @@
+{
+  "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptctx_s720_oponly/last.pt",
+  "train_all": {
+    "path": "data/filtered/pure_recursive_primitive_transition_preferences.jsonl",
+    "rows": 128,
+    "hits": 512,
+    "total": 512,
+    "accuracy": 1.0,
+    "mean_ce": 0.05006674957257928,
+    "by_family": {
+      "arithmetic_chain": [
+        128,
+        128
+      ],
+      "symbolic_binding": [
+        128,
+        128
+      ],
+      "boolean_logic": [
+        128,
+        128
+      ],
+      "list_transform": [
+        128,
+        128
+      ]
+    },
+    "top_confusion": {
+      "hold_final->hold_final": 192,
+      "add_operands->add_operands": 32,
+      "multiply_sum->multiply_sum": 32,
+      "subtract_offset->subtract_offset": 32,
+      "first_mapping->first_mapping": 32,
+      "second_mapping->second_mapping": 32,
+      "not_q->not_q": 32,
+      "and_with_p->and_with_p": 32,
+      "or_with_r->or_with_r": 32,
+      "filter_even->filter_even": 32,
+      "double_filtered->double_filtered": 32
+    },
+    "mismatch_examples": []
+  },
+  "heldout_all": {
+    "path": "data/eval/pure_recursive_primitive_transition_heldout_preferences.jsonl",
+    "rows": 64,
+    "hits": 250,
+    "total": 256,
+    "accuracy": 0.9765625,
+    "mean_ce": 0.09452926179073984,
+    "by_family": {
+      "arithmetic_chain": [
+        64,
+        64
+      ],
+      "symbolic_binding": [
+        64,
+        64
+      ],
+      "boolean_logic": [
+        64,
+        64
+      ],
+      "list_transform": [
+        58,
+        64
+      ]
+    },
+    "top_confusion": {
+      "hold_final->hold_final": 96,
+      "add_operands->add_operands": 16,
+      "multiply_sum->multiply_sum": 16,
+      "subtract_offset->subtract_offset": 16,
+      "first_mapping->first_mapping": 16,
+      "second_mapping->second_mapping": 16,
+      "not_q->not_q": 16,
+      "and_with_p->and_with_p": 16,
+      "or_with_r->or_with_r": 16,
+      "filter_even->filter_even": 16,
+      "double_filtered->double_filtered": 10,
+      "double_filtered->second_mapping": 6
+    },
+    "mismatch_examples": [
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      },
+      {
+        "family": "list_transform",
+        "target": [
+          "filter_even",
+          "double_filtered",
+          "hold_final",
+          "hold_final"
+        ],
+        "pred": [
+          "filter_even",
+          "second_mapping",
+          "hold_final",
+          "hold_final"
+        ]
+      }
+    ]
+  }
+}

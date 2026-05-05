@@ -1,0 +1,41 @@
+{
+  "architecture_note": "Full operation-family holdout is not a fair acceptance gate for the current fixed-label primitive scaffold when eval requires operation ids absent from train. Use it as a reject/diagnostic gate and move the accepted path to a learned latent operation codebook or neural transition model.",
+  "cases_per_family": 8,
+  "eval_count": 64,
+  "eval_families": [
+    "list_transform"
+  ],
+  "eval_operations": [
+    "double_filtered",
+    "filter_even",
+    "hold_final"
+  ],
+  "holdout_family": "list_transform",
+  "interpretation": "reject_fixed_label_transfer",
+  "shared_operations": [
+    "hold_final"
+  ],
+  "start_index": 12000,
+  "stress_variants_per_case": 8,
+  "train_count": 192,
+  "train_families": [
+    "arithmetic_chain",
+    "boolean_logic",
+    "symbolic_binding"
+  ],
+  "train_operations": [
+    "add_operands",
+    "and_with_p",
+    "first_mapping",
+    "hold_final",
+    "multiply_sum",
+    "not_q",
+    "or_with_r",
+    "second_mapping",
+    "subtract_offset"
+  ],
+  "unseen_eval_operations": [
+    "double_filtered",
+    "filter_even"
+  ]
+}

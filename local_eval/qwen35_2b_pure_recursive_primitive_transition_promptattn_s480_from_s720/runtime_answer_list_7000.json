@@ -1,0 +1,36 @@
+{
+  "prompt": "Answer with only the final answer. Do not write reasoning.\nQuestion: From the list [7001, 7004, 7002, 7007, 7003], keep only even numbers, double each kept number, and return comma-separated values with no spaces. If none, return EMPTY.\nAnswer:",
+  "predicted_operations": [
+    "filter_even",
+    "double_filtered",
+    "hold_final",
+    "hold_final"
+  ],
+  "executed_operations": [
+    "filter_even",
+    "double_filtered"
+  ],
+  "states": [
+    "7004,7002",
+    "14008,14004"
+  ],
+  "answer": "14008,14004",
+  "records": [
+    {
+      "trace_index": 0,
+      "operation": "filter_even",
+      "previous_state_text": "",
+      "predicted_state_text": "7004,7002"
+    },
+    {
+      "trace_index": 1,
+      "operation": "double_filtered",
+      "previous_state_text": "7004,7002",
+      "predicted_state_text": "14008,14004"
+    }
+  ],
+  "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/last.pt",
+  "config": "configs/qwen35_2b_4090_pure_recursive_primitive_transition_s060.yaml",
+  "core_steps": 4,
+  "disable_core": false
+}

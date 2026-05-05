@@ -1,0 +1,19 @@
+{
+  "status": "complete",
+  "last_loss": 0.9318516850471497,
+  "train_metrics": {
+    "rows": 2048,
+    "cases": 512,
+    "operation_exact": 0.5,
+    "rollout_state_exact": 0.125,
+    "rollout_final_exact": 0.0
+  },
+  "eval_metrics": {
+    "rows": 256,
+    "cases": 64,
+    "operation_exact": 0.5,
+    "rollout_state_exact": 0.125,
+    "rollout_final_exact": 0.0
+  },
+  "checkpoint": "local_eval/pure_recursive_operation_policy_large_s240_metadata/last.pt"
+}
