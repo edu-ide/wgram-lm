@@ -22,7 +22,7 @@ class QTRMTransitionStateTextEvalTests(unittest.TestCase):
 
         class FakeTokenizer:
             def encode(self, text, add_special_tokens=False):
-                return {" alpha": [11], " beta": [22]}[text]
+                return {"alpha": [11], "beta": [22]}[text]
 
         row = {"depth_targets": {"1": "alpha", "4": "beta"}}
 

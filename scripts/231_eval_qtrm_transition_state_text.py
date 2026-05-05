@@ -26,7 +26,7 @@ def load_rows(path: str | Path) -> list[dict[str, Any]]:
 
 
 def answer_token_ids(tokenizer: Any, text: str) -> list[int]:
-    ids = tokenizer.encode(" " + str(text).strip(), add_special_tokens=False)
+    ids = tokenizer.encode(str(text).strip(), add_special_tokens=False)
     return [int(token_id) for token_id in ids]
 
 
