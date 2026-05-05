@@ -50,6 +50,13 @@ Recommended layers:
    - Receives a compact prompt plus selected evidence and donor states.
    - Generates through donor logits plus bounded QTRM residual logits.
 
+5. `AgentPlanner`
+   - Owns the closed-loop action policy once it exists.
+   - Starts as a scripted baseline and trace logger.
+   - Later trains controller heads over actions such as `RETRIEVE_MEMORY`,
+     `VERIFY_EVIDENCE`, `SEARCH_WEB`, `WRITE_MEMORY`, `WRITE_SKILL`,
+     `SIMULATE`, `ANSWER`, and `STOP`.
+
 ## Inference Modes
 
 Use explicit modes rather than one universal agent path:
@@ -96,6 +103,29 @@ plausible answer. Use gates:
   persisted.
 - Budget safety: max steps, max subcalls, timeout, and tool allowlist are
   enforced.
+- Agent collapse: repeated action templates, low tool/evidence interaction
+  density, and low input-dependence are treated as training failures even if
+  entropy or final reward looks acceptable.
+
+## Closed-Loop Planner Path
+
+Detailed concept:
+[Agentic Closed-Loop Planner](agentic-closed-loop-planner.md).
+
+The staged path is:
+
+1. scripted baseline: `RETRIEVE -> VERIFY -> ANSWER`;
+2. trace store: record states, actions, observations, verifier outcomes, and
+   memory/skill writes;
+3. supervised controller: train `ControllerHeads` on successful traces;
+4. preference/RL controller: prefer lower-cost supported traces over failed
+   traces using turn-level credit assignment;
+5. latent model-based planner: use the LeWM-style core-world-model head to
+   predict candidate action consequences before real execution.
+
+This makes QTRM agentic without pretending that external tools are inside the
+neural network. The trainable policy can become end-to-end over traces, while
+MemoryOS and tools remain explicit environments.
 
 ## RLM Design Decision
 
@@ -126,3 +156,5 @@ Later:
 - Add a skill library for reusable MemoryOS workflows.
 - Consider RLM recursive mode once non-recursive RAG and no-subcall inspection
   are stable.
+- Add closed-loop trace SFT before any multi-turn RL.
+- Add RAGEN-2/ASTER-style collapse diagnostics before accepting agentic RL.

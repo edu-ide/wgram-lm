@@ -1,0 +1,92 @@
+{
+  "records_jsonl": "docs/wiki/decisions/evidence-span-truthcal-72-answer-channel-records.jsonl",
+  "mode": "qtrm_residual_with_evidence",
+  "count": 72,
+  "calibration_count": 36,
+  "heldout_count": 36,
+  "best_thresholds": {
+    "support_min": 0.5,
+    "causal_min": 0.75,
+    "refute_max": 0.25,
+    "missing_max": 0.55
+  },
+  "calibration_baseline": {
+    "count": 36,
+    "hits": 22,
+    "accuracy": 0.6111111111111112,
+    "blocked": 0,
+    "blocked_rate": 0.0,
+    "blocked_positive": 0,
+    "false_positive": 11,
+    "false_positive_rate": 0.3055555555555556,
+    "unknown_correct": 4,
+    "unknown_correct_rate": 0.1111111111111111
+  },
+  "calibration_gated": {
+    "count": 36,
+    "hits": 29,
+    "accuracy": 0.8055555555555556,
+    "blocked": 15,
+    "blocked_rate": 0.4166666666666667,
+    "blocked_positive": 4,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "unknown_correct": 15,
+    "unknown_correct_rate": 0.4166666666666667
+  },
+  "heldout_baseline": {
+    "count": 36,
+    "hits": 27,
+    "accuracy": 0.75,
+    "blocked": 0,
+    "blocked_rate": 0.0,
+    "blocked_positive": 0,
+    "false_positive": 2,
+    "false_positive_rate": 0.05555555555555555,
+    "unknown_correct": 7,
+    "unknown_correct_rate": 0.19444444444444445
+  },
+  "heldout_gated": {
+    "count": 36,
+    "hits": 15,
+    "accuracy": 0.4166666666666667,
+    "blocked": 18,
+    "blocked_rate": 0.5,
+    "blocked_positive": 16,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "unknown_correct": 9,
+    "unknown_correct_rate": 0.25
+  },
+  "full_baseline": {
+    "count": 72,
+    "hits": 49,
+    "accuracy": 0.6805555555555556,
+    "blocked": 0,
+    "blocked_rate": 0.0,
+    "blocked_positive": 0,
+    "false_positive": 13,
+    "false_positive_rate": 0.18055555555555555,
+    "unknown_correct": 11,
+    "unknown_correct_rate": 0.1527777777777778
+  },
+  "full_gated": {
+    "count": 72,
+    "hits": 44,
+    "accuracy": 0.6111111111111112,
+    "blocked": 33,
+    "blocked_rate": 0.4583333333333333,
+    "blocked_positive": 20,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "unknown_correct": 24,
+    "unknown_correct_rate": 0.3333333333333333
+  },
+  "heldout_gain": -0.3333333333333333,
+  "heldout_blocked_positive_rate": 0.4444444444444444,
+  "status": "rejected",
+  "failed_checks": [
+    "heldout_accuracy_gain_too_small",
+    "blocks_too_many_positive_answers"
+  ]
+}

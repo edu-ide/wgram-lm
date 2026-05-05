@@ -1,0 +1,84 @@
+{
+  "claim": "QTRM canonical answer path should improve over donor-only and lose when critical causal components are disabled.",
+  "status": "accepted",
+  "causal_gate_status": "accepted",
+  "strict_promotion_required": true,
+  "baseline_mode": "qtrm_residual_with_evidence",
+  "baseline": {
+    "count": 16,
+    "hits": 13,
+    "accuracy": 0.8125,
+    "exact_match_count": 11,
+    "exact_match_rate": 0.6875,
+    "normalized_exact_count": 11,
+    "normalized_exact_rate": 0.6875,
+    "normalized_contains_count": 13,
+    "normalized_contains_rate": 0.8125,
+    "unknown_correct_count": 3,
+    "unknown_correct_rate": 0.1875,
+    "human_audit_count": 5,
+    "human_audit_rate": 0.3125,
+    "retrieved_target_count": 16,
+    "retrieved_target_rate": 1.0,
+    "all_targets_retrieved_count": 16,
+    "all_targets_retrieved_rate": 1.0,
+    "target_recall_mean": 1.0
+  },
+  "critical_modes": [
+    "qtrm_core_off_with_evidence",
+    "qtrm_workspace_off_with_evidence"
+  ],
+  "comparison_modes": [
+    "donor_only_with_evidence"
+  ],
+  "mode_checks": {
+    "qtrm_core_off_with_evidence": {
+      "count": 16,
+      "hits": 10,
+      "accuracy": 0.625,
+      "hit_drop": 3,
+      "accuracy_drop": 0.1875,
+      "paired_completion_count": 16,
+      "same_completion_count": 7,
+      "same_completion_rate": 0.4375,
+      "has_causal_drop": true,
+      "matches_baseline_identity": false
+    },
+    "qtrm_workspace_off_with_evidence": {
+      "count": 16,
+      "hits": 10,
+      "accuracy": 0.625,
+      "hit_drop": 3,
+      "accuracy_drop": 0.1875,
+      "paired_completion_count": 16,
+      "same_completion_count": 7,
+      "same_completion_rate": 0.4375,
+      "has_causal_drop": true,
+      "matches_baseline_identity": false
+    }
+  },
+  "comparison_checks": {
+    "donor_only_with_evidence": {
+      "count": 16,
+      "hits": 10,
+      "accuracy": 0.625,
+      "hit_advantage": 3,
+      "accuracy_advantage": 0.1875,
+      "baseline_beats_candidate": true
+    }
+  },
+  "causal_modes": [
+    "qtrm_core_off_with_evidence",
+    "qtrm_workspace_off_with_evidence"
+  ],
+  "identity_match_modes": [],
+  "weak_comparison_modes": [],
+  "improving_critical_modes": [],
+  "missing_modes": [],
+  "missing_comparison_modes": [],
+  "failed_checks": [],
+  "passed_checks": [
+    "critical_causal_drop_present"
+  ],
+  "recommendation": "Keep this architecture candidate under test. It has at least one causal component drop and passes the enabled promotion checks."
+}

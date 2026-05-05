@@ -14,6 +14,7 @@ latent loops.
 | CoT compression | CODI, "Compressing Chain-of-Thought into Continuous Space via Self-Distillation" | `references/papers/latent_reasoning/codi_2025.emnlp-main.36.pdf`, `references/official/codi` at `2c23146` | Directly matches the QTRM training target: explicit CoT as teacher, latent state as student. |
 | Hybrid text/latent reasoning | HybridCoT | `references/papers/latent_reasoning/hybridcot_4mfGbMzTwu.pdf` | Warns against over-compressing all reasoning; critical symbols or operations may remain textual while semantic reasoning is latent. |
 | Looped latent thoughts | Reasoning with Latent Thoughts / Looped Transformers | `references/papers/recurrent_depth/reasoning_with_latent_thoughts_looped_transformers_2502.17416.pdf` | Theoretical and empirical support for looped models simulating CoT-like steps through repeated latent computation. |
+| Formal CoT/latent separation | A Formal Comparison Between Chain of Thought and Latent Thought | `references/papers/recurrent_depth/formal_comparison_cot_latent_thought_2509.25239.pdf`, `references/official/cot-vs-loop` at `783fa90` | Shows no universal dominance: latent loops favor parallelizable computation, while CoT favors stochastic approximate counting and sampling. |
 | Reliability warning | Do Latent Tokens Think? | `references/papers/latent_reasoning/do_latent_tokens_think_2512.21711.pdf` | Cautions that latent tokens may become shortcut placeholders. QTRM must prove latent contribution with ablations and adversarial/distractor evals. |
 | Halting reference | TinyRecursiveModels | `references/official/tiny-recursive-models` at `c011037` | Provides the closest official-style reference for z_H/z_L carry, `q_halt/q_continue`, `halt_max_steps`, exploration, and halt loss. |
 | ACT reference implementation | Associative Recurrent Memory Transformer ACT utilities | `references/official/associative-recurrent-memory-transformer/modeling_amt/act_utils.py` | Useful for classic ACT probability/remainder mechanics, but QTRM should start from TRM's simpler Q-head pattern. |
@@ -25,6 +26,9 @@ latent loops.
 - CODI code: <https://github.com/zhenyi4/codi>
 - HybridCoT: <https://openreview.net/forum?id=4mfGbMzTwu>
 - Reasoning with Latent Thoughts: <https://arxiv.org/abs/2502.17416>
+- A Formal Comparison Between Chain of Thought and Latent Thought:
+  <https://arxiv.org/abs/2509.25239>
+- Formal CoT/latent code: <https://github.com/kevin671/cot-vs-loop>
 - Do Latent Tokens Think?: <https://arxiv.org/abs/2512.21711>
 - TinyRecursiveModels: <https://github.com/SamsungSAILMontreal/TinyRecursiveModels>
 
@@ -41,6 +45,10 @@ latent loops.
    known failure mode.
 5. Adaptive computation should follow TRM-style halt supervision before any
    purely hand-written norm threshold is treated as the main halting mechanism.
+6. Formal CoT/latent separation means QTRM raw-intelligence evals must be split
+   by task family. Latent loop gains should be expected first on
+   parallelizable/DAG-like tasks, while stochastic counting/sampling may still
+   require explicit token-level or sampling-oriented computation.
 
 ## TRM Halting Details To Preserve
 

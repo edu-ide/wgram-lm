@@ -1,0 +1,49 @@
+# Raw Intelligence Gate
+
+## Verdict
+
+Gate type: `pure_recursive_reasoning`
+
+Status: `rejected`
+
+Claim: QTRM recursive core depth should improve held-out reasoning without retrieval, MemoryOS, or hidden evidence shortcuts.
+
+Recommendation: Do not tune answer formatting. Redesign or retrain the recursive core so deeper latent steps beat donor-only and core-off on no-evidence tasks.
+
+## Checks
+
+- Passed: `no_retrieval_or_memoryos_shortcut`
+- Failed: `deep_core_does_not_beat_core_off, deep_core_does_not_beat_donor, no_depth_scaling_gain, depth_outputs_identical_across_steps`
+- Missing modes: `none`
+- Shortcut records: `0`
+
+## Mode Metrics
+
+| Label | Mode | Hits | Accuracy |
+| --- | --- | ---: | ---: |
+| donor | donor_only_no_evidence | 1/4 | 0.250 |
+| core_off | qtrm_core_off_no_evidence | 1/4 | 0.250 |
+| deepest_core | qtrm_core_steps_8_no_evidence | 1/4 | 0.250 |
+
+## Depth Ladder
+
+| Mode | Hits | Accuracy |
+| --- | ---: | ---: |
+| qtrm_core_steps_1_no_evidence | 1/4 | 0.250 |
+| qtrm_core_steps_2_no_evidence | 1/4 | 0.250 |
+| qtrm_core_steps_4_no_evidence | 1/4 | 0.250 |
+| qtrm_core_steps_8_no_evidence | 1/4 | 0.250 |
+
+## Depth Output Diversity
+
+- Comparable cases: `4`
+- Identical across all depth modes: `4`
+- Changed by depth: `0`
+- All depth outputs identical: `True`
+
+## Interpretation Rule
+
+- `accepted` means the tested raw-intelligence component was causally useful on this eval.
+- `rejected` means the component did not beat the simpler ablation/baseline or a shortcut contaminated the run.
+- `inconclusive` means required modes are missing or empty.
+- This gate is not a RAG, MemoryOS, answer-format, or SSOT score.

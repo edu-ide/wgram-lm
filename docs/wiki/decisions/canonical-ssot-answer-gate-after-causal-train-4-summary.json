@@ -1,0 +1,134 @@
+{
+  "claim": "QTRM latent workspace/core/evidence paths are causally necessary for the residual answer behavior on this eval.",
+  "status": "rejected",
+  "baseline_mode": "qtrm_residual_with_evidence",
+  "baseline": {
+    "count": 4,
+    "hits": 2,
+    "accuracy": 0.5,
+    "exact_match_count": 0,
+    "exact_match_rate": 0.0,
+    "normalized_exact_count": 0,
+    "normalized_exact_rate": 0.0,
+    "normalized_contains_count": 2,
+    "normalized_contains_rate": 0.5,
+    "unknown_correct_count": 0,
+    "unknown_correct_rate": 0.0,
+    "human_audit_count": 4,
+    "human_audit_rate": 1.0,
+    "retrieved_target_count": 4,
+    "retrieved_target_rate": 1.0,
+    "all_targets_retrieved_count": 4,
+    "all_targets_retrieved_rate": 1.0,
+    "target_recall_mean": 1.0
+  },
+  "critical_modes": [
+    "qtrm_workspace_off_with_evidence",
+    "qtrm_core_off_with_evidence",
+    "qtrm_workspace_memory_off_with_evidence",
+    "qtrm_core_context_off_with_evidence",
+    "qtrm_core_to_text_off_with_evidence",
+    "qtrm_evidence_bottleneck_off_with_evidence",
+    "qtrm_evidence_span_reader_off_with_evidence"
+  ],
+  "mode_checks": {
+    "qtrm_workspace_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 3,
+      "same_completion_rate": 0.75,
+      "has_causal_drop": false,
+      "matches_baseline_identity": false
+    },
+    "qtrm_core_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 3,
+      "same_completion_rate": 0.75,
+      "has_causal_drop": false,
+      "matches_baseline_identity": false
+    },
+    "qtrm_workspace_memory_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 4,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    },
+    "qtrm_core_context_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 4,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    },
+    "qtrm_core_to_text_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 3,
+      "same_completion_rate": 0.75,
+      "has_causal_drop": false,
+      "matches_baseline_identity": false
+    },
+    "qtrm_evidence_bottleneck_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 4,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    },
+    "qtrm_evidence_span_reader_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 4,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    }
+  },
+  "causal_modes": [],
+  "identity_match_modes": [
+    "qtrm_workspace_memory_off_with_evidence",
+    "qtrm_core_context_off_with_evidence",
+    "qtrm_evidence_bottleneck_off_with_evidence",
+    "qtrm_evidence_span_reader_off_with_evidence"
+  ],
+  "missing_modes": [],
+  "failed_checks": [
+    "no_critical_causal_drop",
+    "critical_ablations_match_baseline_identity"
+  ],
+  "passed_checks": [],
+  "recommendation": "Do not spend another local loss/threshold on this checkpoint. Move the answer signal onto a forced workspace/evidence bottleneck, then rerun workspace/core/memory-off ablations."
+}

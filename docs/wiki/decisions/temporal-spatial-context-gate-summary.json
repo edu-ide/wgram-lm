@@ -1,0 +1,117 @@
+{
+  "gate_type": "temporal_spatial_context",
+  "claim": "SSOT-derived temporal/spatial context tokens should causally improve held-out temporal and spatial reasoning over the same model with the context path ablated.",
+  "status": "rejected",
+  "context_on_mode": "qtrm_core_steps_8_no_evidence",
+  "context_off_mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence",
+  "context_on": {
+    "count": 24,
+    "hits": 4,
+    "accuracy": 0.16666666666666666,
+    "mode": "qtrm_core_steps_8_no_evidence"
+  },
+  "context_off": {
+    "count": 24,
+    "hits": 4,
+    "accuracy": 0.16666666666666666,
+    "mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence"
+  },
+  "context_off_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence",
+    "candidate_hits": 4,
+    "baseline_hits": 4,
+    "candidate_count": 24,
+    "baseline_count": 24,
+    "hit_advantage": 0,
+    "accuracy_advantage": 0.0,
+    "candidate_beats_baseline": false
+  },
+  "by_task_family": {
+    "spatial_relation": {
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 12,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_temporal_spatial_off_no_evidence": {
+        "count": 12,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence"
+      }
+    },
+    "temporal_freshness": {
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 12,
+        "hits": 4,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_temporal_spatial_off_no_evidence": {
+        "count": 12,
+        "hits": 4,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence"
+      }
+    }
+  },
+  "by_reasoning_family": {
+    "spatial_comparison": {
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 12,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_temporal_spatial_off_no_evidence": {
+        "count": 12,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence"
+      }
+    },
+    "temporal_validity": {
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 12,
+        "hits": 4,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_temporal_spatial_off_no_evidence": {
+        "count": 12,
+        "hits": 4,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence"
+      }
+    }
+  },
+  "by_expected_paradigm": {
+    "context_conditioned_latent_reasoning": {
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 24,
+        "hits": 4,
+        "accuracy": 0.16666666666666666,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_temporal_spatial_off_no_evidence": {
+        "count": 24,
+        "hits": 4,
+        "accuracy": 0.16666666666666666,
+        "mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence"
+      }
+    }
+  },
+  "shortcut_records": [],
+  "missing_modes": [],
+  "failed_checks": [
+    "context_on_does_not_beat_context_off"
+  ],
+  "passed_checks": [
+    "context_available_on_full_mode",
+    "context_disabled_on_ablation_mode",
+    "no_retrieval_or_memoryos_shortcut"
+  ],
+  "recommendation": "Do not claim temporal/spatial conditioning yet. The context-on path must beat the context-off ablation with no retrieval or MemoryOS shortcut."
+}

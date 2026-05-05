@@ -1,0 +1,353 @@
+{
+  "config": "configs/qwen35_2b_4090_controller_signal_s300.yaml",
+  "checkpoint": "runs/qwen35_2b_4090_controller_signal_s300/last.pt",
+  "train_jsonl": "data/filtered/asi_controller_signal_trace_replay.jsonl",
+  "eval_jsonl": "data/eval/asi_controller_signal_trace_replay_heldout_72.jsonl",
+  "train_sequences": 128,
+  "eval_sequences": 72,
+  "feature_key": "generation_verifier_pooled",
+  "feature_scale": 0.0,
+  "use_donor": false,
+  "use_prev_action": true,
+  "reset_hidden": true,
+  "controller_mode": "explicit_markov_transition_state",
+  "missing_keys": [],
+  "unexpected_keys": [],
+  "history": [
+    {
+      "epoch": 1.0,
+      "loss": 1.234455183148384,
+      "accuracy": 0.5
+    },
+    {
+      "epoch": 2.0,
+      "loss": 0.00013835845265930402,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 3.0,
+      "loss": 4.768368242480392e-07,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 4.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 5.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 6.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 7.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 8.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 9.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 10.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 11.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 12.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 13.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 14.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 15.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 16.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 17.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 18.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 19.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 20.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 21.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 22.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 23.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 24.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 25.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 26.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 27.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 28.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 29.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 30.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 31.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 32.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 33.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 34.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 35.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 36.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 37.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 38.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 39.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 40.0,
+      "loss": 0.0,
+      "accuracy": 1.0
+    }
+  ],
+  "train_eval": {
+    "samples": 384,
+    "accuracy": 1.0,
+    "per_target": {
+      "RETRIEVE_MEMORY": {
+        "total": 128,
+        "correct": 128,
+        "accuracy": 1.0
+      },
+      "VERIFY_EVIDENCE": {
+        "total": 128,
+        "correct": 128,
+        "accuracy": 1.0
+      },
+      "ANSWER": {
+        "total": 128,
+        "correct": 128,
+        "accuracy": 1.0
+      }
+    },
+    "confusion": {
+      "RETRIEVE_MEMORY": {
+        "RETRIEVE_MEMORY": 128
+      },
+      "VERIFY_EVIDENCE": {
+        "VERIFY_EVIDENCE": 128
+      },
+      "ANSWER": {
+        "ANSWER": 128
+      }
+    }
+  },
+  "eval_full": {
+    "samples": 216,
+    "accuracy": 1.0,
+    "per_target": {
+      "RETRIEVE_MEMORY": {
+        "total": 72,
+        "correct": 72,
+        "accuracy": 1.0
+      },
+      "VERIFY_EVIDENCE": {
+        "total": 72,
+        "correct": 72,
+        "accuracy": 1.0
+      },
+      "ANSWER": {
+        "total": 72,
+        "correct": 72,
+        "accuracy": 1.0
+      }
+    },
+    "confusion": {
+      "RETRIEVE_MEMORY": {
+        "RETRIEVE_MEMORY": 72
+      },
+      "VERIFY_EVIDENCE": {
+        "VERIFY_EVIDENCE": 72
+      },
+      "ANSWER": {
+        "ANSWER": 72
+      }
+    }
+  },
+  "eval_reset_each_step": {
+    "samples": 216,
+    "accuracy": 1.0,
+    "per_target": {
+      "RETRIEVE_MEMORY": {
+        "total": 72,
+        "correct": 72,
+        "accuracy": 1.0
+      },
+      "VERIFY_EVIDENCE": {
+        "total": 72,
+        "correct": 72,
+        "accuracy": 1.0
+      },
+      "ANSWER": {
+        "total": 72,
+        "correct": 72,
+        "accuracy": 1.0
+      }
+    },
+    "confusion": {
+      "RETRIEVE_MEMORY": {
+        "RETRIEVE_MEMORY": 72
+      },
+      "VERIFY_EVIDENCE": {
+        "VERIFY_EVIDENCE": 72
+      },
+      "ANSWER": {
+        "ANSWER": 72
+      }
+    }
+  },
+  "eval_reset_transition_state": {
+    "samples": 216,
+    "accuracy": 0.3333333333333333,
+    "per_target": {
+      "RETRIEVE_MEMORY": {
+        "total": 72,
+        "correct": 72,
+        "accuracy": 1.0
+      },
+      "VERIFY_EVIDENCE": {
+        "total": 72,
+        "correct": 0,
+        "accuracy": 0.0
+      },
+      "ANSWER": {
+        "total": 72,
+        "correct": 0,
+        "accuracy": 0.0
+      }
+    },
+    "confusion": {
+      "RETRIEVE_MEMORY": {
+        "RETRIEVE_MEMORY": 72
+      },
+      "VERIFY_EVIDENCE": {
+        "RETRIEVE_MEMORY": 72
+      },
+      "ANSWER": {
+        "RETRIEVE_MEMORY": 72
+      }
+    }
+  },
+  "recurrent_drop": 0.0,
+  "transition_state_drop": 0.6666666666666667,
+  "gate": {
+    "status": "accepted",
+    "min_accuracy": 0.8,
+    "min_transition_state_drop": 0.2
+  }
+}

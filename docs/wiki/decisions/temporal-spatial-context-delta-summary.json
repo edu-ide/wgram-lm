@@ -1,0 +1,262 @@
+{
+  "paired_count": 24,
+  "context_on_only_correct_count": 0,
+  "context_off_only_correct_count": 0,
+  "both_correct_count": 4,
+  "both_wrong_count": 20,
+  "changed_completion_count": 0,
+  "chosen_logprob_delta_count": 24,
+  "chosen_logprob_delta_mean": 0.00048164526621500653,
+  "chosen_logprob_delta_min": -0.0077571868896484375,
+  "chosen_logprob_delta_max": 0.023336410522460938,
+  "examples": [
+    {
+      "id": "temporal-freshness-000",
+      "task_family": "temporal_freshness",
+      "context_on_completion": "green",
+      "context_off_completion": "green",
+      "context_on_hit": true,
+      "context_off_hit": true,
+      "chosen_logprob_delta": 1.71661376953125e-05
+    },
+    {
+      "id": "spatial-relation-000",
+      "task_family": "spatial_relation",
+      "context_on_completion": "UNKNOWN",
+      "context_off_completion": "UNKNOWN",
+      "context_on_hit": false,
+      "context_off_hit": false,
+      "chosen_logprob_delta": -0.003864288330078125
+    },
+    {
+      "id": "temporal-freshness-001",
+      "task_family": "temporal_freshness",
+      "context_on_completion": "amber",
+      "context_off_completion": "amber",
+      "context_on_hit": true,
+      "context_off_hit": true,
+      "chosen_logprob_delta": 5.7220458984375e-06
+    },
+    {
+      "id": "spatial-relation-001",
+      "task_family": "spatial_relation",
+      "context_on_completion": "UNKNOWN",
+      "context_off_completion": "UNKNOWN",
+      "context_on_hit": false,
+      "context_off_hit": false,
+      "chosen_logprob_delta": -1.9073486328125e-05
+    },
+    {
+      "id": "temporal-freshness-002",
+      "task_family": "temporal_freshness",
+      "context_on_completion": "green",
+      "context_off_completion": "green",
+      "context_on_hit": false,
+      "context_off_hit": false,
+      "chosen_logprob_delta": 2.09808349609375e-05
+    },
+    {
+      "id": "spatial-relation-002",
+      "task_family": "spatial_relation",
+      "context_on_completion": "UNKNOWN",
+      "context_off_completion": "UNKNOWN",
+      "context_on_hit": false,
+      "context_off_hit": false,
+      "chosen_logprob_delta": -0.0077457427978515625
+    },
+    {
+      "id": "temporal-freshness-003",
+      "task_family": "temporal_freshness",
+      "context_on_completion": "amber",
+      "context_off_completion": "amber",
+      "context_on_hit": false,
+      "context_off_hit": false,
+      "chosen_logprob_delta": -3.337860107421875e-05
+    },
+    {
+      "id": "spatial-relation-003",
+      "task_family": "spatial_relation",
+      "context_on_completion": "UNKNOWN",
+      "context_off_completion": "UNKNOWN",
+      "context_on_hit": false,
+      "context_off_hit": false,
+      "chosen_logprob_delta": 0.023336410522460938
+    }
+  ],
+  "context_on_mode": "qtrm_core_steps_8_no_evidence",
+  "context_off_mode": "qtrm_core_steps_8_temporal_spatial_off_no_evidence",
+  "by_task_family": {
+    "spatial_relation": {
+      "paired_count": 12,
+      "context_on_only_correct_count": 0,
+      "context_off_only_correct_count": 0,
+      "both_correct_count": 0,
+      "both_wrong_count": 12,
+      "changed_completion_count": 0,
+      "chosen_logprob_delta_count": 12,
+      "chosen_logprob_delta_mean": 0.0009697278340657552,
+      "chosen_logprob_delta_min": -0.0077571868896484375,
+      "chosen_logprob_delta_max": 0.023336410522460938,
+      "examples": [
+        {
+          "id": "spatial-relation-000",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -0.003864288330078125
+        },
+        {
+          "id": "spatial-relation-001",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -1.9073486328125e-05
+        },
+        {
+          "id": "spatial-relation-002",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -0.0077457427978515625
+        },
+        {
+          "id": "spatial-relation-003",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": 0.023336410522460938
+        },
+        {
+          "id": "spatial-relation-004",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -0.003925323486328125
+        },
+        {
+          "id": "spatial-relation-005",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -0.003894805908203125
+        },
+        {
+          "id": "spatial-relation-006",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -1.52587890625e-05
+        },
+        {
+          "id": "spatial-relation-007",
+          "task_family": "spatial_relation",
+          "context_on_completion": "UNKNOWN",
+          "context_off_completion": "UNKNOWN",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -0.0077571868896484375
+        }
+      ]
+    },
+    "temporal_freshness": {
+      "paired_count": 12,
+      "context_on_only_correct_count": 0,
+      "context_off_only_correct_count": 0,
+      "both_correct_count": 4,
+      "both_wrong_count": 8,
+      "changed_completion_count": 0,
+      "chosen_logprob_delta_count": 12,
+      "chosen_logprob_delta_mean": -6.4373016357421875e-06,
+      "chosen_logprob_delta_min": -6.389617919921875e-05,
+      "chosen_logprob_delta_max": 4.291534423828125e-05,
+      "examples": [
+        {
+          "id": "temporal-freshness-000",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "green",
+          "context_off_completion": "green",
+          "context_on_hit": true,
+          "context_off_hit": true,
+          "chosen_logprob_delta": 1.71661376953125e-05
+        },
+        {
+          "id": "temporal-freshness-001",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "amber",
+          "context_off_completion": "amber",
+          "context_on_hit": true,
+          "context_off_hit": true,
+          "chosen_logprob_delta": 5.7220458984375e-06
+        },
+        {
+          "id": "temporal-freshness-002",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "green",
+          "context_off_completion": "green",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": 2.09808349609375e-05
+        },
+        {
+          "id": "temporal-freshness-003",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "amber",
+          "context_off_completion": "amber",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -3.337860107421875e-05
+        },
+        {
+          "id": "temporal-freshness-004",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "green",
+          "context_off_completion": "green",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -2.765655517578125e-05
+        },
+        {
+          "id": "temporal-freshness-005",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "amber",
+          "context_off_completion": "amber",
+          "context_on_hit": false,
+          "context_off_hit": false,
+          "chosen_logprob_delta": -6.389617919921875e-05
+        },
+        {
+          "id": "temporal-freshness-006",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "green",
+          "context_off_completion": "green",
+          "context_on_hit": true,
+          "context_off_hit": true,
+          "chosen_logprob_delta": 2.86102294921875e-06
+        },
+        {
+          "id": "temporal-freshness-007",
+          "task_family": "temporal_freshness",
+          "context_on_completion": "amber",
+          "context_off_completion": "amber",
+          "context_on_hit": true,
+          "context_off_hit": true,
+          "chosen_logprob_delta": 9.5367431640625e-07
+        }
+      ]
+    }
+  }
+}

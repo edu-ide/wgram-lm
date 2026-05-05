@@ -1,0 +1,87 @@
+{
+  "claim": "QTRM canonical answer path should improve over donor-only and lose when critical causal components are disabled.",
+  "status": "rejected",
+  "causal_gate_status": "rejected",
+  "strict_promotion_required": true,
+  "baseline_mode": "qtrm_residual_with_evidence",
+  "baseline": {
+    "count": 8,
+    "hits": 5,
+    "accuracy": 0.625,
+    "exact_match_count": 4,
+    "exact_match_rate": 0.5,
+    "normalized_exact_count": 4,
+    "normalized_exact_rate": 0.5,
+    "normalized_contains_count": 5,
+    "normalized_contains_rate": 0.625,
+    "unknown_correct_count": 1,
+    "unknown_correct_rate": 0.125,
+    "human_audit_count": 4,
+    "human_audit_rate": 0.5,
+    "retrieved_target_count": 8,
+    "retrieved_target_rate": 1.0,
+    "all_targets_retrieved_count": 8,
+    "all_targets_retrieved_rate": 1.0,
+    "target_recall_mean": 1.0
+  },
+  "critical_modes": [
+    "qtrm_core_off_with_evidence",
+    "qtrm_workspace_off_with_evidence"
+  ],
+  "comparison_modes": [
+    "donor_only_with_evidence"
+  ],
+  "mode_checks": {
+    "qtrm_core_off_with_evidence": {
+      "count": 8,
+      "hits": 5,
+      "accuracy": 0.625,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 8,
+      "same_completion_count": 8,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    },
+    "qtrm_workspace_off_with_evidence": {
+      "count": 8,
+      "hits": 5,
+      "accuracy": 0.625,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 8,
+      "same_completion_count": 1,
+      "same_completion_rate": 0.125,
+      "has_causal_drop": false,
+      "matches_baseline_identity": false
+    }
+  },
+  "comparison_checks": {
+    "donor_only_with_evidence": {
+      "count": 8,
+      "hits": 5,
+      "accuracy": 0.625,
+      "hit_advantage": 0,
+      "accuracy_advantage": 0.0,
+      "baseline_beats_candidate": false
+    }
+  },
+  "causal_modes": [],
+  "identity_match_modes": [
+    "qtrm_core_off_with_evidence"
+  ],
+  "weak_comparison_modes": [
+    "donor_only_with_evidence"
+  ],
+  "improving_critical_modes": [],
+  "missing_modes": [],
+  "missing_comparison_modes": [],
+  "failed_checks": [
+    "no_critical_causal_drop",
+    "critical_ablations_match_baseline_identity",
+    "baseline_does_not_beat_comparison"
+  ],
+  "passed_checks": [],
+  "recommendation": "Do not spend another local loss/threshold on this checkpoint. Move the answer signal onto a forced workspace/evidence bottleneck, then rerun workspace/core/memory-off ablations."
+}

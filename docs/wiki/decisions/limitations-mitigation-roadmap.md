@@ -17,6 +17,12 @@ The immediate objective is not to replace Qwen. It is to prove that QTRM can add
 measurable reasoning, memory, or verification behavior without regressing donor
 fluency.
 
+The long-term phrase "a model with no limitations" is treated as an engineering
+objective, not a literal claim. The project target is a
+[limit-aware model](limit-aware-model-objective.md): every known limitation
+should become detectable, routable, verifiable, documented, and attached to a
+falsifiable architecture or training improvement plan.
+
 ## Innovation Claim Boundary
 
 The intended novelty is not that a tiny core internally knows more than a large

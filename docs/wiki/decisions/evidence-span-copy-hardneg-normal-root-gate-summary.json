@@ -1,0 +1,125 @@
+{
+  "claim": "QTRM latent workspace/core/evidence paths are causally necessary for the residual answer behavior on this eval.",
+  "status": "accepted",
+  "baseline_mode": "qtrm_residual_with_evidence",
+  "baseline": {
+    "count": 4,
+    "hits": 3,
+    "accuracy": 0.75,
+    "exact_match_count": 3,
+    "exact_match_rate": 0.75,
+    "normalized_exact_count": 3,
+    "normalized_exact_rate": 0.75,
+    "normalized_contains_count": 3,
+    "normalized_contains_rate": 0.75,
+    "unknown_correct_count": 1,
+    "unknown_correct_rate": 0.25,
+    "human_audit_count": 1,
+    "human_audit_rate": 0.25,
+    "retrieved_target_count": 4,
+    "retrieved_target_rate": 1.0,
+    "all_targets_retrieved_count": 4,
+    "all_targets_retrieved_rate": 1.0,
+    "target_recall_mean": 1.0
+  },
+  "critical_modes": [
+    "qtrm_workspace_off_with_evidence",
+    "qtrm_core_off_with_evidence",
+    "qtrm_workspace_memory_off_with_evidence",
+    "qtrm_core_context_off_with_evidence",
+    "qtrm_evidence_bottleneck_off_with_evidence",
+    "qtrm_evidence_span_reader_off_with_evidence"
+  ],
+  "mode_checks": {
+    "qtrm_workspace_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 1,
+      "accuracy_drop": 0.25,
+      "paired_completion_count": 4,
+      "same_completion_count": 1,
+      "same_completion_rate": 0.25,
+      "has_causal_drop": true,
+      "matches_baseline_identity": false
+    },
+    "qtrm_core_off_with_evidence": {
+      "count": 4,
+      "hits": 3,
+      "accuracy": 0.75,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 4,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    },
+    "qtrm_workspace_memory_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 1,
+      "accuracy_drop": 0.25,
+      "paired_completion_count": 4,
+      "same_completion_count": 1,
+      "same_completion_rate": 0.25,
+      "has_causal_drop": true,
+      "matches_baseline_identity": false
+    },
+    "qtrm_core_context_off_with_evidence": {
+      "count": 4,
+      "hits": 3,
+      "accuracy": 0.75,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 4,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    },
+    "qtrm_evidence_bottleneck_off_with_evidence": {
+      "count": 4,
+      "hits": 3,
+      "accuracy": 0.75,
+      "hit_drop": 0,
+      "accuracy_drop": 0.0,
+      "paired_completion_count": 4,
+      "same_completion_count": 4,
+      "same_completion_rate": 1.0,
+      "has_causal_drop": false,
+      "matches_baseline_identity": true
+    },
+    "qtrm_evidence_span_reader_off_with_evidence": {
+      "count": 4,
+      "hits": 2,
+      "accuracy": 0.5,
+      "hit_drop": 1,
+      "accuracy_drop": 0.25,
+      "paired_completion_count": 4,
+      "same_completion_count": 1,
+      "same_completion_rate": 0.25,
+      "has_causal_drop": true,
+      "matches_baseline_identity": false
+    }
+  },
+  "causal_modes": [
+    "qtrm_workspace_off_with_evidence",
+    "qtrm_workspace_memory_off_with_evidence",
+    "qtrm_evidence_span_reader_off_with_evidence"
+  ],
+  "identity_match_modes": [
+    "qtrm_core_off_with_evidence",
+    "qtrm_core_context_off_with_evidence",
+    "qtrm_evidence_bottleneck_off_with_evidence"
+  ],
+  "missing_modes": [],
+  "failed_checks": [
+    "critical_ablations_match_baseline_identity"
+  ],
+  "passed_checks": [
+    "critical_causal_drop_present"
+  ],
+  "recommendation": "Keep this architecture candidate under test, but require held-out generation quality and donor-only comparison before treating it as solved."
+}

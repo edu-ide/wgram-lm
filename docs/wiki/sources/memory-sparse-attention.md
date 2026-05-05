@@ -28,7 +28,8 @@ Important source claims:
 ## QTRM Decision
 
 MSA should be treated as the closest current reference for the next MemoryOS
-architecture step, but not copied wholesale into the current QTRM code yet.
+architecture step. The project now also keeps an aggressive Qwen3.5-2B full-MSA
+fork path for turning the current donor itself into an MSA-style donor.
 
 Immediate QTRM mapping:
 
@@ -47,3 +48,24 @@ Future QTRM mapping:
 - Route top-k memory blocks into the QTRM latent workspace.
 - Add a Memory Interleave eval mode for multi-hop retrieval over scattered
   evidence.
+
+## Qwen3.5-2B Full-MSA Fork Track
+
+Decision page:
+[Qwen3.5 Full-MSA Fork](../decisions/qwen35-full-msa-fork.md).
+
+Implemented scaffold:
+
+- `src/qtrm_mm/msa_qwen35.py`
+- `scripts/129_prepare_qwen35_full_msa_fork.py`
+- `tests/test_qwen35_full_msa_fork.py`
+
+The scaffold rewrites the Qwen3.5-2B text config so all 24 layers target
+Hugging Face's allowed `sparse` layer type with `qtrm_full_msa_fork=true`.
+It records that the 6 original full-attention layers can seed a Qwen3.5-native
+MSA implementation, while the 18 original linear-attention layers require
+reinitialization/healing.
+
+This is not yet a trained full-MSA donor. It is the necessary conversion
+boundary before implementing the custom Qwen3.5-native MSA layer and donor
+healing run.

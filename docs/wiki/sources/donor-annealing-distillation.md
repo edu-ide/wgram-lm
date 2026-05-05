@@ -18,6 +18,7 @@ Downloaded PDFs:
 | GKD / on-policy distillation | `references/papers/donor_annealing/2306.13649.pdf` | `https://arxiv.org/abs/2306.13649` |
 | Universal Logit Distillation | `references/papers/donor_annealing/2402.12030.pdf` | `https://arxiv.org/abs/2402.12030` |
 | Multi-Level OT | `references/papers/donor_annealing/2412.14528.pdf` | `https://arxiv.org/abs/2412.14528` |
+| Subliminal Learning | `references/papers/donor_annealing/2507.14805.pdf` | `https://arxiv.org/abs/2507.14805` |
 
 New web-searched references to fetch next:
 
@@ -87,8 +88,48 @@ against TRL/MiniLLM/EasyDistill-style code.
 | ULD / Multi-Level OT | Distill logits across models with different tokenizers using optimal transport. | Needed only if the donor changes to a model family with incompatible tokenizer/vocab. |
 | EasyDistill / DistilQwen | Practical black-box, white-box, ranking, RL, and CoT distillation pipelines. | Useful implementation reference for Qwen-family distillation and stored top-k teacher logits. |
 | MiniPLM | Pretraining-stage KD with Qwen teacher and reference-data filtering. | Relevant if QTRM moves from task-local replacement to broader student pretraining. |
+| Subliminal Learning, 2025 | Teacher-generated data can transfer behavioral traits through hidden signals, even when the surface data is unrelated to the trait and filtered; the effect was observed for number sequences, code, and reasoning traces, and is strongest when teacher and student share or closely match the base model. | Direct warning for Qwen3.6-to-Qwen3.5/QTRM distillation: do not treat teacher outputs, CoT traces, or logits as safe gold labels merely because they pass content filters. |
 
 ## Implementation Lessons
+
+### Subliminal-Learning Safety Boundary
+
+Subliminal Learning changes the default QTRM distillation policy.
+
+Risky path:
+
+```text
+teacher output / CoT / logits
+-> content filter
+-> direct SFT or KL target
+-> QTRM student
+```
+
+This is no longer canonical for QTRM, especially for same-family Qwen teacher
+and donor/student setups. The paper reports trait transfer through data that is
+semantically unrelated to the trait, including number sequences, code, and
+reasoning traces. Filtering is not enough as the sole safety mechanism.
+
+Accepted path:
+
+```text
+teacher proposes candidates / critiques / hard cases
+-> rule solver, unit test, symbolic verifier, retrieval evidence checker, or
+   human-approved gold label decides the target
+-> QTRM trains only on verified labels or explicitly scoped preferences
+```
+
+Implications:
+
+- Qwen3.6 online direct-answer distillation is downgraded to a probe.
+- CoT trace distillation from a single teacher is quarantined until a verifier
+  or gold process converts it into checked supervision.
+- Soft-logit KL from Qwen3.6 to QTRM is allowed only as a bounded auxiliary on
+  verified states, not as the semantic source of truth.
+- Same-family Qwen-to-Qwen/QTRM transfer needs extra trait, style, refusal,
+  repetition, and alignment regression gates.
+- Public datasets with gold answers or executable tests now rank above
+  teacher-generated synthetic answers for raw recursive-reasoning training.
 
 Current QTRM implements only the first static step:
 

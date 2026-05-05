@@ -66,6 +66,27 @@ Distillation is allowed when it has explicit labels:
 Synthetic traces must be diversified. Single-teacher, single-template data can
 look clean while silently collapsing to a narrow distribution.
 
+Additional Subliminal Learning rule:
+
+- teacher-generated answers, code, CoT traces, or logits are not gold labels by
+  default;
+- content filtering alone is not enough to make synthetic distillation data
+  safe;
+- same-family teacher/student setups need stronger suspicion because hidden
+  teacher traits may transfer through non-semantic patterns;
+- final labels should come from rule solvers, executable tests, symbolic
+  verifiers, evidence checkers, or human-approved gold data;
+- teacher models may propose candidates, critiques, hard negatives, and
+  curricula, but the verifier/gold process owns the target.
+
+QTRM policy:
+
+```text
+verified public datasets first
+teacher as proposer/critic second
+direct teacher imitation only as a quarantined probe
+```
+
 ## Architecture Consequence
 
 The cognitive-core direction favors:

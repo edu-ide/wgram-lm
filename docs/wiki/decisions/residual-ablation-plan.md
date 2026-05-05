@@ -23,6 +23,22 @@ logits, not as a replacement language model head.
 | residual 0.05 | `configs/qwen35_2b_4090_donor_residual_s005_1000.yaml` | passed stability gate | first production candidate |
 | residual 0.10 | `configs/qwen35_2b_4090_donor_residual_s010_1000.yaml` | passed stability gate | stronger residual comparison |
 
+2026-05-01 guarded rerun:
+`scripts/152_run_residual_language_stability_sweep.sh` rechecked the
+`runs/qwen35_2b_4090_donor_residual_s010_1000/last.pt` candidate at
+`qtrm_logits_scale=0.00/0.05/0.10` with donor logits fixed at `1.0`,
+visible-reasoning suppression, no-repeat-2, sentence stop, and 96 generated
+tokens. All three scales reached `clean_rate=1.0` on the four-prompt smoke:
+
+```text
+runs/language_stability/residual_s010_safe_sweep_96/summary.jsonl
+```
+
+This proves fluency preservation for the guarded residual range, not residual
+usefulness. The same smoke showed no donor argmax shifts and donor-only already
+failed the math correctness prompt, so the next proof must be donor-only versus
+QTRM-residual on evidence-sensitive tasks.
+
 ## First Run
 
 Run `qtrm_logits_scale=0.05` for 1000 steps on

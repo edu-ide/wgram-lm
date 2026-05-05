@@ -6,6 +6,7 @@
 - [Karpathy Cognitive Core And Data Quality](sources/karpathy-cognitive-core.md): corrected source notes for cognitive core, data quality, and the 1B-vs-1.8T overclaim.
 - [Qwen3.5 2B Configs](sources/qwen35-2b-configs.md): donor model card and nested HF config reference.
 - [Qwen3.5 Official Repo](sources/qwen35-official-repo.md): release notes, usage, serving, and training guidance.
+- [Qwen-Scope](sources/qwen-scope.md): official Qwen SAE interpretability modules and QTRM donor-feature logging plan.
 - [Qwen3-VL](sources/qwen3-vl.md): prior vision-language architecture report.
 - [Qwen3-Omni](sources/qwen3-omni.md): prior omni-modal architecture report.
 - [Qwen3.5 Omni](sources/qwen35-omni.md): latest omni-modal Qwen3.5 technical report.
@@ -13,11 +14,17 @@
 - [Training Diagnostics](sources/training-diagnostics.md): scaling laws, learning-curve extrapolation, gradient noise scale, and early stopping references.
 - [Architecture Search](sources/architecture-search.md): design-space, NAS, transformer modification transfer, and composition-risk references.
 - [CoT To Latent Reasoning](sources/cot-to-latent-reasoning.md): Coconut, CODI, HybridCoT, looped latent thoughts, latent-token reliability, and TRM/ACT halting references.
+- [Formal CoT Vs Latent Thought](sources/formal-cot-vs-latent-thought.md): 2026 formal separation showing latent loops favor parallel computation while CoT favors stochastic counting/sampling.
 - [Donor-Logit Sidecar Prior Art](sources/donor-logit-sidecar-prior-art.md): DExperts, FUDGE, GeDi, Proxy-Tuning, Side-Tuning, Ladder Side-Tuning, and AdapterFusion mapping for QTRM donor-logit residual design.
-- [Donor Annealing And Distillation](sources/donor-annealing-distillation.md): Annealing-KD, Pro-KD, MiniLLM, GKD, Distilling step-by-step, EasyDistill, MiniPLM, and cross-tokenizer KD references.
+- [Donor Annealing And Distillation](sources/donor-annealing-distillation.md): Annealing-KD, Pro-KD, MiniLLM, GKD, Subliminal Learning, Distilling step-by-step, EasyDistill, MiniPLM, and cross-tokenizer KD references.
+- [Random Noise Calibration](sources/random-noise-calibration.md): Nature NMI 2026 random-noise warm-up, official GitHub references, and QTRM metacognitive calibration mapping.
+- [HF Distillation Datasets](sources/hf-distillation-datasets.md): first-wave public HF datasets and converters for QTRM/MSA teacher-record warmup.
 - [Test-Time Training](sources/test-time-training.md): In-Place TTT and donor-side fast-weight adaptation references.
 - [Self-Improvement And Hallucination](sources/self-improvement-and-hallucination.md): latest self-improvement, preference learning, self-correction, and hallucination-control references.
+- [Human-Like Loss Design](sources/human-like-loss-design.md): unlikelihood, preference, robust preference, and process-loss references for anti-collapse training.
+- [Generation Verifier And Reranking](sources/generation-verifier-reranking.md): unlikelihood, SimCTG, FUDGE, and generator-reranker references for verifier-guided generation.
 - [Fact Verification And Fake Info](sources/fact-verification-and-fake-info.md): FEVER, FActScore, SAFE, RAGTruth, conflict-aware RAG, and temporal fake-info verification references.
+- [Logical Causal Trust](sources/logical-causal-trust.md): ProoFVer, FOLIO, LINC, NL2LOGIC, insufficient evidence, RAGONITE, CF-RAG, and FaithfulRAG references.
 - [Value And Critical Synthesis](sources/value-and-critical-synthesis.md): value salience, tradition-aware reasoning, religious critique, and constructive positive synthesis references.
 - [Titans](sources/titans.md): unofficial Titans implementation and paper notes for neural long-term memory.
 - [OpenMythos And Recurrent Depth](sources/openmythos-recurrent-depth.md): speculative OpenMythos plus paper-backed Parcae/looped-transformer references.
@@ -29,6 +36,9 @@
 - [Rerankers](sources/rerankers.md): Qwen3-Reranker, BGE, NVIDIA Nemotron, ContextualAI, and Jina reranking candidates.
 - [Memory Sparse Attention](sources/memory-sparse-attention.md): MSA 100M-token latent-memory reference and QTRM mapping.
 - [Long-Horizon Agent References](sources/long-horizon-agent-references.md): Externalization, MemGPT, Memex, RLM, ReAct, Reflexion, Voyager, SWE-agent, Self-RAG, CRAG, and RAPTOR reference map.
+- [Agentic Closed-Loop Planning](sources/agentic-closed-loop-planning.md): Agent Lightning, RAGEN, RAGEN-2, AgentGym, LATS, ACE, SkillRL, Agent-World, and executable world-model references.
+- [Internalized Context Engineering](sources/internalized-context-engineering.md): ACE, REALM, RETRO, DSI, Atlas, LM2, G-MemLLM, MSA, and context-engineering references for moving context routing into trainable memory paths.
+- [2026 Memory And Context Architecture Update](sources/2026-memory-context-architecture.md): current correction that QTRM should use prompt-conditioned memory readers rather than a workspace-only sidecar.
 
 ## Concepts
 
@@ -36,6 +46,7 @@
 - [LeWorldModel](concepts/leworldmodel.md): current preferred JEPA objective.
 - [Tiny Recursive Models](concepts/tiny-recursive-models.md): recursive reasoning core contract.
 - [LLM Wiki](concepts/llm-wiki.md): documentation and knowledge maintenance pattern.
+- [QTRM Terminology](concepts/qtrm-terminology.md): canonical terms for donor, residual cognitive adapter, latent workspace, actual reasoning, and inference cliffs.
 - [Cognitive Core And Data Quality](concepts/cognitive-core-data-quality.md): QTRM interpretation of small reasoning core, external memory, trace quality, and anti-collapse gates.
 - [Qwen3.5 Architecture](concepts/qwen35-architecture.md): donor architecture and multimodal config constraints.
 - [Transfer, Merge, Healing](concepts/transfer-merge-healing.md): practical strategy for QTRM donor adaptation and recovery.
@@ -44,17 +55,32 @@
 - [Recurrent-Depth Transformers](concepts/recurrent-depth-transformers.md): looped transformer design, stable injection, depth sweeps, and telemetry.
 - [CoT To Latent Transfer](concepts/cot-to-latent-transfer.md): QTRM plan for using explicit traces as supervision while running latent workspace loops with halt telemetry.
 - [Workspace Memory Architecture](concepts/workspace-memory-architecture.md): separates QTRM working memory, donor-logit residuals, and future persistent memory.
+- [Gated Latent Memory](concepts/gated-latent-memory.md): LM2/G-MemLLM-inspired gated workspace update and required gate-off ablation.
+- [Workspace Evidence Path](concepts/workspace-evidence-path.md): corrected SSOT evidence design where MemoryOS retrieval is compiled into one canonical token stream; workspace/dual paths are ablation probes.
+- [Gated Core Context Injection](concepts/gated-core-context-injection.md): lets the recursive core read prelude prompt/evidence context through an ablatable gated cross-attention path.
 - [Test-Time Adaptation](concepts/test-time-adaptation.md): separates donor base policy, QTRM residuals, and In-Place TTT donor adaptation.
 - [Donor Annealing Roadmap](concepts/donor-annealing-roadmap.md): staged path from Qwen donor-logit sidecar to low-donor-scale QTRM student behavior.
 - [Self-Improvement Loop](concepts/self-improvement-loop.md): verified trace, preference, NEEDS_SEARCH, and agentic search loop for hallucination control.
+- [Human-Like Loss Design](concepts/human-like-loss-design.md): current anti-repeat loss slice and the staged path toward preference/process supervision.
+- [Generation Verifier](concepts/generation-verifier.md): repeat/stop/quality verifier heads trained on QTRM-generated output failures.
+- [Generation History](concepts/generation-history.md): persistent JSONL record of interactive/eval outputs for failure ledgers, regression tests, and curated self-improvement data.
+- [Answer Channel Contract](concepts/answer-channel-contract.md): visible-answer channel, `<think>` suppression, and format-aware generation gates.
 - [Fact Verification Reasoning](concepts/fact-verification-reasoning.md): separates predictive intuition from evidence grounding, verification, conflict arbitration, and temporal/source judgment.
+- [Logical-Causal Evidence Bottleneck](concepts/logical-causal-evidence-bottleneck.md): support/refute/missing heads plus a causal gate that controls QTRM residual logits.
+- [Truth-Gated Evidence Answer Channel](concepts/truth-gated-evidence-answer-channel.md): answer-path gate that copies hidden-workspace spans only when support/causal heads allow and refute/missing heads do not block.
+- [Memory Evaluation Metrics](concepts/memory-evaluation-metrics.md): layered hit/exact/normalized/audit scoring for MemoryOS evidence tasks.
 - [Critical Synthesis Reasoning](concepts/critical-synthesis-reasoning.md): critique, preserve, risk-check, reframe, and positive conclusion loop for religion/value questions.
 - [Neural Long-Term Memory](concepts/neural-long-term-memory.md): Titans-style memory axis and precise latent-space inference wording.
 - [Long-Horizon Agent Architecture](concepts/long-horizon-agent-architecture.md): QTRM/MemoryOS runtime modes for long-running agent work, RLM, trace memory, skills, and verification gates.
+- [Agentic Closed-Loop Planner](concepts/agentic-closed-loop-planner.md): staged path from scripted MemoryOS loops to learned action controllers, turn-level RL, and latent model-based planning.
+- [Internalized Context Engineering](concepts/internalized-context-engineering.md): staged plan for using compiled context better while keeping MemoryOS outside the model boundary.
 
 ## Architecture
 
+- [KISS YAGNI DRY SSOT Contract](architecture/kiss-yagni-dry-ssot-contract.md): engineering contract for keeping QTRM model claims on the simplest single-stream canonical path.
+- [QTRM Model vs Runtime Boundary](architecture/model-vs-runtime-boundary.md): canonical split between the QTRM model and optional MemoryOS/runtime context system.
 - [QTRM Forward Pass](architecture/qtrm-forward-pass.md): Mermaid diagrams and tensor-shape ledger for the current donor-backed residual forward path.
+- [Canonical Architecture Matrix](architecture/canonical-architecture-matrix.md): active, forward-only, probe-only, runtime, and scaffold status for implemented QTRM components.
 - [Paper Diagram Prompts](architecture/paper-diagram-prompts.md): prompt bank for paper-style architecture and ablation figures.
 
 ## Components
@@ -70,7 +96,101 @@
 - [Reference Architecture Axes](decisions/reference-architecture-axes.md): separates generator, mixer, recursion, world model, and wiki sources.
 - [QTRM Goal And Scope](decisions/qtrm-goal-and-scope.md): defines QTRM as a Qwen-backed cognitive/memory adapter and sets the next priority order.
 - [QTRM Limitations And Mitigation Roadmap](decisions/limitations-mitigation-roadmap.md): maps current architecture limits to prior research, telemetry, ablations, and gated residual next steps.
+- [Limit-Aware Model Objective](decisions/limit-aware-model-objective.md): reframes "no limitations" as a measurable loop for detecting, routing, verifying, learning from, and redesigning around known failure classes.
 - [Residual Ablation Plan](decisions/residual-ablation-plan.md): current donor-logit residual experiment matrix and go/no-go criteria.
 - [Residual Adapter Proof](decisions/residual-adapter-proof.md): fixed proof package showing donor-only versus QTRM residual gains on current MemoryOS probes.
+- [Latent Workspace Prior Decision](decisions/latent-workspace-prior-decision.md): keep Perceiver/Q-Former slots as connector baseline, move memory claims to gated causality and sparse routing.
 - [Expanded Workspace/Core Ablation](decisions/expanded-workspace-core-ablation.md): expanded 72-case causality ablation covering workspace/core, coda, residual-head, donor-hidden, and workspace-only paths.
+- [Root Architecture Causality Gate](decisions/root-architecture-causality-gate.md): automated accept/reject gate for whether workspace/core/evidence paths are causally necessary on ablation evals.
+- [Raw Intelligence Gates](decisions/raw-intelligence-gates.md): first-priority ASI gates for no-retrieval recursive-depth reasoning, trainable memory on/off, and reasoning-memory composition.
+- [Qwen Donor Risk And Metacognition Boundary](decisions/qwen-donor-risk-and-metacognition.md): clarifies when Qwen donor use is valid scaffold versus a crutch hiding QTRM raw-intelligence or calibration failures.
+- [Noise Warmup Metacognitive Calibration Smoke S001](decisions/noise-warmup-metacognitive-calibration-smoke-s001.md): matched 1-case no-warmup versus random-noise-warmup calibration smoke using choice-score ECE/Brier.
+- [Noise Warmup Metacognitive Calibration Heldout40 S001](decisions/noise-warmup-metacognitive-calibration-heldout40-s001.md): 40-case matched metacognition gate rejecting the current 2-step random-noise warm-up because global ECE worsened.
+- [Noise Uniform Warmup Metacognitive Calibration Heldout40 S001](decisions/noise-uniform-warmup-metacognitive-calibration-heldout40-s001.md): stricter 40-case gate for high-entropy random-noise warm-up; global calibration improves but critical QTRM-only/core-on modes worsen, so it is rejected.
+- [Metacog Forced-Choice S080 Calibration Heldout40](decisions/metacog-forced-choice-s080-calibration-heldout40.md): direct known/unknown forced-choice training lowers confidence but rejects because QTRM-only/core-on accuracy drops.
+- [Metacog Teacher-KL S080 V2 Calibration Heldout40](decisions/metacog-teacher-kl-s080-v2-calibration-heldout40.md): teacher-depth KL preserves QTRM-only accuracy but rejects because global and low-donor fused calibration worsen.
+- [Metacog Unknown Teacher-KL S080 Calibration Heldout40](decisions/metacog-unknown-teacher-kl-s080-calibration-heldout40.md): unknown-only selective calibration improves expected-unknown slices but rejects because global/low-donor calibration worsens.
+- [Metacog Unknown Teacher-KL Conservative S040 Calibration Heldout40](decisions/metacog-unknown-teacher-kl-conservative-s040-calibration-heldout40.md): reduced update strength nearly preserves baseline and improves QTRM-only ECE/Brier, but still rejects on low-donor fused calibration.
+- [Metacog Unknown Teacher-KL Conservative S040 QTRM-Core Gate](decisions/metacog-unknown-teacher-kl-conservative-s040-qtrm-core-gate.md): profile-filtered gate accepting the QTRM core metacognition signal while keeping accuracy fixed.
+- [Metacog Unknown Teacher-KL Conservative S040 Fused Gate](decisions/metacog-unknown-teacher-kl-conservative-s040-fused-gate.md): profile-filtered gate rejecting donor/QTRM fusion because low-donor ECE/Brier still worsen.
+- [Metacog Fusion-Scale Sweep Conservative S040 Smoke8](decisions/metacog-fusion-scale-sweep-conservative-s040-smoke8.md): 8-case donor-scale sweep showing candidate calibration degradation grows as donor scale rises.
+- [Donor-QTRM Conflict Gate Probe](decisions/donor-qtrm-conflict-gate-probe.md): optional ablation gate that downscales QTRM residual when donor and QTRM top tokens conflict.
+- [Metacog Checkpoint Rebuild Recovery](decisions/metacog-checkpoint-rebuild-recovery.md): separates exact checkpoint recovery from a new matched-pair rebuild on healthy storage.
+- [Temporal-Spatial Context Conditioning](decisions/temporal-spatial-context-conditioning.md): adds SSOT-derived time/space context tokens to QTRM forward with an ablation contract.
+- [Temporal-Spatial Context Gate](decisions/temporal-spatial-context-gate.md): context-on versus context-off causal gate report generated by the temporal-spatial runner.
+- [Temporal-Spatial Context S240 Failure Ledger](decisions/temporal-spatial-context-s240-failure-ledger.md): rejected context-causality result, zero-delta diagnosis, and next architecture candidates.
+- [Pure Recursive Reasoning Depth Gate Smoke4](decisions/pure-recursive-reasoning-depth-gate-smoke4.md): first forced-choice smoke result rejecting raw core-depth gain on the current mandatory-core checkpoint.
+- [Pure Recursive Reasoning Core S160 Failure Ledger](decisions/pure-recursive-reasoning-core-s160-failure-ledger.md): raw-core SFT result showing core activation without net gain or depth scaling.
+- [Pure Recursive Depth-Supervised S080 Failure Ledger](decisions/pure-recursive-depth-supervised-s080-failure-ledger.md): prompt-only depth supervision and final-path CE still reject because all core depths produce identical held-out answers.
+- [Pure Recursive Full-Sequence KISS Failure Ledger](decisions/pure-recursive-depth-fullseq-kiss-failure-ledger.md): full-answer CE, Cartesian depth schedule, KISS path, core-only rejection, and the new mandatory core-loop readout probe.
 - [MemoryOS 100M Scale Plan](decisions/memoryos-100m-scale-plan.md): treats 100M+ tokens as external memory, not direct prompt context.
+- [Qwen3.5 Full-MSA Fork](decisions/qwen35-full-msa-fork.md): conversion scaffold for replacing all Qwen3.5-2B text mixers with MSA and healing the donor.
+- [Qwen3.6 Online Distillation Roadmap](decisions/qwen36-online-distillation-roadmap.md): DGX teacher, QTRM-first, MSA-second, and joint ablation checklist for offline/online/on-policy distillation.
+- [Actual Reasoning Architecture Roadmap](decisions/actual-reasoning-architecture-roadmap.md): states why QTRM targets latent state-update reasoning, what still needs improvement, and which ablations must pass before stronger claims.
+- [Research-Driven Next Architecture](decisions/research-driven-next-architecture.md): failure ledger, prior-backed candidates, and the counterfactual workspace probe result.
+- [Logical-Causal Bottleneck Root Gate](decisions/logical-causal-bottleneck-root-gate.md): quick-gate result for the logical/causal evidence bottleneck checkpoint.
+- [Workspace Evidence Path Trained Root Gate](decisions/workspace-evidence-path-trained-root-gate.md): supervised hidden-evidence training result showing answer improvement without workspace causality.
+- [Workspace Counterfactual Swap Root Gate](decisions/workspace-counterfactual-swap-root-gate.md): keeps visible questions fixed while swapping hidden workspace evidence; rejects current workspace causality.
+- [Workspace Answer-Bottleneck Governed Root Gate](decisions/workspace-answer-bottleneck-governed-root-gate.md): repetition-fixed answer-bottleneck gate with short-answer governor.
+- [Workspace Answer-Bottleneck Causal Root Gate](decisions/workspace-answer-bottleneck-causal-root-gate.md): narrow causal-gate answer-bottleneck training result.
+- [Workspace Answer-Bottleneck Causal Swap Root Gate](decisions/workspace-answer-bottleneck-causal-swap-root-gate.md): workspace-swap rejection showing the need for an explicit evidence-span reader.
+- [Reasoning-Safe Span-Copy Truth Gate Smoke](decisions/reasoning-safe-span-copy-truth-gate-4.md): truth-gate smoke result showing current logical heads are wired but not calibrated enough for multi-hop acceptance.
+- [ASI Research Roadmap](decisions/asi-research-roadmap.md): converts ASI ambition into falsifiable literature-backed QTRM capability axes, architecture stages, experiments, and kill criteria.
+- [ASI Root Architecture Reset](decisions/asi-root-architecture-reset.md): resets QTRM toward a donor-preserving residual cognitive controller with verified trace, memory, world-model, and causal-gate contracts.
+- [ASI Sufficiency Gate 2026-05-02](decisions/asi-sufficiency-gate-2026-05-02.md): rejects current ASI sufficiency while ranking the next model-only, causal-latent, and verified self-improvement gates.
+- [Canonical SSoT Answer Gate Smoke2](decisions/canonical-ssot-answer-gate-smoke2.md): canonical greedy-answer gate result rejecting current answer-level workspace/core causality.
+- [Canonical SSoT Core-To-Text Causal Smoke](decisions/canonical-ssot-coretotext-answer-gate-after-causal-train-4.md): rejected 4-case greedy-answer gate for the first direct latent-to-text bridge candidate.
+- [Canonical SSoT Core Answer-Bottleneck S150](decisions/canonical-ssot-core-answer-bottleneck-s150-answer-gate-4.md): first accepted 4-case greedy-answer gate where SSoT prompt evidence stays in one token stream and workspace-off causes an answer-level drop.
+- [Canonical Decision Token S120 Result](decisions/canonical-decision-token-s120-result.md): SSOT decision-token training result; logprob causality passed but greedy answer-level causality was rejected.
+- [Canonical SSoT Core Answer-Bottleneck S150 Scale-Up](decisions/canonical-ssot-core-answer-bottleneck-s150-answer-gate-8.md): 8-case scale-up rejection showing the strong latent answer bottleneck harms donor-correct cases and has no critical causal drop.
+- [Canonical SSoT Core Answer-Bottleneck Safe Gate Eval](decisions/canonical-ssot-core-answer-bottleneck-safe-gate-eval-answer-gate-8.md): safe residual-gate rejection showing donor preservation without causal QTRM improvement.
+- [Canonical SSoT Core Answer-Bottleneck Selective Gate](decisions/canonical-ssot-core-answer-bottleneck-selective-gate-s150-answer-gate-8.md): learned residual-gate rejection; QTRM ties donor while core-off improves, so margin-only tuning is not enough.
+- [Canonical Greedy-Margin And Plain-Answer KISS Result](decisions/canonical-greedy-margin-and-plain-answer-kiss-result.md): rejects greedy-token margin and plain-answer KISS resets because workspace/core-off ablations match or improve full QTRM.
+- [Canonical Answer Governor S120 Strict Gate](decisions/canonical-answer-governor-s120-answer-gate-8.md): causal governor signal accepted but strict promotion rejected because QTRM ties donor and core-off beats full QTRM.
+- [Canonical Answer Governor Preserve S120 Strict Gate](decisions/canonical-answer-governor-preserve-s120-answer-gate-8.md): donor-correct preservation reduced one core-off symptom but still rejected because QTRM only ties donor.
+- [Canonical Answer Preference S160 Strict Gate](decisions/canonical-answer-preference-s160-answer-gate-8.md): SSOT plain-answer preference training kept the governor causal signal but rejected because core-off again beats full QTRM.
+- [Canonical Answer Preference S160 QScale030 Gate](decisions/canonical-answer-preference-s160-qscale030-answer-gate-8.md): lower residual scale fixes one override but rejects because QTRM still only ties donor and loses all causal drops.
+- [Intervention Policy Failure Ledger](decisions/intervention-policy-failure-ledger.md): donor/QTRM/core-off audit showing the current blocker is deciding when QTRM may override donor.
+- [Intervention Preference Train24 S080 Gate](decisions/intervention-preference-train24-s080-answer-gate-8.md): on-policy intervention fine-tune fixes one unsafe override but rejects because core/governor-off still beat full QTRM.
+- [Intervention Preference Train24 S080 Active-Path Gate](decisions/intervention-preference-train24-s080-active-path-gate-8.md): active-only critical-mode gate proving rejection is not caused only by inactive probe modes.
+- [Mandatory Identity Core Candidate Gate 8](decisions/mandatory-identity-core-candidate-gate-8.md): corrected mandatory latent-loop candidate; core runs safely but has not yet beaten core-off.
+- [Mandatory Identity Core Causal S080 Gate 8](decisions/mandatory-identity-core-causal-s080-gate-8.md): rejected identity-blend training because `core_off` still matched full completions.
+- [Mandatory Core Answer-Bottleneck Causal S120 Gate 8](decisions/mandatory-core-answer-bottleneck-causal-s120-gate-8.md): rejected strict-bottleneck causal training; bypass removed but donor-only was not beaten.
+- [Mandatory Core Answer Path Accepted](decisions/mandatory-core-answer-path-accepted.md): first accepted small gate for a strict mandatory-core answer path.
+- [Mandatory Core Intervention Preference S080 Gate 8](decisions/mandatory-core-intervention-preference-s080-gate-8.md): accepted 8-case gate where full mandatory core beats donor-only and drops under core/workspace ablations.
+- [Transition-State Finality S120](decisions/transition-state-finality-s120.md): narrow causal finality signal accepted, but Stage 1 recursive reasoning promotion rejected because trace exact remains 0/64.
+- [Mandatory Core Intervention Preference S080 Gate 16](decisions/mandatory-core-intervention-preference-s080-gate-16.md): accepted 16-case scale-up where full mandatory core reaches 13/16 versus 10/16 ablations.
+- [Mandatory Core Intervention Preference S080 Gate 32](decisions/mandatory-core-intervention-preference-s080-gate-32.md): accepted 32-case scale-up where full mandatory core reaches 20/32 versus 17/32 ablations.
+- [Mandatory Core Intervention Preference S080 Gate 72](decisions/mandatory-core-intervention-preference-s080-gate-72.md): accepted full held-out gate where full mandatory core reaches 50/72 versus 39/72 donor/core/workspace-off.
+- [Coreless Workspace Answer Lower-Bound Gate 8](decisions/coreless-workspace-answer-candidate-gate-8.md): diagnostic lower-bound/teacher path, accepted on 8 held-out cases.
+- [Coreless Workspace Answer Lower-Bound Gate 16](decisions/coreless-workspace-answer-candidate-gate-16.md): lower-bound remains accepted on 16 held-out cases, but it is not the final QTRM target.
+- [ASI Controller Causal Loop S300](decisions/asi-controller-causal-loop-s300.md): Stage-1 controller action-policy gate showing latent-core drop but rejecting ASI claims because scripted/donor baselines are not beaten and world-model/verifier paths are not causal yet.
+- [ASI Controller Signal Causal Loop S300](decisions/asi-controller-signal-causal-loop-s300.md): Stage-1.5 controller-signal gate showing world-model/verifier signal drops while rejecting ASI claims because the signal is oracle-scaffolded and latent core is not causal.
+- [ASI Controller Learned-Signal Failure Ledger](decisions/asi-controller-learned-signal-failure-ledger.md): Stage-1.6 learned controller-signal replacement failure showing per-row latent readouts collapse and a recurrent transition-state controller is needed.
+- [ASI Controller Learned-Signal Head Causal Loop S300](decisions/asi-controller-learned-signal-head-causal-loop-s300.md): head-only learned signal ablation report; rejected because QTRM collapses to one action and component-off drops do not pass the gate.
+- [ASI Controller Learned-Signal Readout Causal Loop S300](decisions/asi-controller-learned-signal-readout-causal-loop-s300.md): diagnostic readout-source ablation; rejected because readout improves only to 0.3704 and latent/workspace-off performs better than full.
+- [Transition-State Controller Markov Smoke](decisions/transition-state-controller-markov-smoke.md): accepted narrow smoke showing explicit previous-action transition state is causal while QTRM feature coupling remains unsolved.
+- [Transition-State Controller Explicit-State Smoke](decisions/transition-state-controller-explicit-state-smoke.md): accepted narrow smoke showing previous observation/verifier state is causal even when QTRM features and previous-action input are disabled.
+- [Transition-State Controller Learned-State Smoke](decisions/transition-state-controller-learned-state-smoke.md): accepted narrow smoke showing QTRM row features can predict the loop-state scaffold and drive the controller when direct feature and previous-action paths are disabled; superseded by stricter runtime-state checks for planner claims.
+- [Transition-State Controller Runtime-State S120](decisions/transition-state-controller-runtime-state-s120.md): strict runtime-state retraining result with causal state drop but rejected first-step action stability.
+- [Learned-State Answer Loop Gate](decisions/learned-state-answer-loop-runtime-state-gate.md): task-level answer reward near-miss showing learned-state QTRM beats scripted/donor smoke baselines on 8 cases but rejects on 7/8 action-loop stability.
+- [Transition-State Controller Runtime Action-First S200](decisions/transition-state-controller-runtime-actionfirst-s200.md): accepted strict runtime action-policy gate that reaches 1.0 held-out action accuracy but still rejects task-level answer reward.
+- [Answer Formation Bottleneck After Action Loop](decisions/answer-formation-bottleneck-after-action-loop.md): identifies that stable retrieve-verify-answer control must be paired with a verifier-controlled answer renderer to improve reasoning.
+- [Evidence Span Truthcal 72 Answer Channel](decisions/evidence-span-truthcal-72-answer-channel.md): 72-case span/truth answer-channel result showing 0.6806 QTRM accuracy versus 0.3333 donor/span-off baselines.
+- [Answer Decision Gate Truthcal 72](decisions/answer-decision-gate-truthcal-72.md): rejected threshold-only verifier calibration showing calibration gains but held-out over-abstention.
+- [Learned Answer Decision Head Truthcal Train144 Eval72](decisions/answer-decision-head-truthcal-train144-eval72.md): accepted post-hoc MLP gate improving heldout answer accuracy from 0.6806 to 0.8611 and removing false positives.
+- [Evidence Span Truthcal 72 Answer Decision](decisions/evidence-span-truthcal-72-answer-decision.md): runtime integration of the learned answer-decision head in `95_eval`, reaching 62/72 held-out accuracy with zero expected-unknown false positives.
+- [In-Model Answer Decision Head Truthcal S200](decisions/inmodel-answer-decision-head-truthcal-s200.md): accepted ablatable QTRM checkpoint path matching 62/72 held-out accuracy while feature/head-off ablations drop to 49/72.
+- [Evidence Span Boundary REVISE Truthcal 72](decisions/evidence-span-boundary-revise-truthcal72.md): accepted deterministic span-boundary revision raising full held-out accuracy to 67/72; rejected reliability source-pruning because it dropped to 48/72.
+- [Evidence Source Selector Truthcal 72](decisions/evidence-source-selector-truthcal72.md): accepted learned answer-source selector applied as a span-logit mask, raising held-out answer accuracy to 71/72 while preserving 24/24 UNKNOWN negatives.
+- [ASI Causal Loop Gate](decisions/asi-causal-loop-gate.md): current conservative accepted/rejected ASI gate output from the latest controller/harness metrics.
+- [Verified Reasoning LeWM Core S200](decisions/verified-reasoning-lewm-core-s200.md): LeWM core-world-model loss is wired into raw recursive training, but the 200-step held-out gate ties CE-only and is not promoted.
+- [LeWM Transition Quality Gate](decisions/lewm-transition-quality-gate.md): LeWM reduces recursive-core transition MSE by two orders of magnitude, but answer accuracy remains unchanged, proving the target is not yet semantic/answer-causal.
+- [Pure Recursive LeWM Staged S200 Symbolic Transition Gate](decisions/pure-recursive-lewm-staged-s200-symbolic-transition-gate.md): pure-recursive staged LeWM keeps the raw depth gate accepted but does not improve symbolic intermediate-state accuracy.
+- [LeWM Demoted From Canonical Single-Trace TRM](decisions/lewm-demoted-from-canonical-single-trace-trm.md): keeps LeWM as a probe while making the canonical raw-intelligence path a single-trace TRM with `core_world_model_enabled=false`.
+- [Pure Recursive Single-Trace Rebuild S160 Failure Ledger](decisions/pure-recursive-single-trace-rebuild-s160-failure-ledger.md): 72-case LeWM-free rebuild rejects because core8 loses to donor-only and depth outputs are identical for 69/72 cases.
+- [Pure Recursive Semantic Depth S120 Gate 16](decisions/pure-recursive-answer-state-loop-semantic-depth-s120-depth-gate-16.md): staged internal CE smoke rejected because heldout core depths all emit identical answers and core8 loses to donor-only.
+- [Pure Recursive Semantic Depth S120 Train Slice 16](decisions/pure-recursive-answer-state-loop-semantic-depth-s120-train-slice-16.md): train-distribution smoke still rejects because core depth outputs are identical despite a small donor advantage.
+- [Pure Recursive Multi-Token Depth S080 Gate 16](decisions/pure-recursive-answer-state-loop-multitoken-depth-s080-depth-gate-16.md): multi-token causal-prefix training creates a small depth ladder but still rejects because core8 loses to donor-only and list-transform stays at 0/4.
+- [Explicit Transition-State Core Next](decisions/explicit-transition-state-core-next.md): promotes the next raw-intelligence candidate to an in-model recurrent state variable that must be supervised and ablated through the answer path.
+- [Fixed Operation To General Recursive Core Roadmap](decisions/fixed-operation-to-general-recursive-core-roadmap.md): stages the fixed-operation primitive probe into learned latent operations, records OOD paraphrase recovery from 191/256 to 252/256 raw and 256/256 state-constrained, marks full list-family holdout as a fixed-label reject gate, adds a feasible latent-action codebook split, and rejects S120 codebook training because held-out trace exact remains 0/64.

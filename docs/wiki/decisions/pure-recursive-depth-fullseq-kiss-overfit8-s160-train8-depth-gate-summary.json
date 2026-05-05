@@ -1,0 +1,146 @@
+{
+  "gate_type": "pure_recursive_reasoning",
+  "claim": "QTRM recursive core depth should improve held-out reasoning without retrieval, MemoryOS, or hidden evidence shortcuts.",
+  "status": "rejected",
+  "donor_mode": "donor_only_no_evidence",
+  "core_off_mode": "qtrm_core_off_no_evidence",
+  "deepest_core_mode": "qtrm_core_steps_8_no_evidence",
+  "donor": {
+    "count": 8,
+    "hits": 5,
+    "accuracy": 0.625,
+    "mode": "donor_only_no_evidence"
+  },
+  "core_off": {
+    "count": 8,
+    "hits": 6,
+    "accuracy": 0.75,
+    "mode": "qtrm_core_off_no_evidence"
+  },
+  "deepest_core": {
+    "count": 8,
+    "hits": 6,
+    "accuracy": 0.75,
+    "mode": "qtrm_core_steps_8_no_evidence"
+  },
+  "depth_ladder": [
+    {
+      "count": 8,
+      "hits": 6,
+      "accuracy": 0.75,
+      "mode": "qtrm_core_steps_1_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 6,
+      "accuracy": 0.75,
+      "mode": "qtrm_core_steps_2_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 6,
+      "accuracy": 0.75,
+      "mode": "qtrm_core_steps_4_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 6,
+      "accuracy": 0.75,
+      "mode": "qtrm_core_steps_8_no_evidence"
+    }
+  ],
+  "depth_output_diversity": {
+    "measured": true,
+    "reason": "ok",
+    "case_count": 8,
+    "identical_case_count": 8,
+    "changed_case_count": 0,
+    "all_depth_outputs_identical": true,
+    "examples": [
+      {
+        "id": "arith-chain-100",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "220",
+          "qtrm_core_steps_2_no_evidence": "220",
+          "qtrm_core_steps_4_no_evidence": "220",
+          "qtrm_core_steps_8_no_evidence": "220"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "symbolic-binding-100",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "green",
+          "qtrm_core_steps_2_no_evidence": "green",
+          "qtrm_core_steps_4_no_evidence": "green",
+          "qtrm_core_steps_8_no_evidence": "green"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "boolean-logic-100",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "true",
+          "qtrm_core_steps_2_no_evidence": "true",
+          "qtrm_core_steps_4_no_evidence": "true",
+          "qtrm_core_steps_8_no_evidence": "true"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "list-transform-100",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "208,204",
+          "qtrm_core_steps_2_no_evidence": "208,204",
+          "qtrm_core_steps_4_no_evidence": "208,204",
+          "qtrm_core_steps_8_no_evidence": "208,204"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "arith-chain-101",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "331",
+          "qtrm_core_steps_2_no_evidence": "331",
+          "qtrm_core_steps_4_no_evidence": "331",
+          "qtrm_core_steps_8_no_evidence": "331"
+        },
+        "all_identical": true
+      }
+    ]
+  },
+  "donor_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "donor_only_no_evidence",
+    "candidate_hits": 6,
+    "baseline_hits": 5,
+    "candidate_count": 8,
+    "baseline_count": 8,
+    "hit_advantage": 1,
+    "accuracy_advantage": 0.125,
+    "candidate_beats_baseline": true
+  },
+  "core_off_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "qtrm_core_off_no_evidence",
+    "candidate_hits": 6,
+    "baseline_hits": 6,
+    "candidate_count": 8,
+    "baseline_count": 8,
+    "hit_advantage": 0,
+    "accuracy_advantage": 0.0,
+    "candidate_beats_baseline": false
+  },
+  "shortcut_records": [],
+  "missing_modes": [],
+  "failed_checks": [
+    "deep_core_does_not_beat_core_off",
+    "no_depth_scaling_gain",
+    "depth_outputs_identical_across_steps"
+  ],
+  "passed_checks": [
+    "deep_core_beats_donor",
+    "no_retrieval_or_memoryos_shortcut"
+  ],
+  "recommendation": "Do not tune answer formatting. Redesign or retrain the recursive core so deeper latent steps beat donor-only and core-off on no-evidence tasks."
+}

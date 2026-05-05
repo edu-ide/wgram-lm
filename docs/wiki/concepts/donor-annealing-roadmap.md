@@ -258,6 +258,60 @@ Immediate implementation direction:
 5. Re-run the donor-scale sweep and require `donor=0.0` repeated 2/3-gram rates
    to drop before claiming donor-detach progress.
 
+## Subliminal-Learning Safety Update
+
+Subliminal Learning (`https://arxiv.org/abs/2507.14805`) adds a stronger risk
+boundary around the OPD/GKD plan. Teacher-generated data is not automatically
+safe just because visible content looks unrelated to alignment traits or passes
+filters. The paper reports hidden trait transfer through number sequences, code,
+and reasoning traces, especially when teacher and student share the same base
+initialization or model family.
+
+For QTRM this matters because the likely teacher/donor/student stack is
+Qwen-family:
+
+```text
+Qwen3.6-27B teacher
+Qwen3.5-2B donor hidden/logits
+QTRM student head/core attached to Qwen tokenizer and donor states
+```
+
+Therefore the donor-annealing plan must split teacher use into two classes.
+
+Canonical:
+
+```text
+teacher proposes candidates, critiques, or hard negatives
+external verifier/gold process chooses the label
+QTRM trains on the verified label or checked preference
+```
+
+Non-canonical until proven safe:
+
+```text
+teacher answer direct SFT
+single-teacher CoT trace SFT
+unbounded teacher-logit KL as the target distribution
+large same-family synthetic datasets filtered only by surface content
+```
+
+This does not mean online distillation is abandoned. It means online
+distillation must become verifier-gated:
+
+```text
+QTRM/student rollout
+-> teacher suggests correction or critique
+-> rule solver / unit test / symbolic checker / evidence verifier / human gold
+   accepts or rejects it
+-> train only from accepted labels and explicit rejected alternatives
+```
+
+Near-term consequence: before DGX Qwen3.6 direct online distillation, use
+verified public datasets such as GSM8K, MATH-500, NuminaMath verifiable,
+ProofWriter, CLUTRR, bAbI, MBPP, MBPP+, and HumanEval. Qwen3.6 can still be
+used for candidate generation and hard-case mining, but not as the only source
+of truth.
+
 Bounded residual support:
 
 ```yaml

@@ -1,0 +1,18 @@
+{
+  "baseline": "qtrm_harness",
+  "causal_drops": {
+    "qtrm_latent_core_off": -0.05555555555555558,
+    "qtrm_verifier_off": 0.33333333333333326,
+    "qtrm_world_model_off": 0.6111111111111112
+  },
+  "failed_checks": [
+    "qtrm_does_not_beat_donor_harness",
+    "qtrm_does_not_beat_scripted_harness",
+    "latent_core_not_causal"
+  ],
+  "gain_over_donor_harness": -0.05555555555555558,
+  "gain_over_scripted_harness": -0.05555555555555558,
+  "min_drop": 0.03,
+  "min_gain": 0.02,
+  "status": "rejected"
+}

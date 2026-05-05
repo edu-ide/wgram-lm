@@ -29,12 +29,18 @@ documented as explicit deviations from these baselines.
 | LeWorldModel | `references/official/le-wm` | `https://github.com/lucas-maes/le-wm` | `bf04d3e8c375` | Latest end-to-end JEPA world-model objective and predictor reference |
 | DreamerV3 | `references/official/dreamerv3` | `https://github.com/danijar/dreamerv3` | `b65cf81a6fb1` | Latent world-model transition and imagination reference |
 | Tiny Recursive Models | `references/official/tiny-recursive-models` | `https://github.com/SamsungSAILMontreal/TinyRecursiveModels` | `c01103738605` | TRM recursive z_H/z_L, ACT halting, carry-detach reference |
+| LM2 | `references/official/lm2` | `https://github.com/convergence-ai/lm2` | `5f56b197b735` | Gated auxiliary memory lane for decoder-only Transformers |
+| MSA | `references/official/msa` | `https://github.com/EverMind-AI/MSA` | `30405b2a134c` | Sparse latent-memory routing for 100M-token memory |
+| LightMem | `references/official/lightmem` | `https://github.com/zjunlp/LightMem` | `b11eccd23c7c` | External agent MemoryOS filtering, consolidation, and evaluation |
+| Titans PyTorch | `references/official/titans-pytorch` | `https://github.com/lucidrains/titans-pytorch` | `714a14cc8942` | Unofficial neural long-term memory implementation reference |
 | MergeKit | `references/official/model-merging/mergekit` | `https://github.com/arcee-ai/mergekit` | `71113608094f` | Practical LLM merge/frankenmerge/passthrough toolkit |
 | TIES-Merging | `references/official/model-merging/ties-merging` | `https://github.com/prateeky2806/ties-merging` | `44e7891fc84f` | Task-vector merge interference reference |
 | DELLA-Merging | `references/official/model-merging/della` | `https://github.com/declare-lab/della` | `80675156d674` | Magnitude-based sampling/pruning merge reference |
 | Model Soups | `references/official/model-merging/model-soups` | `https://github.com/mlfoundations/model-soups` | `d5398f181ea5` | Checkpoint averaging / greedy soup reference |
 | Branch-Train-Merge | `references/official/model-merging/btm` | `https://github.com/hadasah/btm` | `529b0f162bb6` | Branch-train-merge expert language model reference |
 | Parcae | `references/official/parcae` | `https://github.com/sandyresearch/parcae` | `dee8363` | Paper-backed stable looped language model and recurrence-depth reference |
+| Random2 calibration | `references/official/cogilab-random2` | `https://github.com/cogilab/Random2` | `798a76cb1d98` | Official random-noise warm-up implementation for uncertainty calibration |
+| Random noise pretraining | `references/official/cogilab-random` | `https://github.com/cogilab/Random` | `e96aadd13903` | Official NeurIPS 2024 random-noise pretraining implementation |
 
 ## Experimental / Speculative Code References
 
@@ -55,8 +61,17 @@ documented as explicit deviations from these baselines.
 | EB-JEPA | `references/papers/eb_jepa_2602.03604.pdf` | `https://arxiv.org/abs/2602.03604` |
 | JEPA world models | `references/papers/jepa_wms_physical_planning_2512.24497.pdf` | `https://arxiv.org/abs/2512.24497` |
 | LeWorldModel | `references/papers/leworldmodel_2603.19312.pdf` | `https://arxiv.org/abs/2603.19312` |
+| V-JEPA 2 | `references/papers/asi_roadmap/vjepa2_2506.09985.pdf` | `https://arxiv.org/abs/2506.09985` |
 | DreamerV3 | `references/papers/dreamerv3_2301.04104.pdf` | `https://arxiv.org/abs/2301.04104` |
 | Tiny Recursive Models | `references/papers/tiny_recursive_models_2510.04871.pdf` | `https://arxiv.org/abs/2510.04871` |
+| LM2 | `references/papers/memory_workspace/lm2_2502.06049.pdf` | `https://arxiv.org/abs/2502.06049` |
+| G-MemLLM | `references/papers/memory_workspace/g_memllm_2602.00015.pdf` | `https://arxiv.org/abs/2602.00015` |
+| MSA | `references/official/msa/paper/MSA__Memory_Sparse_Attention_for_Efficient_End_to_End_Memory_Model_Scaling_to_100M_Tokens.pdf` | `https://arxiv.org/abs/2603.23516` |
+| Titans | `references/papers/long_term_memory/titans_2501.00663.pdf` | `https://arxiv.org/abs/2501.00663` |
+| ATLAS | `references/papers/long_term_memory/atlas_2505.23735.pdf` | `https://arxiv.org/abs/2505.23735` |
+| MIRAS | `references/papers/long_term_memory/miras_2504.13173.pdf` | `https://arxiv.org/abs/2504.13173` |
+| LightMem | `references/papers/long_term_memory/lightmem_2510.18866.pdf` | `https://arxiv.org/abs/2510.18866` |
+| MemCoT | `references/papers/long_term_memory/memcot_2604.08216.pdf` | `https://arxiv.org/abs/2604.08216` |
 | Model Soups | `references/papers/model_merging/model_soups_2203.05482.pdf` | `https://arxiv.org/abs/2203.05482` |
 | TIES-Merging | `references/papers/model_merging/ties_merging_2306.01708.pdf` | `https://arxiv.org/abs/2306.01708` |
 | DARE Merging | `references/papers/model_merging/dare_merging_2311.03099.pdf` | `https://arxiv.org/abs/2311.03099` |
@@ -82,6 +97,13 @@ documented as explicit deviations from these baselines.
 | Looped transformers for learning algorithms | `references/papers/recurrent_depth/looped_transformers_learning_algorithms_2311.12424.pdf` | `https://arxiv.org/abs/2311.12424` |
 | Reasoning with latent thoughts | `references/papers/recurrent_depth/reasoning_with_latent_thoughts_looped_transformers_2502.17416.pdf` | `https://arxiv.org/abs/2502.17416` |
 | Latent CoT probing | `references/papers/recurrent_depth/latent_cot_depth_recurrent_transformer_2507.02199.pdf` | `https://arxiv.org/abs/2507.02199` |
+| SEAL / Self-Adapting LLMs | `references/papers/asi_roadmap/seal_self_adapting_language_models_2506.10943.pdf` | `https://arxiv.org/abs/2506.10943` |
+| AlphaEvolve | `references/papers/asi_roadmap/alphaevolve_2506.13131.pdf` | `https://arxiv.org/abs/2506.13131` |
+| CodeEvolve | `references/papers/asi_roadmap/codeevolve_2510.14150.pdf` | `https://arxiv.org/abs/2510.14150` |
+| Bidirectional RAG | `references/papers/asi_roadmap/bidirectional_rag_2512.22199.pdf` | `https://arxiv.org/abs/2512.22199` |
+| Agent harness residual role | `references/papers/asi_roadmap/agent_harness_residual_role_2604.07236.pdf` | `https://arxiv.org/abs/2604.07236` |
+| Memory for autonomous LLM agents | `references/papers/asi_roadmap/memory_for_autonomous_llm_agents_2603.07670.pdf` | `https://arxiv.org/abs/2603.07670` |
+| Autonomous memory agents | `references/papers/asi_roadmap/autonomous_memory_agents_2602.22406.pdf` | `https://arxiv.org/abs/2602.22406` |
 
 ## Web / Transcript References
 
@@ -123,3 +145,17 @@ documented as explicit deviations from these baselines.
     data/memory-separation hypothesis, not as proof that QTRM can reach frontier
     capability by adding steps. Require donor baselines, clean trace audits,
     target-token-rank, entropy/repetition diagnostics, and ablations first.
+12. Any gated latent-memory claim must include a gate-off ablation. Treat the
+    current QTRM gate as LM2/G-MemLLM-inspired, not a faithful implementation of
+    either paper.
+13. Any ASI-oriented claim must be stated as a falsifiable capability gate, not
+    as a status label. Require causal evidence for grounded retrieval, latent
+    reasoning, world-model prediction, verification, self-improvement, and
+    long-horizon agency before escalating claims.
+13. Treat Perceiver/Q-Former/OpenFlamingo-style learned latent slots as a
+    connector/bottleneck baseline. Do not use them alone as evidence of modern
+    long-term memory or latent reasoning; those claims require LM2/G-MemLLM
+    gate-off causality and MSA/MemoryOS-style sparse memory routing evidence.
+14. Any gated core-context claim must include `qtrm_core_context_off_*`
+    ablations plus gate telemetry in eval records. A configured cross-attention
+    route is not evidence that the recursive core used prompt/evidence context.

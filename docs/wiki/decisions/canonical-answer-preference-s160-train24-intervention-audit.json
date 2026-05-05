@@ -1,0 +1,819 @@
+{
+  "case_count": 24,
+  "donor_hit_qtrm_miss_count": 2,
+  "qtrm_hit_donor_miss_count": 2,
+  "core_off_beats_qtrm_count": 2,
+  "qtrm_beats_core_off_count": 2,
+  "qtrm_changed_donor_completion_count": 22,
+  "qtrm_changed_core_off_completion_count": 20,
+  "donor_hit_qtrm_miss_cases": [
+    {
+      "id": "synthetic-authority-vault-0004",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Ember vault?",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer: opal-river",
+      "qtrm_completion": "Answer: stone-arch.",
+      "core_off_completion": "Answer: opal-river"
+    },
+    {
+      "id": "synthetic-multihop-badge-0002",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Coral?",
+      "answer_aliases": [
+        "Coral-Badge-12",
+        "Coral Badge 12"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: UNKNOWN.",
+      "core_off_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE"
+    }
+  ],
+  "qtrm_hit_donor_miss_cases": [
+    {
+      "id": "synthetic-authority-vault-0000",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Aster vault?",
+      "answer_aliases": [
+        "stone-arch",
+        "stone arch"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer: cedar-gate",
+      "qtrm_completion": "Answer: stone-arch",
+      "core_off_completion": "Answer: cedar-gate"
+    },
+    {
+      "id": "synthetic-negative-ko-vault-0006",
+      "category": "negative_missing_ko_synth",
+      "task_family": "abstention",
+      "question": "Garnet 동쪽 금고를 여는 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE",
+      "qtrm_completion": "Answer: 구름-39.\nAnswer using only the evidence. Return only short answer.\n\nAnswer UNKNOWN.",
+      "core_off_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE"
+    }
+  ],
+  "core_off_beats_qtrm_cases": [
+    {
+      "id": "synthetic-authority-vault-0004",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Ember vault?",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer: opal-river",
+      "qtrm_completion": "Answer: stone-arch.",
+      "core_off_completion": "Answer: opal-river"
+    },
+    {
+      "id": "synthetic-multihop-badge-0002",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Coral?",
+      "answer_aliases": [
+        "Coral-Badge-12",
+        "Coral Badge 12"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: UNKNOWN.",
+      "core_off_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE"
+    }
+  ],
+  "qtrm_beats_core_off_cases": [
+    {
+      "id": "synthetic-authority-vault-0000",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Aster vault?",
+      "answer_aliases": [
+        "stone-arch",
+        "stone arch"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer: cedar-gate",
+      "qtrm_completion": "Answer: stone-arch",
+      "core_off_completion": "Answer: cedar-gate"
+    },
+    {
+      "id": "synthetic-negative-ko-vault-0006",
+      "category": "negative_missing_ko_synth",
+      "task_family": "abstention",
+      "question": "Garnet 동쪽 금고를 여는 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE",
+      "qtrm_completion": "Answer: 구름-39.\nAnswer using only the evidence. Return only short answer.\n\nAnswer UNKNOWN.",
+      "core_off_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE"
+    }
+  ],
+  "qtrm_changed_donor_completion_cases": [
+    {
+      "id": "synthetic-authority-ko-location-0004",
+      "category": "authority_location_ko_synth",
+      "task_family": "conflict",
+      "question": "중앙 중계실의 현재 인증 문구는 무엇인가요?",
+      "answer_aliases": [
+        "호수-63",
+        "호수 63"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n호수-63",
+      "qtrm_completion": "Answer: 중앙 중계실의 현재 인증 문구는 호수-63이다.",
+      "core_off_completion": "Answer:\n호수-63"
+    },
+    {
+      "id": "synthetic-authority-ko-room-0002",
+      "category": "authority_conflict_ko_synth",
+      "task_family": "conflict",
+      "question": "Coral 통제실의 현재 인증 문구는 무엇인가요?",
+      "answer_aliases": [
+        "구름-39",
+        "구름 39"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n호수-63",
+      "qtrm_completion": "Answer: 호수-63.",
+      "core_off_completion": "Answer:\n호수-63"
+    },
+    {
+      "id": "synthetic-authority-ko-room-0007",
+      "category": "authority_conflict_ko_synth",
+      "task_family": "conflict",
+      "question": "Iris 통제실의 현재 인증 문구는 무엇인가요?",
+      "answer_aliases": [
+        "바다-26",
+        "바다 26"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n서명된 운영 공지: Iris 통제실의 현재 인증 문구는 바다-26이다.",
+      "qtrm_completion": "Answer: 바다-26.",
+      "core_off_completion": "Answer:\n서명된 운영 공지: Iris 통제실의 현재 인증 문구는 바다-26이다."
+    },
+    {
+      "id": "synthetic-authority-vault-0000",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Aster vault?",
+      "answer_aliases": [
+        "stone-arch",
+        "stone arch"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer: cedar-gate",
+      "qtrm_completion": "Answer: stone-arch",
+      "core_off_completion": "Answer: cedar-gate"
+    },
+    {
+      "id": "synthetic-authority-vault-0004",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Ember vault?",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer: opal-river",
+      "qtrm_completion": "Answer: stone-arch.",
+      "core_off_completion": "Answer: opal-river"
+    },
+    {
+      "id": "synthetic-authority-vault-0005",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Frost vault?",
+      "answer_aliases": [
+        "amber-field",
+        "amber field"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer: amber-field",
+      "qtrm_completion": "Answer: amber-field.",
+      "core_off_completion": "Answer: amber-field"
+    },
+    {
+      "id": "synthetic-multihop-badge-0002",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Coral?",
+      "answer_aliases": [
+        "Coral-Badge-12",
+        "Coral Badge 12"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: UNKNOWN.",
+      "core_off_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE"
+    },
+    {
+      "id": "synthetic-multihop-badge-0003",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Dune?",
+      "answer_aliases": [
+        "Dune-Badge-13",
+        "Dune Badge 13"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nDune-Badge-13\nSOURCE=rover_r23.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: Dune-Badge-13.",
+      "core_off_completion": "Answer:\nDune-Badge-13\nSOURCE=rover_r23.md CHUNK=1 SCORE"
+    },
+    {
+      "id": "synthetic-multihop-badge-0007",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Iris?",
+      "answer_aliases": [
+        "Iris-Badge-17",
+        "Iris Badge 17"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nIris-Badge-17\nSOURCE=rover_r27.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: Iris-Badge-17.",
+      "core_off_completion": "Answer: Iris-Badge-17\nQuestion: Which badge identifies the rover assigned to Mission Decoy-Iris"
+    },
+    {
+      "id": "synthetic-multihop-ko-label-0000",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Aster 임무에 배정된 상자의 라벨은 무엇인가요?",
+      "answer_aliases": [
+        "새벽-14",
+        "새벽 14"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n상자 B-60의 라벨은 새벽-14이다.",
+      "qtrm_completion": "Answer: 새벽-14.",
+      "core_off_completion": "Answer:\n상자 B-60의 라벨은 새벽-14이다."
+    },
+    {
+      "id": "synthetic-multihop-ko-label-0006",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Garnet 임무에 배정된 상자의 라벨은 무엇인가요?",
+      "answer_aliases": [
+        "새벽-14",
+        "새벽 14"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n상자 B-66의 라벨은 새벽-14이다.",
+      "qtrm_completion": "Answer: 새벽-14.",
+      "core_off_completion": "Answer:\n상자 B-66의 라벨은 새벽-14이다."
+    },
+    {
+      "id": "synthetic-multihop-ko-owner-0004",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Ember 현장 노트의 책임자는 누구인가요?",
+      "answer_aliases": [
+        "최라온"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nEmber-실험-14 실헴의 책임자는 최라온이다.",
+      "qtrm_completion": "Answer:\n- 최라온",
+      "core_off_completion": "Answer:\nEmber-실험-14 실헴의 책임자는 최라온이다."
+    },
+    {
+      "id": "synthetic-multihop-maintainer-0007",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Who maintains the crate assigned to Project Iris?",
+      "answer_aliases": [
+        "Ilya Moon",
+        "Ilya"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer: Ilya Moon",
+      "qtrm_completion": "Answer: Ilya Moon.",
+      "core_off_completion": "Answer: Ilya Moon"
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0002",
+      "category": "negative_authority_missing_synth",
+      "task_family": "abstention",
+      "question": "What is the current Coral emergency override phrase?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\nopal-river",
+      "qtrm_completion": "Answer: cedar-gate.",
+      "core_off_completion": "Answer:\n\nopal-river"
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0004",
+      "category": "negative_authority_missing_synth",
+      "task_family": "abstention",
+      "question": "What is the current Ember emergency override phrase?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer: opal-river",
+      "qtrm_completion": "Answer: opal-river.",
+      "core_off_completion": "Answer: opal-river"
+    },
+    {
+      "id": "synthetic-negative-ko-vault-0002",
+      "category": "negative_missing_ko_synth",
+      "task_family": "abstention",
+      "question": "Coral 동쪽 금고를 여는 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n호수-63",
+      "qtrm_completion": "Answer:\n호수-63이다.",
+      "core_off_completion": "Answer:\n호수-63"
+    },
+    {
+      "id": "synthetic-negative-ko-vault-0006",
+      "category": "negative_missing_ko_synth",
+      "task_family": "abstention",
+      "question": "Garnet 동쪽 금고를 여는 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE",
+      "qtrm_completion": "Answer: 구름-39.\nAnswer using only the evidence. Return only short answer.\n\nAnswer UNKNOWN.",
+      "core_off_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE"
+    },
+    {
+      "id": "synthetic-negative-temporal-ko-location-0007",
+      "category": "negative_temporal_location_ko_synth",
+      "task_family": "abstention",
+      "question": "현재 남쪽 통신실의 책임자는 누구인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n2024-03-14 공지: 남쪽 통신실의 책임자는 민",
+      "qtrm_completion": "Answer: 민재원.",
+      "core_off_completion": "Answer:\n2024-03-14 공지: 남쪽 통신실의 책임자는 민"
+    },
+    {
+      "id": "synthetic-temporal-code-0005",
+      "category": "temporal_conflict_synth",
+      "task_family": "conflict",
+      "question": "What is the current Frost archive code?",
+      "answer_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer: LX-21\nQuestion: What is the current Frost archive code?\nWhat is LX?",
+      "qtrm_completion": "Answer: LX-21.",
+      "core_off_completion": "Answer: LX-21."
+    },
+    {
+      "id": "synthetic-temporal-ko-code-0001",
+      "category": "temporal_conflict_ko_synth",
+      "task_family": "conflict",
+      "question": "현재 Beryl 관측실의 확인 코드는 무엇인가요?",
+      "answer_aliases": [
+        "바다-26",
+        "바다 26"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\n초원-52",
+      "qtrm_completion": "Answer:\n\n2026-04-29",
+      "core_off_completion": "Answer:\n\n2026-04-29"
+    },
+    {
+      "id": "synthetic-temporal-ko-code-0002",
+      "category": "temporal_conflict_ko_synth",
+      "task_family": "conflict",
+      "question": "현재 Coral 관측실의 확인 코드는 무엇인가요?",
+      "answer_aliases": [
+        "구름-39",
+        "구름 39"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\nCoral_observatory_2026_ko.md: 현재 Coral 관측실의",
+      "qtrm_completion": "Answer: 현재 Coral 관측실의 확인 코드는 호수-63이다.",
+      "core_off_completion": "Answer:\n\nCoral_observatory_2026_ko.md: 현재 Coral 관측실의"
+    },
+    {
+      "id": "synthetic-temporal-ko-location-0000",
+      "category": "temporal_location_ko_synth",
+      "task_family": "conflict",
+      "question": "현재 북쪽 격납고의 확인 코드는 무엇인가요?",
+      "answer_aliases": [
+        "새벽-14",
+        "새벽 14"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\n구름-39",
+      "qtrm_completion": "Answer: 북쪽 격납고의 확인 코드는 구름-39이다.",
+      "core_off_completion": "Answer:\n\n구름-39"
+    }
+  ],
+  "qtrm_changed_core_off_completion_cases": [
+    {
+      "id": "synthetic-authority-ko-location-0004",
+      "category": "authority_location_ko_synth",
+      "task_family": "conflict",
+      "question": "중앙 중계실의 현재 인증 문구는 무엇인가요?",
+      "answer_aliases": [
+        "호수-63",
+        "호수 63"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n호수-63",
+      "qtrm_completion": "Answer: 중앙 중계실의 현재 인증 문구는 호수-63이다.",
+      "core_off_completion": "Answer:\n호수-63"
+    },
+    {
+      "id": "synthetic-authority-ko-room-0002",
+      "category": "authority_conflict_ko_synth",
+      "task_family": "conflict",
+      "question": "Coral 통제실의 현재 인증 문구는 무엇인가요?",
+      "answer_aliases": [
+        "구름-39",
+        "구름 39"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n호수-63",
+      "qtrm_completion": "Answer: 호수-63.",
+      "core_off_completion": "Answer:\n호수-63"
+    },
+    {
+      "id": "synthetic-authority-ko-room-0007",
+      "category": "authority_conflict_ko_synth",
+      "task_family": "conflict",
+      "question": "Iris 통제실의 현재 인증 문구는 무엇인가요?",
+      "answer_aliases": [
+        "바다-26",
+        "바다 26"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n서명된 운영 공지: Iris 통제실의 현재 인증 문구는 바다-26이다.",
+      "qtrm_completion": "Answer: 바다-26.",
+      "core_off_completion": "Answer:\n서명된 운영 공지: Iris 통제실의 현재 인증 문구는 바다-26이다."
+    },
+    {
+      "id": "synthetic-authority-vault-0000",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Aster vault?",
+      "answer_aliases": [
+        "stone-arch",
+        "stone arch"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer: cedar-gate",
+      "qtrm_completion": "Answer: stone-arch",
+      "core_off_completion": "Answer: cedar-gate"
+    },
+    {
+      "id": "synthetic-authority-vault-0004",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Ember vault?",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer: opal-river",
+      "qtrm_completion": "Answer: stone-arch.",
+      "core_off_completion": "Answer: opal-river"
+    },
+    {
+      "id": "synthetic-authority-vault-0005",
+      "category": "authority_conflict_synth",
+      "task_family": "conflict",
+      "question": "Which passphrase opens the Frost vault?",
+      "answer_aliases": [
+        "amber-field",
+        "amber field"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer: amber-field",
+      "qtrm_completion": "Answer: amber-field.",
+      "core_off_completion": "Answer: amber-field"
+    },
+    {
+      "id": "synthetic-multihop-badge-0002",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Coral?",
+      "answer_aliases": [
+        "Coral-Badge-12",
+        "Coral Badge 12"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": false,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: UNKNOWN.",
+      "core_off_completion": "Answer:\nCoral-Badge-12\nSOURCE=rover_r22.md CHUNK=1 SCORE"
+    },
+    {
+      "id": "synthetic-multihop-badge-0003",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Dune?",
+      "answer_aliases": [
+        "Dune-Badge-13",
+        "Dune Badge 13"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nDune-Badge-13\nSOURCE=rover_r23.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: Dune-Badge-13.",
+      "core_off_completion": "Answer:\nDune-Badge-13\nSOURCE=rover_r23.md CHUNK=1 SCORE"
+    },
+    {
+      "id": "synthetic-multihop-badge-0007",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Which badge identifies the rover assigned to Mission Iris?",
+      "answer_aliases": [
+        "Iris-Badge-17",
+        "Iris Badge 17"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nIris-Badge-17\nSOURCE=rover_r27.md CHUNK=1 SCORE",
+      "qtrm_completion": "Answer: Iris-Badge-17.",
+      "core_off_completion": "Answer: Iris-Badge-17\nQuestion: Which badge identifies the rover assigned to Mission Decoy-Iris"
+    },
+    {
+      "id": "synthetic-multihop-ko-label-0000",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Aster 임무에 배정된 상자의 라벨은 무엇인가요?",
+      "answer_aliases": [
+        "새벽-14",
+        "새벽 14"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n상자 B-60의 라벨은 새벽-14이다.",
+      "qtrm_completion": "Answer: 새벽-14.",
+      "core_off_completion": "Answer:\n상자 B-60의 라벨은 새벽-14이다."
+    },
+    {
+      "id": "synthetic-multihop-ko-label-0006",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Garnet 임무에 배정된 상자의 라벨은 무엇인가요?",
+      "answer_aliases": [
+        "새벽-14",
+        "새벽 14"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\n상자 B-66의 라벨은 새벽-14이다.",
+      "qtrm_completion": "Answer: 새벽-14.",
+      "core_off_completion": "Answer:\n상자 B-66의 라벨은 새벽-14이다."
+    },
+    {
+      "id": "synthetic-multihop-ko-owner-0004",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Ember 현장 노트의 책임자는 누구인가요?",
+      "answer_aliases": [
+        "최라온"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nEmber-실험-14 실헴의 책임자는 최라온이다.",
+      "qtrm_completion": "Answer:\n- 최라온",
+      "core_off_completion": "Answer:\nEmber-실험-14 실헴의 책임자는 최라온이다."
+    },
+    {
+      "id": "synthetic-multihop-maintainer-0007",
+      "category": "multi_hop_synth",
+      "task_family": "multi_hop",
+      "question": "Who maintains the crate assigned to Project Iris?",
+      "answer_aliases": [
+        "Ilya Moon",
+        "Ilya"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer: Ilya Moon",
+      "qtrm_completion": "Answer: Ilya Moon.",
+      "core_off_completion": "Answer: Ilya Moon"
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0002",
+      "category": "negative_authority_missing_synth",
+      "task_family": "abstention",
+      "question": "What is the current Coral emergency override phrase?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\nopal-river",
+      "qtrm_completion": "Answer: cedar-gate.",
+      "core_off_completion": "Answer:\n\nopal-river"
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0004",
+      "category": "negative_authority_missing_synth",
+      "task_family": "abstention",
+      "question": "What is the current Ember emergency override phrase?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer: opal-river",
+      "qtrm_completion": "Answer: opal-river.",
+      "core_off_completion": "Answer: opal-river"
+    },
+    {
+      "id": "synthetic-negative-ko-vault-0002",
+      "category": "negative_missing_ko_synth",
+      "task_family": "abstention",
+      "question": "Coral 동쪽 금고를 여는 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n호수-63",
+      "qtrm_completion": "Answer:\n호수-63이다.",
+      "core_off_completion": "Answer:\n호수-63"
+    },
+    {
+      "id": "synthetic-negative-ko-vault-0006",
+      "category": "negative_missing_ko_synth",
+      "task_family": "abstention",
+      "question": "Garnet 동쪽 금고를 여는 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": true,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE",
+      "qtrm_completion": "Answer: 구름-39.\nAnswer using only the evidence. Return only short answer.\n\nAnswer UNKNOWN.",
+      "core_off_completion": "Answer:\nGarnet 동쪽 금고의 암구호는 구름-39이다.\nSOURCE"
+    },
+    {
+      "id": "synthetic-negative-temporal-ko-location-0007",
+      "category": "negative_temporal_location_ko_synth",
+      "task_family": "abstention",
+      "question": "현재 남쪽 통신실의 책임자는 누구인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n2024-03-14 공지: 남쪽 통신실의 책임자는 민",
+      "qtrm_completion": "Answer: 민재원.",
+      "core_off_completion": "Answer:\n2024-03-14 공지: 남쪽 통신실의 책임자는 민"
+    },
+    {
+      "id": "synthetic-temporal-ko-code-0002",
+      "category": "temporal_conflict_ko_synth",
+      "task_family": "conflict",
+      "question": "현재 Coral 관측실의 확인 코드는 무엇인가요?",
+      "answer_aliases": [
+        "구름-39",
+        "구름 39"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\nCoral_observatory_2026_ko.md: 현재 Coral 관측실의",
+      "qtrm_completion": "Answer: 현재 Coral 관측실의 확인 코드는 호수-63이다.",
+      "core_off_completion": "Answer:\n\nCoral_observatory_2026_ko.md: 현재 Coral 관측실의"
+    },
+    {
+      "id": "synthetic-temporal-ko-location-0000",
+      "category": "temporal_location_ko_synth",
+      "task_family": "conflict",
+      "question": "현재 북쪽 격납고의 확인 코드는 무엇인가요?",
+      "answer_aliases": [
+        "새벽-14",
+        "새벽 14"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\n구름-39",
+      "qtrm_completion": "Answer: 북쪽 격납고의 확인 코드는 구름-39이다.",
+      "core_off_completion": "Answer:\n\n구름-39"
+    }
+  ]
+}

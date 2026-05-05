@@ -14,7 +14,8 @@ Build a Qwen-donor-backed system that can:
 - use Qwen donor logits as the base language policy and train QTRM as a
   residual adapter;
 - support multimodal/world-model objectives through reference-backed modules;
-- connect to MemoryOS-style external memory;
+- optionally connect to MemoryOS-style external memory at the runtime/system
+  layer;
 - learn from clean, curated reasoning and retrieval traces;
 - avoid repetition collapse under free generation.
 
@@ -32,7 +33,7 @@ Build a Qwen-donor-backed system that can:
 | --- | --- |
 | Generator | Qwen/HF donor is the baseline and quality reference |
 | Cognitive core | QTRM modules are the experimental reasoning/memory residual adapter |
-| External memory | Prefer retrieval/MemoryOS for facts and episodes |
+| External memory | Prefer retrieval/MemoryOS for facts and episodes, but keep it outside the model architecture |
 | Data | Clean trace shape matters more than just more steps |
 | Mixer | Official Gated DeltaNet/FLA path preferred |
 | World model | LeWM-style next-embedding prediction plus SIGReg preferred |
@@ -64,8 +65,40 @@ Can QTRM, as a residual adapter, improve donor-only answers on tasks where
 external memory/evidence matters, without damaging donor fluency?
 ```
 
+MemoryOS is not part of this model architecture. The system-level question is:
+
+```text
+Can a QTRM runtime use optional MemoryOS retrieval/rerank/context compilation
+to improve evidence-sensitive tasks while the base QTRM model still works on
+plain prompts without MemoryOS?
+```
+
 The standalone-student question comes later, after OPD/GKD/DistiLLM-style
 training has exposed QTRM to its own generation distribution.
+
+## Reasoning Claim Boundary
+
+QTRM should not be described as merely learning the visible text pattern of
+reasoning traces. The target is a trainable latent state-update process:
+
+```text
+retrieve or receive evidence -> compress into workspace -> update z_l/z_h
+-> decide whether to halt/search/verify/change logits -> answer
+```
+
+However, this is still an operational claim, not a philosophical proof of
+human-like reasoning. The claim becomes credible only when the intermediate
+latent computation is causally necessary:
+
+```text
+full QTRM > donor-only
+full QTRM > workspace/core/context ablated variants
+and the gain transfers to held-out distractor/conflict/missing-answer cases
+```
+
+If those gates fail, the correct conclusion is that QTRM has useful adapter
+hooks but has not yet demonstrated actual latent reasoning. The canonical
+glossary is [QTRM Terminology](../concepts/qtrm-terminology.md).
 
 ## Immediate Priority Order
 

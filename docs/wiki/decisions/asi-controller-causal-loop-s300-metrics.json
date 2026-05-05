@@ -1,0 +1,8 @@
+{
+  "donor_harness": 1.0,
+  "qtrm_harness": 1.0,
+  "qtrm_latent_core_off": 0.7037037037037037,
+  "qtrm_verifier_off": 1.0,
+  "qtrm_world_model_off": 1.0,
+  "scripted_harness": 1.0
+}

@@ -1,0 +1,72 @@
+# Raw Intelligence Gate
+
+## Verdict
+
+Gate type: `pure_recursive_reasoning`
+
+Status: `rejected`
+
+Claim: QTRM recursive core depth should improve held-out reasoning without retrieval, MemoryOS, or hidden evidence shortcuts.
+
+Recommendation: Do not tune answer formatting. Redesign or retrain the recursive core so deeper latent steps beat donor-only and core-off on no-evidence tasks.
+
+## Checks
+
+- Passed: `deep_core_beats_core_off, deep_core_beats_donor, no_retrieval_or_memoryos_shortcut`
+- Failed: `no_depth_scaling_gain, depth_outputs_identical_across_steps`
+- Missing modes: `none`
+- Shortcut records: `0`
+
+## Mode Metrics
+
+| Label | Mode | Hits | Accuracy |
+| --- | --- | ---: | ---: |
+| donor | donor_only_no_evidence | 3/16 | 0.188 |
+| core_off | qtrm_core_off_no_evidence | 0/16 | 0.000 |
+| deepest_core | qtrm_core_steps_8_no_evidence | 4/16 | 0.250 |
+
+## Depth Ladder
+
+| Mode | Hits | Accuracy |
+| --- | ---: | ---: |
+| qtrm_core_steps_1_no_evidence | 4/16 | 0.250 |
+| qtrm_core_steps_2_no_evidence | 4/16 | 0.250 |
+| qtrm_core_steps_4_no_evidence | 4/16 | 0.250 |
+| qtrm_core_steps_8_no_evidence | 4/16 | 0.250 |
+
+## Depth Output Diversity
+
+- Comparable cases: `16`
+- Identical across all depth modes: `16`
+- Changed by depth: `0`
+- All depth outputs identical: `True`
+
+## Expected-Paradigm Metrics
+
+| Expected paradigm | Mode | Hits | Accuracy |
+| --- | --- | ---: | ---: |
+| hybrid_or_cot | donor_only_no_evidence | 1/8 | 0.125 |
+| hybrid_or_cot | qtrm_core_off_no_evidence | 0/8 | 0.000 |
+| hybrid_or_cot | qtrm_core_steps_1_no_evidence | 0/8 | 0.000 |
+| hybrid_or_cot | qtrm_core_steps_2_no_evidence | 0/8 | 0.000 |
+| hybrid_or_cot | qtrm_core_steps_4_no_evidence | 0/8 | 0.000 |
+| hybrid_or_cot | qtrm_core_steps_8_no_evidence | 0/8 | 0.000 |
+| latent_parallel | donor_only_no_evidence | 1/4 | 0.250 |
+| latent_parallel | qtrm_core_off_no_evidence | 0/4 | 0.000 |
+| latent_parallel | qtrm_core_steps_1_no_evidence | 3/4 | 0.750 |
+| latent_parallel | qtrm_core_steps_2_no_evidence | 3/4 | 0.750 |
+| latent_parallel | qtrm_core_steps_4_no_evidence | 3/4 | 0.750 |
+| latent_parallel | qtrm_core_steps_8_no_evidence | 3/4 | 0.750 |
+| latent_recurrent | donor_only_no_evidence | 1/4 | 0.250 |
+| latent_recurrent | qtrm_core_off_no_evidence | 0/4 | 0.000 |
+| latent_recurrent | qtrm_core_steps_1_no_evidence | 1/4 | 0.250 |
+| latent_recurrent | qtrm_core_steps_2_no_evidence | 1/4 | 0.250 |
+| latent_recurrent | qtrm_core_steps_4_no_evidence | 1/4 | 0.250 |
+| latent_recurrent | qtrm_core_steps_8_no_evidence | 1/4 | 0.250 |
+
+## Interpretation Rule
+
+- `accepted` means the tested raw-intelligence component was causally useful on this eval.
+- `rejected` means the component did not beat the simpler ablation/baseline or a shortcut contaminated the run.
+- `inconclusive` means required modes are missing or empty.
+- This gate is not a RAG, MemoryOS, answer-format, or SSOT score.

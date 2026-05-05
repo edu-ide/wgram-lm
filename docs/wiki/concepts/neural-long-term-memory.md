@@ -12,6 +12,7 @@ QTRM should keep these memory concepts separate:
 | --- | --- | --- |
 | Donor KV/context | inherited from Qwen donor | base language modeling over the current prefix |
 | LatentWorkspace | implemented | in-context working memory over projected donor/text states |
+| Gated latent update | implemented, optional | LM2/G-MemLLM-inspired update/preserve/overwrite control inside workspace layers |
 | Recursive core | implemented | looped latent computation over workspace slots |
 | Retrieval/MemoryOS | future | explicit external evidence and episodic records |
 | Titans-style NeuralMemory | future ablation | learned long-term/test-time memory state |
@@ -23,6 +24,8 @@ QTRM can be described as performing latent-space computation because:
 
 - Qwen hidden states are projected into QTRM-width context tokens.
 - Learned workspace slots cross-attend to that context.
+- Optional gated workspace layers decide how much latent state to preserve or
+  overwrite after cross-attention.
 - The recursive core updates `z_l` and `z_h` latent states for multiple cycles.
 - The resulting `z_h` states are prepended before coda decoding and influence
   QTRM residual logits.
@@ -42,6 +45,21 @@ QTRM performs looped latent-workspace computation over donor representations.
 It is being trained as a residual reasoning/memory adapter over Qwen donor
 logits. It is not yet a standalone latent-reasoning LM.
 ```
+
+## Current Gated Memory Fit
+
+The implemented gated workspace is the conservative first step:
+
+```text
+previous latent slot
++ cross-attended context update
++ update/reset/candidate gates
+-> next latent slot
+```
+
+It is local to the current forward pass. It does not yet persist across user
+turns, documents, or inference calls. Its contribution must be measured with
+`qtrm_workspace_gate_off_with_evidence`, not assumed from architecture alone.
 
 ## Titans-Style Memory Fit
 

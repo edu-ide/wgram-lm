@@ -1,0 +1,145 @@
+{
+  "gate_type": "pure_recursive_reasoning",
+  "claim": "QTRM recursive core depth should improve held-out reasoning without retrieval, MemoryOS, or hidden evidence shortcuts.",
+  "status": "accepted",
+  "donor_mode": "donor_only_no_evidence",
+  "core_off_mode": "qtrm_core_off_no_evidence",
+  "deepest_core_mode": "qtrm_core_steps_8_no_evidence",
+  "donor": {
+    "count": 8,
+    "hits": 2,
+    "accuracy": 0.25,
+    "mode": "donor_only_no_evidence"
+  },
+  "core_off": {
+    "count": 8,
+    "hits": 0,
+    "accuracy": 0.0,
+    "mode": "qtrm_core_off_no_evidence"
+  },
+  "deepest_core": {
+    "count": 8,
+    "hits": 3,
+    "accuracy": 0.375,
+    "mode": "qtrm_core_steps_8_no_evidence"
+  },
+  "depth_ladder": [
+    {
+      "count": 8,
+      "hits": 3,
+      "accuracy": 0.375,
+      "mode": "qtrm_core_steps_1_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 2,
+      "accuracy": 0.25,
+      "mode": "qtrm_core_steps_2_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 3,
+      "accuracy": 0.375,
+      "mode": "qtrm_core_steps_4_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 3,
+      "accuracy": 0.375,
+      "mode": "qtrm_core_steps_8_no_evidence"
+    }
+  ],
+  "depth_output_diversity": {
+    "measured": true,
+    "reason": "ok",
+    "case_count": 8,
+    "identical_case_count": 6,
+    "changed_case_count": 2,
+    "all_depth_outputs_identical": false,
+    "examples": [
+      {
+        "id": "arith-chain-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "17",
+          "qtrm_core_steps_2_no_evidence": "20",
+          "qtrm_core_steps_4_no_evidence": "20",
+          "qtrm_core_steps_8_no_evidence": "20"
+        },
+        "all_identical": false
+      },
+      {
+        "id": "symbolic-binding-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "violet",
+          "qtrm_core_steps_2_no_evidence": "violet",
+          "qtrm_core_steps_4_no_evidence": "violet",
+          "qtrm_core_steps_8_no_evidence": "violet"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "boolean-logic-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "false",
+          "qtrm_core_steps_2_no_evidence": "false",
+          "qtrm_core_steps_4_no_evidence": "false",
+          "qtrm_core_steps_8_no_evidence": "false"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "list-transform-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "empty",
+          "qtrm_core_steps_2_no_evidence": "empty",
+          "qtrm_core_steps_4_no_evidence": "empty",
+          "qtrm_core_steps_8_no_evidence": "empty"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "arith-chain-001",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "31",
+          "qtrm_core_steps_2_no_evidence": "31",
+          "qtrm_core_steps_4_no_evidence": "32",
+          "qtrm_core_steps_8_no_evidence": "32"
+        },
+        "all_identical": false
+      }
+    ]
+  },
+  "donor_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "donor_only_no_evidence",
+    "candidate_hits": 3,
+    "baseline_hits": 2,
+    "candidate_count": 8,
+    "baseline_count": 8,
+    "hit_advantage": 1,
+    "accuracy_advantage": 0.125,
+    "candidate_beats_baseline": true
+  },
+  "core_off_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "qtrm_core_off_no_evidence",
+    "candidate_hits": 3,
+    "baseline_hits": 0,
+    "candidate_count": 8,
+    "baseline_count": 8,
+    "hit_advantage": 3,
+    "accuracy_advantage": 0.375,
+    "candidate_beats_baseline": true
+  },
+  "shortcut_records": [],
+  "missing_modes": [],
+  "failed_checks": [],
+  "passed_checks": [
+    "deep_core_beats_core_off",
+    "deep_core_beats_donor",
+    "depth_scaling_gain_present",
+    "depth_outputs_not_all_identical",
+    "no_retrieval_or_memoryos_shortcut"
+  ],
+  "recommendation": "Promote this result as raw-intelligence evidence only for the tested axis, then rerun on harder held-out cases before changing architecture."
+}

@@ -1,0 +1,127 @@
+{
+  "case_count": 8,
+  "donor_hit_qtrm_miss_count": 0,
+  "qtrm_hit_donor_miss_count": 0,
+  "core_off_beats_qtrm_count": 0,
+  "qtrm_beats_core_off_count": 0,
+  "qtrm_changed_donor_completion_count": 4,
+  "qtrm_changed_core_off_completion_count": 3,
+  "donor_hit_qtrm_miss_cases": [],
+  "qtrm_hit_donor_miss_cases": [],
+  "core_off_beats_qtrm_cases": [],
+  "qtrm_beats_core_off_cases": [],
+  "qtrm_changed_donor_completion_cases": [
+    {
+      "id": "synthetic-multihop-ko-owner-0102",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Garnet 현장 노트의 책임자는 누구인가요?",
+      "answer_aliases": [
+        "윤서아"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nGarnet-실험-112 실헴의 책임자는 윤서아",
+      "qtrm_completion": "Answer:\nGarnet-실험-112 실헤의 책임자는 윤서아",
+      "core_off_completion": "Answer:\nGarnet-실험-112 실헴의 책임자는 윤서아"
+    },
+    {
+      "id": "synthetic-negative-authority-ko-location-0102",
+      "category": "negative_authority_location_ko_synth",
+      "task_family": "abstention",
+      "question": "북쪽 통신실의 현재 비상 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n비공개",
+      "qtrm_completion": "Answer: 북쪽 통신실의 현재 비상 암구호는 비공개입니다.",
+      "core_off_completion": "Answer:\n비공개"
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0102",
+      "category": "negative_authority_missing_synth",
+      "task_family": "abstention",
+      "question": "What is the current Garnet emergency override phrase?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\nredacted",
+      "qtrm_completion": "Answer:\n\nstone-arch",
+      "core_off_completion": "Answer:\n\nredacted"
+    },
+    {
+      "id": "synthetic-temporal-code-0101",
+      "category": "temporal_conflict_synth",
+      "task_family": "conflict",
+      "question": "What is the current Frost archive code?",
+      "answer_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer: LX-21\nQuestion: What is the current Frost archive code?\nWhat is LX?",
+      "qtrm_completion": "Answer: LX-21.",
+      "core_off_completion": "Answer: LX-21."
+    }
+  ],
+  "qtrm_changed_core_off_completion_cases": [
+    {
+      "id": "synthetic-multihop-ko-owner-0102",
+      "category": "multi_hop_ko_synth",
+      "task_family": "multi_hop",
+      "question": "Garnet 현장 노트의 책임자는 누구인가요?",
+      "answer_aliases": [
+        "윤서아"
+      ],
+      "donor_hit": true,
+      "qtrm_hit": true,
+      "core_off_hit": true,
+      "donor_completion": "Answer:\nGarnet-실험-112 실헴의 책임자는 윤서아",
+      "qtrm_completion": "Answer:\nGarnet-실험-112 실헤의 책임자는 윤서아",
+      "core_off_completion": "Answer:\nGarnet-실험-112 실헴의 책임자는 윤서아"
+    },
+    {
+      "id": "synthetic-negative-authority-ko-location-0102",
+      "category": "negative_authority_location_ko_synth",
+      "task_family": "abstention",
+      "question": "북쪽 통신실의 현재 비상 암구호는 무엇인가요?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n비공개",
+      "qtrm_completion": "Answer: 북쪽 통신실의 현재 비상 암구호는 비공개입니다.",
+      "core_off_completion": "Answer:\n비공개"
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0102",
+      "category": "negative_authority_missing_synth",
+      "task_family": "abstention",
+      "question": "What is the current Garnet emergency override phrase?",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "donor_hit": false,
+      "qtrm_hit": false,
+      "core_off_hit": false,
+      "donor_completion": "Answer:\n\nredacted",
+      "qtrm_completion": "Answer:\n\nstone-arch",
+      "core_off_completion": "Answer:\n\nredacted"
+    }
+  ]
+}

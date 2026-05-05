@@ -1,0 +1,570 @@
+{
+  "gate_type": "pure_recursive_reasoning",
+  "claim": "QTRM recursive core depth should improve held-out reasoning without retrieval, MemoryOS, or hidden evidence shortcuts.",
+  "status": "rejected",
+  "donor_mode": "donor_only_no_evidence",
+  "core_off_mode": "qtrm_core_off_no_evidence",
+  "deepest_core_mode": "qtrm_core_steps_8_no_evidence",
+  "donor": {
+    "count": 72,
+    "hits": 22,
+    "accuracy": 0.3055555555555556,
+    "mode": "donor_only_no_evidence"
+  },
+  "core_off": {
+    "count": 72,
+    "hits": 0,
+    "accuracy": 0.0,
+    "mode": "qtrm_core_off_no_evidence"
+  },
+  "deepest_core": {
+    "count": 72,
+    "hits": 18,
+    "accuracy": 0.25,
+    "mode": "qtrm_core_steps_8_no_evidence"
+  },
+  "depth_ladder": [
+    {
+      "count": 72,
+      "hits": 19,
+      "accuracy": 0.2638888888888889,
+      "mode": "qtrm_core_steps_1_no_evidence"
+    },
+    {
+      "count": 72,
+      "hits": 18,
+      "accuracy": 0.25,
+      "mode": "qtrm_core_steps_2_no_evidence"
+    },
+    {
+      "count": 72,
+      "hits": 18,
+      "accuracy": 0.25,
+      "mode": "qtrm_core_steps_4_no_evidence"
+    },
+    {
+      "count": 72,
+      "hits": 18,
+      "accuracy": 0.25,
+      "mode": "qtrm_core_steps_8_no_evidence"
+    }
+  ],
+  "depth_output_diversity": {
+    "measured": true,
+    "reason": "ok",
+    "case_count": 72,
+    "identical_case_count": 69,
+    "changed_case_count": 3,
+    "all_depth_outputs_identical": false,
+    "examples": [
+      {
+        "id": "arith-chain-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "18",
+          "qtrm_core_steps_2_no_evidence": "18",
+          "qtrm_core_steps_4_no_evidence": "18",
+          "qtrm_core_steps_8_no_evidence": "18"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "symbolic-binding-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "silver",
+          "qtrm_core_steps_2_no_evidence": "silver",
+          "qtrm_core_steps_4_no_evidence": "silver",
+          "qtrm_core_steps_8_no_evidence": "silver"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "boolean-logic-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "false",
+          "qtrm_core_steps_2_no_evidence": "false",
+          "qtrm_core_steps_4_no_evidence": "false",
+          "qtrm_core_steps_8_no_evidence": "false"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "list-transform-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "empty",
+          "qtrm_core_steps_2_no_evidence": "empty",
+          "qtrm_core_steps_4_no_evidence": "empty",
+          "qtrm_core_steps_8_no_evidence": "empty"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "arith-chain-001",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "33",
+          "qtrm_core_steps_2_no_evidence": "33",
+          "qtrm_core_steps_4_no_evidence": "33",
+          "qtrm_core_steps_8_no_evidence": "33"
+        },
+        "all_identical": true
+      }
+    ]
+  },
+  "by_task_family": {
+    "arithmetic_chain": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 8,
+        "accuracy": 0.4444444444444444,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 3,
+        "accuracy": 0.16666666666666666,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 2,
+        "accuracy": 0.1111111111111111,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 2,
+        "accuracy": 0.1111111111111111,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 2,
+        "accuracy": 0.1111111111111111,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "boolean_logic": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 8,
+        "accuracy": 0.4444444444444444,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "list_transform": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "symbolic_binding": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    }
+  },
+  "by_reasoning_family": {
+    "parallel_boolean": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 8,
+        "accuracy": 0.4444444444444444,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "sequential_arithmetic": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 8,
+        "accuracy": 0.4444444444444444,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 3,
+        "accuracy": 0.16666666666666666,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 2,
+        "accuracy": 0.1111111111111111,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 2,
+        "accuracy": 0.1111111111111111,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 2,
+        "accuracy": 0.1111111111111111,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "sequential_list_transform": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "state_propagation": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    }
+  },
+  "by_expected_paradigm": {
+    "hybrid_or_cot": {
+      "donor_only_no_evidence": {
+        "count": 36,
+        "hits": 8,
+        "accuracy": 0.2222222222222222,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 36,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 36,
+        "hits": 3,
+        "accuracy": 0.08333333333333333,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 36,
+        "hits": 2,
+        "accuracy": 0.05555555555555555,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 36,
+        "hits": 2,
+        "accuracy": 0.05555555555555555,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 36,
+        "hits": 2,
+        "accuracy": 0.05555555555555555,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "latent_parallel": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 8,
+        "accuracy": 0.4444444444444444,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 10,
+        "accuracy": 0.5555555555555556,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "latent_recurrent": {
+      "donor_only_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 18,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 18,
+        "hits": 6,
+        "accuracy": 0.3333333333333333,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    }
+  },
+  "donor_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "donor_only_no_evidence",
+    "candidate_hits": 18,
+    "baseline_hits": 22,
+    "candidate_count": 72,
+    "baseline_count": 72,
+    "hit_advantage": -4,
+    "accuracy_advantage": -0.05555555555555558,
+    "candidate_beats_baseline": false
+  },
+  "core_off_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "qtrm_core_off_no_evidence",
+    "candidate_hits": 18,
+    "baseline_hits": 0,
+    "candidate_count": 72,
+    "baseline_count": 72,
+    "hit_advantage": 18,
+    "accuracy_advantage": 0.25,
+    "candidate_beats_baseline": true
+  },
+  "shortcut_records": [],
+  "missing_modes": [],
+  "failed_checks": [
+    "deep_core_does_not_beat_donor",
+    "no_depth_scaling_gain"
+  ],
+  "passed_checks": [
+    "deep_core_beats_core_off",
+    "depth_outputs_not_all_identical",
+    "no_retrieval_or_memoryos_shortcut"
+  ],
+  "recommendation": "Do not tune answer formatting. Redesign or retrain the recursive core so deeper latent steps beat donor-only and core-off on no-evidence tasks."
+}

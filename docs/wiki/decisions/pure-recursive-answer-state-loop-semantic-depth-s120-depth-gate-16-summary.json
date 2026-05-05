@@ -1,0 +1,570 @@
+{
+  "gate_type": "pure_recursive_reasoning",
+  "claim": "QTRM recursive core depth should improve held-out reasoning without retrieval, MemoryOS, or hidden evidence shortcuts.",
+  "status": "rejected",
+  "donor_mode": "donor_only_no_evidence",
+  "core_off_mode": "qtrm_core_off_no_evidence",
+  "deepest_core_mode": "qtrm_core_steps_8_no_evidence",
+  "donor": {
+    "count": 16,
+    "hits": 5,
+    "accuracy": 0.3125,
+    "mode": "donor_only_no_evidence"
+  },
+  "core_off": {
+    "count": 16,
+    "hits": 0,
+    "accuracy": 0.0,
+    "mode": "qtrm_core_off_no_evidence"
+  },
+  "deepest_core": {
+    "count": 16,
+    "hits": 2,
+    "accuracy": 0.125,
+    "mode": "qtrm_core_steps_8_no_evidence"
+  },
+  "depth_ladder": [
+    {
+      "count": 16,
+      "hits": 2,
+      "accuracy": 0.125,
+      "mode": "qtrm_core_steps_1_no_evidence"
+    },
+    {
+      "count": 16,
+      "hits": 2,
+      "accuracy": 0.125,
+      "mode": "qtrm_core_steps_2_no_evidence"
+    },
+    {
+      "count": 16,
+      "hits": 2,
+      "accuracy": 0.125,
+      "mode": "qtrm_core_steps_4_no_evidence"
+    },
+    {
+      "count": 16,
+      "hits": 2,
+      "accuracy": 0.125,
+      "mode": "qtrm_core_steps_8_no_evidence"
+    }
+  ],
+  "depth_output_diversity": {
+    "measured": true,
+    "reason": "ok",
+    "case_count": 16,
+    "identical_case_count": 16,
+    "changed_case_count": 0,
+    "all_depth_outputs_identical": true,
+    "examples": [
+      {
+        "id": "arith-chain-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "18",
+          "qtrm_core_steps_2_no_evidence": "18",
+          "qtrm_core_steps_4_no_evidence": "18",
+          "qtrm_core_steps_8_no_evidence": "18"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "symbolic-binding-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "green",
+          "qtrm_core_steps_2_no_evidence": "green",
+          "qtrm_core_steps_4_no_evidence": "green",
+          "qtrm_core_steps_8_no_evidence": "green"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "boolean-logic-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "false",
+          "qtrm_core_steps_2_no_evidence": "false",
+          "qtrm_core_steps_4_no_evidence": "false",
+          "qtrm_core_steps_8_no_evidence": "false"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "list-transform-000",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "empty",
+          "qtrm_core_steps_2_no_evidence": "empty",
+          "qtrm_core_steps_4_no_evidence": "empty",
+          "qtrm_core_steps_8_no_evidence": "empty"
+        },
+        "all_identical": true
+      },
+      {
+        "id": "arith-chain-001",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "33",
+          "qtrm_core_steps_2_no_evidence": "33",
+          "qtrm_core_steps_4_no_evidence": "33",
+          "qtrm_core_steps_8_no_evidence": "33"
+        },
+        "all_identical": true
+      }
+    ]
+  },
+  "by_task_family": {
+    "arithmetic_chain": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "boolean_logic": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "list_transform": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "symbolic_binding": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 1,
+        "accuracy": 0.25,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    }
+  },
+  "by_reasoning_family": {
+    "parallel_boolean": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "sequential_arithmetic": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "sequential_list_transform": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "state_propagation": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 1,
+        "accuracy": 0.25,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    }
+  },
+  "by_expected_paradigm": {
+    "hybrid_or_cot": {
+      "donor_only_no_evidence": {
+        "count": 8,
+        "hits": 2,
+        "accuracy": 0.25,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "latent_parallel": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 2,
+        "accuracy": 0.5,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    },
+    "latent_recurrent": {
+      "donor_only_no_evidence": {
+        "count": 4,
+        "hits": 1,
+        "accuracy": 0.25,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      }
+    }
+  },
+  "donor_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "donor_only_no_evidence",
+    "candidate_hits": 2,
+    "baseline_hits": 5,
+    "candidate_count": 16,
+    "baseline_count": 16,
+    "hit_advantage": -3,
+    "accuracy_advantage": -0.1875,
+    "candidate_beats_baseline": false
+  },
+  "core_off_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "qtrm_core_off_no_evidence",
+    "candidate_hits": 2,
+    "baseline_hits": 0,
+    "candidate_count": 16,
+    "baseline_count": 16,
+    "hit_advantage": 2,
+    "accuracy_advantage": 0.125,
+    "candidate_beats_baseline": true
+  },
+  "shortcut_records": [],
+  "missing_modes": [],
+  "failed_checks": [
+    "deep_core_does_not_beat_donor",
+    "no_depth_scaling_gain",
+    "depth_outputs_identical_across_steps"
+  ],
+  "passed_checks": [
+    "deep_core_beats_core_off",
+    "no_retrieval_or_memoryos_shortcut"
+  ],
+  "recommendation": "Do not tune answer formatting. Redesign or retrain the recursive core so deeper latent steps beat donor-only and core-off on no-evidence tasks."
+}

@@ -27,6 +27,24 @@ inference, verification, and agent-computer interfaces.
 | Voyager | https://arxiv.org/abs/2305.16291 | Promote repeated successful procedures into a skill library after execution feedback and self-verification. |
 | SWE-agent | https://arxiv.org/abs/2405.15793 | Design a constrained agent-computer interface; performance depends on the interface, test hooks, and editing tools. |
 
+## Closed-Loop Agent Planning And Agent RL
+
+Detailed source notes:
+[Agentic Closed-Loop Planning References](agentic-closed-loop-planning.md).
+
+| Source | Link | What To Extract For QTRM |
+| --- | --- | --- |
+| LATS | https://arxiv.org/abs/2310.04406 | Use tree search over reasoning/action candidates with environment feedback, value scoring, and reflection. |
+| AgentGym | https://arxiv.org/abs/2406.04151 | Use diverse agent environments and trajectories so the policy does not overfit one MemoryOS task shape. |
+| RAGEN | https://arxiv.org/abs/2504.20073 | Treat multi-turn agent RL as trajectory-level policy optimization with stability filters. |
+| Agent Lightning | https://arxiv.org/abs/2508.03680 | Decouple agent execution from training and convert logged traces into turn-level transitions. |
+| ACE | https://arxiv.org/abs/2510.04618 | Maintain curated evolving contexts/playbooks as strategy memory, separate from factual memory. |
+| ASTER | https://arxiv.org/abs/2602.01204 | Use interaction-dense cold starts so RL does not collapse into text-only reasoning. |
+| RAGEN-2 | https://arxiv.org/abs/2604.06268 | Track input-dependence/MI proxies; entropy alone misses template collapse. |
+| Agent-World | https://arxiv.org/abs/2604.18292 | Long-term target: synthesize verifiable environments from tool ecosystems and train in a self-evolving arena. |
+| Agent2World | https://arxiv.org/abs/2512.22336 | Generate and test explicit symbolic world models for planner training. |
+| DEVS World Models | https://arxiv.org/abs/2603.03784 | Prefer executable, trace-verifiable world models for discrete-event tool workflows. |
+
 ## Retrieval And Corrective Generation
 
 | Source | Link | What To Extract For QTRM |
@@ -45,6 +63,8 @@ the trainable QTRM module. The stable reading is:
 - Long-running agent capability belongs in an orchestration/harness layer.
 - Recursive/RLM execution is an inference mode, not the default training target.
 - Reflections and skills must be separately typed from factual evidence.
+- Closed-loop planning should start as replayable traces and verifier rewards,
+  then move into learned controller heads and latent world-model rollouts.
 
 ## Do Not Import Yet
 

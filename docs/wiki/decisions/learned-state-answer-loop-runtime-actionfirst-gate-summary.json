@@ -1,0 +1,4589 @@
+{
+  "config": "configs/qwen35_2b_4090_controller_signal_s300.yaml",
+  "checkpoint": "runs/qwen35_2b_4090_controller_signal_s300/last.pt",
+  "transition_checkpoint": "runs/qwen35_2b_4090_transition_state_controller_runtime_actionfirst_s200/last.pt",
+  "cases": "data/eval/memory_reasoning_heldout_expanded_72.jsonl",
+  "case_count": 8,
+  "strict_runtime_state": true,
+  "feature_key": "generation_verifier_pooled",
+  "controller_feature_scale": 0.0,
+  "reset_hidden": true,
+  "answer_channel": "greedy",
+  "evidence_mode": "all",
+  "evidence_injection": "prompt",
+  "summary": {
+    "overall": {
+      "count": 32,
+      "hits": 14,
+      "accuracy": 0.4375,
+      "exact_match_count": 11,
+      "exact_match_rate": 0.34375,
+      "normalized_exact_count": 11,
+      "normalized_exact_rate": 0.34375,
+      "normalized_contains_count": 14,
+      "normalized_contains_rate": 0.4375,
+      "unknown_correct_count": 2,
+      "unknown_correct_rate": 0.0625,
+      "human_audit_count": 21,
+      "human_audit_rate": 0.65625,
+      "retrieved_target_count": 32,
+      "retrieved_target_rate": 1.0,
+      "all_targets_retrieved_count": 32,
+      "all_targets_retrieved_rate": 1.0,
+      "target_recall_mean": 1.0
+    },
+    "by_mode": {
+      "scripted_donor_answer_channel": {
+        "count": 8,
+        "hits": 4,
+        "accuracy": 0.5,
+        "exact_match_count": 3,
+        "exact_match_rate": 0.375,
+        "normalized_exact_count": 3,
+        "normalized_exact_rate": 0.375,
+        "normalized_contains_count": 4,
+        "normalized_contains_rate": 0.5,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 5,
+        "human_audit_rate": 0.625,
+        "retrieved_target_count": 8,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 8,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "scripted_qtrm_answer_channel": {
+        "count": 8,
+        "hits": 4,
+        "accuracy": 0.5,
+        "exact_match_count": 3,
+        "exact_match_rate": 0.375,
+        "normalized_exact_count": 3,
+        "normalized_exact_rate": 0.375,
+        "normalized_contains_count": 4,
+        "normalized_contains_rate": 0.5,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 5,
+        "human_audit_rate": 0.625,
+        "retrieved_target_count": 8,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 8,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "learned_state_qtrm": {
+        "count": 8,
+        "hits": 4,
+        "accuracy": 0.5,
+        "exact_match_count": 3,
+        "exact_match_rate": 0.375,
+        "normalized_exact_count": 3,
+        "normalized_exact_rate": 0.375,
+        "normalized_contains_count": 4,
+        "normalized_contains_rate": 0.5,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 5,
+        "human_audit_rate": 0.625,
+        "retrieved_target_count": 8,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 8,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "learned_state_qtrm_state_off": {
+        "count": 8,
+        "hits": 2,
+        "accuracy": 0.25,
+        "exact_match_count": 2,
+        "exact_match_rate": 0.25,
+        "normalized_exact_count": 2,
+        "normalized_exact_rate": 0.25,
+        "normalized_contains_count": 2,
+        "normalized_contains_rate": 0.25,
+        "unknown_correct_count": 2,
+        "unknown_correct_rate": 0.25,
+        "human_audit_count": 6,
+        "human_audit_rate": 0.75,
+        "retrieved_target_count": 8,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 8,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      }
+    },
+    "by_category": {
+      "negative_authority_missing_synth": {
+        "count": 4,
+        "hits": 1,
+        "accuracy": 0.25,
+        "exact_match_count": 1,
+        "exact_match_rate": 0.25,
+        "normalized_exact_count": 1,
+        "normalized_exact_rate": 0.25,
+        "normalized_contains_count": 1,
+        "normalized_contains_rate": 0.25,
+        "unknown_correct_count": 1,
+        "unknown_correct_rate": 0.25,
+        "human_audit_count": 3,
+        "human_audit_rate": 0.75,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "multi_hop_ko_synth": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "exact_match_count": 0,
+        "exact_match_rate": 0.0,
+        "normalized_exact_count": 0,
+        "normalized_exact_rate": 0.0,
+        "normalized_contains_count": 0,
+        "normalized_contains_rate": 0.0,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 4,
+        "human_audit_rate": 1.0,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "multi_hop_location_ko_synth": {
+        "count": 4,
+        "hits": 3,
+        "accuracy": 0.75,
+        "exact_match_count": 0,
+        "exact_match_rate": 0.0,
+        "normalized_exact_count": 0,
+        "normalized_exact_rate": 0.0,
+        "normalized_contains_count": 3,
+        "normalized_contains_rate": 0.75,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 4,
+        "human_audit_rate": 1.0,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "negative_authority_location_ko_synth": {
+        "count": 4,
+        "hits": 1,
+        "accuracy": 0.25,
+        "exact_match_count": 1,
+        "exact_match_rate": 0.25,
+        "normalized_exact_count": 1,
+        "normalized_exact_rate": 0.25,
+        "normalized_contains_count": 1,
+        "normalized_contains_rate": 0.25,
+        "unknown_correct_count": 1,
+        "unknown_correct_rate": 0.25,
+        "human_audit_count": 3,
+        "human_audit_rate": 0.75,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "multi_hop_maintainer_3hop_synth": {
+        "count": 4,
+        "hits": 3,
+        "accuracy": 0.75,
+        "exact_match_count": 3,
+        "exact_match_rate": 0.75,
+        "normalized_exact_count": 3,
+        "normalized_exact_rate": 0.75,
+        "normalized_contains_count": 3,
+        "normalized_contains_rate": 0.75,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 1,
+        "human_audit_rate": 0.25,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "authority_conflict_synth": {
+        "count": 4,
+        "hits": 3,
+        "accuracy": 0.75,
+        "exact_match_count": 3,
+        "exact_match_rate": 0.75,
+        "normalized_exact_count": 3,
+        "normalized_exact_rate": 0.75,
+        "normalized_contains_count": 3,
+        "normalized_contains_rate": 0.75,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 1,
+        "human_audit_rate": 0.25,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "temporal_conflict_synth": {
+        "count": 4,
+        "hits": 3,
+        "accuracy": 0.75,
+        "exact_match_count": 3,
+        "exact_match_rate": 0.75,
+        "normalized_exact_count": 3,
+        "normalized_exact_rate": 0.75,
+        "normalized_contains_count": 3,
+        "normalized_contains_rate": 0.75,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 1,
+        "human_audit_rate": 0.25,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "temporal_location_ko_synth": {
+        "count": 4,
+        "hits": 0,
+        "accuracy": 0.0,
+        "exact_match_count": 0,
+        "exact_match_rate": 0.0,
+        "normalized_exact_count": 0,
+        "normalized_exact_rate": 0.0,
+        "normalized_contains_count": 0,
+        "normalized_contains_rate": 0.0,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 4,
+        "human_audit_rate": 1.0,
+        "retrieved_target_count": 4,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 4,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      }
+    },
+    "by_task_family": {
+      "abstention": {
+        "count": 8,
+        "hits": 2,
+        "accuracy": 0.25,
+        "exact_match_count": 2,
+        "exact_match_rate": 0.25,
+        "normalized_exact_count": 2,
+        "normalized_exact_rate": 0.25,
+        "normalized_contains_count": 2,
+        "normalized_contains_rate": 0.25,
+        "unknown_correct_count": 2,
+        "unknown_correct_rate": 0.25,
+        "human_audit_count": 6,
+        "human_audit_rate": 0.75,
+        "retrieved_target_count": 8,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 8,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "multi_hop": {
+        "count": 12,
+        "hits": 6,
+        "accuracy": 0.5,
+        "exact_match_count": 3,
+        "exact_match_rate": 0.25,
+        "normalized_exact_count": 3,
+        "normalized_exact_rate": 0.25,
+        "normalized_contains_count": 6,
+        "normalized_contains_rate": 0.5,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 9,
+        "human_audit_rate": 0.75,
+        "retrieved_target_count": 12,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 12,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      },
+      "conflict": {
+        "count": 12,
+        "hits": 6,
+        "accuracy": 0.5,
+        "exact_match_count": 6,
+        "exact_match_rate": 0.5,
+        "normalized_exact_count": 6,
+        "normalized_exact_rate": 0.5,
+        "normalized_contains_count": 6,
+        "normalized_contains_rate": 0.5,
+        "unknown_correct_count": 0,
+        "unknown_correct_rate": 0.0,
+        "human_audit_count": 6,
+        "human_audit_rate": 0.5,
+        "retrieved_target_count": 12,
+        "retrieved_target_rate": 1.0,
+        "all_targets_retrieved_count": 12,
+        "all_targets_retrieved_rate": 1.0,
+        "target_recall_mean": 1.0
+      }
+    }
+  },
+  "gate": {
+    "status": "rejected",
+    "learned_state_qtrm_accuracy": 0.5,
+    "scripted_qtrm_accuracy": 0.5,
+    "scripted_donor_accuracy": 0.5,
+    "state_off_accuracy": 0.25,
+    "gain_over_scripted_qtrm": 0.0,
+    "gain_over_scripted_donor": 0.0,
+    "transition_state_drop": 0.25,
+    "action_success_rate": 1.0,
+    "min_gain": 0.02,
+    "min_drop": 0.03,
+    "min_action_success": 0.9,
+    "failed_checks": [
+      "learned_state_does_not_beat_scripted_qtrm",
+      "learned_state_does_not_beat_scripted_donor"
+    ]
+  },
+  "records": [
+    {
+      "id": "synthetic-negative-authority-redacted-0102",
+      "category": "negative_authority_missing_synth",
+      "question": "What is the current Garnet emergency override phrase?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "scripted_donor_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "redacted",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: redacted",
+      "raw_completion": "Answer:\n\nredacted",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 6,
+      "prompt_token_count": 221,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_security_redaction.md",
+        "anonymous_garnet_override.md",
+        "old_garnet_override.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731499582529068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.1171875,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=signed_garnet_security_redaction.md CHUNK=0 SCORE=1.0000\nSigned security notice: the current Garnet emergency override phrase is redacted and is not present in this record.\nSOURCE=anonymous_garnet_override.md CHUNK=1 SCORE=1.0000\nAnonymous note: the current Garnet emergency override phrase is stone-arch.\nSOURCE=old_garnet_override.md CHUNK=2 SCORE=1.0000\n2024 memo: the Garnet emergency override phrase was cedar-gate.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nWhen records conflict, trust the signed security notice. If the signed notice redacts the requested answer, answer UNKNOWN.\nQuestion: What is the current Garnet emergency override phrase?\nAnswer:\n\nredacted",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0102",
+      "category": "negative_authority_missing_synth",
+      "question": "What is the current Garnet emergency override phrase?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "redacted",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: redacted",
+      "raw_completion": "Answer:\n\nredacted",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 6,
+      "prompt_token_count": 221,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_security_redaction.md",
+        "anonymous_garnet_override.md",
+        "old_garnet_override.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731499582529068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.1171875,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=signed_garnet_security_redaction.md CHUNK=0 SCORE=1.0000\nSigned security notice: the current Garnet emergency override phrase is redacted and is not present in this record.\nSOURCE=anonymous_garnet_override.md CHUNK=1 SCORE=1.0000\nAnonymous note: the current Garnet emergency override phrase is stone-arch.\nSOURCE=old_garnet_override.md CHUNK=2 SCORE=1.0000\n2024 memo: the Garnet emergency override phrase was cedar-gate.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nWhen records conflict, trust the signed security notice. If the signed notice redacts the requested answer, answer UNKNOWN.\nQuestion: What is the current Garnet emergency override phrase?\nAnswer:\n\nredacted",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0102",
+      "category": "negative_authority_missing_synth",
+      "question": "What is the current Garnet emergency override phrase?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "learned_state_qtrm",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "redacted",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: redacted",
+      "raw_completion": "Answer:\n\nredacted",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.10074826329946518,
+            0.0012541565811261535,
+            0.359642893075943,
+            0.15996482968330383,
+            0.21187637746334076,
+            0.00035686156479641795,
+            0.16727645695209503,
+            0.297672301530838,
+            0.0013551260344684124
+          ],
+          "state_logits": [
+            -2.1889381408691406,
+            -6.680037021636963,
+            -0.5769144296646118,
+            -1.6584898233413696,
+            -1.3136519193649292,
+            -7.937805652618408,
+            -1.6050537824630737,
+            -0.8584068417549133,
+            -6.602504730224609
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.9999994039535522,
+            0.9998432397842407,
+            0.00012267680722288787,
+            1.6973148376564495e-05,
+            0.0002685337676666677,
+            0.45548295974731445,
+            1.955829247890506e-06,
+            6.564912473550066e-05,
+            2.7011719794245437e-06
+          ],
+          "state_logits": [
+            14.381403923034668,
+            8.760849952697754,
+            -9.005834579467773,
+            -10.983860969543457,
+            -8.222265243530273,
+            -0.17854072153568268,
+            -13.144694328308105,
+            -9.631120681762695,
+            -12.821822166442871
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.9941921830177307,
+            0.03759557381272316,
+            0.9099595546722412,
+            0.9622663855552673,
+            0.8811202049255371,
+            0.009432332590222359,
+            0.9706060290336609,
+            0.9154283404350281,
+            0.00016577191126998514
+          ],
+          "state_logits": [
+            5.142732620239258,
+            -3.2425484657287598,
+            2.313141345977783,
+            3.238739252090454,
+            2.0030810832977295,
+            -4.654134750366211,
+            3.4971303939819336,
+            2.3817925453186035,
+            -8.704731941223145
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_security_redaction.md",
+        "anonymous_garnet_override.md",
+        "old_garnet_override.md"
+      ]
+    },
+    {
+      "id": "synthetic-negative-authority-redacted-0102",
+      "category": "negative_authority_missing_synth",
+      "question": "What is the current Garnet emergency override phrase?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": true,
+      "match_type": "unknown_exact",
+      "matched_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -2.1889381408691406,
+            -6.680037021636963,
+            -0.5769144296646118,
+            -1.6584898233413696,
+            -1.3136519193649292,
+            -7.937805652618408,
+            -1.6050537824630737,
+            -0.8584068417549133,
+            -6.602504730224609
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_security_redaction.md",
+        "anonymous_garnet_override.md",
+        "old_garnet_override.md"
+      ]
+    },
+    {
+      "id": "synthetic-multihop-ko-owner-0102",
+      "category": "multi_hop_ko_synth",
+      "question": "Garnet 현장 노트의 책임자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "scripted_donor_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "Garnet-실험-112 �",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "윤서아"
+      ],
+      "completion": "Answer: Garnet-실험-112 �",
+      "raw_completion": "Answer:\nGarnet-실험-112 �",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 268,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 2,
+      "retrieved_target_count": 2,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "garnet_note_ko.md",
+        "garnet_owner_ko.md",
+        "garnet_decoy_note_ko.md",
+        "garnet_decoy_owner_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1732313334941864,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=garnet_note_ko.md CHUNK=0 SCORE=1.0000\nGarnet 현장 노트의 실험 이름은 Garnet-실험-112이다.\nSOURCE=garnet_owner_ko.md CHUNK=1 SCORE=1.0000\nGarnet-실험-112 실험의 책임자는 윤서아이다.\nSOURCE=garnet_decoy_note_ko.md CHUNK=2 SCORE=1.0000\n다른 현장 노트의 실험 이름은 Garnet-가짜-122이다.\nSOURCE=garnet_decoy_owner_ko.md CHUNK=3 SCORE=1.0000\nGarnet-가짜-122 실험의 책임자는 이도현이다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n관련 증거를 모두 사용해서 별칭을 따라가세요.\nQuestion: Garnet 현장 노트의 책임자는 누구인가요?\nAnswer:\nGarnet-실험-112 �",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-multihop-ko-owner-0102",
+      "category": "multi_hop_ko_synth",
+      "question": "Garnet 현장 노트의 책임자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "Garnet-실험-112 �",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "윤서아"
+      ],
+      "completion": "Answer: Garnet-실험-112 �",
+      "raw_completion": "Answer:\nGarnet-실험-112 �",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 268,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 2,
+      "retrieved_target_count": 2,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "garnet_note_ko.md",
+        "garnet_owner_ko.md",
+        "garnet_decoy_note_ko.md",
+        "garnet_decoy_owner_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1732313334941864,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=garnet_note_ko.md CHUNK=0 SCORE=1.0000\nGarnet 현장 노트의 실험 이름은 Garnet-실험-112이다.\nSOURCE=garnet_owner_ko.md CHUNK=1 SCORE=1.0000\nGarnet-실험-112 실험의 책임자는 윤서아이다.\nSOURCE=garnet_decoy_note_ko.md CHUNK=2 SCORE=1.0000\n다른 현장 노트의 실험 이름은 Garnet-가짜-122이다.\nSOURCE=garnet_decoy_owner_ko.md CHUNK=3 SCORE=1.0000\nGarnet-가짜-122 실험의 책임자는 이도현이다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n관련 증거를 모두 사용해서 별칭을 따라가세요.\nQuestion: Garnet 현장 노트의 책임자는 누구인가요?\nAnswer:\nGarnet-실험-112 �",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-multihop-ko-owner-0102",
+      "category": "multi_hop_ko_synth",
+      "question": "Garnet 현장 노트의 책임자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "Garnet-실험-112 �",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "윤서아"
+      ],
+      "completion": "Answer: Garnet-실험-112 �",
+      "raw_completion": "Answer:\nGarnet-실험-112 �",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.0011282589985057712,
+            9.93684443528764e-05,
+            0.042629703879356384,
+            0.004340767860412598,
+            0.0002213918778579682,
+            3.1258616218110546e-05,
+            0.0037192939780652523,
+            0.028440644964575768,
+            0.0027213036082684994
+          ],
+          "state_logits": [
+            -6.785950660705566,
+            -9.21657657623291,
+            -3.1116390228271484,
+            -5.435353755950928,
+            -8.41535472869873,
+            -10.373184204101562,
+            -5.5904951095581055,
+            -3.531083106994629,
+            -5.903919219970703
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            1.0,
+            0.9999878406524658,
+            1.0682043466658797e-05,
+            8.580208259445499e-07,
+            6.327929895633133e-07,
+            0.5227333307266235,
+            4.523735697148368e-08,
+            1.2321124813752249e-05,
+            6.018233307258924e-07
+          ],
+          "state_logits": [
+            16.96661376953125,
+            11.319546699523926,
+            -11.446935653686523,
+            -13.968636512756348,
+            -14.27312183380127,
+            0.09099625051021576,
+            -16.91134262084961,
+            -11.304183006286621,
+            -14.323301315307617
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.9971950054168701,
+            0.030318230390548706,
+            0.9271396994590759,
+            0.9804065227508545,
+            0.0757046565413475,
+            0.008472515270113945,
+            0.9827547669410706,
+            0.9491918087005615,
+            6.316194048849866e-05
+          ],
+          "state_logits": [
+            5.873544692993164,
+            -3.4652187824249268,
+            2.543560028076172,
+            3.912766456604004,
+            -2.5021920204162598,
+            -4.7624192237854,
+            4.042825222015381,
+            2.927553176879883,
+            -9.669745445251465
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 2,
+      "retrieved_target_count": 2,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "garnet_note_ko.md",
+        "garnet_owner_ko.md",
+        "garnet_decoy_note_ko.md",
+        "garnet_decoy_owner_ko.md"
+      ]
+    },
+    {
+      "id": "synthetic-multihop-ko-owner-0102",
+      "category": "multi_hop_ko_synth",
+      "question": "Garnet 현장 노트의 책임자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "윤서아"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -6.785950660705566,
+            -9.21657657623291,
+            -3.1116390228271484,
+            -5.435353755950928,
+            -8.41535472869873,
+            -10.373184204101562,
+            -5.5904951095581055,
+            -3.531083106994629,
+            -5.903919219970703
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 2,
+      "retrieved_target_count": 2,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "garnet_note_ko.md",
+        "garnet_owner_ko.md",
+        "garnet_decoy_note_ko.md",
+        "garnet_decoy_owner_ko.md"
+      ]
+    },
+    {
+      "id": "synthetic-multihop-ko-location-3hop-0103",
+      "category": "multi_hop_location_ko_synth",
+      "question": "Iris 임무에 배정된 상자가 보관된 통신실의 담당자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "scripted_donor_answer_channel",
+      "hit": true,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "normalized_contains",
+      "matched_aliases": [
+        "민재원"
+      ],
+      "canonical_answer": "남쪽 통신실의 담당자는 민재원이다.",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "loose_contains_match"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "민재원"
+      ],
+      "completion": "Answer: 남쪽 통신실의 담당자는 민재원이다.",
+      "raw_completion": "Answer:\n남쪽 통신실의 담당자는 민재원이다.",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 254,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "iris_mission_box_ko.md",
+        "box_k183_facility_ko.md",
+        "iris_통신실_owner_ko.md",
+        "box_k184_facility_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1733940988779068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1650390625,
+            0.0966796875,
+            0.10107421875,
+            0.31640625,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=iris_mission_box_ko.md CHUNK=0 SCORE=1.0000\nIris 임무에는 상자 K-183이 배정되었다.\nSOURCE=box_k183_facility_ko.md CHUNK=1 SCORE=1.0000\n상자 K-183은 남쪽 통신실에 보관된다.\nSOURCE=iris_통신실_owner_ko.md CHUNK=2 SCORE=1.0000\n남쪽 통신실의 담당자는 민재원이다.\nSOURCE=box_k184_facility_ko.md CHUNK=3 SCORE=1.0000\n상자 K-184은 동쪽 통신실에 보관된다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n관련 증거를 모두 사용해서 별칭을 따라가세요.\nQuestion: Iris 임무에 배정된 상자가 보관된 통신실의 담당자는 누구인가요?\nAnswer:\n남쪽 통신실의 담당자는 민재원이다.",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-multihop-ko-location-3hop-0103",
+      "category": "multi_hop_location_ko_synth",
+      "question": "Iris 임무에 배정된 상자가 보관된 통신실의 담당자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": true,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "normalized_contains",
+      "matched_aliases": [
+        "민재원"
+      ],
+      "canonical_answer": "남쪽 통신실의 담당자는 민재원이다.",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "loose_contains_match"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "민재원"
+      ],
+      "completion": "Answer: 남쪽 통신실의 담당자는 민재원이다.",
+      "raw_completion": "Answer:\n남쪽 통신실의 담당자는 민재원이다.",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 254,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "iris_mission_box_ko.md",
+        "box_k183_facility_ko.md",
+        "iris_통신실_owner_ko.md",
+        "box_k184_facility_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1733940988779068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1650390625,
+            0.0966796875,
+            0.10107421875,
+            0.31640625,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=iris_mission_box_ko.md CHUNK=0 SCORE=1.0000\nIris 임무에는 상자 K-183이 배정되었다.\nSOURCE=box_k183_facility_ko.md CHUNK=1 SCORE=1.0000\n상자 K-183은 남쪽 통신실에 보관된다.\nSOURCE=iris_통신실_owner_ko.md CHUNK=2 SCORE=1.0000\n남쪽 통신실의 담당자는 민재원이다.\nSOURCE=box_k184_facility_ko.md CHUNK=3 SCORE=1.0000\n상자 K-184은 동쪽 통신실에 보관된다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n관련 증거를 모두 사용해서 별칭을 따라가세요.\nQuestion: Iris 임무에 배정된 상자가 보관된 통신실의 담당자는 누구인가요?\nAnswer:\n남쪽 통신실의 담당자는 민재원이다.",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-multihop-ko-location-3hop-0103",
+      "category": "multi_hop_location_ko_synth",
+      "question": "Iris 임무에 배정된 상자가 보관된 통신실의 담당자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm",
+      "hit": true,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "normalized_contains",
+      "matched_aliases": [
+        "민재원"
+      ],
+      "canonical_answer": "남쪽 통신실의 담당자는 민재원이다.",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "loose_contains_match"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "민재원"
+      ],
+      "completion": "Answer: 남쪽 통신실의 담당자는 민재원이다.",
+      "raw_completion": "Answer:\n남쪽 통신실의 담당자는 민재원이다.",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.01548973098397255,
+            0.00036818557418882847,
+            0.17253273725509644,
+            0.04311670362949371,
+            0.0017228706274181604,
+            0.00012165064254077151,
+            0.03971764072775841,
+            0.15052975714206696,
+            0.0014423733809962869
+          ],
+          "state_logits": [
+            -4.1519670486450195,
+            -7.90655517578125,
+            -1.5677825212478638,
+            -3.099771022796631,
+            -6.362039089202881,
+            -9.014235496520996,
+            -3.185431957244873,
+            -1.7304521799087524,
+            -6.540021896362305
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.9999998807907104,
+            0.9999775886535645,
+            1.8426540918881074e-05,
+            1.647039766794478e-06,
+            5.5107634580053855e-06,
+            0.48540976643562317,
+            1.0163447683453342e-07,
+            1.7033858966897242e-05,
+            1.0569165169727057e-06
+          ],
+          "state_logits": [
+            16.21406364440918,
+            10.707984924316406,
+            -10.901700019836426,
+            -13.316529273986816,
+            -12.10880184173584,
+            -0.05837751924991608,
+            -16.101882934570312,
+            -10.980290412902832,
+            -13.760153770446777
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.9948238134384155,
+            0.05388851463794708,
+            0.8390201330184937,
+            0.9134171009063721,
+            0.08634611964225769,
+            0.009427071548998356,
+            0.9067289233207703,
+            0.880127489566803,
+            9.547734953230247e-05
+          ],
+          "state_logits": [
+            5.258486747741699,
+            -2.865442991256714,
+            1.6509555578231812,
+            2.3560900688171387,
+            -2.3590879440307617,
+            -4.654697895050049,
+            2.2743337154388428,
+            1.993638515472412,
+            -9.256525993347168
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "iris_mission_box_ko.md",
+        "box_k183_facility_ko.md",
+        "iris_통신실_owner_ko.md",
+        "box_k184_facility_ko.md"
+      ]
+    },
+    {
+      "id": "synthetic-multihop-ko-location-3hop-0103",
+      "category": "multi_hop_location_ko_synth",
+      "question": "Iris 임무에 배정된 상자가 보관된 통신실의 담당자는 누구인가요?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "민재원"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -4.1519670486450195,
+            -7.90655517578125,
+            -1.5677825212478638,
+            -3.099771022796631,
+            -6.362039089202881,
+            -9.014235496520996,
+            -3.185431957244873,
+            -1.7304521799087524,
+            -6.540021896362305
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "iris_mission_box_ko.md",
+        "box_k183_facility_ko.md",
+        "iris_통신실_owner_ko.md",
+        "box_k184_facility_ko.md"
+      ]
+    },
+    {
+      "id": "synthetic-negative-authority-ko-location-0102",
+      "category": "negative_authority_location_ko_synth",
+      "question": "북쪽 통신실의 현재 비상 암구호는 무엇인가요?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "scripted_donor_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "비공개",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: 비공개",
+      "raw_completion": "Answer:\n비공개",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 6,
+      "prompt_token_count": 258,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_통신실_redacted_ko.md",
+        "anonymous_garnet_통신실_override_ko.md",
+        "old_garnet_통신실_override_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1733940988779068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1650390625,
+            0.0966796875,
+            0.10107421875,
+            0.31640625,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=signed_garnet_통신실_redacted_ko.md CHUNK=0 SCORE=1.0000\n서명된 운영 공지: 북쪽 통신실의 현재 비상 암구호는 비공개이며 이 기록에 없다.\nSOURCE=anonymous_garnet_통신실_override_ko.md CHUNK=1 SCORE=1.0000\n익명 메모: 북쪽 통신실의 비상 암구호는 구름-39이다.\nSOURCE=old_garnet_통신실_override_ko.md CHUNK=2 SCORE=1.0000\n2024년 메모: 북쪽 통신실의 비상 암구호는 호수-63였다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n서명된 운영 공지를 우선하세요. 서명된 공지에서 요청한 답이 비공개이면 UNKNOWN만 답하세요.\nQuestion: 북쪽 통신실의 현재 비상 암구호는 무엇인가요?\nAnswer:\n비공개",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-negative-authority-ko-location-0102",
+      "category": "negative_authority_location_ko_synth",
+      "question": "북쪽 통신실의 현재 비상 암구호는 무엇인가요?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "비공개",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: 비공개",
+      "raw_completion": "Answer:\n비공개",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 6,
+      "prompt_token_count": 258,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_통신실_redacted_ko.md",
+        "anonymous_garnet_통신실_override_ko.md",
+        "old_garnet_통신실_override_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1733940988779068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1650390625,
+            0.0966796875,
+            0.10107421875,
+            0.31640625,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=signed_garnet_통신실_redacted_ko.md CHUNK=0 SCORE=1.0000\n서명된 운영 공지: 북쪽 통신실의 현재 비상 암구호는 비공개이며 이 기록에 없다.\nSOURCE=anonymous_garnet_통신실_override_ko.md CHUNK=1 SCORE=1.0000\n익명 메모: 북쪽 통신실의 비상 암구호는 구름-39이다.\nSOURCE=old_garnet_통신실_override_ko.md CHUNK=2 SCORE=1.0000\n2024년 메모: 북쪽 통신실의 비상 암구호는 호수-63였다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n서명된 운영 공지를 우선하세요. 서명된 공지에서 요청한 답이 비공개이면 UNKNOWN만 답하세요.\nQuestion: 북쪽 통신실의 현재 비상 암구호는 무엇인가요?\nAnswer:\n비공개",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-negative-authority-ko-location-0102",
+      "category": "negative_authority_location_ko_synth",
+      "question": "북쪽 통신실의 현재 비상 암구호는 무엇인가요?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "learned_state_qtrm",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "비공개",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: 비공개",
+      "raw_completion": "Answer:\n비공개",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.12552015483379364,
+            0.0016765353502705693,
+            0.4390590488910675,
+            0.21459130942821503,
+            0.3151768147945404,
+            0.0005014786729589105,
+            0.21798090636730194,
+            0.37672847509384155,
+            0.0014654281549155712
+          ],
+          "state_logits": [
+            -1.9411628246307373,
+            -6.389348030090332,
+            -0.24498169124126434,
+            -1.2974687814712524,
+            -0.7760268449783325,
+            -7.597447872161865,
+            -1.277471661567688,
+            -0.5034574866294861,
+            -6.524141311645508
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.9999988079071045,
+            0.999862551689148,
+            5.6704393500695005e-05,
+            6.433666840166552e-06,
+            8.68146526045166e-05,
+            0.38453802466392517,
+            6.055960852791031e-07,
+            4.178327799309045e-05,
+            3.335941983095836e-06
+          ],
+          "state_logits": [
+            13.687803268432617,
+            8.892241477966309,
+            -9.777602195739746,
+            -11.953959465026855,
+            -9.351648330688477,
+            -0.47033047676086426,
+            -14.317051887512207,
+            -10.082972526550293,
+            -12.61075210571289
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.9840059280395508,
+            0.038421280682086945,
+            0.8300465941429138,
+            0.8849871158599854,
+            0.7990422248840332,
+            0.0072792330756783485,
+            0.8942020535469055,
+            0.8426251411437988,
+            0.00023463192337658256
+          ],
+          "state_logits": [
+            4.11941385269165,
+            -3.2199649810791016,
+            1.5859578847885132,
+            2.040529251098633,
+            1.3803189992904663,
+            -4.91542387008667,
+            2.1344003677368164,
+            1.677891492843628,
+            -8.357257843017578
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_통신실_redacted_ko.md",
+        "anonymous_garnet_통신실_override_ko.md",
+        "old_garnet_통신실_override_ko.md"
+      ]
+    },
+    {
+      "id": "synthetic-negative-authority-ko-location-0102",
+      "category": "negative_authority_location_ko_synth",
+      "question": "북쪽 통신실의 현재 비상 암구호는 무엇인가요?",
+      "task_family": "abstention",
+      "expected_unknown": true,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": true,
+      "match_type": "unknown_exact",
+      "matched_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "UNKNOWN",
+        "unknown"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -1.9411628246307373,
+            -6.389348030090332,
+            -0.24498169124126434,
+            -1.2974687814712524,
+            -0.7760268449783325,
+            -7.597447872161865,
+            -1.277471661567688,
+            -0.5034574866294861,
+            -6.524141311645508
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_garnet_통신실_redacted_ko.md",
+        "anonymous_garnet_통신실_override_ko.md",
+        "old_garnet_통신실_override_ko.md"
+      ]
+    },
+    {
+      "id": "synthetic-multihop-maintainer-3hop-0100",
+      "category": "multi_hop_maintainer_3hop_synth",
+      "question": "Who maintains the crate assigned to Project Ember?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "scripted_donor_answer_channel",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "Tao Lin",
+        "Tao"
+      ],
+      "canonical_answer": "Tao Lin",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "Tao Lin",
+        "Tao"
+      ],
+      "completion": "Answer: Tao Lin",
+      "raw_completion": "Answer: Tao Lin\nSOURCE=project_ember_3hop.md CHUNK",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 225,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "project_ember_3hop.md",
+        "crate_k142.md",
+        "bay_silver.md",
+        "project_decoy_ember_3hop.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731770783662796,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=project_ember_3hop.md CHUNK=0 SCORE=1.0000\nProject Ember is assigned to crate K-142.\nSOURCE=crate_k142.md CHUNK=1 SCORE=1.0000\nCrate K-142 is stored in Bay Silver.\nSOURCE=bay_silver.md CHUNK=2 SCORE=1.0000\nBay Silver is maintained by Tao Lin.\nSOURCE=project_decoy_ember_3hop.md CHUNK=3 SCORE=1.0000\nProject Decoy-Ember is assigned to crate K-170.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nUse all relevant evidence records and follow aliases across records.\nQuestion: Who maintains the crate assigned to Project Ember?\nAnswer: Tao Lin\nSOURCE=project_ember_3hop.md CHUNK",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-multihop-maintainer-3hop-0100",
+      "category": "multi_hop_maintainer_3hop_synth",
+      "question": "Who maintains the crate assigned to Project Ember?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "Tao Lin",
+        "Tao"
+      ],
+      "canonical_answer": "Tao Lin",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "Tao Lin",
+        "Tao"
+      ],
+      "completion": "Answer: Tao Lin",
+      "raw_completion": "Answer: Tao Lin\nSOURCE=project_ember_3hop.md CHUNK",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 225,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "project_ember_3hop.md",
+        "crate_k142.md",
+        "bay_silver.md",
+        "project_decoy_ember_3hop.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731770783662796,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=project_ember_3hop.md CHUNK=0 SCORE=1.0000\nProject Ember is assigned to crate K-142.\nSOURCE=crate_k142.md CHUNK=1 SCORE=1.0000\nCrate K-142 is stored in Bay Silver.\nSOURCE=bay_silver.md CHUNK=2 SCORE=1.0000\nBay Silver is maintained by Tao Lin.\nSOURCE=project_decoy_ember_3hop.md CHUNK=3 SCORE=1.0000\nProject Decoy-Ember is assigned to crate K-170.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nUse all relevant evidence records and follow aliases across records.\nQuestion: Who maintains the crate assigned to Project Ember?\nAnswer: Tao Lin\nSOURCE=project_ember_3hop.md CHUNK",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-multihop-maintainer-3hop-0100",
+      "category": "multi_hop_maintainer_3hop_synth",
+      "question": "Who maintains the crate assigned to Project Ember?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "Tao Lin",
+        "Tao"
+      ],
+      "canonical_answer": "Tao Lin",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "Tao Lin",
+        "Tao"
+      ],
+      "completion": "Answer: Tao Lin",
+      "raw_completion": "Answer: Tao Lin\nSOURCE=project_ember_3hop.md CHUNK",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.004430415574461222,
+            8.483708370476961e-05,
+            0.06653615832328796,
+            0.01218421757221222,
+            2.9714852644247003e-05,
+            2.7735142793972045e-05,
+            0.0109670739620924,
+            0.0471993125975132,
+            0.001046299934387207
+          ],
+          "state_logits": [
+            -5.414821624755859,
+            -9.374692916870117,
+            -2.6411566734313965,
+            -4.395354747772217,
+            -10.423833847045898,
+            -10.492782592773438,
+            -4.501830101013184,
+            -3.005026340484619,
+            -6.861448287963867
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            1.0,
+            0.9999732971191406,
+            4.609982352121733e-05,
+            7.549212114099646e-06,
+            1.2618137361641857e-06,
+            0.49477526545524597,
+            5.0410068297424e-07,
+            4.742973032989539e-05,
+            3.0430803121817007e-07
+          ],
+          "state_logits": [
+            17.893644332885742,
+            10.532021522521973,
+            -9.984655380249023,
+            -11.794059753417969,
+            -13.582959175109863,
+            -0.020899787545204163,
+            -14.500489234924316,
+            -9.95621395111084,
+            -15.00522518157959
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.8326746225357056,
+            0.0018813806818798184,
+            0.7444517612457275,
+            0.8393678665161133,
+            0.0029228064231574535,
+            0.000706115853972733,
+            0.8540876507759094,
+            0.7753623723983765,
+            0.00015581646584905684
+          ],
+          "state_logits": [
+            1.6047027111053467,
+            -6.273866176605225,
+            1.0692366361618042,
+            1.6535323858261108,
+            -5.832283973693848,
+            -7.2550249099731445,
+            1.7670273780822754,
+            1.2388416528701782,
+            -8.76667594909668
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "project_ember_3hop.md",
+        "crate_k142.md",
+        "bay_silver.md",
+        "project_decoy_ember_3hop.md"
+      ]
+    },
+    {
+      "id": "synthetic-multihop-maintainer-3hop-0100",
+      "category": "multi_hop_maintainer_3hop_synth",
+      "question": "Who maintains the crate assigned to Project Ember?",
+      "task_family": "multi_hop",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "Tao Lin",
+        "Tao"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -5.414821624755859,
+            -9.374692916870117,
+            -2.6411566734313965,
+            -4.395354747772217,
+            -10.423833847045898,
+            -10.492782592773438,
+            -4.501830101013184,
+            -3.005026340484619,
+            -6.861448287963867
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 3,
+      "retrieved_target_count": 3,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "target",
+        "target",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "project_ember_3hop.md",
+        "crate_k142.md",
+        "bay_silver.md",
+        "project_decoy_ember_3hop.md"
+      ]
+    },
+    {
+      "id": "synthetic-authority-vault-0100",
+      "category": "authority_conflict_synth",
+      "question": "Which passphrase opens the Ember vault?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "scripted_donor_answer_channel",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "canonical_answer": "opal-river",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "completion": "Answer: opal-river",
+      "raw_completion": "Answer: opal-river",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 7,
+      "prompt_token_count": 185,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_ember_vault.md",
+        "anonymous_ember_vault.md",
+        "ember_storage.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1383463591337204,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.1396484375,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731499582529068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.1171875,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=signed_ember_vault.md CHUNK=0 SCORE=1.0000\nSigned supervisor note: the Ember vault passphrase is opal-river.\nSOURCE=anonymous_ember_vault.md CHUNK=1 SCORE=1.0000\nAnonymous note: the Ember vault passphrase is stone-arch.\nSOURCE=ember_storage.md CHUNK=2 SCORE=1.0000\nThe Ember storage marker is VK-72.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nWhen records conflict, trust the signed supervisor note over anonymous notes.\nQuestion: Which passphrase opens the Ember vault?\nAnswer: opal-river",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-authority-vault-0100",
+      "category": "authority_conflict_synth",
+      "question": "Which passphrase opens the Ember vault?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "canonical_answer": "opal-river",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "completion": "Answer: opal-river",
+      "raw_completion": "Answer: opal-river",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 7,
+      "prompt_token_count": 185,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_ember_vault.md",
+        "anonymous_ember_vault.md",
+        "ember_storage.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1383463591337204,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.1396484375,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731499582529068,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.1171875,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=signed_ember_vault.md CHUNK=0 SCORE=1.0000\nSigned supervisor note: the Ember vault passphrase is opal-river.\nSOURCE=anonymous_ember_vault.md CHUNK=1 SCORE=1.0000\nAnonymous note: the Ember vault passphrase is stone-arch.\nSOURCE=ember_storage.md CHUNK=2 SCORE=1.0000\nThe Ember storage marker is VK-72.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nWhen records conflict, trust the signed supervisor note over anonymous notes.\nQuestion: Which passphrase opens the Ember vault?\nAnswer: opal-river",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-authority-vault-0100",
+      "category": "authority_conflict_synth",
+      "question": "Which passphrase opens the Ember vault?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "canonical_answer": "opal-river",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "completion": "Answer: opal-river",
+      "raw_completion": "Answer: opal-river",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.001673492486588657,
+            0.00010955171455862,
+            0.043968554586172104,
+            0.005372040439397097,
+            0.00031817302806302905,
+            3.598678813432343e-05,
+            0.004548600409179926,
+            0.02731439098715782,
+            0.0023225215263664722
+          ],
+          "state_logits": [
+            -6.391167640686035,
+            -9.119004249572754,
+            -3.0793161392211914,
+            -5.221160888671875,
+            -8.052597045898438,
+            -10.232322692871094,
+            -5.388376712799072,
+            -3.5726470947265625,
+            -6.062776565551758
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.9999998807907104,
+            0.9997692704200745,
+            0.0005273160641081631,
+            0.00010377145372331142,
+            6.41499282210134e-05,
+            0.3807533383369446,
+            1.1741532944142818e-05,
+            0.00038424591184593737,
+            1.3675424952452886e-06
+          ],
+          "state_logits": [
+            15.64236831665039,
+            8.374035835266113,
+            -7.547183036804199,
+            -9.173215866088867,
+            -9.654223442077637,
+            -0.4863520860671997,
+            -11.35236644744873,
+            -7.8638434410095215,
+            -13.502493858337402
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.8705366849899292,
+            0.0037373921368271112,
+            0.7687128186225891,
+            0.8520907163619995,
+            0.035101424902677536,
+            0.001491028000600636,
+            0.863442063331604,
+            0.7860693335533142,
+            0.0002245616924483329
+          ],
+          "state_logits": [
+            1.9057120084762573,
+            -5.585622787475586,
+            1.2010573148727417,
+            1.7510935068130493,
+            -3.313781261444092,
+            -6.5067973136901855,
+            1.844177484512329,
+            1.301392912864685,
+            -8.401135444641113
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_ember_vault.md",
+        "anonymous_ember_vault.md",
+        "ember_storage.md"
+      ]
+    },
+    {
+      "id": "synthetic-authority-vault-0100",
+      "category": "authority_conflict_synth",
+      "question": "Which passphrase opens the Ember vault?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "opal-river",
+        "opal river"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -6.391167640686035,
+            -9.119004249572754,
+            -3.0793161392211914,
+            -5.221160888671875,
+            -8.052597045898438,
+            -10.232322692871094,
+            -5.388376712799072,
+            -3.5726470947265625,
+            -6.062776565551758
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "signed_ember_vault.md",
+        "anonymous_ember_vault.md",
+        "ember_storage.md"
+      ]
+    },
+    {
+      "id": "synthetic-temporal-code-0101",
+      "category": "temporal_conflict_synth",
+      "question": "What is the current Frost archive code?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "scripted_donor_answer_channel",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "canonical_answer": "LX-21",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "completion": "Answer: LX-21",
+      "raw_completion": "Answer: LX-21\nQuestion: What is the current Frost archive",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 216,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_archive_2026.md",
+        "frost_archive_2025.md",
+        "frost_vault.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731228232383728,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.1083984375,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.1171875,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=frost_archive_2026.md CHUNK=0 SCORE=1.0000\n2026-04-29 update: the current Frost archive code is LX-21. This update supersedes all older archive codes.\nSOURCE=frost_archive_2025.md CHUNK=1 SCORE=1.0000\n2025-01-10 memo: the Frost archive code is YP-16.\nSOURCE=frost_vault.md CHUNK=2 SCORE=1.0000\nThe Frost vault passphrase is amber-field.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nPrefer the newest dated evidence when records conflict.\nQuestion: What is the current Frost archive code?\nAnswer: LX-21\nQuestion: What is the current Frost archive",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-temporal-code-0101",
+      "category": "temporal_conflict_synth",
+      "question": "What is the current Frost archive code?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "canonical_answer": "LX-21",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "completion": "Answer: LX-21",
+      "raw_completion": "Answer: LX-21\nQuestion: What is the current Frost archive",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 16,
+      "prompt_token_count": 216,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_archive_2026.md",
+        "frost_archive_2025.md",
+        "frost_vault.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1380208283662796,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.1357421875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1731228232383728,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.1083984375,
+            0.09033203125,
+            0.1142578125,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.1171875,
+            0.43359375,
+            0.11767578125,
+            0.11865234375,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=frost_archive_2026.md CHUNK=0 SCORE=1.0000\n2026-04-29 update: the current Frost archive code is LX-21. This update supersedes all older archive codes.\nSOURCE=frost_archive_2025.md CHUNK=1 SCORE=1.0000\n2025-01-10 memo: the Frost archive code is YP-16.\nSOURCE=frost_vault.md CHUNK=2 SCORE=1.0000\nThe Frost vault passphrase is amber-field.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\nPrefer the newest dated evidence when records conflict.\nQuestion: What is the current Frost archive code?\nAnswer: LX-21\nQuestion: What is the current Frost archive",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-temporal-code-0101",
+      "category": "temporal_conflict_synth",
+      "question": "What is the current Frost archive code?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm",
+      "hit": true,
+      "exact_match": true,
+      "normalized_exact": true,
+      "normalized_contains": true,
+      "unknown_correct": false,
+      "match_type": "exact",
+      "matched_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "canonical_answer": "LX-21",
+      "needs_human_audit": false,
+      "audit_reasons": [],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "completion": "Answer: LX-21",
+      "raw_completion": "Answer: LX-21\nQuestion: What is the current Frost archive",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.0008461128454655409,
+            8.736651216167957e-05,
+            0.031952012330293655,
+            0.0028773818630725145,
+            0.0005033003399148583,
+            2.4086524717858993e-05,
+            0.0024172854609787464,
+            0.0179641991853714,
+            0.003094616113230586
+          ],
+          "state_logits": [
+            -7.074011325836182,
+            -9.345311164855957,
+            -3.4110465049743652,
+            -5.847992897033691,
+            -7.593820095062256,
+            -10.633833885192871,
+            -6.0226898193359375,
+            -4.001246929168701,
+            -5.774991989135742
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            1.0,
+            0.9999688863754272,
+            4.8272395360982046e-05,
+            6.268996912695002e-06,
+            3.8021594264137093e-06,
+            0.4703653156757355,
+            4.47041855977659e-07,
+            4.497055851970799e-05,
+            5.56758607217489e-07
+          ],
+          "state_logits": [
+            17.081314086914062,
+            10.3760404586792,
+            -9.938602447509766,
+            -11.979887962341309,
+            -12.479937553405762,
+            -0.11867775022983551,
+            -14.620613098144531,
+            -10.0094575881958,
+            -14.40113353729248
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.9176724553108215,
+            0.004405032843351364,
+            0.8156835436820984,
+            0.901074230670929,
+            0.06927131861448288,
+            0.0015912485541775823,
+            0.9151756763458252,
+            0.8357231020927429,
+            0.00019832220277749002
+          ],
+          "state_logits": [
+            2.411134958267212,
+            -5.420592784881592,
+            1.4873725175857544,
+            2.2092180252075195,
+            -2.5979368686676025,
+            -6.441643714904785,
+            2.3785336017608643,
+            1.6267436742782593,
+            -8.525419235229492
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_archive_2026.md",
+        "frost_archive_2025.md",
+        "frost_vault.md"
+      ]
+    },
+    {
+      "id": "synthetic-temporal-code-0101",
+      "category": "temporal_conflict_synth",
+      "question": "What is the current Frost archive code?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "LX-21",
+        "LX 21"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -7.074011325836182,
+            -9.345311164855957,
+            -3.4110465049743652,
+            -5.847992897033691,
+            -7.593820095062256,
+            -10.633833885192871,
+            -6.0226898193359375,
+            -4.001246929168701,
+            -5.774991989135742
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_archive_2026.md",
+        "frost_archive_2025.md",
+        "frost_vault.md"
+      ]
+    },
+    {
+      "id": "synthetic-temporal-ko-location-0101",
+      "category": "temporal_location_ko_synth",
+      "question": "현재 외곽 중계실의 확인 코드는 무엇인가요?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "scripted_donor_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "바다-26",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "별빛-75",
+        "별빛 75"
+      ],
+      "completion": "Answer: 바다-26",
+      "raw_completion": "Answer:\n\n바다-26",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 9,
+      "prompt_token_count": 256,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_중계실_2026_ko.md",
+        "frost_중계실_2025_ko.md",
+        "frost_other_중계실_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.0,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1383463591337204,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.13671875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1732313334941864,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=frost_중계실_2026_ko.md CHUNK=0 SCORE=1.0000\n2026-04-29 공지: 현재 외곽 중계실의 확인 코드는 별빛-75이다. 이전 코드는 모두 폐기되었다.\nSOURCE=frost_중계실_2025_ko.md CHUNK=1 SCORE=1.0000\n2025-04-02 공지: 외곽 중계실의 확인 코드는 바다-26이다.\nSOURCE=frost_other_중계실_ko.md CHUNK=2 SCORE=1.0000\n북쪽 중계실의 확인 코드는 구름-39이다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n날짜가 충돌하면 가장 최신 날짜의 증거를 우선하세요.\nQuestion: 현재 외곽 중계실의 확인 코드는 무엇인가요?\nAnswer:\n\n바다-26",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-temporal-ko-location-0101",
+      "category": "temporal_location_ko_synth",
+      "question": "현재 외곽 중계실의 확인 코드는 무엇인가요?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "scripted_qtrm_answer_channel",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "바다-26",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "별빛-75",
+        "별빛 75"
+      ],
+      "completion": "Answer: 바다-26",
+      "raw_completion": "Answer:\n\n바다-26",
+      "short_answer_governor": true,
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "completion_token_count": 9,
+      "prompt_token_count": 256,
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "workspace_memory_token_count": 0,
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_중계실_2026_ko.md",
+        "frost_중계실_2025_ko.md",
+        "frost_other_중계실_ko.md"
+      ],
+      "retrieved_rerank_backend": [
+        "none",
+        "none",
+        "none"
+      ],
+      "retrieved_rerank_scores": [
+        null,
+        null,
+        null
+      ],
+      "retrieved_retrieval_scores": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "qtrm_logits_scale": 0.5,
+      "donor_logits_scale": 1.0,
+      "forward_ablation": {
+        "disable_workspace": false,
+        "disable_core": false
+      },
+      "suppressed_token_ids": [
+        248068,
+        248069
+      ],
+      "no_repeat_ngram_size": 2,
+      "core_halt": {
+        "mode": "config",
+        "core_steps": [
+          3
+        ],
+        "core_halted": [
+          false
+        ],
+        "q_halt_steps": 0,
+        "q_halt_last_mean": null,
+        "q_continue_steps": 0,
+        "q_continue_last_mean": null
+      },
+      "latent_gates": {
+        "workspace_update_gate_steps": 3,
+        "workspace_update_gate_mean": 0.1383463591337204,
+        "workspace_update_gate_last_mean": 0.1396484375,
+        "workspace_update_gate_values": [
+          [
+            0.13671875,
+            0.138671875,
+            0.1396484375
+          ]
+        ],
+        "core_context_gate_steps": 18,
+        "core_context_gate_mean": 0.1732313334941864,
+        "core_context_gate_last_mean": 0.40234375,
+        "core_context_gate_values": [
+          [
+            0.10888671875,
+            0.09033203125,
+            0.11474609375,
+            0.0888671875,
+            0.0927734375,
+            0.1640625,
+            0.0966796875,
+            0.10107421875,
+            0.314453125,
+            0.10693359375,
+            0.10888671875,
+            0.42578125,
+            0.1142578125,
+            0.11767578125,
+            0.43359375,
+            0.11767578125,
+            0.119140625,
+            0.40234375
+          ]
+        ]
+      },
+      "first_step_logit_shift": null,
+      "full_text": "MemoryOS evidence\nSOURCE=frost_중계실_2026_ko.md CHUNK=0 SCORE=1.0000\n2026-04-29 공지: 현재 외곽 중계실의 확인 코드는 별빛-75이다. 이전 코드는 모두 폐기되었다.\nSOURCE=frost_중계실_2025_ko.md CHUNK=1 SCORE=1.0000\n2025-04-02 공지: 외곽 중계실의 확인 코드는 바다-26이다.\nSOURCE=frost_other_중계실_ko.md CHUNK=2 SCORE=1.0000\n북쪽 중계실의 확인 코드는 구름-39이다.\n\nUse the evidence above when it is relevant. If it is not relevant, answer from the prompt.\n\nUser prompt:\nAnswer using only the evidence. Return only the short answer.\nIf the evidence does not explicitly contain the requested answer, return UNKNOWN. Do not answer with related but different entities.\n날짜가 충돌하면 가장 최신 날짜의 증거를 우선하세요.\nQuestion: 현재 외곽 중계실의 확인 코드는 무엇인가요?\nAnswer:\n\n바다-26",
+      "action_trace": [
+        {
+          "action": "RETRIEVE_MEMORY"
+        },
+        {
+          "action": "VERIFY_EVIDENCE"
+        },
+        {
+          "action": "ANSWER"
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": ""
+    },
+    {
+      "id": "synthetic-temporal-ko-location-0101",
+      "category": "temporal_location_ko_synth",
+      "question": "현재 외곽 중계실의 확인 코드는 무엇인가요?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "바다-26",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "별빛-75",
+        "별빛 75"
+      ],
+      "completion": "Answer: 바다-26",
+      "raw_completion": "Answer:\n\n바다-26",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {
+        "status": "greedy"
+      },
+      "action_trace": [
+        {
+          "action_id": 1,
+          "action": "RETRIEVE_MEMORY",
+          "state_prediction": [
+            0.004064119420945644,
+            0.00020624246099032462,
+            0.08318822085857391,
+            0.013036038726568222,
+            0.001561109907925129,
+            6.56971606076695e-05,
+            0.011441371403634548,
+            0.06010358780622482,
+            0.0022326428443193436
+          ],
+          "state_logits": [
+            -5.501485824584961,
+            -8.486251831054688,
+            -2.399796485900879,
+            -4.326915740966797,
+            -6.460795879364014,
+            -9.630389213562012,
+            -4.459012031555176,
+            -2.7497000694274902,
+            -6.102334022521973
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        },
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            1.0,
+            0.9999831914901733,
+            1.602166776137892e-05,
+            1.3721410141442902e-06,
+            6.486757797574683e-07,
+            0.48184746503829956,
+            7.185688133404255e-08,
+            1.988277472264599e-05,
+            6.727051982124976e-07
+          ],
+          "state_logits": [
+            16.67647361755371,
+            10.995257377624512,
+            -11.041552543640137,
+            -13.499136924743652,
+            -14.248332023620605,
+            -0.07264186441898346,
+            -16.448589324951172,
+            -10.825636863708496,
+            -14.211957931518555
+          ],
+          "expected_action": "VERIFY_EVIDENCE",
+          "step": 1
+        },
+        {
+          "action_id": 3,
+          "action": "ANSWER",
+          "state_prediction": [
+            0.9750231504440308,
+            0.01074554305523634,
+            0.8944432139396667,
+            0.9555208086967468,
+            0.16321346163749695,
+            0.003921268507838249,
+            0.9622788429260254,
+            0.9172384738922119,
+            0.00015676919429097325
+          ],
+          "state_logits": [
+            3.6645126342773438,
+            -4.522460460662842,
+            2.1369526386260986,
+            3.0672342777252197,
+            -1.6345100402832031,
+            -5.537411212921143,
+            3.2390830516815186,
+            2.4054040908813477,
+            -8.760579109191895
+          ],
+          "expected_action": "ANSWER",
+          "step": 2
+        }
+      ],
+      "action_sequence": [
+        "RETRIEVE_MEMORY",
+        "VERIFY_EVIDENCE",
+        "ANSWER"
+      ],
+      "action_success": true,
+      "failure_reason": "",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_중계실_2026_ko.md",
+        "frost_중계실_2025_ko.md",
+        "frost_other_중계실_ko.md"
+      ]
+    },
+    {
+      "id": "synthetic-temporal-ko-location-0101",
+      "category": "temporal_location_ko_synth",
+      "question": "현재 외곽 중계실의 확인 코드는 무엇인가요?",
+      "task_family": "conflict",
+      "expected_unknown": false,
+      "mode": "learned_state_qtrm_state_off",
+      "hit": false,
+      "exact_match": false,
+      "normalized_exact": false,
+      "normalized_contains": false,
+      "unknown_correct": false,
+      "match_type": "none",
+      "matched_aliases": [],
+      "canonical_answer": "UNKNOWN",
+      "needs_human_audit": true,
+      "audit_reasons": [
+        "answer_miss"
+      ],
+      "judge_status": "not_run",
+      "answer_aliases": [
+        "별빛-75",
+        "별빛 75"
+      ],
+      "completion": "Answer: UNKNOWN",
+      "raw_completion": "Answer: UNKNOWN",
+      "answer_channel": "greedy",
+      "answer_channel_meta": {},
+      "action_trace": [
+        {
+          "action_id": 2,
+          "action": "VERIFY_EVIDENCE",
+          "state_prediction": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "state_logits": [
+            -5.501485824584961,
+            -8.486251831054688,
+            -2.399796485900879,
+            -4.326915740966797,
+            -6.460795879364014,
+            -9.630389213562012,
+            -4.459012031555176,
+            -2.7497000694274902,
+            -6.102334022521973
+          ],
+          "expected_action": "RETRIEVE_MEMORY",
+          "step": 0
+        }
+      ],
+      "action_sequence": [
+        "VERIFY_EVIDENCE"
+      ],
+      "action_success": false,
+      "failure_reason": "expected_RETRIEVE_MEMORY_got_VERIFY_EVIDENCE",
+      "include_evidence": true,
+      "evidence_mode": "all",
+      "evidence_injection": "prompt",
+      "retrieved_target": true,
+      "target_count": 1,
+      "retrieved_target_count": 1,
+      "all_targets_retrieved": true,
+      "target_recall": 1.0,
+      "retrieved_roles": [
+        "target",
+        "distractor",
+        "distractor"
+      ],
+      "retrieved_sources": [
+        "frost_중계실_2026_ko.md",
+        "frost_중계실_2025_ko.md",
+        "frost_other_중계실_ko.md"
+      ]
+    }
+  ]
+}

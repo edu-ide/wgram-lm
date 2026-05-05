@@ -1,0 +1,241 @@
+{
+  "date": "2026-05-04",
+  "status": "architecture_rejected_direct_state_string_generation",
+  "artifacts": {
+    "module": "src/qtrm_mm/agentic/solver_state_machine.py",
+    "train_script": "scripts/216_train_pure_recursive_solver_state_machine.py",
+    "small_checkpoint": "local_eval/pure_recursive_solver_state_machine_s240_compact_input/last.pt",
+    "large_checkpoint": "local_eval/pure_recursive_solver_state_machine_large_s240/last.pt"
+  },
+  "small_probe": {
+    "train_cases": 32,
+    "train_rows": 128,
+    "loss": 0.024972867220640182,
+    "train_rollout_final_exact": 0.90625,
+    "eval_cases": 8,
+    "eval_rollout_final_exact": 0.0
+  },
+  "large_probe": {
+    "train_cases": 512,
+    "train_rows": 2048,
+    "loss": 0.14789509773254395,
+    "train_rollout_final_exact": 0.46484375,
+    "eval_cases": 64,
+    "eval_rollout_final_exact": 0.0
+  },
+  "primitive_ceiling": {
+    "heldout200_state_exact": "32/32",
+    "heldout200_final_exact": "8/8",
+    "heldout_large_state_exact": "256/256",
+    "heldout_large_final_exact": "64/64"
+  },
+  "char_operation_policy": {
+    "checkpoint": "local_eval/pure_recursive_operation_policy_large_s240_metadata_tail/last.pt",
+    "eval_operation_exact": 0.625,
+    "eval_rollout_state_exact": 0.5,
+    "eval_rollout_final_exact": 0.5
+  },
+  "structured_operation_policy": {
+    "checkpoint": "local_eval/pure_recursive_structured_operation_policy_large_s240/last.pt",
+    "eval_operation_exact": 1.0,
+    "eval_rollout_state_exact": 1.0,
+    "eval_rollout_final_exact": 1.0
+  },
+  "all_family_structured_operation_policy": {
+    "train_data": "data/filtered/pure_recursive_solver_trace_all_family_train.jsonl",
+    "eval_data": "data/eval/pure_recursive_solver_trace_all_family_heldout.jsonl",
+    "checkpoint": "local_eval/pure_recursive_structured_operation_policy_all_family_s240/last.pt",
+    "primitive_ceiling_state_exact": "512/512",
+    "primitive_ceiling_final_exact": "128/128",
+    "eval_operation_exact": 1.0,
+    "eval_rollout_state_exact": 1.0,
+    "eval_rollout_final_exact": 1.0
+  },
+  "qtrm_integration_surface": {
+    "config_fields": [
+      "primitive_transition_enabled",
+      "primitive_transition_num_operations",
+      "primitive_transition_hidden_dim",
+      "primitive_transition_prompt_context_enabled",
+      "primitive_transition_prompt_token_attention_enabled"
+    ],
+    "model_output": "primitive_transition_operation_logits",
+    "training_arg": "--primitive-transition-operation-ce-weight",
+    "target_source": "solver_trace.operation"
+  },
+  "qtrm_primitive_transition_core_only_s240": {
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_s240_oponly/last.pt",
+    "heldout_first64_operation_accuracy": 0.5,
+    "failure": "family-insensitive operation schedule collapse"
+  },
+  "qtrm_primitive_transition_promptctx_s240": {
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptctx_s240_oponly/last.pt",
+    "train_operation_exact": "417/512",
+    "train_operation_accuracy": 0.814453125,
+    "heldout_operation_exact": "210/256",
+    "heldout_operation_accuracy": 0.8203125
+  },
+  "qtrm_primitive_transition_promptctx_s720": {
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptctx_s720_oponly/last.pt",
+    "train_operation_exact": "512/512",
+    "train_operation_accuracy": 1.0,
+    "heldout_operation_exact": "250/256",
+    "heldout_operation_accuracy": 0.9765625,
+    "heldout7000_operation_exact": "507/512",
+    "heldout7000_operation_accuracy": 0.990234375,
+    "remaining_error": "list_transform double_filtered predicted as second_mapping"
+  },
+  "qtrm_primitive_transition_promptattn_s480_from_s720": {
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/last.pt",
+    "init_checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptctx_s720_oponly/last.pt",
+    "train_steps": 480,
+    "heldout_operation_exact": "256/256",
+    "heldout_operation_accuracy": 1.0,
+    "heldout7000_operation_exact": "512/512",
+    "heldout7000_operation_accuracy": 1.0,
+    "remaining_error": null,
+    "decision": "Token-level prompt attention replaces mean-pooled prompt context for the primitive transition head."
+  },
+  "qtrm_primitive_transition_promptattn_rollout_heldout7000": {
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/last.pt",
+    "report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_rollout_heldout7000.json",
+    "operation_exact": "512/512",
+    "state_exact": "512/512",
+    "final_exact": "128/128",
+    "core_off_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_rollout_heldout7000_coreoff.json",
+    "core_off_operation_exact": "0/512",
+    "core_off_state_exact": "0/512",
+    "core_off_final_exact": "0/128"
+  },
+  "qtrm_primitive_transition_runtime_answer_path": {
+    "script": "scripts/222_infer_qtrm_primitive_transition_answer.py",
+    "runtime_function": "qtrm_mm.agentic.solver_state_machine.answer_from_primitive_operations",
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/last.pt",
+    "arithmetic_smoke": {
+      "artifact": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/runtime_answer_arith_7000.json",
+      "predicted_operations": [
+        "add_operands",
+        "multiply_sum",
+        "subtract_offset",
+        "hold_final"
+      ],
+      "states": [
+        "7010",
+        "14020",
+        "14017"
+      ],
+      "answer": "14017"
+    },
+    "list_transform_smoke": {
+      "artifact": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/runtime_answer_list_7000.json",
+      "predicted_operations": [
+        "filter_even",
+        "double_filtered",
+        "hold_final",
+        "hold_final"
+      ],
+      "states": [
+        "7004,7002",
+        "14008,14004"
+      ],
+      "answer": "14008,14004"
+    },
+    "boundary": "Synthetic primitive-reasoning runtime for supported operation families; not yet a general autoregressive answer channel."
+  },
+  "qtrm_primitive_transition_answer_only_runtime_gate": {
+    "script": "scripts/223_eval_qtrm_primitive_answer_runtime.py",
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/last.pt",
+    "report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_answer_runtime_heldout7000.json",
+    "answer_exact": "128/128",
+    "answer_accuracy": 1.0,
+    "by_family": {
+      "arithmetic_chain": "32/32",
+      "symbolic_binding": "32/32",
+      "boolean_logic": "32/32",
+      "list_transform": "32/32"
+    },
+    "core_off_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_answer_runtime_heldout7000_coreoff.json",
+    "core_off_answer_exact": "0/128",
+    "runtime_contract": "prompt only at runtime; no solver_trace, intermediate states, or chosen answer are provided to the primitive runtime."
+  },
+  "donor_only_baseline_heldout7000": {
+    "script": "scripts/224_eval_donor_only_baseline.py",
+    "report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_donor_only_heldout7000.json",
+    "donor_model_id": "Qwen/Qwen3.5-2B-Base",
+    "forced_choice_answer_exact": "61/128",
+    "forced_choice_accuracy": 0.4765625,
+    "greedy_answer_exact": "29/128",
+    "greedy_accuracy": 0.2265625,
+    "forced_choice_by_family": {
+      "arithmetic_chain": "15/32",
+      "symbolic_binding": "17/32",
+      "boolean_logic": "29/32",
+      "list_transform": "0/32"
+    },
+    "greedy_by_family": {
+      "arithmetic_chain": "0/32",
+      "symbolic_binding": "0/32",
+      "boolean_logic": "29/32",
+      "list_transform": "0/32"
+    }
+  },
+  "donor_vs_qtrm_conclusion": "On this synthetic primitive-reasoning heldout7000 gate, QTRM primitive runtime beats donor-only forced-choice and greedy baselines. This is a scoped benchmark claim, not a broad general-LLM superiority claim.",
+  "ood_surface_form_gate_heldout8000": {
+    "builder": "scripts/225_build_pure_recursive_ood_surface_cases.py",
+    "data": "data/eval/pure_recursive_primitive_transition_ood_surface_heldout8000_preferences.jsonl",
+    "qtrm_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_answer_runtime_ood_surface_heldout8000.json",
+    "qtrm_answer_exact": "107/128",
+    "qtrm_accuracy": 0.8359375,
+    "qtrm_core_off_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_answer_runtime_ood_surface_heldout8000_coreoff.json",
+    "qtrm_core_off_answer_exact": "0/128",
+    "donor_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_donor_only_ood_surface_heldout8000.json",
+    "donor_forced_choice_answer_exact": "71/128",
+    "donor_forced_choice_accuracy": 0.5546875,
+    "donor_greedy_answer_exact": "32/128",
+    "donor_greedy_accuracy": 0.25,
+    "qtrm_by_family": {
+      "arithmetic_chain": "11/32",
+      "symbolic_binding": "32/32",
+      "boolean_logic": "32/32",
+      "list_transform": "32/32"
+    },
+    "arithmetic_variant_breakdown": {
+      "variant_0": "11/11",
+      "variant_1": "0/11",
+      "variant_2": "0/10"
+    },
+    "failure": "Arithmetic operation-family routing is surface-form sensitive; variants 1 and 2 often route to not_q or filter_even before subtract_offset.",
+    "next_gate": "Add arithmetic surface-form augmentation and require OOD arithmetic recovery before new primitive families."
+  },
+  "surface_form_augmentation_recovery_gate": {
+    "builder": "scripts/226_build_pure_recursive_surface_aug_mix.py",
+    "train_data": "data/filtered/pure_recursive_primitive_transition_surface_aug_mix_train.jsonl",
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_surface_aug_s640_from_promptattn/last.pt",
+    "init_checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/last.pt",
+    "train_steps": 640,
+    "loss_path": "primitive_transition_operation_ce only; answer CE disabled",
+    "ood_surface_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_surface_aug_s640_from_promptattn/eval_answer_runtime_ood_surface_heldout8000.json",
+    "ood_surface_answer_exact": "128/128",
+    "ood_surface_accuracy": 1.0,
+    "ood_surface_core_off_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_surface_aug_s640_from_promptattn/eval_answer_runtime_ood_surface_heldout8000_coreoff.json",
+    "ood_surface_core_off_answer_exact": "0/128",
+    "ood_surface_core_off_accuracy": 0.0,
+    "ood_surface_by_family": {
+      "arithmetic_chain": "32/32",
+      "symbolic_binding": "32/32",
+      "boolean_logic": "32/32",
+      "list_transform": "32/32"
+    },
+    "canonical_heldout_report": "local_eval/qwen35_2b_pure_recursive_primitive_transition_surface_aug_s640_from_promptattn/eval_answer_runtime_heldout7000.json",
+    "canonical_heldout_answer_exact": "128/128",
+    "canonical_heldout_accuracy": 1.0,
+    "canonical_heldout_by_family": {
+      "arithmetic_chain": "32/32",
+      "symbolic_binding": "32/32",
+      "boolean_logic": "32/32",
+      "list_transform": "32/32"
+    },
+    "interpretation": "Surface-form arithmetic routing failure recovered through the causal primitive-operation path without canonical heldout regression."
+  },
+  "decision": "Replace direct free-form state string generation with token-grounded prompt-conditioned structured operation policy plus primitive transition updates."
+}

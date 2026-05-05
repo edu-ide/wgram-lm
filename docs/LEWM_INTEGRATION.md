@@ -52,11 +52,17 @@ Implemented files:
   - `SIGReg`
 - `src/qtrm_mm/qtrm_model.py`
   - adds a causal JEPA latent encoder
+  - adds optional core-trajectory LeWM prediction over recursive `z_H` states
   - exposes `jepa_pred`, `jepa_target`, `jepa_latents`, `jepa_latent_mask`, and `jepa_mask`
+  - exposes `core_world_model_pred`, `core_world_model_target`,
+    `core_world_model_latents`, `core_world_model_latent_mask`, and
+    `core_world_model_mask` when enabled
 - `src/qtrm_mm/losses.py`
   - `jepa_world_model_loss` now uses MSE plus optional SIGReg
+  - `core_world_model_weight` applies the same LeWM loss to recursive core
+    trajectories
 - `tests/test_jepa_world_model.py`
-  - verifies next-latent shapes, padding transition masks, end-to-end target gradients, and SIGReg integration
+  - verifies next-latent shapes, padding transition masks, end-to-end target gradients, SIGReg integration, and core trajectory prediction
 
 ## What Changed
 
@@ -87,6 +93,26 @@ This is closer to LeWorldModel: end-to-end next-embedding prediction from
 latents, action-conditioned predictor support, and a Gaussian latent
 regularizer instead of stop-gradient/EMA.
 
+Core-world-model probe:
+
+```text
+MemoryOS evidence / visible prompt
+  -> Latent Workspace
+  -> TRM recursive core
+  -> z_H[0], z_H[1], z_H[2]
+
+z_H[0:T-1] + action trace(RETRIEVE/VERIFY/ANSWER)
+  -> LeWM-style predictor
+  -> predicted z_H[1:T]
+
+loss = mse(predicted z_H, next z_H) + lambda * SIGReg(z_H trajectory)
+```
+
+This directly connects LeWM to the TRM-like reasoning loop instead of only to
+token embeddings. The first action trace is deliberately simple:
+`OBSERVE` for no evidence, `RETRIEVE` when workspace evidence exists, then
+`VERIFY`, then `ANSWER`.
+
 ## Still Not Done
 
 This is not a full LeWM reproduction.
@@ -94,10 +120,18 @@ This is not a full LeWM reproduction.
 Remaining gaps:
 
 1. Add real action traces for `LOOK`, `RETRIEVE`, `VERIFY`, `ANSWER`, then pass
-   those actions into the predictor.
+   those actions into the predictor. The current implementation has a fixed
+   first probe action trace, not learned or human-verified action labels.
 2. Add multimodal/video latents from a real vision encoder, not only text token
    latents.
 3. Add autoregressive rollout evaluation over multiple future steps.
 4. Add bisection/search support for the SIGReg weight.
 5. Keep Qwen/HF `generate()` as the baseline generator; the QTRM JEPA path is an
    auxiliary world-model/controller objective until metrics justify promotion.
+
+Probe entry point:
+
+```bash
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src MAX_CASES=4 \
+  bash scripts/128_run_lewm_core_world_model_probe.sh
+```
