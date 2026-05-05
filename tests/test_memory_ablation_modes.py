@@ -24,6 +24,12 @@ class MemoryAblationModeTests(unittest.TestCase):
             "qtrm_residual_head_off_with_evidence",
             "qtrm_donor_hidden_off_with_evidence",
             "qtrm_workspace_only_with_evidence",
+            "qtrm_workspace_gate_off_with_evidence",
+            "qtrm_workspace_memory_off_with_evidence",
+            "qtrm_core_context_off_with_evidence",
+            "qtrm_core_to_text_off_with_evidence",
+            "qtrm_evidence_span_reader_off_with_evidence",
+            "qtrm_answer_residual_governor_off_with_evidence",
         ):
             include_evidence, qtrm_scale, donor_scale = self.module.mode_settings(
                 mode,
@@ -102,6 +108,78 @@ class MemoryAblationModeTests(unittest.TestCase):
                 "workspace_only_context": True,
             },
         )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_workspace_gate_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+                "disable_workspace_memory_gate": True,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_workspace_memory_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+                "disable_workspace_memory_context": True,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_core_context_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+                "disable_core_context": True,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_core_to_text_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+                "disable_core_to_text": True,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_evidence_span_reader_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+                "disable_evidence_span_reader": True,
+            },
+        )
+        self.assertEqual(
+            self.module.mode_forward_kwargs("qtrm_answer_residual_governor_off_with_evidence"),
+            {
+                "disable_workspace": False,
+                "disable_core": False,
+                "disable_coda": False,
+                "disable_qtrm_residual": False,
+                "disable_donor_context": False,
+                "workspace_only_context": False,
+                "disable_answer_residual_governor": True,
+            },
+        )
 
     def test_mode_forward_kwargs_can_force_core_halt_mode(self):
         self.assertEqual(
@@ -134,6 +212,20 @@ class MemoryAblationModeTests(unittest.TestCase):
 
         self.assertEqual(args.core_halt_mode, "disabled")
 
+    def test_cli_exposes_workspace_evidence_injection(self):
+        parser = self.module.build_arg_parser()
+
+        args = parser.parse_args(["--evidence-injection", "workspace"])
+
+        self.assertEqual(args.evidence_injection, "workspace")
+
+    def test_cli_exposes_dual_evidence_injection(self):
+        parser = self.module.build_arg_parser()
+
+        args = parser.parse_args(["--evidence-injection", "dual"])
+
+        self.assertEqual(args.evidence_injection, "dual")
+
     def test_core_halt_telemetry_serializes_prompt_forward_outputs(self):
         import torch
 
@@ -153,6 +245,21 @@ class MemoryAblationModeTests(unittest.TestCase):
         self.assertEqual(record["q_halt_steps"], 2)
         self.assertAlmostEqual(record["q_halt_last_mean"], 0.7, places=6)
 
+    def test_latent_gate_telemetry_serializes_workspace_and_core_context_gates(self):
+        import torch
+
+        record = self.module.latent_gate_telemetry(
+            {
+                "workspace_update_gate_mean": torch.tensor([[0.25, 0.75]]),
+                "core_context_gate_mean": torch.tensor([[0.10, 0.30]]),
+            }
+        )
+
+        self.assertEqual(record["workspace_update_gate_steps"], 2)
+        self.assertAlmostEqual(record["workspace_update_gate_mean"], 0.5, places=6)
+        self.assertEqual(record["core_context_gate_steps"], 2)
+        self.assertAlmostEqual(record["core_context_gate_mean"], 0.2, places=6)
+
     def test_default_modes_include_causal_component_ablations(self):
         self.assertIn("qtrm_workspace_off_with_evidence", self.module.DEFAULT_MODES)
         self.assertIn("qtrm_core_off_with_evidence", self.module.DEFAULT_MODES)
@@ -160,6 +267,12 @@ class MemoryAblationModeTests(unittest.TestCase):
         self.assertIn("qtrm_residual_head_off_with_evidence", self.module.DEFAULT_MODES)
         self.assertIn("qtrm_donor_hidden_off_with_evidence", self.module.DEFAULT_MODES)
         self.assertIn("qtrm_workspace_only_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_workspace_gate_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_workspace_memory_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_core_context_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_core_to_text_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_evidence_span_reader_off_with_evidence", self.module.DEFAULT_MODES)
+        self.assertIn("qtrm_answer_residual_governor_off_with_evidence", self.module.DEFAULT_MODES)
 
 
 if __name__ == "__main__":

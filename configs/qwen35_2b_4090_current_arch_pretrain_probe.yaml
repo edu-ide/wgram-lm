@@ -19,6 +19,8 @@ model:
   workspace_layers: 3
   workspace_ff_mult: 2
   workspace_include_latents_in_kv: true
+  workspace_memory_gate_enabled: true
+  workspace_memory_gate_init_bias: -2.0
   h_cycles: 2
   l_cycles: 2
   outer_steps: 2

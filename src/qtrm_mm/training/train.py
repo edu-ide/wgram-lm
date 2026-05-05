@@ -17,7 +17,18 @@ from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
 def load_initial_checkpoint(model, checkpoint_path: str, map_location):
     state = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
-    missing, unexpected = model.load_state_dict(state.get("model", state), strict=False)
+    loaded = state.get("model", state)
+    current = model.state_dict()
+    compatible = {}
+    skipped = []
+    for name, value in loaded.items():
+        if name in current and tuple(value.shape) != tuple(current[name].shape):
+            skipped.append(name)
+            continue
+        compatible[name] = value
+    missing, unexpected = model.load_state_dict(compatible, strict=False)
+    if skipped:
+        print(f"[init] skipped shape-mismatched keys: {', '.join(skipped)}")
     return list(missing), list(unexpected)
 
 
@@ -27,6 +38,21 @@ def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
         for param in model.parameters():
             param.requires_grad_(True)
         return [name for name, param in model.named_parameters() if param.requires_grad]
+
+    if policy == "controller_only":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = (
+                name.startswith("ctrl.")
+                or name.startswith("controller_signal_proj.")
+                or name.startswith("controller_signal_head.")
+            )
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError("trainable_param_policy=controller_only requires model.ctrl heads")
+        return trainable_names
 
     if policy == "core_halt_only":
         trainable_names = []
@@ -41,11 +67,305 @@ def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
             )
         return trainable_names
 
+    if policy == "core_only":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith("core.")
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError("trainable_param_policy=core_only requires model.core")
+        return trainable_names
+
+    if policy == "core_and_loop_readout":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith("core.") or name.startswith("core_loop_readout_")
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("core_loop_readout_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_loop_readout requires "
+                "model.core_loop_readout_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_and_answer_state_loop":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = (
+                name.startswith("core.")
+                or name.startswith("answer_state_loop_")
+                or name.startswith("transition_state_")
+            )
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("answer_state_loop_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_answer_state_loop requires "
+                "model.answer_state_loop_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_and_answer_state_loop_and_world_model":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = (
+                name.startswith("core.")
+                or name.startswith("answer_state_loop_")
+                or name.startswith("core_world_model.")
+            )
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("answer_state_loop_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_answer_state_loop_and_world_model requires "
+                "model.answer_state_loop_enabled=true"
+            )
+        if not any(name.startswith("core_world_model.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_answer_state_loop_and_world_model requires "
+                "model.core_world_model_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_and_primitive_transition":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = (
+                name.startswith("core.")
+                or name.startswith("primitive_transition_")
+            )
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_primitive_transition requires "
+                "model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("core.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_primitive_transition requires model.core"
+            )
+        return trainable_names
+
+    if policy == "core_and_temporal_spatial_context":
+        trainable_names = []
+        prefixes = (
+            "core.",
+            "temporal_spatial_context_proj.",
+            "temporal_spatial_context_norm.",
+            "temporal_spatial_context_pos",
+        )
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("temporal_spatial_context_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_temporal_spatial_context requires "
+                "model.temporal_spatial_context_enabled=true"
+            )
+        if not any(name.startswith("core.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_temporal_spatial_context requires model.core"
+            )
+        return trainable_names
+
+    if policy == "workspace_gate_only":
+        trainable_names = []
+        gate_markers = (
+            ".gate_norm_prev.",
+            ".gate_norm_update.",
+            ".update_gate.",
+            ".reset_gate.",
+            ".candidate.",
+        )
+        for name, param in model.named_parameters():
+            trainable = name.startswith("workspace.layers.") and any(
+                marker in name for marker in gate_markers
+            )
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError(
+                "trainable_param_policy=workspace_gate_only requires "
+                "model.workspace_memory_gate_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "generation_verifier_only":
+        trainable_names = []
+        prefixes = (
+            "generation_repeat_head.",
+            "generation_stop_head.",
+            "generation_quality_head.",
+        )
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError(
+                "trainable_param_policy=generation_verifier_only requires "
+                "model.generation_verifier_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "controller_signal_head_only":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith("controller_signal_head.")
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError(
+                "trainable_param_policy=controller_signal_head_only requires "
+                "model.controller_signal_source to be a learned signal source"
+            )
+        return trainable_names
+
+    if policy == "answer_decision_head_only":
+        trainable_names = []
+        prefixes = (
+            "answer_decision_head.",
+            "answer_decision_feature_norm.",
+            "answer_decision_feature_proj.",
+            "answer_decision_feature_head.",
+        )
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError(
+                "trainable_param_policy=answer_decision_head_only requires "
+                "model.answer_decision_head_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "answer_bottleneck_evidence_only":
+        trainable_names = []
+        answer_trainable_names = []
+        prefixes = (
+            "answer_bottleneck_query_norm.",
+            "answer_bottleneck_workspace_norm.",
+            "answer_bottleneck_cross.",
+            "answer_bottleneck_output_norm.",
+            "evidence_support_head.",
+            "evidence_refute_head.",
+            "evidence_missing_head.",
+            "evidence_causal_gate_head.",
+        )
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+                if name.startswith("answer_bottleneck_"):
+                    answer_trainable_names.append(name)
+        if not trainable_names or not answer_trainable_names:
+            raise ValueError(
+                "trainable_param_policy=answer_bottleneck_evidence_only requires "
+                "model.answer_bottleneck_enabled=true and evidence heads"
+            )
+        return trainable_names
+
+    if policy == "evidence_span_reader_only":
+        trainable_names = []
+        prefixes = (
+            "evidence_span_",
+            "evidence_support_head.",
+            "evidence_refute_head.",
+            "evidence_missing_head.",
+            "evidence_causal_gate_head.",
+            "projector.visual_proj.",
+            "projector.norm.",
+        )
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("evidence_span_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=evidence_span_reader_only requires "
+                "model.evidence_span_reader_enabled=true"
+            )
+        return trainable_names
+
     raise ValueError(f"unknown trainable_param_policy: {policy}")
 
 
 def trainable_parameters(model):
     return [param for param in model.parameters() if param.requires_grad]
+
+
+def strip_training_only_batch_keys(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    return {
+        key: value
+        for key, value in batch.items()
+        if key
+        not in {
+            "workspace_input_ids",
+            "workspace_attention_mask",
+            "workspace_counterfactual_input_ids",
+            "workspace_counterfactual_attention_mask",
+            "answer_decision_target",
+            "answer_decision_sample_weight",
+            "action_target",
+            "action_sample_weight",
+        }
+    }
+
+
+def build_core_world_model_actions(
+    batch: dict[str, torch.Tensor],
+    *,
+    num_steps: int,
+    num_actions: int,
+    device,
+) -> torch.Tensor:
+    """Build simple LeWM-style action traces for recursive core states.
+
+    Action ids are intentionally fixed for the first probe:
+    0=OBSERVE, 1=RETRIEVE, 2=VERIFY, 3=ANSWER.
+    """
+    if num_steps < 0:
+        raise ValueError("num_steps must be non-negative")
+    if num_actions < 4:
+        raise ValueError("num_actions must be at least 4 for core world-model actions")
+    input_ids = batch["input_ids"]
+    b = input_ids.shape[0]
+    actions = torch.zeros((b, num_steps, num_actions), device=device, dtype=torch.float32)
+    if num_steps == 0:
+        return actions
+
+    workspace_mask = batch.get("workspace_attention_mask")
+    if workspace_mask is None:
+        has_workspace = torch.zeros((b,), device=device, dtype=torch.bool)
+    else:
+        has_workspace = workspace_mask.to(device=device, dtype=torch.bool).any(dim=1)
+
+    action_ids = torch.full((b, num_steps), 2, device=device, dtype=torch.long)
+    action_ids[:, 0] = torch.where(
+        has_workspace,
+        torch.full((b,), 1, device=device, dtype=torch.long),
+        torch.zeros((b,), device=device, dtype=torch.long),
+    )
+    if num_steps >= 2:
+        action_ids[:, -1] = 3
+    return actions.scatter_(dim=-1, index=action_ids.unsqueeze(-1), value=1.0)
 
 
 def scheduled_donor_logits_scale(
@@ -98,6 +418,42 @@ def prepare_donor_batch(
         out["visual_features"] = donor_out["visual_features"].detach()
     if return_logits and donor_out.get("logits") is not None:
         out["donor_logits"] = donor_out["logits"].detach()
+    if "preference_rejected_input_ids" in batch:
+        rejected_out = donor.encode_inputs(
+            input_ids=batch["preference_rejected_input_ids"],
+            attention_mask=batch.get("preference_rejected_attention_mask"),
+            return_logits=return_logits,
+        )
+        out["preference_rejected_text_states"] = rejected_out["text_states"].detach()
+        if return_logits and rejected_out.get("logits") is not None:
+            out["preference_rejected_donor_logits"] = rejected_out["logits"].detach()
+    workspace_attention_mask = batch.get("workspace_attention_mask")
+    has_workspace_tokens = (
+        workspace_attention_mask is None
+        or bool(workspace_attention_mask.to(torch.bool).any().detach().cpu().item())
+    )
+    if "workspace_input_ids" in batch and has_workspace_tokens:
+        workspace_out = donor.encode_inputs(
+            input_ids=batch["workspace_input_ids"],
+            attention_mask=workspace_attention_mask,
+            return_logits=False,
+        )
+        out["workspace_text_states"] = workspace_out["text_states"].detach()
+        if workspace_attention_mask is not None:
+            out["workspace_attention_mask"] = workspace_attention_mask.detach()
+    counterfactual_attention_mask = batch.get("workspace_counterfactual_attention_mask")
+    has_counterfactual_tokens = (
+        counterfactual_attention_mask is not None
+        and bool(counterfactual_attention_mask.to(torch.bool).any().detach().cpu().item())
+    )
+    if "workspace_counterfactual_input_ids" in batch and has_counterfactual_tokens:
+        counterfactual_out = donor.encode_inputs(
+            input_ids=batch["workspace_counterfactual_input_ids"],
+            attention_mask=counterfactual_attention_mask,
+            return_logits=False,
+        )
+        out["workspace_counterfactual_text_states"] = counterfactual_out["text_states"].detach()
+        out["workspace_counterfactual_attention_mask"] = counterfactual_attention_mask.detach()
     return out
 
 
@@ -228,9 +584,11 @@ def main():
             vocab_size=cfg.model.vocab_size,
             seq_len=cfg.train.seq_len,
             visual_dim=cfg.model.visual_dim,
-            max_visual_tokens=min(cfg.model.max_visual_tokens, 64),
+            max_visual_tokens=min(cfg.model.max_visual_tokens, 256),
             multimodal=args.multimodal,
             tokenizer_model_id=tokenizer_model_id,
+            workspace_evidence_injection=cfg.train.workspace_evidence_injection,
+            workspace_evidence_injection_mode=cfg.train.workspace_evidence_injection_mode,
         )
         loader = DataLoader(ds, batch_size=cfg.train.batch_size, collate_fn=collate_jsonl)
     else:
@@ -284,7 +642,7 @@ def main():
         batch = {k: v.to(device) for k, v in batch.items()}
         opt.zero_grad(set_to_none=True)
         with torch.amp.autocast("cuda", enabled=(cfg.train.use_amp and device == "cuda"), dtype=torch.bfloat16):
-            model_batch = dict(batch)
+            model_batch = strip_training_only_batch_keys(batch)
             if donor is not None:
                 model_batch.update(
                     prepare_donor_batch(
@@ -293,10 +651,39 @@ def main():
                         return_logits=use_donor_logits,
                     )
                 )
+            if cfg.model.core_world_model_enabled or cfg.train.loss_core_world_model_weight != 0.0:
+                model_batch["core_world_model_actions"] = build_core_world_model_actions(
+                    batch,
+                    num_steps=cfg.model.outer_steps,
+                    num_actions=cfg.model.num_actions,
+                    device=device,
+                )
+            if (
+                cfg.train.workspace_evidence_injection
+                and cfg.train.workspace_evidence_injection_mode == "ssot"
+            ):
+                model_batch["evidence_span_reader_context"] = "input"
+            if "action_target" in batch:
+                model_batch["action_targets"] = batch["action_target"]
+            if "action_sample_weight" in batch:
+                model_batch["action_sample_weight"] = batch["action_sample_weight"]
+            if "answer_decision_target" in batch:
+                model_batch["answer_decision_target"] = batch["answer_decision_target"]
+            if "answer_decision_sample_weight" in batch:
+                model_batch["answer_decision_sample_weight"] = batch[
+                    "answer_decision_sample_weight"
+                ]
+            if (
+                "controller_signal" in batch
+                and str(cfg.model.controller_signal_source).lower() != "external"
+            ):
+                model_batch["controller_signal_target"] = batch["controller_signal"]
+                model_batch.pop("controller_signal", None)
             loss, metrics, _ = qtrm_smoke_loss(
                 model,
                 **model_batch,
                 jepa_weight=cfg.train.loss_jepa_weight,
+                lm_weight=cfg.train.loss_lm_weight,
                 aux_weight=cfg.train.loss_aux_weight,
                 core_halt_weight=cfg.train.loss_core_halt_weight,
                 core_halt_auto_targets=cfg.train.core_halt_auto_targets,
@@ -309,6 +696,38 @@ def main():
                 donor_kl_weight=cfg.train.loss_donor_kl_weight,
                 donor_kl_beta=cfg.train.donor_kl_beta,
                 donor_kl_temperature=cfg.train.donor_kl_temperature,
+                repeat_unlikelihood_weight=cfg.train.loss_repeat_unlikelihood_weight,
+                greedy_token_margin_weight=cfg.train.loss_greedy_token_margin_weight,
+                greedy_token_margin=cfg.train.greedy_token_margin,
+                greedy_token_margin_only_donor_errors=(
+                    cfg.train.greedy_token_margin_only_donor_errors
+                ),
+                donor_correct_margin_weight=cfg.train.loss_donor_correct_margin_weight,
+                donor_correct_margin=cfg.train.donor_correct_margin,
+                preference_weight=cfg.train.loss_preference_weight,
+                preference_beta=cfg.train.preference_beta,
+                preference_margin=cfg.train.preference_margin,
+                workspace_contrastive_weight=cfg.train.loss_workspace_contrastive_weight,
+                workspace_contrastive_beta=cfg.train.workspace_contrastive_beta,
+                workspace_contrastive_margin=cfg.train.workspace_contrastive_margin,
+                logical_evidence_weight=cfg.train.loss_logical_evidence_weight,
+                causal_evidence_gate_weight=cfg.train.loss_causal_evidence_gate_weight,
+                core_world_model_weight=cfg.train.loss_core_world_model_weight,
+                generation_verifier_weight=cfg.train.loss_generation_verifier_weight,
+                evidence_span_reader_weight=cfg.train.loss_evidence_span_reader_weight,
+                evidence_span_no_answer_span_suppression_weight=(
+                    cfg.train.loss_evidence_span_no_answer_span_suppression_weight
+                ),
+                answer_decision_weight=cfg.train.loss_answer_decision_weight,
+                answer_residual_governor_weight=(
+                    cfg.train.loss_answer_residual_governor_weight
+                ),
+                canonical_causal_weight=cfg.train.loss_canonical_causal_weight,
+                canonical_causal_beta=cfg.train.canonical_causal_beta,
+                canonical_causal_margin=cfg.train.canonical_causal_margin,
+                canonical_causal_ablation_modes=cfg.train.canonical_causal_ablation_modes,
+                action_policy_weight=cfg.train.loss_action_policy_weight,
+                controller_signal_weight=cfg.train.loss_controller_signal_weight,
             )
         scaler.scale(loss).backward()
         scaler.unscale_(opt)

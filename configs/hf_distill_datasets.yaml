@@ -1,0 +1,77 @@
+datasets:
+  - name: yana_reasoning_dpo
+    hf_id: Yana/ft-llm-2026-reasoning-dpo
+    split: train
+    adapter: yana_reasoning_dpo
+    role: qtrm_preference_cot
+    priority: 1
+    license: apache-2.0
+    expected_columns:
+      - prompt
+      - chosen
+      - rejected
+      - strategy
+      - source
+    target_outputs:
+      - prompt
+      - answer
+      - rejected_answer
+      - trace_summary
+    notes: "2026 reasoning DPO data; best first QTRM preference and CoT-to-latent warmup source."
+
+  - name: noesis_50k_reasoning_sft
+    hf_id: AMAImedia/NOESIS-50K-reasoning-router-code-math-psych-opus47-deepseek4-qwen36-gemini31-r1-gpt54
+    split: train
+    adapter: noesis_text_sft
+    role: qtrm_multilingual_reasoning_warmup
+    priority: 2
+    license: apache-2.0
+    expected_columns:
+      - text
+      - domain
+      - src
+      - tok_len
+    target_outputs:
+      - prompt
+      - answer
+      - trace_summary
+    notes: "2026 multilingual reasoning SFT; use 50K subset before 1M."
+
+  - name: ragognize_evidence
+    hf_id: F4biian/RAGognize
+    split: train
+    adapter: ragognize
+    role: msa_routing_evidence_gate
+    priority: 1
+    license: cc-by-sa-4.0
+    expected_columns:
+      - user_prompt
+      - answerable
+      - documents
+      - responses
+    target_outputs:
+      - prompt
+      - answer
+      - memory_docs
+      - target_doc_ids
+      - evidence_spans
+    notes: "2026 RAG dataset with documents and hallucination annotations; use for MSA/evidence gate smoke."
+
+  - name: halluclaim_76k
+    hf_id: lrsbrgrn/HalluClaim-76k
+    split: train
+    adapter: halluclaim_76k
+    role: logical_causal_evidence_bottleneck
+    priority: 1
+    license: apache-2.0
+    expected_columns:
+      - claim
+      - document
+      - label
+    target_outputs:
+      - prompt
+      - answer
+      - memory_docs
+      - evidence_spans
+      - rejected_answer
+    notes: "2026 HalluGuard-derived hallucination/evidence data; inspect columns before large conversion."

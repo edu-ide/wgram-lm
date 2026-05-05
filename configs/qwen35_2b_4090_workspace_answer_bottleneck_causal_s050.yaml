@@ -1,0 +1,66 @@
+donor:
+  model_id: Qwen/Qwen3.5-2B-Base
+  load_in_4bit: true
+  freeze_donor: true
+  train_lora: false
+
+model:
+  vocab_size: 248320
+  d_model: 512
+  n_heads: 8
+  n_kv_heads: 4
+  d_ff: 1536
+  max_seq_len: 2048
+  n_prelude_layers: 2
+  n_core_layers: 4
+  n_coda_layers: 2
+  attn_every: 4
+  workspace_tokens: 64
+  workspace_layers: 3
+  workspace_ff_mult: 2
+  workspace_include_latents_in_kv: true
+  workspace_memory_gate_enabled: true
+  workspace_memory_gate_init_bias: -2.0
+  core_context_enabled: true
+  core_context_gate_init_bias: -2.0
+  h_cycles: 2
+  l_cycles: 2
+  outer_steps: 2
+  dropout: 0.0
+  rope_theta: 100000.0
+  delta_backend: torch_gated_delta
+  attention_backend: flash_attn
+  strict_backends: false
+  visual_dim: 2048
+  max_visual_tokens: 64
+  num_actions: 10
+  qtrm_logits_scale: 0.5
+  donor_logits_scale: 1.0
+  qtrm_residual_clamp: 0.75
+  answer_bottleneck_enabled: true
+  answer_bottleneck_requires_workspace_memory: true
+  evidence_bottleneck_enabled: true
+  evidence_bottleneck_applies_to_residual: true
+  evidence_bottleneck_gate_init_bias: -2.0
+  evidence_bottleneck_gate_min: 0.0
+  evidence_bottleneck_suppress_without_workspace: true
+
+train:
+  batch_size: 1
+  seq_len: 384
+  steps: 300
+  lr: 5.0e-5
+  loss_jepa_weight: 0.0
+  loss_aux_weight: 0.0
+  loss_repeat_unlikelihood_weight: 0.02
+  loss_workspace_contrastive_weight: 0.1
+  workspace_contrastive_beta: 2.0
+  workspace_contrastive_margin: 0.25
+  loss_logical_evidence_weight: 0.5
+  loss_causal_evidence_gate_weight: 0.5
+  trainable_param_policy: answer_bottleneck_evidence_only
+  workspace_evidence_injection: true
+  device: auto
+  use_amp: true
+  log_every: 25
+  out_dir: runs/qwen35_2b_4090_workspace_answer_bottleneck_causal_s050

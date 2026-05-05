@@ -5,6 +5,7 @@ import argparse
 from contextlib import redirect_stdout
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Iterable
 
@@ -37,6 +38,23 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--max-samples", type=int, default=8)
     ap.add_argument("--max-length", type=int, default=None)
     ap.add_argument("--max-new-tokens", type=int, default=32)
+    ap.add_argument("--num-candidates", type=int, default=1)
+    ap.add_argument("--do-sample", action="store_true")
+    ap.add_argument("--temperature", type=float, default=1.0)
+    ap.add_argument("--top-p", type=float, default=1.0)
+    ap.add_argument("--seed", type=int, default=17)
+    ap.add_argument("--no-repeat-ngram-size", type=int, default=0)
+    ap.add_argument("--donor-logits-scale", type=float, default=None)
+    ap.add_argument("--qtrm-logits-scale", type=float, default=None)
+    ap.add_argument("--qtrm-residual-clamp", type=float, default=None)
+    ap.add_argument("--stop-after-sentence", action="store_true")
+    ap.add_argument("--min-new-tokens-before-stop", type=int, default=16)
+    ap.add_argument("--answer-contract", choices=["none", "direct"], default="none")
+    ap.add_argument(
+        "--suppress-visible-reasoning-tokens",
+        action="store_true",
+        help="Suppress common visible reasoning tokens such as <think> during generation.",
+    )
     ap.add_argument("--top-k", type=int, default=10)
     ap.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
     ap.add_argument("--no-donor", action="store_true", help="Do not pass donor hidden states into QTRM.")
@@ -69,6 +87,122 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return ap
 
 
+DIRECT_ANSWER_CONTRACT = (
+    "\n\n/no_think\n"
+    "Answer directly. Do not reveal hidden reasoning. "
+    "Do not create multiple-choice options or a new question."
+)
+
+
+def apply_answer_contract(text: str, mode: str) -> str:
+    if mode == "none":
+        return str(text)
+    if mode == "direct":
+        return str(text).rstrip() + DIRECT_ANSWER_CONTRACT
+    raise ValueError(f"unknown answer contract: {mode}")
+
+
+def _top_p_filtered_logits(logits: torch.Tensor, *, top_p: float) -> torch.Tensor:
+    top_p = float(top_p)
+    if top_p >= 1.0:
+        return logits
+    if top_p <= 0.0:
+        raise ValueError("top_p must be > 0")
+    sorted_logits, sorted_indices = torch.sort(logits.float(), descending=True)
+    sorted_probs = torch.softmax(sorted_logits, dim=-1)
+    cumulative = sorted_probs.cumsum(dim=-1)
+    remove = cumulative > top_p
+    remove[1:] = remove[:-1].clone()
+    remove[0] = False
+    filtered = logits.float().clone()
+    filtered[sorted_indices[remove]] = -torch.inf
+    return filtered
+
+
+def apply_token_suppression(
+    logits: torch.Tensor,
+    suppressed_token_ids: Iterable[int] | None,
+) -> torch.Tensor:
+    ids = [int(token_id) for token_id in (suppressed_token_ids or []) if 0 <= int(token_id) < logits.shape[-1]]
+    if not ids:
+        return logits
+    filtered = logits.float().clone()
+    filtered[torch.tensor(ids, device=filtered.device, dtype=torch.long)] = -torch.inf
+    return filtered
+
+
+def no_repeat_ngram_banned_tokens(generated: Sequence[int], ngram_size: int) -> list[int]:
+    n = int(ngram_size)
+    if n <= 0 or len(generated) < n - 1:
+        return []
+    if n == 1:
+        return sorted(set(int(token_id) for token_id in generated))
+    prefix = tuple(int(token_id) for token_id in generated[-(n - 1) :])
+    banned: set[int] = set()
+    for idx in range(0, len(generated) - n + 1):
+        ngram = tuple(int(token_id) for token_id in generated[idx : idx + n])
+        if ngram[:-1] == prefix:
+            banned.add(ngram[-1])
+    return sorted(banned)
+
+
+def generated_completion_text(tokenizer, generated: Sequence[int], *, prompt_len: int) -> str:
+    full_text = tokenizer.decode(generated, skip_special_tokens=True)
+    prompt_text = tokenizer.decode(generated[:prompt_len], skip_special_tokens=True)
+    if prompt_text and full_text.startswith(prompt_text):
+        return full_text[len(prompt_text) :].strip()
+    return tokenizer.decode(generated[prompt_len:], skip_special_tokens=True).strip()
+
+
+def should_stop_after_sentence(
+    generated: Sequence[int],
+    *,
+    prompt_len: int,
+    tokenizer,
+    enabled: bool,
+    min_new_tokens_before_stop: int,
+) -> bool:
+    if not enabled or len(generated) - int(prompt_len) < int(min_new_tokens_before_stop):
+        return False
+    completion = generated_completion_text(tokenizer, generated, prompt_len=prompt_len)
+    if not completion:
+        return False
+    return re.search(r"[.!?。！？]\s*$", completion) is not None
+
+
+def select_next_token(
+    logits: torch.Tensor,
+    *,
+    do_sample: bool,
+    temperature: float,
+    top_p: float,
+    generator: torch.Generator | None,
+    suppressed_token_ids: Iterable[int] | None = None,
+) -> int:
+    logits = apply_token_suppression(logits.float(), suppressed_token_ids)
+    if not do_sample:
+        return int(logits.argmax(dim=-1).detach().cpu().item())
+    temperature = max(float(temperature), 1e-6)
+    filtered = _top_p_filtered_logits(logits / temperature, top_p=top_p)
+    probs = torch.softmax(filtered, dim=-1)
+    next_id = torch.multinomial(probs, num_samples=1, generator=generator)
+    return int(next_id.detach().cpu().item())
+
+
+def visible_reasoning_token_ids(tokenizer, *, enabled: bool) -> list[int]:
+    if not enabled:
+        return []
+    markers = ("<think>", "</think>")
+    ids: list[int] = []
+    for marker in markers:
+        try:
+            encoded = tokenizer.encode(marker, add_special_tokens=False)
+        except Exception:
+            encoded = []
+        ids.extend(int(token_id) for token_id in encoded)
+    return sorted(set(ids))
+
+
 def iter_jsonl_texts(paths: Iterable[str]) -> Iterable[str]:
     for raw_path in paths:
         path = Path(raw_path)
@@ -91,22 +225,31 @@ def iter_jsonl_texts(paths: Iterable[str]) -> Iterable[str]:
 
 def collect_texts(args: argparse.Namespace) -> list[str]:
     if args.prompt:
-        return args.prompt[: args.max_samples]
+        return [apply_answer_contract(text, args.answer_contract) for text in args.prompt[: args.max_samples]]
     if args.data_jsonl:
         texts = []
         for text in iter_jsonl_texts(args.data_jsonl):
-            texts.append(text)
+            texts.append(apply_answer_contract(text, args.answer_contract))
             if len(texts) >= args.max_samples:
                 break
         if texts:
             return texts
-    return DEFAULT_PROMPTS[: args.max_samples]
+    return [apply_answer_contract(text, args.answer_contract) for text in DEFAULT_PROMPTS[: args.max_samples]]
 
 
 def apply_ablation_mode(model: QTRMMultimodalModel, mode: str) -> None:
     if mode == "donor_only":
         model.cfg.qtrm_logits_scale = 0.0
         model.cfg.donor_logits_scale = 1.0
+
+
+def apply_logit_scale_overrides(model: QTRMMultimodalModel, args: argparse.Namespace) -> None:
+    if args.donor_logits_scale is not None:
+        model.cfg.donor_logits_scale = float(args.donor_logits_scale)
+    if args.qtrm_logits_scale is not None:
+        model.cfg.qtrm_logits_scale = float(args.qtrm_logits_scale)
+    if args.qtrm_residual_clamp is not None:
+        model.cfg.qtrm_residual_clamp = float(args.qtrm_residual_clamp)
 
 
 def forward_ablation_kwargs(mode: str) -> dict[str, bool]:
@@ -241,9 +384,21 @@ def greedy_generate(
     return_donor_logits: bool,
     ablation_mode: str,
     enable_core_halt: bool,
+    do_sample: bool = False,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    seed: int | None = None,
+    suppressed_token_ids: Iterable[int] | None = None,
+    no_repeat_ngram_size: int = 0,
+    stop_after_sentence: bool = False,
+    min_new_tokens_before_stop: int = 16,
 ) -> tuple[list[int], list[dict]]:
     generated = input_ids[0].detach().cpu().tolist()
     prompt_len = len(generated)
+    generator = None
+    if do_sample:
+        generator = torch.Generator(device=device)
+        generator.manual_seed(int(seed if seed is not None else 0))
     fixed_donor = donor_kwargs(
         donor,
         input_ids,
@@ -275,7 +430,18 @@ def greedy_generate(
                 enable_core_halt=enable_core_halt,
             )
         last_logits = outputs["logits"][0, -1].float()
-        next_id = int(last_logits.argmax(dim=-1).detach().cpu().item())
+        step_suppressed_ids = list(suppressed_token_ids or [])
+        step_suppressed_ids.extend(
+            no_repeat_ngram_banned_tokens(generated[prompt_len:], no_repeat_ngram_size)
+        )
+        next_id = select_next_token(
+            last_logits,
+            do_sample=do_sample,
+            temperature=temperature,
+            top_p=top_p,
+            generator=generator,
+            suppressed_token_ids=step_suppressed_ids,
+        )
         steps.append(
             {
                 "step": step,
@@ -288,6 +454,14 @@ def greedy_generate(
         if tokenizer.eos_token_id is not None and next_id == tokenizer.eos_token_id:
             break
         generated.append(next_id)
+        if should_stop_after_sentence(
+            generated,
+            prompt_len=prompt_len,
+            tokenizer=tokenizer,
+            enabled=stop_after_sentence,
+            min_new_tokens_before_stop=min_new_tokens_before_stop,
+        ):
+            break
     return generated, steps
 
 
@@ -309,12 +483,19 @@ def main() -> None:
 
     max_length = args.max_length or cfg.train.seq_len
     model = load_qtrm(args.config, args.checkpoint, device)
+    apply_logit_scale_overrides(model, args)
     apply_ablation_mode(model, args.ablation_mode)
     donor = build_donor(cfg, no_donor=args.no_donor, json_mode=args.json)
     texts = collect_texts(args)
+    if args.num_candidates < 1:
+        raise SystemExit("--num-candidates must be >= 1")
     refresh_donor_each_step = args.refresh_donor_each_step or not args.fixed_donor_during_generation
     use_donor_logits = bool(model.cfg.donor_logits_scale != 0.0)
     fwd_ablation = forward_ablation_kwargs(args.ablation_mode)
+    suppressed_token_ids = visible_reasoning_token_ids(
+        tokenizer,
+        enabled=args.suppress_visible_reasoning_tokens,
+    )
 
     if not args.json:
         print("=" * 72)
@@ -326,6 +507,12 @@ def main() -> None:
             f"max_length={max_length}, refresh_donor_each_step={refresh_donor_each_step}, "
             f"ablation_mode={args.ablation_mode}, "
             f"enable_core_halt={args.enable_core_halt}, "
+            f"num_candidates={args.num_candidates}, do_sample={args.do_sample}, "
+            f"temperature={args.temperature}, top_p={args.top_p}, seed={args.seed}, "
+            f"no_repeat_ngram_size={args.no_repeat_ngram_size}, "
+            f"stop_after_sentence={args.stop_after_sentence}, "
+            f"answer_contract={args.answer_contract}, "
+            f"suppressed_token_ids={suppressed_token_ids}, "
             f"donor_logits_scale={model.cfg.donor_logits_scale}, "
             f"qtrm_logits_scale={model.cfg.qtrm_logits_scale}"
         )
@@ -368,40 +555,65 @@ def main() -> None:
                 tokenizer=tokenizer,
                 donor_logits_scale=model.cfg.donor_logits_scale,
             )
-        generated, steps = greedy_generate(
-            model,
-            donor,
-            tokenizer,
-            input_ids,
-            attention_mask,
-            device=device,
-            max_new_tokens=args.max_new_tokens,
-            refresh_donor_each_step=refresh_donor_each_step,
-            return_donor_logits=use_donor_logits,
-            ablation_mode=args.ablation_mode,
-            enable_core_halt=args.enable_core_halt,
-        )
-        rep = repetition_stats(generated, prompt_len=input_ids.shape[1])
         core_halt = core_halt_telemetry(outputs, enabled=args.enable_core_halt)
         residual_gate = residual_gate_telemetry(outputs)
-        record = {
-            "sample": idx,
-            "ablation_mode": args.ablation_mode,
-            "core_halt": core_halt,
-            "residual_gate": residual_gate,
-            "text": text,
-            "input_tokens": int(input_ids.shape[1]),
-            "offset": int(offset),
-            "teacher_forced": metrics,
-            "next_token_topk": top,
-            "residual_telemetry": residual_telemetry,
-            "greedy_text": tokenizer.decode(generated, skip_special_tokens=True),
-            "greedy_repetition": rep,
-            "greedy_steps": steps[: min(5, len(steps))],
-        }
+        records = []
+        for candidate_id in range(args.num_candidates):
+            candidate_seed = int(args.seed) + idx * 1000 + candidate_id
+            generated, steps = greedy_generate(
+                model,
+                donor,
+                tokenizer,
+                input_ids,
+                attention_mask,
+                device=device,
+                max_new_tokens=args.max_new_tokens,
+                refresh_donor_each_step=refresh_donor_each_step,
+                return_donor_logits=use_donor_logits,
+                ablation_mode=args.ablation_mode,
+                enable_core_halt=args.enable_core_halt,
+                do_sample=args.do_sample,
+                temperature=args.temperature,
+                top_p=args.top_p,
+                seed=candidate_seed,
+                suppressed_token_ids=suppressed_token_ids,
+                no_repeat_ngram_size=args.no_repeat_ngram_size,
+                stop_after_sentence=args.stop_after_sentence,
+                min_new_tokens_before_stop=args.min_new_tokens_before_stop,
+            )
+            rep = repetition_stats(generated, prompt_len=input_ids.shape[1])
+            record = {
+                "sample": idx,
+                "candidate_id": candidate_id,
+                "ablation_mode": args.ablation_mode,
+                "core_halt": core_halt,
+                "residual_gate": residual_gate,
+                "text": text,
+                "input_tokens": int(input_ids.shape[1]),
+                "offset": int(offset),
+                "teacher_forced": metrics,
+                "next_token_topk": top,
+                "residual_telemetry": residual_telemetry,
+                "decoding": {
+                    "do_sample": bool(args.do_sample),
+                    "temperature": float(args.temperature),
+                    "top_p": float(args.top_p),
+                    "seed": candidate_seed,
+                    "suppressed_token_ids": suppressed_token_ids,
+                    "no_repeat_ngram_size": int(args.no_repeat_ngram_size),
+                    "stop_after_sentence": bool(args.stop_after_sentence),
+                    "min_new_tokens_before_stop": int(args.min_new_tokens_before_stop),
+                    "answer_contract": args.answer_contract,
+                },
+                "greedy_text": tokenizer.decode(generated, skip_special_tokens=True),
+                "greedy_repetition": rep,
+                "greedy_steps": steps[: min(5, len(steps))],
+            }
+            records.append(record)
+            if args.json:
+                print(json.dumps(record, ensure_ascii=False))
 
         if args.json:
-            print(json.dumps(record, ensure_ascii=False))
             continue
 
         print(f"\n[{idx}] {text[:180]}")
@@ -442,14 +654,16 @@ def main() -> None:
             f"q_halt_steps={core_halt['q_halt_steps']} "
             f"q_halt_last_mean={core_halt['q_halt_last_mean']}"
         )
-        print(
-            "greedy repetition: "
-            f"completion_tokens={rep['completion_tokens']} max_run={rep['max_token_run']} "
-            f"common={rep['most_common_token_id']}x{rep['most_common_token_count']} "
-            f"rep2={rep['repeated_2gram_rate']:.3f} rep3={rep['repeated_3gram_rate']:.3f}"
-        )
-        print("greedy text:")
-        print(record["greedy_text"])
+        for record in records:
+            rep = record["greedy_repetition"]
+            print(
+                f"candidate {record['candidate_id']} repetition: "
+                f"completion_tokens={rep['completion_tokens']} max_run={rep['max_token_run']} "
+                f"common={rep['most_common_token_id']}x{rep['most_common_token_count']} "
+                f"rep2={rep['repeated_2gram_rate']:.3f} rep3={rep['repeated_3gram_rate']:.3f}"
+            )
+            print(f"candidate {record['candidate_id']} text:")
+            print(record["greedy_text"])
 
 
 if __name__ == "__main__":

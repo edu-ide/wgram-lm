@@ -137,6 +137,9 @@ class ArchitectureAblationProofTests(unittest.TestCase):
         self.assertIn("qtrm_residual_head_off_with_evidence", DEFAULT_MODES)
         self.assertIn("qtrm_donor_hidden_off_with_evidence", DEFAULT_MODES)
         self.assertIn("qtrm_workspace_only_with_evidence", DEFAULT_MODES)
+        self.assertIn("qtrm_workspace_gate_off_with_evidence", DEFAULT_MODES)
+        self.assertIn("qtrm_workspace_memory_off_with_evidence", DEFAULT_MODES)
+        self.assertIn("qtrm_core_context_off_with_evidence", DEFAULT_MODES)
 
         proof = build_ablation_summary(
             [
@@ -170,6 +173,7 @@ class ArchitectureAblationProofTests(unittest.TestCase):
         markdown = render_markdown(proof)
 
         self.assertIn("# Expanded Workspace/Core Ablation Proof", markdown)
+        self.assertIn("measures whether residual behavior is localized", markdown)
         self.assertIn("qtrm_workspace_off_with_evidence", markdown)
         self.assertIn("| qtrm_workspace_off_with_evidence | 0/1 | +1 |", markdown)
         self.assertIn("## Completion Identity", markdown)
@@ -192,6 +196,8 @@ class ArchitectureAblationProofTests(unittest.TestCase):
         self.assertIn("--mode qtrm_residual_head_off_with_evidence", strict_runner)
         self.assertIn("--mode qtrm_donor_hidden_off_with_evidence", strict_runner)
         self.assertIn("--mode qtrm_workspace_only_with_evidence", strict_runner)
+        self.assertIn("--mode qtrm_workspace_gate_off_with_evidence", strict_runner)
+        self.assertIn("--mode qtrm_core_context_off_with_evidence", strict_runner)
         self.assertIn("memory_reasoning_heldout_expanded_strict_causality_ablation", strict_runner)
         self.assertIn("expanded-workspace-core-ablation.md", builder)
         self.assertIn("memory_reasoning_heldout_expanded_qwen3_rerank_32tok", builder)

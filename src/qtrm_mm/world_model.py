@@ -256,7 +256,8 @@ class JepaWorldModelHead(nn.Module):
 
         action_context = None
         if actions is not None:
-            action_context = actions[:, :-horizon] if actions.dim() == 3 else actions
+            context_steps = context.shape[1]
+            action_context = actions[:, :context_steps] if actions.dim() == 3 else actions
 
         pred = self.predictor(context, context_mask=context_mask, actions=action_context)
         return {"pred": pred, "target": target, "latents": latents, "latent_mask": latent_mask, "mask": transition_mask}

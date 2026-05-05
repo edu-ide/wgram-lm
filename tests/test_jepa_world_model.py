@@ -136,6 +136,84 @@ class JepaWorldModelTests(unittest.TestCase):
             )
         )
 
+    def test_qtrm_forward_exposes_core_world_model_outputs_when_enabled(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=128,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            max_seq_len=32,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=3,
+            attn_every=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_world_model_enabled=True,
+            core_world_model_predictor_layers=1,
+            core_world_model_predictor_dim=64,
+        )
+        model = QTRMMultimodalModel(cfg)
+        ids = torch.randint(0, cfg.vocab_size, (2, 6))
+        actions = torch.zeros(2, cfg.outer_steps, cfg.num_actions)
+        actions[:, 0, 1] = 1.0
+        actions[:, 1, 2] = 1.0
+        actions[:, 2, 3] = 1.0
+
+        out = model(ids, core_world_model_actions=actions)
+
+        self.assertEqual(out["core_world_model_pred"].shape, (2, 2, cfg.d_model))
+        self.assertEqual(out["core_world_model_target"].shape, (2, 2, cfg.d_model))
+        self.assertTrue(torch.equal(out["core_world_model_mask"], torch.ones(2, 2, dtype=torch.bool)))
+        self.assertTrue(out["core_world_model_target"].requires_grad)
+
+    def test_core_world_model_supports_dynamic_outer_steps_up_to_conditioning_limit(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=128,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            max_seq_len=32,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=4,
+            attn_every=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_step_conditioning_enabled=True,
+            core_step_conditioning_max_steps=8,
+            core_world_model_enabled=True,
+            core_world_model_predictor_layers=1,
+            core_world_model_predictor_dim=64,
+        )
+        model = QTRMMultimodalModel(cfg)
+        ids = torch.randint(0, cfg.vocab_size, (1, 6))
+        actions = torch.zeros(1, 8, cfg.num_actions)
+        actions[:, :, 2] = 1.0
+
+        old_outer_steps = model.cfg.outer_steps
+        model.cfg.outer_steps = 8
+        try:
+            out = model(ids, core_world_model_actions=actions)
+        finally:
+            model.cfg.outer_steps = old_outer_steps
+
+        self.assertEqual(out["core_world_model_pred"].shape, (1, 7, cfg.d_model))
+
 
 if __name__ == "__main__":
     unittest.main()

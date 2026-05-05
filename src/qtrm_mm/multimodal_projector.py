@@ -29,6 +29,7 @@ class MultimodalProjector(nn.Module):
         text_states: torch.Tensor,
         visual_features: Optional[torch.Tensor] = None,
         text_mask: Optional[torch.Tensor] = None,
+        feature_mask: Optional[torch.Tensor] = None,
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
         if visual_features is None:
             return text_states, text_mask
@@ -41,6 +42,9 @@ class MultimodalProjector(nn.Module):
         context = torch.cat([visual, text_states], dim=1)
         if text_mask is None:
             mask = None
+        elif feature_mask is not None:
+            vmask = feature_mask[:, :v].to(device=text_mask.device, dtype=text_mask.dtype)
+            mask = torch.cat([vmask, text_mask], dim=1)
         else:
             vmask = torch.ones(text_mask.shape[0], v, device=text_mask.device, dtype=text_mask.dtype)
             mask = torch.cat([vmask, text_mask], dim=1)

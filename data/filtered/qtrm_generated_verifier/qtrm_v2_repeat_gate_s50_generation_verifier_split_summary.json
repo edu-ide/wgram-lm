@@ -1,0 +1,33 @@
+{
+  "source": "data/filtered/qtrm_generated_verifier/qtrm_v2_repeat_gate_s50_generation_verifier.jsonl",
+  "prefix": "qtrm_v2_repeat_gate_s50_generation_verifier",
+  "seed": 17,
+  "calibration_ratio": 0.2,
+  "holdout_ratio": 0.2,
+  "total_rows": 50,
+  "splits": {
+    "train": {
+      "rows": 29,
+      "repeat_failures": 11,
+      "stop_failures": 3,
+      "quality_pass": 16
+    },
+    "calibration": {
+      "rows": 10,
+      "repeat_failures": 3,
+      "stop_failures": 1,
+      "quality_pass": 6
+    },
+    "holdout": {
+      "rows": 11,
+      "repeat_failures": 4,
+      "stop_failures": 2,
+      "quality_pass": 6
+    }
+  },
+  "target_totals": {
+    "repeat_failures": 18,
+    "stop_failures": 6,
+    "quality_pass": 28
+  }
+}

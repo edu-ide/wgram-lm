@@ -16,6 +16,10 @@ DEFAULT_MODES = [
     "qtrm_residual_head_off_with_evidence",
     "qtrm_donor_hidden_off_with_evidence",
     "qtrm_workspace_only_with_evidence",
+    "qtrm_workspace_gate_off_with_evidence",
+    "qtrm_workspace_memory_off_with_evidence",
+    "qtrm_core_context_off_with_evidence",
+    "qtrm_evidence_bottleneck_off_with_evidence",
 ]
 
 
@@ -125,7 +129,7 @@ def build_ablation_summary(
         by_task_family[family] = family_summary
 
     return {
-        "claim": "Expanded MemoryOS ablation separates full QTRM residual behavior from workspace-off and core-off paths.",
+        "claim": "Expanded MemoryOS ablation measures which QTRM components are causally responsible for residual behavior.",
         "baseline_mode": baseline_mode,
         "modes": mode_metrics,
         "drop_from_residual": drops,
@@ -151,7 +155,7 @@ def render_markdown(proof: dict[str, Any]) -> str:
     lines = [
         "# Expanded Workspace/Core Ablation Proof",
         "",
-        "Claim: the expanded 72-case MemoryOS gate should separate full QTRM residual behavior from workspace-off and core-off ablations.",
+        "Claim: this expanded 72-case MemoryOS gate measures whether residual behavior is localized to workspace, core, coda, residual-head, donor-hidden, or workspace-gate paths.",
         "",
         "Positive drop means the ablated mode is worse than full `qtrm_residual_with_evidence` on the same expanded gate.",
         "",
@@ -235,6 +239,33 @@ def render_markdown(proof: dict[str, Any]) -> str:
         if workspace_only is not None and int(workspace_only["hit_drop"]) == 0:
             lines.append(
                 "- Workspace-only context matches full residual, but workspace-off also matches full residual; this gate still does not prove latent-workspace causality."
+            )
+        workspace_gate = drops.get("qtrm_workspace_gate_off_with_evidence")
+        if workspace_gate is not None and int(workspace_gate["hit_drop"]) > 0:
+            lines.append(
+                "- Turning off the workspace memory gate causes a drop, so the gated latent memory path contributes on this gate."
+            )
+        elif workspace_gate is not None and int(workspace_gate["hit_drop"]) == 0:
+            lines.append(
+                "- Turning off the workspace memory gate does not change score or completions, so this run does not prove gated latent-memory causality."
+            )
+        workspace_memory = drops.get("qtrm_workspace_memory_off_with_evidence")
+        if workspace_memory is not None and int(workspace_memory["hit_drop"]) > 0:
+            lines.append(
+                "- Removing workspace-side evidence memory causes a drop, so retrieved evidence is flowing through the workspace-memory path on this gate."
+            )
+        elif workspace_memory is not None and int(workspace_memory["hit_drop"]) == 0:
+            lines.append(
+                "- Removing workspace-side evidence memory does not change score or completions, so this run does not prove workspace-memory evidence causality."
+            )
+        core_context = drops.get("qtrm_core_context_off_with_evidence")
+        if core_context is not None and int(core_context["hit_drop"]) > 0:
+            lines.append(
+                "- Turning off gated core context injection causes a drop, so the recursive core is using direct prompt/evidence context on this gate."
+            )
+        elif core_context is not None and int(core_context["hit_drop"]) == 0:
+            lines.append(
+                "- Turning off gated core context injection does not change score or completions, so this run does not prove direct core-context causality."
             )
 
     lines.extend(

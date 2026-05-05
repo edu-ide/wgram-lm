@@ -1,6 +1,4 @@
 from .config import QTRMConfig, DonorConfig, TrainConfig, FullConfig, load_config
-from .qtrm_model import QTRMMultimodalModel
-from .world_model import JepaWorldModelHead
 
 __all__ = [
     "QTRMConfig",
@@ -11,3 +9,15 @@ __all__ = [
     "QTRMMultimodalModel",
     "JepaWorldModelHead",
 ]
+
+
+def __getattr__(name):
+    if name == "QTRMMultimodalModel":
+        from .qtrm_model import QTRMMultimodalModel
+
+        return QTRMMultimodalModel
+    if name == "JepaWorldModelHead":
+        from .world_model import JepaWorldModelHead
+
+        return JepaWorldModelHead
+    raise AttributeError(name)

@@ -49,6 +49,8 @@ python scripts/95_eval_memory_retrieval.py \
   --mode qtrm_residual_head_off_with_evidence \
   --mode qtrm_donor_hidden_off_with_evidence \
   --mode qtrm_workspace_only_with_evidence \
+  --mode qtrm_workspace_gate_off_with_evidence \
+  --mode qtrm_core_context_off_with_evidence \
   --evidence-mode memoryos \
   --memory-index "$INDEX" \
   --retrieve-top-n "$RETRIEVE_TOP_N" \

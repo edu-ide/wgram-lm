@@ -16,6 +16,8 @@ class CurrentArchPretrainProbeTests(unittest.TestCase):
         self.assertGreaterEqual(cfg.model.workspace_tokens, 64)
         self.assertGreaterEqual(cfg.model.workspace_layers, 3)
         self.assertTrue(cfg.model.workspace_include_latents_in_kv)
+        self.assertTrue(cfg.model.workspace_memory_gate_enabled)
+        self.assertLessEqual(cfg.model.workspace_memory_gate_init_bias, -1.0)
         self.assertEqual(cfg.train.loss_jepa_weight, 0.0)
         self.assertEqual(cfg.train.loss_aux_weight, 0.0)
         self.assertGreaterEqual(cfg.train.steps, 2000)

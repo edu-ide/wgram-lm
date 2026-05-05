@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+if [[ -f .venv/bin/activate ]]; then
+  source .venv/bin/activate
+fi
+export PYTHONPATH=${PYTHONPATH:-$PWD/src}
+export HF_HOME=${HF_HOME:-~/.cache/huggingface}
+
+CONFIG="${CONFIG:-configs/qwen35_2b_4090_pure_recursive_depth_supervised_s080.yaml}"
+INIT_CHECKPOINT="${INIT_CHECKPOINT:-runs/qwen35_2b_4090_pure_recursive_reasoning_core_s160/last.pt}"
+TRAIN_CASES="${TRAIN_CASES:-data/filtered/pure_recursive_reasoning_train256_cases.jsonl}"
+DATA="${DATA:-data/filtered/pure_recursive_reasoning_preferences_train.jsonl}"
+OUT_DIR="${OUT_DIR:-runs/qwen35_2b_4090_pure_recursive_depth_supervised_s080}"
+RUN_NAME="${RUN_NAME:-pure_recursive_depth_supervised_s080}"
+HELDOUT_CASES="${HELDOUT_CASES:-data/eval/pure_recursive_reasoning_heldout_72.jsonl}"
+MAX_CASES="${MAX_CASES:-16}"
+EVAL_OUT="${EVAL_OUT:-runs/eval/${RUN_NAME}_depth_gate_${MAX_CASES}.jsonl}"
+TRAIN_CASES_PER_FAMILY="${TRAIN_CASES_PER_FAMILY:-64}"
+TRAIN_START_INDEX="${TRAIN_START_INDEX:-100}"
+TRAIN_INCLUDE_FAMILIES="${TRAIN_INCLUDE_FAMILIES:-}"
+HELDOUT_CASES_PER_FAMILY="${HELDOUT_CASES_PER_FAMILY:-18}"
+HELDOUT_START_INDEX="${HELDOUT_START_INDEX:-0}"
+HELDOUT_INCLUDE_FAMILIES="${HELDOUT_INCLUDE_FAMILIES:-$TRAIN_INCLUDE_FAMILIES}"
+MAX_REJECTED_PER_CASE="${MAX_REJECTED_PER_CASE:-3}"
+STEPS="${STEPS:-80}"
+DEPTH_STEPS="${DEPTH_STEPS:-1,2,4,8}"
+TARGET_MODE="${TARGET_MODE:-staged}"
+FINAL_LOGIT_CE_WEIGHT="${FINAL_LOGIT_CE_WEIGHT:-1.0}"
+ALL_DEPTH_CE_WEIGHT="${ALL_DEPTH_CE_WEIGHT:-0.0}"
+PROGRESS_MARGIN_WEIGHT="${PROGRESS_MARGIN_WEIGHT:-0.25}"
+PROGRESS_MARGIN="${PROGRESS_MARGIN:-0.10}"
+FAMILY_REPEAT="${FAMILY_REPEAT:-}"
+CHOICE_MARGIN_WEIGHT="${CHOICE_MARGIN_WEIGHT:-0.0}"
+CHOICE_MARGIN="${CHOICE_MARGIN:-0.10}"
+CHOICE_MARGIN_MODE="${CHOICE_MARGIN_MODE:-first_token}"
+CAUSAL_PREFIX_SUPERVISION="${CAUSAL_PREFIX_SUPERVISION:-0}"
+CAUSAL_PREFIX_MAX_TARGET_TOKENS="${CAUSAL_PREFIX_MAX_TARGET_TOKENS:-1}"
+CAUSAL_PREFIX_LATER_TOKEN_WEIGHT="${CAUSAL_PREFIX_LATER_TOKEN_WEIGHT:-1.0}"
+TEACHER_CHECKPOINT="${TEACHER_CHECKPOINT:-}"
+TEACHER_FIRST_TOKEN_DEPTH_KL_WEIGHT="${TEACHER_FIRST_TOKEN_DEPTH_KL_WEIGHT:-0.0}"
+TEACHER_DEPTH_KL_TEMPERATURE="${TEACHER_DEPTH_KL_TEMPERATURE:-1.0}"
+CORE_WORLD_MODEL_WEIGHT="${CORE_WORLD_MODEL_WEIGHT:-}"
+STAGED_INTERNAL_FIRST_TOKEN_CE_WEIGHT="${STAGED_INTERNAL_FIRST_TOKEN_CE_WEIGHT:-0.0}"
+STAGED_INTERNAL_SEQUENCE_CE_WEIGHT="${STAGED_INTERNAL_SEQUENCE_CE_WEIGHT:-0.0}"
+STAGED_INTERNAL_SEQUENCE_MAX_TARGET_TOKENS="${STAGED_INTERNAL_SEQUENCE_MAX_TARGET_TOKENS:-6}"
+NOISE_WARMUP_STEPS="${NOISE_WARMUP_STEPS:-0}"
+NOISE_WARMUP_SEQ_LEN="${NOISE_WARMUP_SEQ_LEN:-32}"
+NOISE_WARMUP_BATCH_SIZE="${NOISE_WARMUP_BATCH_SIZE:-1}"
+NOISE_WARMUP_CORE_STEPS="${NOISE_WARMUP_CORE_STEPS:-2}"
+NOISE_WARMUP_TARGET_VOCAB_SIZE="${NOISE_WARMUP_TARGET_VOCAB_SIZE:-0}"
+NOISE_WARMUP_FINAL_CE_WEIGHT="${NOISE_WARMUP_FINAL_CE_WEIGHT:-1.0}"
+NOISE_WARMUP_DEPTH_CE_WEIGHT="${NOISE_WARMUP_DEPTH_CE_WEIGHT:-1.0}"
+NOISE_WARMUP_UNIFORM_WEIGHT="${NOISE_WARMUP_UNIFORM_WEIGHT:-0.0}"
+TEMPORAL_SPATIAL_CONTEXT_CONTRAST_WEIGHT="${TEMPORAL_SPATIAL_CONTEXT_CONTRAST_WEIGHT:-0.0}"
+TEMPORAL_SPATIAL_CONTEXT_CONTRAST_MARGIN="${TEMPORAL_SPATIAL_CONTEXT_CONTRAST_MARGIN:-0.10}"
+TRANSITION_STATE_CONTRAST_WEIGHT="${TRANSITION_STATE_CONTRAST_WEIGHT:-0.0}"
+TRANSITION_STATE_CONTRAST_MARGIN="${TRANSITION_STATE_CONTRAST_MARGIN:-0.10}"
+TRANSITION_STATE_CE_WEIGHT="${TRANSITION_STATE_CE_WEIGHT:-0.0}"
+TRANSITION_STATE_CODE_CE_WEIGHT="${TRANSITION_STATE_CODE_CE_WEIGHT:-0.0}"
+INCLUDE_TRANSITION_STATE_OFF="${INCLUDE_TRANSITION_STATE_OFF:-0}"
+
+PREFIX_ARGS=()
+if [[ "$CAUSAL_PREFIX_SUPERVISION" == "1" || "$CAUSAL_PREFIX_SUPERVISION" == "true" ]]; then
+  PREFIX_ARGS+=(--causal-prefix-supervision)
+  PREFIX_ARGS+=(--causal-prefix-max-target-tokens "$CAUSAL_PREFIX_MAX_TARGET_TOKENS")
+  PREFIX_ARGS+=(--causal-prefix-later-token-weight "$CAUSAL_PREFIX_LATER_TOKEN_WEIGHT")
+fi
+
+TEACHER_ARGS=()
+if [[ "$TEACHER_FIRST_TOKEN_DEPTH_KL_WEIGHT" != "0" && "$TEACHER_FIRST_TOKEN_DEPTH_KL_WEIGHT" != "0.0" ]]; then
+  if [[ -z "$TEACHER_CHECKPOINT" ]]; then
+    echo "TEACHER_CHECKPOINT is required when TEACHER_FIRST_TOKEN_DEPTH_KL_WEIGHT is non-zero" >&2
+    exit 1
+  fi
+  TEACHER_ARGS+=(--teacher-checkpoint "$TEACHER_CHECKPOINT")
+  TEACHER_ARGS+=(--teacher-first-token-depth-kl-weight "$TEACHER_FIRST_TOKEN_DEPTH_KL_WEIGHT")
+  TEACHER_ARGS+=(--teacher-depth-kl-temperature "$TEACHER_DEPTH_KL_TEMPERATURE")
+fi
+
+CORE_WORLD_MODEL_ARGS=()
+if [[ -n "$CORE_WORLD_MODEL_WEIGHT" ]]; then
+  CORE_WORLD_MODEL_ARGS+=(--core-world-model-weight "$CORE_WORLD_MODEL_WEIGHT")
+fi
+
+STAGED_INTERNAL_ARGS=()
+if [[ "$STAGED_INTERNAL_FIRST_TOKEN_CE_WEIGHT" != "0" && "$STAGED_INTERNAL_FIRST_TOKEN_CE_WEIGHT" != "0.0" ]]; then
+  STAGED_INTERNAL_ARGS+=(--staged-internal-first-token-ce-weight "$STAGED_INTERNAL_FIRST_TOKEN_CE_WEIGHT")
+fi
+if [[ "$STAGED_INTERNAL_SEQUENCE_CE_WEIGHT" != "0" && "$STAGED_INTERNAL_SEQUENCE_CE_WEIGHT" != "0.0" ]]; then
+  STAGED_INTERNAL_ARGS+=(--staged-internal-sequence-ce-weight "$STAGED_INTERNAL_SEQUENCE_CE_WEIGHT")
+  STAGED_INTERNAL_ARGS+=(--staged-internal-sequence-max-target-tokens "$STAGED_INTERNAL_SEQUENCE_MAX_TARGET_TOKENS")
+fi
+
+NOISE_WARMUP_ARGS=()
+if [[ "$NOISE_WARMUP_STEPS" != "0" && "$NOISE_WARMUP_STEPS" != "0.0" ]]; then
+  NOISE_WARMUP_ARGS+=(--noise-warmup-steps "$NOISE_WARMUP_STEPS")
+  NOISE_WARMUP_ARGS+=(--noise-warmup-seq-len "$NOISE_WARMUP_SEQ_LEN")
+  NOISE_WARMUP_ARGS+=(--noise-warmup-batch-size "$NOISE_WARMUP_BATCH_SIZE")
+  NOISE_WARMUP_ARGS+=(--noise-warmup-core-steps "$NOISE_WARMUP_CORE_STEPS")
+  NOISE_WARMUP_ARGS+=(--noise-warmup-target-vocab-size "$NOISE_WARMUP_TARGET_VOCAB_SIZE")
+  NOISE_WARMUP_ARGS+=(--noise-warmup-final-ce-weight "$NOISE_WARMUP_FINAL_CE_WEIGHT")
+  NOISE_WARMUP_ARGS+=(--noise-warmup-depth-ce-weight "$NOISE_WARMUP_DEPTH_CE_WEIGHT")
+  NOISE_WARMUP_ARGS+=(--noise-warmup-uniform-weight "$NOISE_WARMUP_UNIFORM_WEIGHT")
+fi
+
+TEMPORAL_SPATIAL_CONTEXT_ARGS=()
+if [[ "$TEMPORAL_SPATIAL_CONTEXT_CONTRAST_WEIGHT" != "0" && "$TEMPORAL_SPATIAL_CONTEXT_CONTRAST_WEIGHT" != "0.0" ]]; then
+  TEMPORAL_SPATIAL_CONTEXT_ARGS+=(--temporal-spatial-context-contrast-weight "$TEMPORAL_SPATIAL_CONTEXT_CONTRAST_WEIGHT")
+  TEMPORAL_SPATIAL_CONTEXT_ARGS+=(--temporal-spatial-context-contrast-margin "$TEMPORAL_SPATIAL_CONTEXT_CONTRAST_MARGIN")
+fi
+
+TRANSITION_STATE_ARGS=()
+if [[ "$TRANSITION_STATE_CONTRAST_WEIGHT" != "0" && "$TRANSITION_STATE_CONTRAST_WEIGHT" != "0.0" ]]; then
+  TRANSITION_STATE_ARGS+=(--transition-state-contrast-weight "$TRANSITION_STATE_CONTRAST_WEIGHT")
+  TRANSITION_STATE_ARGS+=(--transition-state-contrast-margin "$TRANSITION_STATE_CONTRAST_MARGIN")
+  INCLUDE_TRANSITION_STATE_OFF=1
+fi
+if [[ "$TRANSITION_STATE_CE_WEIGHT" != "0" && "$TRANSITION_STATE_CE_WEIGHT" != "0.0" ]]; then
+  TRANSITION_STATE_ARGS+=(--transition-state-ce-weight "$TRANSITION_STATE_CE_WEIGHT")
+  INCLUDE_TRANSITION_STATE_OFF=1
+fi
+if [[ "$TRANSITION_STATE_CODE_CE_WEIGHT" != "0" && "$TRANSITION_STATE_CODE_CE_WEIGHT" != "0.0" ]]; then
+  TRANSITION_STATE_ARGS+=(--transition-state-code-ce-weight "$TRANSITION_STATE_CODE_CE_WEIGHT")
+  INCLUDE_TRANSITION_STATE_OFF=1
+fi
+
+if [[ ! -f "$INIT_CHECKPOINT" ]]; then
+  echo "Missing init checkpoint: $INIT_CHECKPOINT" >&2
+  exit 1
+fi
+
+TRAIN_CASE_ARGS=()
+if [[ -n "$TRAIN_INCLUDE_FAMILIES" ]]; then
+  TRAIN_CASE_ARGS+=(--include-family "$TRAIN_INCLUDE_FAMILIES")
+fi
+
+python scripts/190_build_pure_recursive_reasoning_cases.py \
+  --out "$TRAIN_CASES" \
+  --cases-per-family "$TRAIN_CASES_PER_FAMILY" \
+  --start-index "$TRAIN_START_INDEX" \
+  "${TRAIN_CASE_ARGS[@]}"
+
+python scripts/194_build_pure_recursive_reasoning_preferences.py \
+  --cases "$TRAIN_CASES" \
+  --out "$DATA" \
+  --max-rejected-per-case "$MAX_REJECTED_PER_CASE"
+
+echo "============================================================"
+echo "Pure recursive depth-supervised core training"
+echo "config=$CONFIG"
+echo "init=$INIT_CHECKPOINT"
+echo "data=$DATA"
+echo "out_dir=$OUT_DIR"
+echo "steps=$STEPS"
+echo "choice_margin_mode=$CHOICE_MARGIN_MODE"
+echo "train_include_families=${TRAIN_INCLUDE_FAMILIES:-all}"
+echo "heldout_include_families=${HELDOUT_INCLUDE_FAMILIES:-all}"
+echo "============================================================"
+
+python scripts/196_train_pure_recursive_depth_supervised.py \
+  --config "$CONFIG" \
+  --data-jsonl "$DATA" \
+  --init-checkpoint "$INIT_CHECKPOINT" \
+  --tokenizer-model-id Qwen/Qwen3.5-2B-Base \
+  --steps "$STEPS" \
+  --depth-steps "$DEPTH_STEPS" \
+  --target-mode "$TARGET_MODE" \
+  --out-dir "$OUT_DIR" \
+  --final-logit-ce-weight "$FINAL_LOGIT_CE_WEIGHT" \
+  --all-depth-ce-weight "$ALL_DEPTH_CE_WEIGHT" \
+  --progress-margin-weight "$PROGRESS_MARGIN_WEIGHT" \
+  --progress-margin "$PROGRESS_MARGIN" \
+  --family-repeat "$FAMILY_REPEAT" \
+  --choice-margin-weight "$CHOICE_MARGIN_WEIGHT" \
+  --choice-margin "$CHOICE_MARGIN" \
+  --choice-margin-mode "$CHOICE_MARGIN_MODE" \
+  "${CORE_WORLD_MODEL_ARGS[@]}" \
+  "${STAGED_INTERNAL_ARGS[@]}" \
+  "${NOISE_WARMUP_ARGS[@]}" \
+  "${TEMPORAL_SPATIAL_CONTEXT_ARGS[@]}" \
+  "${TRANSITION_STATE_ARGS[@]}" \
+  "${PREFIX_ARGS[@]}" \
+  "${TEACHER_ARGS[@]}"
+
+CHECKPOINT="$OUT_DIR/last.pt" \
+CONFIG="$CONFIG" \
+CASES="$HELDOUT_CASES" \
+MAX_CASES="$MAX_CASES" \
+OUT="$EVAL_OUT" \
+ROOT_MD="docs/wiki/decisions/${RUN_NAME//_/-}-depth-gate-${MAX_CASES}.md" \
+ROOT_JSON="docs/wiki/decisions/${RUN_NAME//_/-}-depth-gate-${MAX_CASES}-summary.json" \
+INCLUDE_TRANSITION_STATE_OFF="$INCLUDE_TRANSITION_STATE_OFF" \
+CASES_PER_FAMILY="$HELDOUT_CASES_PER_FAMILY" \
+START_INDEX="$HELDOUT_START_INDEX" \
+INCLUDE_FAMILIES="$HELDOUT_INCLUDE_FAMILIES" \
+bash scripts/193_run_pure_recursive_reasoning_depth_gate.sh

@@ -7,6 +7,31 @@ from torch import nn
 from .config import DonorConfig
 
 
+def _bitsandbytes_available() -> bool:
+    try:
+        import bitsandbytes  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+def _build_4bit_quantization_config(load_in_4bit: bool):
+    if not load_in_4bit:
+        return None
+    if not _bitsandbytes_available():
+        print("[warn] bitsandbytes not found; loading without 4bit quantization")
+        return None
+    try:
+        from transformers import BitsAndBytesConfig
+    except ImportError:
+        print("[warn] BitsAndBytesConfig unavailable; loading without 4bit quantization")
+        return None
+    return BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.bfloat16,
+    )
+
+
 class QwenDonorAdapter(nn.Module):
     """Lazy Hugging Face adapter for Qwen3.5-style multimodal donor models.
 
@@ -32,17 +57,7 @@ class QwenDonorAdapter(nn.Module):
                 "transformers with AutoModelForImageTextToText support is required"
             ) from exc
 
-        quantization_config = None
-        if self.cfg.load_in_4bit:
-            try:
-                from transformers import BitsAndBytesConfig
-                quantization_config = BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_compute_dtype=torch.bfloat16,
-                )
-            except ImportError:
-                print("[warn] bitsandbytes not found; loading without 4bit quantization")
-                quantization_config = None
+        quantization_config = _build_4bit_quantization_config(self.cfg.load_in_4bit)
 
         self.processor = AutoProcessor.from_pretrained(
             self.cfg.model_id,
