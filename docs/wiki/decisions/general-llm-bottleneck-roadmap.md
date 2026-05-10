@@ -973,3 +973,26 @@ Latest source-binding / L4 audit:
   likely add a scalar reduction/accumulator state, then require a causal drop
   under `primitive_off`, `source_slot_off`, `source_binder_off`, and
   `answer_bridge_off`. Mere completion perturbation is not sufficient.
+
+2026-05-10 direct L4 sufficient-condition update:
+
+- The mixed non-copy gate has been tightened into a direct sufficient-condition
+  gate instead of another loose diagnostic:
+  strict exact generation only, no loose contains matches.
+- Required baselines and ablations are now:
+  donor-only, core-off, full QTRM, primitive-off, source-slot-off,
+  source-binder-off, answer-bridge-off, vocab-renderer-off, and
+  answer-recurrent-off.
+- Acceptance requires full QTRM to beat donor-only and core-off, and to lose
+  its advantage when each required causal path is disabled.
+- The existing source-copy default checkpoint cannot currently be used for
+  this direct gate because its trainable-delta base chain refers to a missing
+  `primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt`.
+- A self-contained typed-value checkpoint was used for a 1-case runner smoke:
+  `/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  l4_sufficient_noncopy_gate_typed_value_s020_smoke_1case`.
+  It executed successfully but rejected with strict exact `0/1` for donor,
+  core-off, full, and all ablations.
+- Conclusion: the direct sufficient-condition path is now available, but the
+  architecture still lacks a reliable scalar/list accumulator-to-LM-logits
+  path. This remains the active bottleneck for broad L4 promotion.

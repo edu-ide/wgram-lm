@@ -12189,3 +12189,101 @@ path. It is not a solver. It makes the next relative source-slot experiment a
 fairer test because newly initialized prompt-derived binding modules are no
 longer frozen.
 ```
+
+## 2026-05-10 Direct L4 Sufficient-Condition Gate
+
+Question:
+
+```text
+Can we skip more loose L2/L3-style diagnostics and go directly to a sufficient
+L4 condition for a general non-copy LM path?
+```
+
+Answer:
+
+```text
+Yes, but only by making the gate stricter, not easier.
+```
+
+Implementation:
+
+```text
+scripts/330_run_mixed_noncopy_lm_gate.py now scores strict exact generation
+only. Loose contains-style `hit` fields are ignored for this gate.
+
+Required modes:
+  donor_only_no_evidence
+  qtrm_core_off_no_evidence
+  qtrm_core_steps_8_no_evidence
+  qtrm_core_steps_8_primitive_role_value_off_no_evidence
+  qtrm_core_steps_8_token_numeric_source_slots_off_no_evidence
+  qtrm_core_steps_8_core_source_position_binder_off_no_evidence
+  qtrm_core_steps_8_role_value_answer_bridge_off_no_evidence
+  qtrm_core_steps_8_core_role_value_vocab_renderer_off_no_evidence
+  qtrm_core_steps_8_answer_state_recurrent_off_no_evidence
+```
+
+Sufficient condition:
+
+```text
+full strict generation accuracy >= threshold
+full > donor-only by margin
+full > core-off by margin
+full drops under primitive-off
+full drops under source-slot-off
+full drops under source-binder-off
+full drops under answer-bridge-off
+full drops under vocab-renderer-off
+full drops under answer-recurrent-off
+all eval commands must complete
+all required modes must be present
+```
+
+Checkpoint audit:
+
+```text
+The source-copy default checkpoint is not currently runnable as a sufficient
+gate input because its trainable-delta base chain points to missing file:
+
+  local_eval/research_gate_runner/
+  primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt
+
+This is a checkpoint hygiene problem, not a sufficient-gate design problem.
+```
+
+Runnable smoke:
+
+```text
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_answer_bridge_final_choice_s020_from_s040/last.pt
+
+config:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_typed_value_answer_bridge_s040.yaml
+
+run:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  l4_sufficient_noncopy_gate_typed_value_s020_smoke_1case
+
+decision:
+  rejected_noncopy_lm_gate
+
+strict exact:
+  donor_only:        0/1
+  core_off:          0/1
+  full:              0/1
+  every ablation:    0/1
+```
+
+Interpretation:
+
+```text
+The sufficient-condition runner is now executable and conservative. The
+current typed-value checkpoint still fails the actual L4 condition: full QTRM
+does not produce the final scalar answer, and disabling core paths does not
+cause a measurable accuracy drop because the full path is already at zero.
+
+The next architecture change should target scalar/list accumulator state that
+causally feeds the canonical LM logits path. A source-copy renderer repair or
+loose contains metric cannot count as general L4 progress.
+```
