@@ -465,6 +465,19 @@ shuffle follow-up:
   gaps, but it does not improve hit count over 4/8. Row order was not the
   decisive bottleneck.
 
+checkpoint-selection follow-up:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_fullpath_subtract_heavy_s020_save_every5_from_s060
+  reran the original subtract-heavy continuation with --save-every 5.
+  qtrm_core_steps_4_no_evidence max_cases=8:
+    step_000005: 0/8, gold-minus-pred mean -0.2924
+    step_000010: 2/8, gold-minus-pred mean -0.2691
+    step_000015: 4/8, gold-minus-pred mean -0.2457
+    step_000020: 4/8, gold-minus-pred mean -0.2316
+  This rejects the hypothesis that an earlier checkpoint clearly beats the
+  final checkpoint. The narrow answer-change gate appears late and then
+  plateaus at 4/8 for this loss mix.
+
 decision:
   partial acceptance for the narrow answer-change prerequisite:
   the recurrent answer/core path can now change causal forced-choice answers
