@@ -171,6 +171,34 @@ eval smoke:
     step. This is wiring validation only, not an accepted reasoning result.
 ```
 
+Short gate result, 2026-05-10:
+
+```text
+run:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_answer_bridge_s040_from_jointonly
+
+checkpoint:
+  last.pt
+
+forced-choice max_cases=4:
+  donor_only:              0/4
+  core_off:                0/4
+  recurrent_off:           0/4
+  typed_bridge_off:        0/4
+  full bridge/recurrent:   0/4
+
+dominant full failure:
+  doubled_list:            4/4
+
+decision:
+  rejected as an L2/L3 performance gate. The bridge is committed as a causal
+  wiring scaffold, but it does not yet convert typed value state into the final
+  scalar LM answer. The next candidate needs stronger process supervision for
+  accumulator/final-subtract state or a different scalar-to-LM alignment loss,
+  not merely more steps on the same shallow bridge.
+```
+
 ## Dual-Process Ordering
 
 QTRM may eventually become a dual-process architecture:
