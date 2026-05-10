@@ -359,6 +359,81 @@ decision:
   final scalar decision boundary.
 ```
 
+Full token/core/answer-loop typed scalar codec, 2026-05-10:
+
+```text
+implementation:
+  b9c4bc1 feat(training): add full token answer loop typed policy
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_typed_value_fullpath_scalar_codec_s060.yaml
+
+principle:
+  previous candidates split the trainable path:
+    core+answer_loop+typed, but token/prompt input path frozen
+    token+core+typed, but answer loop frozen
+  The new policy opens the canonical path together:
+    prompt tokens -> token/prelude/workspace/core -> typed scalar codec
+    -> answer recurrent loop -> LM logits
+  The scalar codec remains auxiliary. It must not be treated as a hidden
+  answer channel.
+
+smoke:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  smoke_typed_value_fullpath_scalar_codec_s1
+  observed in one step:
+    final_path_acc=0.7500
+    final_choice_sequence_margin_final_path=0.0667
+    final_subtract_tail_counterfactual_margin_final_path=0.0500
+    typed_algorithmic_value_state_ce=28.6436
+    typed_algorithmic_scalar_regression_mae=46.7143
+
+short path:
+  s020:
+    /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+    typed_value_fullpath_scalar_codec_s020_from_subtract_tail
+    full forced-choice max_cases=4: 0/4
+    donor: 0/4, core_off: 0/4, recurrent_off: 0/4
+    full gold-minus-pred mean: -0.4107
+
+  s060:
+    /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+    typed_value_fullpath_scalar_codec_s060_from_s020
+    full forced-choice max_cases=4: 0/4
+    donor: 0/4, core_off: 0/4, recurrent_off: 0/4
+    full gold-minus-pred mean: -0.3750
+
+  subtract-heavy continuation:
+    /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+    typed_value_fullpath_subtract_heavy_s020_from_s060
+    final-subtract margin weight=2.0, margin=0.20
+
+forced-choice max_cases=4 after subtract-heavy:
+  donor_only:              0/4
+  core_off:                0/4
+  recurrent_off:           0/4
+  typed_bridge_off:        2/4
+  full bridge/recurrent:   2/4
+
+score-gap diagnostic after subtract-heavy:
+  donor gold-minus-pred mean:          -1.5316
+  recurrent_off gold-minus-pred mean:  -0.7360
+  full gold-minus-pred mean:           -0.4290
+  typed_bridge_off gold-minus-pred:    -0.4292
+
+decision:
+  partial acceptance for the narrow answer-change prerequisite:
+  the recurrent answer/core path can now change causal forced-choice answers
+  over donor-only, core-off, and recurrent-off on this 4-case mixed arithmetic
+  gate. This is not L3/L4/general LLM acceptance because the score is only
+  2/4, typed-bridge-off ties full, and the remaining len11 case still chooses
+  the pre-subtract sum. The scalar typed bridge is diagnostic, not yet causal.
+
+next hypothesis:
+  keep the canonical token/core/answer-loop policy, but stop relying on the
+  typed scalar bridge as the decisive mechanism. The next gate should make the
+  recurrent answer loop's internal subtract operation causal across both
+  starts, then expand beyond 4 cases.
+```
+
 ## Dual-Process Ordering
 
 QTRM may eventually become a dual-process architecture:
