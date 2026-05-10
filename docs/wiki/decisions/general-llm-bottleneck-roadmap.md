@@ -981,8 +981,8 @@ Latest source-binding / L4 audit:
   strict exact generation only, no loose contains matches.
 - Required baselines and ablations are now:
   donor-only, core-off, full QTRM, primitive-off, source-slot-off,
-  source-binder-off, answer-bridge-off, vocab-renderer-off, and
-  answer-recurrent-off.
+  source-binder-off, answer-bridge-off, typed-value-answer-bridge-off,
+  vocab-renderer-off, and answer-recurrent-off.
 - Acceptance requires full QTRM to beat donor-only and core-off, and to lose
   its advantage when each required causal path is disabled.
 - The existing source-copy default checkpoint cannot currently be used for

@@ -32,6 +32,7 @@ PRIMITIVE_OFF_MODE = "qtrm_core_steps_8_primitive_role_value_off_no_evidence"
 SOURCE_SLOT_OFF_MODE = "qtrm_core_steps_8_token_numeric_source_slots_off_no_evidence"
 SOURCE_BINDER_OFF_MODE = "qtrm_core_steps_8_core_source_position_binder_off_no_evidence"
 BRIDGE_OFF_MODE = "qtrm_core_steps_8_role_value_answer_bridge_off_no_evidence"
+TYPED_VALUE_BRIDGE_OFF_MODE = "qtrm_core_steps_8_typed_value_answer_bridge_off_no_evidence"
 VOCAB_RENDERER_OFF_MODE = "qtrm_core_steps_8_core_role_value_vocab_renderer_off_no_evidence"
 ANSWER_RECURRENT_OFF_MODE = "qtrm_core_steps_8_answer_state_recurrent_off_no_evidence"
 
@@ -40,6 +41,7 @@ ABLATION_MODES = {
     "source_slot_off": SOURCE_SLOT_OFF_MODE,
     "source_binder_off": SOURCE_BINDER_OFF_MODE,
     "bridge_off": BRIDGE_OFF_MODE,
+    "typed_value_bridge_off": TYPED_VALUE_BRIDGE_OFF_MODE,
     "vocab_renderer_off": VOCAB_RENDERER_OFF_MODE,
     "answer_recurrent_off": ANSWER_RECURRENT_OFF_MODE,
 }
@@ -51,6 +53,7 @@ DEFAULT_MODES = [
     SOURCE_SLOT_OFF_MODE,
     SOURCE_BINDER_OFF_MODE,
     BRIDGE_OFF_MODE,
+    TYPED_VALUE_BRIDGE_OFF_MODE,
     VOCAB_RENDERER_OFF_MODE,
     ANSWER_RECURRENT_OFF_MODE,
 ]
@@ -297,6 +300,7 @@ def build_report(
     min_source_slot_drop: float = 0.01,
     min_source_binder_drop: float = 0.01,
     min_bridge_drop: float = 0.01,
+    min_typed_value_bridge_drop: float = 0.01,
     min_vocab_renderer_drop: float = 0.01,
     min_answer_recurrent_drop: float = 0.01,
 ) -> dict[str, Any]:
@@ -311,6 +315,7 @@ def build_report(
         "source_slot_off": float(min_source_slot_drop),
         "source_binder_off": float(min_source_binder_drop),
         "bridge_off": float(min_bridge_drop),
+        "typed_value_bridge_off": float(min_typed_value_bridge_drop),
         "vocab_renderer_off": float(min_vocab_renderer_drop),
         "answer_recurrent_off": float(min_answer_recurrent_drop),
     }
@@ -425,6 +430,7 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
             min_source_slot_drop=float(args.min_source_slot_drop),
             min_source_binder_drop=float(args.min_source_binder_drop),
             min_bridge_drop=float(args.min_bridge_drop),
+            min_typed_value_bridge_drop=float(args.min_typed_value_bridge_drop),
             min_vocab_renderer_drop=float(args.min_vocab_renderer_drop),
             min_answer_recurrent_drop=float(args.min_answer_recurrent_drop),
         )
@@ -526,6 +532,7 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
         min_source_slot_drop=float(args.min_source_slot_drop),
         min_source_binder_drop=float(args.min_source_binder_drop),
         min_bridge_drop=float(args.min_bridge_drop),
+        min_typed_value_bridge_drop=float(args.min_typed_value_bridge_drop),
         min_vocab_renderer_drop=float(args.min_vocab_renderer_drop),
         min_answer_recurrent_drop=float(args.min_answer_recurrent_drop),
     )
@@ -576,6 +583,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-source-slot-drop", type=float, default=0.01)
     parser.add_argument("--min-source-binder-drop", type=float, default=0.01)
     parser.add_argument("--min-bridge-drop", type=float, default=0.01)
+    parser.add_argument("--min-typed-value-bridge-drop", type=float, default=0.01)
     parser.add_argument("--min-vocab-renderer-drop", type=float, default=0.01)
     parser.add_argument("--min-answer-recurrent-drop", type=float, default=0.01)
     parser.add_argument("--token-numeric-source-slots", action="store_true")

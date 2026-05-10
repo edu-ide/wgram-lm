@@ -67,6 +67,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             module.SOURCE_SLOT_OFF_MODE: [False, False, False, False],
             module.SOURCE_BINDER_OFF_MODE: [False, False, False, False],
             module.BRIDGE_OFF_MODE: [False, False, False, False],
+            module.TYPED_VALUE_BRIDGE_OFF_MODE: [False, False, False, False],
             module.VOCAB_RENDERER_OFF_MODE: [False, False, False, False],
             module.ANSWER_RECURRENT_OFF_MODE: [False, False, False, False],
         }
@@ -92,6 +93,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             min_source_slot_drop=0.10,
             min_source_binder_drop=0.10,
             min_bridge_drop=0.10,
+            min_typed_value_bridge_drop=0.10,
             min_vocab_renderer_drop=0.10,
             min_answer_recurrent_drop=0.10,
         )
@@ -111,6 +113,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             module.SOURCE_SLOT_OFF_MODE: [False, False, False, False],
             module.SOURCE_BINDER_OFF_MODE: [False, False, False, False],
             module.BRIDGE_OFF_MODE: [False, False, False, False],
+            module.TYPED_VALUE_BRIDGE_OFF_MODE: [False, False, False, False],
             module.VOCAB_RENDERER_OFF_MODE: [False, False, False, False],
             module.ANSWER_RECURRENT_OFF_MODE: [False, False, False, False],
         }
@@ -136,6 +139,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             min_source_slot_drop=0.10,
             min_source_binder_drop=0.10,
             min_bridge_drop=0.10,
+            min_typed_value_bridge_drop=0.10,
             min_vocab_renderer_drop=0.10,
             min_answer_recurrent_drop=0.10,
         )
@@ -173,6 +177,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             min_source_slot_drop=0.10,
             min_source_binder_drop=0.10,
             min_bridge_drop=0.10,
+            min_typed_value_bridge_drop=0.10,
             min_vocab_renderer_drop=0.10,
             min_answer_recurrent_drop=0.10,
         )
@@ -265,6 +270,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
         self.assertIn(module.SOURCE_SLOT_OFF_MODE, module.DEFAULT_MODES)
         self.assertIn(module.SOURCE_BINDER_OFF_MODE, module.DEFAULT_MODES)
         self.assertIn(module.BRIDGE_OFF_MODE, module.DEFAULT_MODES)
+        self.assertIn(module.TYPED_VALUE_BRIDGE_OFF_MODE, module.DEFAULT_MODES)
         self.assertIn(module.VOCAB_RENDERER_OFF_MODE, module.DEFAULT_MODES)
         self.assertIn(module.ANSWER_RECURRENT_OFF_MODE, module.DEFAULT_MODES)
 

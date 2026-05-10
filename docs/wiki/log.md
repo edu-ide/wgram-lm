@@ -12219,6 +12219,7 @@ Required modes:
   qtrm_core_steps_8_token_numeric_source_slots_off_no_evidence
   qtrm_core_steps_8_core_source_position_binder_off_no_evidence
   qtrm_core_steps_8_role_value_answer_bridge_off_no_evidence
+  qtrm_core_steps_8_typed_value_answer_bridge_off_no_evidence
   qtrm_core_steps_8_core_role_value_vocab_renderer_off_no_evidence
   qtrm_core_steps_8_answer_state_recurrent_off_no_evidence
 ```
@@ -12233,6 +12234,7 @@ full drops under primitive-off
 full drops under source-slot-off
 full drops under source-binder-off
 full drops under answer-bridge-off
+full drops under typed-value-answer-bridge-off
 full drops under vocab-renderer-off
 full drops under answer-recurrent-off
 all eval commands must complete
