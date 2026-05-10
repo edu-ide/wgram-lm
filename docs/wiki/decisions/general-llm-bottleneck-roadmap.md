@@ -495,6 +495,27 @@ length-coverage follow-up:
   mix. The remaining blocker is more likely final subtract/offset binding in
   the causal latent-to-LM path, not length coverage alone.
 
+typed value-state diagnostic:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_fullpath_subtract_heavy_s020_save_every5_from_s060/
+  eval_typed_value_state_max8.json
+  on the 4/8 baseline checkpoint, with typed scalar regression values:
+    trace_exact_accuracy:       0/8
+    step_exact_accuracy:        0/32
+    field_accuracy:             32/200 = 0.1600
+    content_field_accuracy:     32/168 = 0.1905
+  Scalar diagnostics show offset/final-residual fields are wrong on held-out
+  len11/13 cases. This means the current typed scalar bridge is not merely
+  failing to route a correct latent value to LM logits; the typed value state
+  itself is not a reliable held-out value representation.
+
+  next design implication:
+    do not promote the absolute typed scalar codec. Treat it as diagnostic.
+    The next canonical candidate should bind prompt source values and offset
+    variables from the token stream into recurrent state, then make that state
+    causal for the normal LM answer path. Source/offset binding is the bottleneck
+    to test before more final-answer margin tuning.
+
 decision:
   partial acceptance for the narrow answer-change prerequisite:
   the recurrent answer/core path can now change causal forced-choice answers
