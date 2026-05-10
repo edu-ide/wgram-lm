@@ -245,6 +245,71 @@ decision:
   selected answer.
 ```
 
+Typed bridge final-contrast retry, 2026-05-10:
+
+```text
+implementation:
+  e9fc05e feat(training): add typed bridge final contrast
+
+principle:
+  run a no-grad ablated forward with
+  disable_typed_algorithmic_value_state_answer_bridge=True, then apply a
+  final LM-path target-logp contrast:
+    full target logp > typed-bridge-off target logp + margin
+
+smoke:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  smoke_typed_value_bridge_final_contrast_s1
+  metric observed:
+    typed_value_answer_bridge_final_contrast=0.0463
+    typed_value_answer_bridge_final_target_logp_delta=0.0037
+
+short run:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_bridge_final_contrast_s020_from_final_choice_s020
+
+forced-choice max_cases=4:
+  donor_only:              0/4
+  core_off:                0/4
+  recurrent_off:           0/4
+  typed_bridge_off:        0/4
+  full bridge/recurrent:   0/4
+
+score-gap diagnostic:
+  donor gold-minus-pred mean:          -1.5316
+  recurrent_off gold-minus-pred mean:  -1.5538
+  full gold-minus-pred mean:           -0.7651
+  typed_bridge_off gold-minus-pred:    -0.7664
+
+strong final-choice continuation:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_bridge_final_choice_strong_s020_from_contrast_s020
+
+strong forced-choice max_cases=4:
+  donor_only:              0/4
+  core_off:                0/4
+  recurrent_off:           0/4
+  typed_bridge_off:        0/4
+  full bridge/recurrent:   0/4
+
+strong score-gap diagnostic:
+  donor gold-minus-pred mean:          -1.5316
+  recurrent_off gold-minus-pred mean:  -1.5657
+  full gold-minus-pred mean:           -0.6753
+  typed_bridge_off gold-minus-pred:    -0.6794
+
+dominant full failures:
+  pre_subtract_sum:        2/4
+  doubled_list:            2/4
+
+decision:
+  rejected as a solved answer-change gate. The final LM path now clearly moves
+  away from donor-only doubled-list behavior and the answer recurrent path is
+  causal by score-gap ablation, but the typed value-state bridge still has only
+  a tiny causal delta and turning it off nearly matches full. The remaining
+  blocker is final subtract/value-generalization, not text rendering alone.
+```
+
 ## Dual-Process Ordering
 
 QTRM may eventually become a dual-process architecture:
