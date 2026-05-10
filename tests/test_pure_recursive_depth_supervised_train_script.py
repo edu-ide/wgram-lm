@@ -202,6 +202,25 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
             1.0,
         )
 
+    def test_token_numeric_source_slot_parity_ce_loss_supports_relative_parity_ids(self):
+        import torch
+
+        module = _load_module()
+        logits = torch.tensor([[[3.0, 0.0], [0.0, 3.0], [0.0, 0.0]]])
+        source_slot_ids = torch.tensor([[1, 2, 0]])
+
+        loss, metrics = module.token_numeric_source_slot_parity_ce_loss(
+            logits,
+            source_slot_ids,
+            id_mode="relative_parity",
+        )
+
+        self.assertLess(float(loss), 0.10)
+        self.assertEqual(
+            float(metrics["token_numeric_source_slot_parity_acc"]),
+            1.0,
+        )
+
     def test_row_temporal_spatial_context_converts_json_vectors(self):
         module = _load_module()
 
@@ -1647,6 +1666,8 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
                 "64",
                 "--token-numeric-source-slot-max-slots",
                 "7",
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
                 "--token-numeric-source-slot-gate-min",
                 "1.0",
                 "--token-numeric-source-slot-parity-ce-weight",
@@ -1683,6 +1704,7 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
         self.assertTrue(args.token_numeric_source_slots)
         self.assertEqual(args.token_numeric_source_slot_vocab_size, 64)
         self.assertEqual(args.token_numeric_source_slot_max_slots, 7)
+        self.assertEqual(args.token_numeric_source_slot_id_mode, "relative_parity")
         self.assertEqual(args.token_numeric_source_slot_gate_min, 1.0)
         self.assertEqual(args.token_numeric_source_slot_parity_ce_weight, 0.7)
         self.assertTrue(args.token_numeric_source_slot_predicate_feedback)

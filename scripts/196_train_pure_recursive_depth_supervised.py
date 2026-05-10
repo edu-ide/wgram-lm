@@ -11,6 +11,7 @@ from qtrm_mm.algorithmic_value_state import (
     apply_role_value_list_class_mode,
     mixed_even_offsets,
     numeric_source_feature_matrix,
+    relative_source_slot_parity_ids,
     role_value_targets_from_row,
     row_input_list,
     row_mixed_list_base,
@@ -1448,6 +1449,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--token-numeric-source-slot-vocab-size", type=int, default=128)
     parser.add_argument("--token-numeric-source-slot-max-slots", type=int, default=5)
+    parser.add_argument(
+        "--token-numeric-source-slot-id-mode",
+        choices=["absolute_value", "relative_parity"],
+        default="absolute_value",
+        help=(
+            "Encoding for compact source slots. absolute_value preserves value+1 "
+            "classes; relative_parity uses 0=pad, 1=odd, 2=even to avoid "
+            "absolute numeric leakage."
+        ),
+    )
     parser.add_argument("--token-numeric-source-slot-gate-min", type=float, default=0.0)
     parser.add_argument(
         "--token-numeric-source-slot-parity-ce-weight",
@@ -1631,6 +1642,7 @@ def _token_numeric_source_slots_for_prompt(
     max_slots: int,
     value_vocab_size: int,
     device: str,
+    id_mode: str = "absolute_value",
 ):
     import torch
 
@@ -1643,19 +1655,29 @@ def _token_numeric_source_slots_for_prompt(
         add_special_tokens=True,
         return_offsets_mapping=True,
     )
-    ids, mask = token_numeric_source_slot_ids(
-        row,
-        offsets=enc["offset_mapping"][0].tolist(),
-        max_list_len=int(max_slots),
-        value_vocab_size=int(value_vocab_size),
-    )
-    slot_token_ids = token_numeric_source_slot_token_ids(
-        row,
-        offsets=enc["offset_mapping"][0].tolist(),
-        input_ids=enc["input_ids"][0].tolist(),
-        max_list_len=int(max_slots),
-        value_vocab_size=int(value_vocab_size),
-    )
+    mode = str(id_mode or "absolute_value")
+    if mode == "relative_parity":
+        ids, mask = relative_source_slot_parity_ids(
+            row,
+            max_list_len=int(max_slots),
+        )
+        slot_token_ids = tuple(0 for _ in range(int(max_slots)))
+    elif mode == "absolute_value":
+        ids, mask = token_numeric_source_slot_ids(
+            row,
+            offsets=enc["offset_mapping"][0].tolist(),
+            max_list_len=int(max_slots),
+            value_vocab_size=int(value_vocab_size),
+        )
+        slot_token_ids = token_numeric_source_slot_token_ids(
+            row,
+            offsets=enc["offset_mapping"][0].tolist(),
+            input_ids=enc["input_ids"][0].tolist(),
+            max_list_len=int(max_slots),
+            value_vocab_size=int(value_vocab_size),
+        )
+    else:
+        raise ValueError(f"unknown token numeric source slot id mode: {mode}")
     return (
         torch.tensor([ids], dtype=torch.long, device=device),
         torch.tensor([slot_token_ids], dtype=torch.long, device=device),
@@ -3124,7 +3146,12 @@ def core_primitive_role_value_update_gate_bce_loss(
     }
 
 
-def token_numeric_source_slot_parity_ce_loss(parity_logits, source_slot_ids):
+def token_numeric_source_slot_parity_ce_loss(
+    parity_logits,
+    source_slot_ids,
+    *,
+    id_mode: str = "absolute_value",
+):
     import torch
     import torch.nn.functional as F
 
@@ -3156,8 +3183,14 @@ def token_numeric_source_slot_parity_ce_loss(parity_logits, source_slot_ids):
             "token_numeric_source_slot_parity_acc": zero.detach(),
             "token_numeric_source_slot_parity_samples": zero.detach(),
         }
-    values = ids - 1
-    targets = ((values % 2) == 0).long()
+    mode = str(id_mode or "absolute_value")
+    if mode == "relative_parity":
+        targets = (ids == 2).long()
+    elif mode == "absolute_value":
+        values = ids - 1
+        targets = ((values % 2) == 0).long()
+    else:
+        raise ValueError(f"unknown token numeric source slot id mode: {mode}")
     loss = F.cross_entropy(logits[mask], targets[mask])
     pred = logits.detach().argmax(dim=-1)
     acc = (pred[mask] == targets[mask]).float().mean()
@@ -3169,10 +3202,16 @@ def token_numeric_source_slot_parity_ce_loss(parity_logits, source_slot_ids):
     }
 
 
-def token_numeric_source_slot_predicate_ce_loss(predicate_logits, source_slot_ids):
+def token_numeric_source_slot_predicate_ce_loss(
+    predicate_logits,
+    source_slot_ids,
+    *,
+    id_mode: str = "absolute_value",
+):
     loss, metrics = token_numeric_source_slot_parity_ce_loss(
         predicate_logits,
         source_slot_ids,
+        id_mode=id_mode,
     )
     return loss, {
         key.replace("parity", "predicate"): value
@@ -5063,6 +5102,14 @@ def main() -> None:
         cfg.model.token_numeric_value_embedding_enabled = True
         cfg.model.token_numeric_value_vocab_size = int(args.token_numeric_value_vocab_size)
     if bool(args.token_numeric_source_slots):
+        if (
+            str(args.token_numeric_source_slot_id_mode) == "relative_parity"
+            and int(args.token_numeric_source_slot_vocab_size) < 3
+        ):
+            raise ValueError(
+                "--token-numeric-source-slot-id-mode relative_parity requires "
+                "--token-numeric-source-slot-vocab-size >= 3"
+            )
         cfg.model.token_numeric_source_slot_embedding_enabled = True
         cfg.model.token_numeric_source_slot_vocab_size = int(
             args.token_numeric_source_slot_vocab_size
@@ -5733,6 +5780,7 @@ def main() -> None:
                 max_slots=int(args.token_numeric_source_slot_max_slots),
                 value_vocab_size=int(args.token_numeric_source_slot_vocab_size),
                 device=device,
+                id_mode=str(args.token_numeric_source_slot_id_mode),
             )
         self_rollout_examples_count = 0
         self_rollout_prefix_tokens = 0
@@ -5930,6 +5978,7 @@ def main() -> None:
                             token_numeric_source_slot_parity_ce_loss(
                                 parity_logits,
                                 token_numeric_source_slot_ids_tensor,
+                                id_mode=str(args.token_numeric_source_slot_id_mode),
                             )
                         )
                         losses.append(parity_loss)
@@ -5957,6 +6006,7 @@ def main() -> None:
                             token_numeric_source_slot_predicate_ce_loss(
                                 predicate_logits,
                                 token_numeric_source_slot_ids_tensor,
+                                id_mode=str(args.token_numeric_source_slot_id_mode),
                             )
                         )
                         losses.append(predicate_loss)

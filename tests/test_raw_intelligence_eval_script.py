@@ -73,6 +73,69 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
         self.assertIn("cfg.model.core_source_position_binder_enabled = True", script)
         self.assertGreaterEqual(script.count("token_numeric_value_ids="), 4)
 
+    def test_parser_accepts_relative_parity_source_slot_mode(self) -> None:
+        module = _load_eval_module()
+
+        args = module.build_arg_parser().parse_args(
+            [
+                "--config",
+                "cfg.yaml",
+                "--checkpoint",
+                "ckpt.pt",
+                "--cases",
+                "eval.jsonl",
+                "--out",
+                "out.jsonl",
+                "--token-numeric-source-slots",
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
+                "--token-numeric-source-slot-vocab-size",
+                "3",
+            ]
+        )
+
+        self.assertTrue(args.token_numeric_source_slots)
+        self.assertEqual(args.token_numeric_source_slot_id_mode, "relative_parity")
+        self.assertEqual(args.token_numeric_source_slot_vocab_size, 3)
+
+    def test_relative_parity_source_slots_support_metadata_lists(self) -> None:
+        import torch
+
+        module = _load_eval_module()
+
+        class FakeTokenizer:
+            def __call__(self, prompt, **kwargs):
+                self.kwargs = kwargs
+                return {
+                    "input_ids": torch.tensor([[1, 2, 3, 4, 5]]),
+                    "attention_mask": torch.tensor([[1, 1, 1, 1, 1]]),
+                    "offset_mapping": torch.tensor(
+                        [[[0, 1], [1, 6], [6, 7], [7, 12], [12, 13]]]
+                    ),
+                }
+
+        source_slot_ids, source_slot_token_ids, source_slot_mask = (
+            module._token_numeric_source_slots_for_prompt_prefix(
+                FakeTokenizer(),
+                {
+                    "prompt": "[60001,60002]",
+                    "list_value_start": 60001,
+                    "list_length": 2,
+                },
+                "[60001,60002]",
+                max_length=16,
+                device="cpu",
+                enabled=True,
+                value_vocab_size=3,
+                max_slots=4,
+                id_mode="relative_parity",
+            )
+        )
+
+        self.assertEqual(source_slot_ids.tolist(), [[1, 2, 0, 0]])
+        self.assertEqual(source_slot_token_ids.tolist(), [[0, 0, 0, 0]])
+        self.assertEqual(source_slot_mask.tolist(), [[1, 1, 0, 0]])
+
     def test_source_copy_generation_scoring_rejects_loose_contains_match(self) -> None:
         module = _load_eval_module()
 

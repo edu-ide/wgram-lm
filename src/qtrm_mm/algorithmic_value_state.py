@@ -203,6 +203,31 @@ def token_numeric_source_slot_ids(
     return tuple(ids), tuple(mask)
 
 
+def relative_source_slot_parity_ids(
+    row: dict[str, Any],
+    *,
+    max_list_len: int,
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """Encode compact source slots as relative parity classes.
+
+    Class ids are intentionally tiny and independent of absolute numeric
+    magnitude: 0=pad, 1=odd source value, 2=even source value.
+    """
+
+    values = row_input_list(row)
+    if values is None:
+        raise ValueError("row has no input_list")
+    ids: list[int] = []
+    mask: list[int] = []
+    for value in values[: int(max_list_len)]:
+        ids.append(2 if int(value) % 2 == 0 else 1)
+        mask.append(1)
+    while len(ids) < int(max_list_len):
+        ids.append(0)
+        mask.append(0)
+    return tuple(ids), tuple(mask)
+
+
 def token_numeric_source_slot_token_ids(
     row: dict[str, Any],
     *,

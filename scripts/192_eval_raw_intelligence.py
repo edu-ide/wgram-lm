@@ -211,6 +211,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--disable-token-numeric-source-slots", action="store_true")
     parser.add_argument("--token-numeric-source-slot-vocab-size", type=int, default=128)
     parser.add_argument("--token-numeric-source-slot-max-slots", type=int, default=5)
+    parser.add_argument(
+        "--token-numeric-source-slot-id-mode",
+        choices=["absolute_value", "relative_parity"],
+        default="absolute_value",
+    )
     parser.add_argument("--token-numeric-source-slot-gate-min", type=float, default=0.0)
     parser.add_argument(
         "--token-numeric-source-slot-predicate-feedback",
@@ -994,16 +999,19 @@ def _token_numeric_source_slots_for_prompt_prefix(
     enabled: bool,
     value_vocab_size: int,
     max_slots: int,
+    id_mode: str = "absolute_value",
 ):
     if not enabled:
         return None, None, None
-    if not case.get("input_list"):
-        return None, None, None
     import torch
     from qtrm_mm.algorithmic_value_state import (
+        relative_source_slot_parity_ids,
+        row_input_list,
         token_numeric_source_slot_ids,
         token_numeric_source_slot_token_ids,
     )
+    if row_input_list(case) is None:
+        return None, None, None
 
     enc = tokenizer(
         prompt,
@@ -1014,19 +1022,29 @@ def _token_numeric_source_slots_for_prompt_prefix(
         add_special_tokens=True,
         return_offsets_mapping=True,
     )
-    ids, mask = token_numeric_source_slot_ids(
-        case,
-        offsets=enc["offset_mapping"][0].tolist(),
-        max_list_len=int(max_slots),
-        value_vocab_size=int(value_vocab_size),
-    )
-    slot_token_ids = token_numeric_source_slot_token_ids(
-        case,
-        offsets=enc["offset_mapping"][0].tolist(),
-        input_ids=enc["input_ids"][0].tolist(),
-        max_list_len=int(max_slots),
-        value_vocab_size=int(value_vocab_size),
-    )
+    mode = str(id_mode or "absolute_value")
+    if mode == "relative_parity":
+        ids, mask = relative_source_slot_parity_ids(
+            case,
+            max_list_len=int(max_slots),
+        )
+        slot_token_ids = tuple(0 for _ in range(int(max_slots)))
+    elif mode == "absolute_value":
+        ids, mask = token_numeric_source_slot_ids(
+            case,
+            offsets=enc["offset_mapping"][0].tolist(),
+            max_list_len=int(max_slots),
+            value_vocab_size=int(value_vocab_size),
+        )
+        slot_token_ids = token_numeric_source_slot_token_ids(
+            case,
+            offsets=enc["offset_mapping"][0].tolist(),
+            input_ids=enc["input_ids"][0].tolist(),
+            max_list_len=int(max_slots),
+            value_vocab_size=int(value_vocab_size),
+        )
+    else:
+        raise ValueError(f"unknown token numeric source slot id mode: {mode}")
     return (
         torch.tensor([ids], dtype=torch.long, device=device),
         torch.tensor([slot_token_ids], dtype=torch.long, device=device),
@@ -1045,13 +1063,34 @@ def _token_numeric_source_slot_spans_for_prompt_prefix(
     value_vocab_size: int,
     max_slots: int,
     max_token_pieces: int = 8,
+    id_mode: str = "absolute_value",
 ):
     if not enabled:
         return None, None
-    if not case.get("input_list"):
-        return None, None
     import torch
-    from qtrm_mm.algorithmic_value_state import token_numeric_source_slot_token_spans
+    from qtrm_mm.algorithmic_value_state import (
+        row_input_list,
+        token_numeric_source_slot_token_spans,
+    )
+    if row_input_list(case) is None:
+        return None, None
+    if str(id_mode or "absolute_value") == "relative_parity":
+        span_ids = tuple(
+            tuple(0 for _ in range(int(max_token_pieces)))
+            for _ in range(int(max_slots))
+        )
+        span_mask = tuple(
+            tuple(0 for _ in range(int(max_token_pieces)))
+            for _ in range(int(max_slots))
+        )
+        return (
+            torch.tensor([span_ids], dtype=torch.long, device=device),
+            torch.tensor([span_mask], dtype=torch.long, device=device),
+        )
+    if str(id_mode or "absolute_value") != "absolute_value":
+        raise ValueError(
+            f"unknown token numeric source slot id mode: {id_mode}"
+        )
 
     enc = tokenizer(
         prompt,
@@ -1259,6 +1298,7 @@ def _answer_choice_logprob(
     token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
 ) -> float:
     import torch
 
@@ -1290,6 +1330,7 @@ def _answer_choice_logprob(
         enabled=bool(token_numeric_source_slots),
         value_vocab_size=int(token_numeric_source_slot_vocab_size),
         max_slots=int(token_numeric_source_slot_max_slots),
+        id_mode=str(token_numeric_source_slot_id_mode),
     )
     (
         source_slot_token_span_ids,
@@ -1303,6 +1344,7 @@ def _answer_choice_logprob(
         enabled=bool(token_numeric_source_slots),
         value_vocab_size=int(token_numeric_source_slot_vocab_size),
         max_slots=int(token_numeric_source_slot_max_slots),
+        id_mode=str(token_numeric_source_slot_id_mode),
     )
     prompt_len = int(prompt_inputs["input_ids"].shape[1])
     full_len = int(input_ids.shape[1])
@@ -1439,6 +1481,7 @@ def _answer_choice_causal_logprob(
     token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
 ) -> float:
     import torch
 
@@ -1473,18 +1516,17 @@ def _answer_choice_causal_logprob(
                 source_slot_ids,
                 source_slot_token_ids,
                 source_slot_mask,
-            ) = (
-                _token_numeric_source_slots_for_prompt_prefix(
-                    tokenizer,
-                    case,
-                    prompt,
-                    max_length=max_length,
-                    device=device,
-                    enabled=bool(token_numeric_source_slots),
-                    value_vocab_size=int(token_numeric_source_slot_vocab_size),
-                    max_slots=int(token_numeric_source_slot_max_slots),
-                    )
-                )
+            ) = _token_numeric_source_slots_for_prompt_prefix(
+                tokenizer,
+                case,
+                prompt,
+                max_length=max_length,
+                device=device,
+                enabled=bool(token_numeric_source_slots),
+                value_vocab_size=int(token_numeric_source_slot_vocab_size),
+                max_slots=int(token_numeric_source_slot_max_slots),
+                id_mode=str(token_numeric_source_slot_id_mode),
+            )
             (
                 source_slot_token_span_ids,
                 source_slot_token_span_mask,
@@ -1497,6 +1539,7 @@ def _answer_choice_causal_logprob(
                 enabled=bool(token_numeric_source_slots),
                 value_vocab_size=int(token_numeric_source_slot_vocab_size),
                 max_slots=int(token_numeric_source_slot_max_slots),
+                id_mode=str(token_numeric_source_slot_id_mode),
             )
             extra = _donor_kwargs(
                 donor,
@@ -1619,6 +1662,7 @@ def _forced_choice_case(
     token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
 ) -> tuple[str, list[dict[str, Any]]]:
     prompt = case.get("prompt") or case.get("question", "")
     temporal_spatial_context = _case_temporal_spatial_context(case, device=device)
@@ -1644,6 +1688,7 @@ def _forced_choice_case(
                 token_numeric_source_slot_vocab_size
             ),
             token_numeric_source_slot_max_slots=int(token_numeric_source_slot_max_slots),
+            token_numeric_source_slot_id_mode=str(token_numeric_source_slot_id_mode),
         )
         token_count = _choice_token_count(tokenizer, choice)
         score = _normalized_choice_score(
@@ -1687,6 +1732,7 @@ def _causal_forced_choice_case(
     token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
 ) -> tuple[str, list[dict[str, Any]]]:
     prompt = case.get("prompt") or case.get("question", "")
     temporal_spatial_context = _case_temporal_spatial_context(case, device=device)
@@ -1712,6 +1758,7 @@ def _causal_forced_choice_case(
                 token_numeric_source_slot_vocab_size
             ),
             token_numeric_source_slot_max_slots=int(token_numeric_source_slot_max_slots),
+            token_numeric_source_slot_id_mode=str(token_numeric_source_slot_id_mode),
         )
         token_count = _choice_token_count(tokenizer, choice)
         score = _normalized_choice_score(
@@ -1759,6 +1806,7 @@ def _generate_case(
     token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
 ) -> tuple[str, int]:
     import torch
 
@@ -1796,6 +1844,7 @@ def _generate_case(
                 enabled=bool(token_numeric_source_slots),
                 value_vocab_size=int(token_numeric_source_slot_vocab_size),
                 max_slots=int(token_numeric_source_slot_max_slots),
+                id_mode=str(token_numeric_source_slot_id_mode),
             )
             (
                 source_slot_token_span_ids,
@@ -1809,6 +1858,7 @@ def _generate_case(
                 enabled=bool(token_numeric_source_slots),
                 value_vocab_size=int(token_numeric_source_slot_vocab_size),
                 max_slots=int(token_numeric_source_slot_max_slots),
+                id_mode=str(token_numeric_source_slot_id_mode),
             )
             extra = _donor_kwargs(
                 donor,
@@ -1946,6 +1996,7 @@ def _beam_generate_case(
     token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
 ) -> tuple[str, int]:
     import torch
 
@@ -1992,17 +2043,16 @@ def _beam_generate_case(
                     source_slot_ids,
                     source_slot_token_ids,
                     source_slot_mask,
-                ) = (
-                    _token_numeric_source_slots_for_prompt_prefix(
-                        tokenizer,
-                        case,
-                        prompt,
-                        max_length=max_length,
-                        device=device,
-                        enabled=bool(token_numeric_source_slots),
-                        value_vocab_size=int(token_numeric_source_slot_vocab_size),
-                        max_slots=int(token_numeric_source_slot_max_slots),
-                    )
+                ) = _token_numeric_source_slots_for_prompt_prefix(
+                    tokenizer,
+                    case,
+                    prompt,
+                    max_length=max_length,
+                    device=device,
+                    enabled=bool(token_numeric_source_slots),
+                    value_vocab_size=int(token_numeric_source_slot_vocab_size),
+                    max_slots=int(token_numeric_source_slot_max_slots),
+                    id_mode=str(token_numeric_source_slot_id_mode),
                 )
                 (
                     source_slot_token_span_ids,
@@ -2016,6 +2066,7 @@ def _beam_generate_case(
                     enabled=bool(token_numeric_source_slots),
                     value_vocab_size=int(token_numeric_source_slot_vocab_size),
                     max_slots=int(token_numeric_source_slot_max_slots),
+                    id_mode=str(token_numeric_source_slot_id_mode),
                 )
                 extra = _donor_kwargs(
                     donor,
@@ -2191,6 +2242,14 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
         cfg.model.token_numeric_value_embedding_enabled = True
         cfg.model.token_numeric_value_vocab_size = int(args.token_numeric_value_vocab_size)
     if bool(args.token_numeric_source_slots):
+        if (
+            str(args.token_numeric_source_slot_id_mode) == "relative_parity"
+            and int(args.token_numeric_source_slot_vocab_size) < 3
+        ):
+            raise ValueError(
+                "--token-numeric-source-slot-id-mode relative_parity requires "
+                "--token-numeric-source-slot-vocab-size >= 3"
+            )
         cfg.model.token_numeric_source_slot_embedding_enabled = True
         cfg.model.token_numeric_source_slot_vocab_size = int(
             args.token_numeric_source_slot_vocab_size
@@ -2305,6 +2364,9 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                             token_numeric_source_slot_max_slots=int(
                                 args.token_numeric_source_slot_max_slots
                             ),
+                            token_numeric_source_slot_id_mode=str(
+                                args.token_numeric_source_slot_id_mode
+                            ),
                         )
                         generated_tokens = 0
                     elif args.scoring == "causal_forced_choice":
@@ -2325,6 +2387,9 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                             ),
                             token_numeric_source_slot_max_slots=int(
                                 args.token_numeric_source_slot_max_slots
+                            ),
+                            token_numeric_source_slot_id_mode=str(
+                                args.token_numeric_source_slot_id_mode
                             ),
                         )
                         generated_tokens = 0
@@ -2357,6 +2422,9 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                             token_numeric_source_slot_max_slots=int(
                                 args.token_numeric_source_slot_max_slots
                             ),
+                            token_numeric_source_slot_id_mode=str(
+                                args.token_numeric_source_slot_id_mode
+                            ),
                         )
                     else:
                         temporal_spatial_context = _case_temporal_spatial_context(
@@ -2384,6 +2452,9 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                             ),
                             token_numeric_source_slot_max_slots=int(
                                 args.token_numeric_source_slot_max_slots
+                            ),
+                            token_numeric_source_slot_id_mode=str(
+                                args.token_numeric_source_slot_id_mode
                             ),
                         )
                     record = score_case_record(

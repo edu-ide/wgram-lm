@@ -10,6 +10,7 @@ from qtrm_mm.algorithmic_value_state import (
     algorithmic_targets_from_row as _algorithmic_targets_from_row,
     apply_role_value_list_class_mode,
     numeric_source_feature_matrix,
+    relative_source_slot_parity_ids,
     role_value_initial_targets_from_row,
     role_value_targets_from_row,
     score_algorithmic_sequences,
@@ -285,6 +286,7 @@ def _prepare_prompt_with_token_numeric(
     disable_token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
 ):
     import torch
 
@@ -325,12 +327,21 @@ def _prepare_prompt_with_token_numeric(
             device=device,
         )
     if source_slot_enabled:
-        ids, mask = token_numeric_source_slot_ids(
-            row,
-            offsets=offset_mapping[0].tolist(),
-            max_list_len=int(token_numeric_source_slot_max_slots),
-            value_vocab_size=int(token_numeric_source_slot_vocab_size),
-        )
+        mode = str(token_numeric_source_slot_id_mode or "absolute_value")
+        if mode == "relative_parity":
+            ids, mask = relative_source_slot_parity_ids(
+                row,
+                max_list_len=int(token_numeric_source_slot_max_slots),
+            )
+        elif mode == "absolute_value":
+            ids, mask = token_numeric_source_slot_ids(
+                row,
+                offsets=offset_mapping[0].tolist(),
+                max_list_len=int(token_numeric_source_slot_max_slots),
+                value_vocab_size=int(token_numeric_source_slot_vocab_size),
+            )
+        else:
+            raise ValueError(f"unknown token numeric source slot id mode: {mode}")
         source_slot_ids = torch.tensor([ids], dtype=torch.long, device=device)
         source_slot_mask = torch.tensor([mask], dtype=torch.long, device=device)
     return input_ids, attention_mask, token_numeric_ids, source_slot_ids, source_slot_mask
@@ -505,6 +516,7 @@ def evaluate_rows(
     disable_token_numeric_source_slots: bool = False,
     token_numeric_source_slot_vocab_size: int = 128,
     token_numeric_source_slot_max_slots: int = 5,
+    token_numeric_source_slot_id_mode: str = "absolute_value",
     token_numeric_source_slot_gate_min: float = 0.0,
     token_numeric_source_slot_predicate_feedback: bool = False,
     token_numeric_source_slot_predicate_gate_min: float = 0.0,
@@ -522,6 +534,14 @@ def evaluate_rows(
         cfg.model.token_numeric_value_embedding_enabled = True
         cfg.model.token_numeric_value_vocab_size = int(token_numeric_value_vocab_size)
     if bool(token_numeric_source_slots):
+        if (
+            str(token_numeric_source_slot_id_mode) == "relative_parity"
+            and int(token_numeric_source_slot_vocab_size) < 3
+        ):
+            raise ValueError(
+                "relative_parity source slots require "
+                "token_numeric_source_slot_vocab_size >= 3"
+            )
         cfg.model.token_numeric_source_slot_embedding_enabled = True
         cfg.model.token_numeric_source_slot_vocab_size = int(
             token_numeric_source_slot_vocab_size
@@ -630,6 +650,9 @@ def evaluate_rows(
                         ),
                         token_numeric_source_slot_max_slots=int(
                             token_numeric_source_slot_max_slots
+                        ),
+                        token_numeric_source_slot_id_mode=str(
+                            token_numeric_source_slot_id_mode
                         ),
                     )
                 )
@@ -953,6 +976,7 @@ def evaluate_rows(
         "disable_token_numeric_source_slots": bool(
             disable_token_numeric_source_slots
         ),
+        "token_numeric_source_slot_id_mode": str(token_numeric_source_slot_id_mode),
         "token_numeric_source_slot_predicate_feedback": bool(
             token_numeric_source_slot_predicate_feedback
         ),
@@ -1159,6 +1183,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--disable-token-numeric-source-slots", action="store_true")
     parser.add_argument("--token-numeric-source-slot-vocab-size", type=int, default=128)
     parser.add_argument("--token-numeric-source-slot-max-slots", type=int, default=5)
+    parser.add_argument(
+        "--token-numeric-source-slot-id-mode",
+        choices=["absolute_value", "relative_parity"],
+        default="absolute_value",
+    )
     parser.add_argument("--token-numeric-source-slot-gate-min", type=float, default=0.0)
     parser.add_argument(
         "--token-numeric-source-slot-predicate-feedback",
@@ -1270,6 +1299,7 @@ def main() -> None:
             args.token_numeric_source_slot_vocab_size
         ),
         token_numeric_source_slot_max_slots=args.token_numeric_source_slot_max_slots,
+        token_numeric_source_slot_id_mode=args.token_numeric_source_slot_id_mode,
         token_numeric_source_slot_gate_min=args.token_numeric_source_slot_gate_min,
         token_numeric_source_slot_predicate_feedback=(
             args.token_numeric_source_slot_predicate_feedback

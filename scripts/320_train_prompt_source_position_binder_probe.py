@@ -13,6 +13,7 @@ from torch import nn
 
 from qtrm_mm.algorithmic_value_state import (
     parse_int_list_state,
+    relative_source_slot_parity_ids,
     row_input_list,
     row_list_state_values,
     source_position_list_classes,
@@ -79,25 +80,6 @@ def numeric_value_ids(
         if class_id <= 0 or class_id >= int(value_vocab_size):
             raise ValueError(f"numeric value class out of range: {class_id}")
         ids.append(class_id)
-        mask.append(1)
-    while len(ids) < int(max_list_len):
-        ids.append(0)
-        mask.append(0)
-    return tuple(ids), tuple(mask)
-
-
-def relative_source_slot_parity_ids(
-    row: dict[str, Any],
-    *,
-    max_list_len: int,
-) -> tuple[tuple[int, ...], tuple[int, ...]]:
-    values = row_input_list(row)
-    if values is None:
-        raise ValueError("row has no input_list")
-    ids: list[int] = []
-    mask: list[int] = []
-    for value in values[: int(max_list_len)]:
-        ids.append(2 if int(value) % 2 == 0 else 1)
         mask.append(1)
     while len(ids) < int(max_list_len):
         ids.append(0)

@@ -391,6 +391,8 @@ class QTRMAlgorithmicValueStateEvalTests(unittest.TestCase):
                 "64",
                 "--token-numeric-source-slot-max-slots",
                 "7",
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
                 "--token-numeric-source-slot-gate-min",
                 "1.0",
                 "--token-numeric-source-slot-predicate-feedback",
@@ -402,6 +404,7 @@ class QTRMAlgorithmicValueStateEvalTests(unittest.TestCase):
         self.assertTrue(args.disable_token_numeric_source_slots)
         self.assertEqual(args.token_numeric_source_slot_vocab_size, 64)
         self.assertEqual(args.token_numeric_source_slot_max_slots, 7)
+        self.assertEqual(args.token_numeric_source_slot_id_mode, "relative_parity")
         self.assertEqual(args.token_numeric_source_slot_gate_min, 1.0)
         self.assertTrue(args.token_numeric_source_slot_predicate_feedback)
 
@@ -485,6 +488,52 @@ class QTRMAlgorithmicValueStateEvalTests(unittest.TestCase):
 
         self.assertIsNone(token_numeric_ids)
         self.assertEqual(source_slot_ids.tolist(), [[15, 32, 0, 0]])
+        self.assertEqual(source_slot_mask.tolist(), [[1, 1, 0, 0]])
+        self.assertTrue(tokenizer.kwargs["return_offsets_mapping"])
+
+    def test_prepare_prompt_with_relative_parity_source_slots(self):
+        import torch
+
+        module = load_eval_script()
+
+        class FakeTokenizer:
+            def __call__(self, prompt, **kwargs):
+                self.kwargs = kwargs
+                return {
+                    "input_ids": torch.tensor([[1, 2, 3, 4, 5]]),
+                    "attention_mask": torch.tensor([[1, 1, 1, 1, 1]]),
+                    "offset_mapping": torch.tensor(
+                        [[[0, 1], [1, 6], [6, 7], [7, 12], [12, 13]]]
+                    ),
+                }
+
+        row = {
+            "prompt": "[60001,60002]",
+            "list_value_start": 60001,
+            "list_length": 2,
+        }
+        tokenizer = FakeTokenizer()
+
+        (
+            _input_ids,
+            _attention_mask,
+            token_numeric_ids,
+            source_slot_ids,
+            source_slot_mask,
+        ) = module._prepare_prompt_with_token_numeric(
+            tokenizer,
+            row,
+            max_length=16,
+            device="cpu",
+            token_numeric_source_slots=True,
+            disable_token_numeric_source_slots=False,
+            token_numeric_source_slot_vocab_size=3,
+            token_numeric_source_slot_max_slots=4,
+            token_numeric_source_slot_id_mode="relative_parity",
+        )
+
+        self.assertIsNone(token_numeric_ids)
+        self.assertEqual(source_slot_ids.tolist(), [[1, 2, 0, 0]])
         self.assertEqual(source_slot_mask.tolist(), [[1, 1, 0, 0]])
         self.assertTrue(tokenizer.kwargs["return_offsets_mapping"])
 

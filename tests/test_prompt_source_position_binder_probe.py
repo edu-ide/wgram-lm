@@ -150,6 +150,17 @@ class PromptSourcePositionBinderProbeTests(unittest.TestCase):
         self.assertEqual(ids, (1, 2, 1, 2, 0, 0))
         self.assertEqual(mask, (1, 1, 1, 1, 0, 0))
 
+    def test_shared_relative_source_slot_parity_ids_ignore_absolute_value(self):
+        from qtrm_mm.algorithmic_value_state import relative_source_slot_parity_ids
+
+        ids, mask = relative_source_slot_parity_ids(
+            {"list_value_start": 60001, "list_length": 4},
+            max_list_len=6,
+        )
+
+        self.assertEqual(ids, (1, 2, 1, 2, 0, 0))
+        self.assertEqual(mask, (1, 1, 1, 1, 0, 0))
+
     def test_token_numeric_value_ids_marks_source_number_spans(self):
         module = load_module()
 
