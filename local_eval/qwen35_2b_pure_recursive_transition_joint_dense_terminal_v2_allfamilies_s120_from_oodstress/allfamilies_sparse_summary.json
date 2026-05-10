@@ -1,0 +1,16 @@
+{
+  "eval_families": [
+    "list_transform"
+  ],
+  "eval_rows": 64,
+  "eval_start_index": 17000,
+  "purpose": "sanity control: list surface included in train, eval list held out by index",
+  "train_families": [
+    "arithmetic_chain",
+    "boolean_logic",
+    "list_transform",
+    "symbolic_binding"
+  ],
+  "train_rows": 256,
+  "train_start_index": 16000
+}

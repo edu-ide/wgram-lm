@@ -1,0 +1,41 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/transformer.py:382: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/617 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/617 [00:00<01:06,  9.30it/s]
+Loading weights:   4%|▍         | 26/617 [00:00<00:04, 139.15it/s]
+Loading weights:  13%|█▎        | 80/617 [00:00<00:01, 312.69it/s]
+Loading weights:  27%|██▋       | 168/617 [00:00<00:00, 528.75it/s]
+Loading weights:  42%|████▏     | 257/617 [00:00<00:00, 650.92it/s]
+Loading weights:  65%|██████▍   | 400/617 [00:00<00:00, 909.54it/s]
+Loading weights: 100%|██████████| 617/617 [00:00<00:00, 886.82it/s]
+
+  0%|          | 0/1 [00:00<?, ?it/s]
+  0%|          | 0/1 [00:22<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/196_train_pure_recursive_depth_supervised.py", line 7876, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/196_train_pure_recursive_depth_supervised.py", line 5611, in main
+    outputs = model(
+              ^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/qtrm_model.py", line 4300, in forward
+    qtrm_logits = self.lm_head(seq) * float(self.cfg.qtrm_logits_scale)
+                  ^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 244.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 236.19 MiB is free. Including non-PyTorch memory, this process has 22.55 GiB memory in use. Of the allocated memory 22.03 GiB is allocated by PyTorch, and 66.24 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

@@ -1,0 +1,34 @@
+{
+  "train_rows": 768,
+  "eval_rows": 128,
+  "best_exact_acc": 0.0,
+  "reports": [
+    {
+      "rows": 128.0,
+      "loss": 7.2904269099235535,
+      "exact_acc": 0.0,
+      "scalar_coeff_acc": 0.25,
+      "scalar_offset_acc": 0.1640625,
+      "scalar_residual_acc": 0.03125,
+      "step": 40
+    },
+    {
+      "rows": 128.0,
+      "loss": 7.211997330188751,
+      "exact_acc": 0.0,
+      "scalar_coeff_acc": 0.25,
+      "scalar_offset_acc": 0.15625,
+      "scalar_residual_acc": 0.03125,
+      "step": 80
+    },
+    {
+      "rows": 128.0,
+      "loss": 7.149619698524475,
+      "exact_acc": 0.0,
+      "scalar_coeff_acc": 0.25,
+      "scalar_offset_acc": 0.1640625,
+      "scalar_residual_acc": 0.03125,
+      "step": 120
+    }
+  ]
+}

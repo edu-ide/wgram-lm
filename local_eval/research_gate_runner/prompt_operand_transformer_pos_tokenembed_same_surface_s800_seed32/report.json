@@ -1,0 +1,45 @@
+{
+  "input_source": "token_embedding",
+  "binder_kind": "transformer",
+  "train_rows": 3072,
+  "eval_rows": 384,
+  "best_exact_acc": 1.0,
+  "reports": [
+    {
+      "rows": 384.0,
+      "loss": 0.02367104993512233,
+      "exact_acc": 0.9973958333333334,
+      "scalar_coeff_acc": 1.0,
+      "scalar_offset_acc": 1.0,
+      "scalar_residual_acc": 0.9973958333333334,
+      "step": 200
+    },
+    {
+      "rows": 384.0,
+      "loss": 0.0038102270724872747,
+      "exact_acc": 1.0,
+      "scalar_coeff_acc": 1.0,
+      "scalar_offset_acc": 1.0,
+      "scalar_residual_acc": 1.0,
+      "step": 400
+    },
+    {
+      "rows": 384.0,
+      "loss": 0.0019418779023302097,
+      "exact_acc": 1.0,
+      "scalar_coeff_acc": 1.0,
+      "scalar_offset_acc": 1.0,
+      "scalar_residual_acc": 1.0,
+      "step": 600
+    },
+    {
+      "rows": 384.0,
+      "loss": 0.0011936812079511583,
+      "exact_acc": 1.0,
+      "scalar_coeff_acc": 1.0,
+      "scalar_offset_acc": 1.0,
+      "scalar_residual_acc": 1.0,
+      "step": 800
+    }
+  ]
+}

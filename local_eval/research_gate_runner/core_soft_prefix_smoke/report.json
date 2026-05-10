@@ -1,0 +1,50 @@
+{
+  "decision": "rejected",
+  "accepted": false,
+  "target_level": "L0/L1 donor-internal-renderer falsifier",
+  "major_bottleneck": "latent-core-to-autoregressive-text",
+  "adapter": {
+    "core_dim": 512,
+    "donor_dim": 2048,
+    "prefix_tokens": 2,
+    "rank": 16,
+    "scale": 1.0
+  },
+  "teacher_forced": {
+    "count": 1,
+    "soft_full_token_acc": 0.0,
+    "soft_core_off_token_acc": 0.5
+  },
+  "generation": {
+    "donor_only_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 1,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_core_off_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 1,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_full_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 1,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    }
+  },
+  "history": [
+    {
+      "step": 1,
+      "loss": 3.080777883529663,
+      "token_acc": 0.0
+    }
+  ],
+  "suppress_visible_reasoning_tokens": true,
+  "next_action": "soft-prefix did not solve renderer; implement true donor residual layer hook or reset data/model"
+}

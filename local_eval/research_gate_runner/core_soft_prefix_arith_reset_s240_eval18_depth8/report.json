@@ -1,0 +1,76 @@
+{
+  "decision": "rejected",
+  "accepted": false,
+  "target_level": "L0/L1 donor-internal-renderer falsifier",
+  "major_bottleneck": "latent-core-to-autoregressive-text",
+  "adapter": {
+    "core_dim": 512,
+    "donor_dim": 2048,
+    "prefix_tokens": 4,
+    "rank": 64,
+    "scale": 4.0
+  },
+  "teacher_forced": {
+    "count": 18,
+    "soft_full_token_acc": 0.5087719298245614,
+    "soft_core_off_token_acc": 0.07017543859649122
+  },
+  "generation": {
+    "donor_only_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 18,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_core_off_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 18,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_full_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 18,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    }
+  },
+  "history": [
+    {
+      "step": 1,
+      "loss": 2.8631107807159424,
+      "token_acc": 0.25,
+      "use_rollout": false
+    },
+    {
+      "step": 60,
+      "loss": 1.9670920372009277,
+      "token_acc": 0.5,
+      "use_rollout": false
+    },
+    {
+      "step": 120,
+      "loss": 1.6695643663406372,
+      "token_acc": 0.25,
+      "use_rollout": false
+    },
+    {
+      "step": 180,
+      "loss": 0.527601957321167,
+      "token_acc": 0.5,
+      "use_rollout": false
+    },
+    {
+      "step": 240,
+      "loss": 0.5388547778129578,
+      "token_acc": 0.75,
+      "use_rollout": false
+    }
+  ],
+  "suppress_visible_reasoning_tokens": true,
+  "scheduled_sampling_prob": 0.0,
+  "next_action": "soft-prefix did not solve renderer; implement true donor residual layer hook or reset data/model"
+}

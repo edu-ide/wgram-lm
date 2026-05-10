@@ -1,0 +1,14 @@
+[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
+[donor] Frozen (all params requires_grad=False)
+[donor] params: 1,363,305,280 total, 0 trainable
+{
+  "rows": 4,
+  "exact_rows": 0,
+  "trace_exact_accuracy": 0.0,
+  "correct_values": 8,
+  "total_values": 40,
+  "value_accuracy": 0.2,
+  "exact_steps": 0,
+  "total_steps": 16,
+  "step_exact_accuracy": 0.0
+}

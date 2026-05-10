@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-05-08T09:44:16",
+  "gate": "donorless_recurrent_depth",
+  "target_level": "L1 scaffold",
+  "major_bottleneck": "reset prerequisite for bottleneck 2 recursive depth scaling",
+  "profile": "smoke",
+  "command": [
+    "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python",
+    "scripts/260_train_donorless_recurrent_depth_probe.py",
+    "--out-dir",
+    "local_eval/research_gate_runner/donorless_recurrent_depth_smoke",
+    "--steps",
+    "5",
+    "--train-cases",
+    "32",
+    "--eval-cases",
+    "16",
+    "--batch-size",
+    "8",
+    "--device",
+    "cpu",
+    "--log-every",
+    "0"
+  ],
+  "out_dir": "local_eval/research_gate_runner/donorless_recurrent_depth_smoke",
+  "report_path": "local_eval/research_gate_runner/donorless_recurrent_depth_smoke/report.json",
+  "exit_code": null,
+  "decision": "dry_run",
+  "accepted": false,
+  "next_action": "stop integrated donor-QTRM tuning; redesign the donorless recurrence/task until an isolated depth gain is accepted",
+  "decisive_metrics": {}
+}

@@ -1,0 +1,5837 @@
+{
+  "checkpoint": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_balanced_interleave_s720_from_s240/last.pt",
+  "config": "configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_s120.yaml",
+  "core_steps": 8,
+  "data_jsonl": "data/eval/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_eval50000_v6to7_len7_9.jsonl",
+  "disable_transition_state": true,
+  "drop_predicted_codes_to": null,
+  "missing_keys": 0,
+  "predicted_code_permutation": {},
+  "records": [
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50800-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50800-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50801-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50801-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50802-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50802-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50803-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50803-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50804-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50804-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50805-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50805-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50806-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50806-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50807-len9-mixedstress6",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    },
+    {
+      "correct_steps": 1,
+      "finality_correct_steps": 3,
+      "finality_labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0.0,
+          "step_index": 0,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 2,
+          "predicted": 0.0,
+          "step_index": 1,
+          "target": 0.0
+        },
+        {
+          "correct": true,
+          "depth": 3,
+          "predicted": 0.0,
+          "step_index": 2,
+          "target": 0.0
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0.0,
+          "step_index": 3,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0.0,
+          "step_index": 4,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0.0,
+          "step_index": 5,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0.0,
+          "step_index": 6,
+          "target": 1.0
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0.0,
+          "step_index": 7,
+          "target": 1.0
+        }
+      ],
+      "finality_logits": [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "finality_step_accuracy": 0.375,
+      "finality_targets": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "finality_total_steps": 8,
+      "finality_trace_exact": false,
+      "halted_depth": null,
+      "halted_prefix_steps": 0,
+      "halted_trace_exact": false,
+      "id": "mixed-list-arithmetic-50807-len9-mixedstress7",
+      "labelled_steps": [
+        {
+          "correct": true,
+          "depth": 1,
+          "predicted": 0,
+          "step_index": 0,
+          "target": 0
+        },
+        {
+          "correct": false,
+          "depth": 2,
+          "predicted": 0,
+          "step_index": 1,
+          "target": 1
+        },
+        {
+          "correct": false,
+          "depth": 3,
+          "predicted": 0,
+          "step_index": 2,
+          "target": 2
+        },
+        {
+          "correct": false,
+          "depth": 4,
+          "predicted": 0,
+          "step_index": 3,
+          "target": 3
+        },
+        {
+          "correct": false,
+          "depth": 5,
+          "predicted": 0,
+          "step_index": 4,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 6,
+          "predicted": 0,
+          "step_index": 5,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 7,
+          "predicted": 0,
+          "step_index": 6,
+          "target": 4
+        },
+        {
+          "correct": false,
+          "depth": 8,
+          "predicted": 0,
+          "step_index": 7,
+          "target": 4
+        }
+      ],
+      "predicted_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_joint_states": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "step_accuracy": 0.125,
+      "target_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4
+      ],
+      "task_family": "mixed_list_arithmetic",
+      "total_steps": 8,
+      "trace_exact": false
+    }
+  ],
+  "summary": {
+    "by_family": {
+      "mixed_list_arithmetic": {
+        "correct_steps": 32,
+        "exact_rows": 0,
+        "finality_correct_steps": 96,
+        "finality_exact_rows": 0,
+        "finality_step_accuracy": 0.375,
+        "finality_total_steps": 256,
+        "finality_trace_exact_accuracy": 0.0,
+        "halted_exact_rows": 0,
+        "halted_trace_exact_accuracy": 0.0,
+        "rows": 32,
+        "step_accuracy": 0.125,
+        "total_steps": 256,
+        "trace_exact_accuracy": 0.0
+      }
+    },
+    "correct_steps": 32,
+    "exact_rows": 0,
+    "finality_correct_steps": 96,
+    "finality_exact_rows": 0,
+    "finality_step_accuracy": 0.375,
+    "finality_total_steps": 256,
+    "finality_trace_exact_accuracy": 0.0,
+    "halted_exact_rows": 0,
+    "halted_trace_exact_accuracy": 0.0,
+    "rows": 32,
+    "step_accuracy": 0.125,
+    "total_steps": 256,
+    "trace_exact_accuracy": 0.0
+  },
+  "unexpected_keys": 0
+}

@@ -1,0 +1,37 @@
+{
+  "rows": 32,
+  "raw_exact_rows": 0,
+  "oracle_roles": [
+    {
+      "role_spec": "scalar_residual",
+      "exact_rows": 8,
+      "rows": 32,
+      "trace_exact_accuracy": 0.25
+    },
+    {
+      "role_spec": "scalar",
+      "exact_rows": 16,
+      "rows": 32,
+      "trace_exact_accuracy": 0.5
+    },
+    {
+      "role_spec": "raw_list,doubled_list",
+      "exact_rows": 0,
+      "rows": 32,
+      "trace_exact_accuracy": 0.0
+    },
+    {
+      "role_spec": "raw_list,doubled_list,scalar",
+      "exact_rows": 32,
+      "rows": 32,
+      "trace_exact_accuracy": 1.0
+    },
+    {
+      "role_spec": "all",
+      "exact_rows": 32,
+      "rows": 32,
+      "trace_exact_accuracy": 1.0
+    }
+  ],
+  "input_json": "local_eval/research_gate_runner/primitive_state_machine_copy_bce_s80_lr1e4_seed9/value_eval_primitive_step_000040_full.json"
+}

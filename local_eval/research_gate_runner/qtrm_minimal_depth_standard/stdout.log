@@ -1,0 +1,22 @@
+{
+  "status": "complete",
+  "target_level": "L2 local gate",
+  "decision": "accepted_l2",
+  "accepted": true,
+  "reject_reasons": [],
+  "source_artifacts": {
+    "full_json": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_answer_runtime_heldout7000.json",
+    "core_off_json": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_answer_runtime_heldout7000_coreoff.json",
+    "donor_json": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/eval_donor_only_heldout7000.json"
+  },
+  "metrics": {
+    "cases": 128,
+    "full_answer_accuracy": 1.0,
+    "core_off_answer_accuracy": 0.0,
+    "full_minus_core_off": 1.0,
+    "donor_forced_choice_accuracy": 0.4765625,
+    "donor_greedy_accuracy": 0.2265625,
+    "full_minus_donor": 0.5234375
+  },
+  "next_action": "open renderer/canonical-LLM-path gate; primitive executor success is not yet normal autoregressive text generation"
+}

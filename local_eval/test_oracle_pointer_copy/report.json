@@ -1,0 +1,31 @@
+{
+  "decision": "accepted_l1_oracle_pointer_copy",
+  "accepted": true,
+  "target_level": "L1 minimal pointer/copy lexicalizer reproduction",
+  "major_bottleneck": "state/source-position to token lexicalization",
+  "prior_principle": "pointer-generator / copy attention",
+  "rows": 1,
+  "full_exact": 1,
+  "renderer_off_exact": 0,
+  "full_accuracy": 1.0,
+  "renderer_off_accuracy": 0.0,
+  "nonempty_rows": 1,
+  "nonempty_pointer_drop": 1.0,
+  "records": [
+    {
+      "id": "a",
+      "target": "44,40",
+      "source_positions": [
+        0,
+        2
+      ],
+      "oracle_pointer_copy_answer": "44,40",
+      "renderer_off_answer": "EMPTY",
+      "full_exact": true,
+      "renderer_off_exact": false
+    }
+  ],
+  "next_action": "replace oracle positions with QTRM source-position logits and require the same renderer-off drop",
+  "cases": "local_eval/test_oracle_pointer_copy/cases.jsonl",
+  "out": "local_eval/test_oracle_pointer_copy/report.json"
+}

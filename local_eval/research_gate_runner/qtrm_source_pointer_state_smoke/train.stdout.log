@@ -1,0 +1,9 @@
+[seed] 319
+[data] shuffle_rows=true rows=512 seed=319
+[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
+[donor] Frozen (all params requires_grad=False)
+[donor] params: 1,363,305,280 total, 0 trainable
+[trainable] policy=primitive_role_value_state_machine params=5,336,596 tensors=57
+[curriculum] family_repeat={'list_transform': 16} effective_rows=8192
+saved local_eval/research_gate_runner/qtrm_source_pointer_state_smoke/train/step_000005.pt
+saved local_eval/research_gate_runner/qtrm_source_pointer_state_smoke/train/last.pt

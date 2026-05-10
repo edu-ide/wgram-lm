@@ -1,0 +1,10 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/617 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/617 [00:00<01:50,  5.56it/s]
+Loading weights:  13%|█▎        | 79/617 [00:00<00:01, 347.53it/s]
+Loading weights:  27%|██▋       | 167/617 [00:00<00:00, 546.93it/s]
+Loading weights:  41%|████      | 253/617 [00:00<00:00, 655.26it/s]
+Loading weights:  65%|██████▍   | 398/617 [00:00<00:00, 918.48it/s]
+Loading weights: 100%|██████████| 617/617 [00:00<00:00, 935.86it/s]

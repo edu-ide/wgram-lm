@@ -1,0 +1,89 @@
+{
+  "decision": "rejected",
+  "accepted": false,
+  "target_level": "L0/L1 donor-internal-renderer falsifier",
+  "major_bottleneck": "latent-core-to-autoregressive-text",
+  "adapter": {
+    "core_dim": 512,
+    "state_dim": 2179,
+    "state_logits_key": "typed_algorithmic_kind_logits,typed_algorithmic_raw_list_offset_logits,typed_algorithmic_doubled_list_offset_logits,typed_algorithmic_scalar_coeff_logits,typed_algorithmic_scalar_residual_logits,typed_algorithmic_final_residual_logits",
+    "state_feature_mode": "softmax",
+    "donor_dim": 2048,
+    "prefix_tokens": 4,
+    "rank": 64,
+    "scale": 4.0
+  },
+  "teacher_forced": {
+    "count": 4,
+    "soft_full_token_acc": 0.7083333333333334,
+    "soft_core_off_token_acc": 0.625,
+    "soft_state_off_token_acc": 0.7083333333333334
+  },
+  "generation": {
+    "donor_only_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 4,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_core_off_no_evidence": {
+      "hits": 1,
+      "exact": 1,
+      "total": 4,
+      "accuracy": 0.25,
+      "exact_accuracy": 0.25
+    },
+    "soft_state_off_no_evidence": {
+      "hits": 1,
+      "exact": 1,
+      "total": 4,
+      "accuracy": 0.25,
+      "exact_accuracy": 0.25
+    },
+    "soft_full_no_evidence": {
+      "hits": 1,
+      "exact": 1,
+      "total": 4,
+      "accuracy": 0.25,
+      "exact_accuracy": 0.25
+    }
+  },
+  "history": [
+    {
+      "step": 1,
+      "loss": 3.2202701568603516,
+      "token_acc": 0.0,
+      "use_rollout": false
+    },
+    {
+      "step": 20,
+      "loss": 0.03864626958966255,
+      "token_acc": 1.0,
+      "use_rollout": false
+    },
+    {
+      "step": 40,
+      "loss": 0.0003637926420196891,
+      "token_acc": 1.0,
+      "use_rollout": false
+    },
+    {
+      "step": 60,
+      "loss": 0.0006973771960474551,
+      "token_acc": 1.0,
+      "use_rollout": false
+    },
+    {
+      "step": 80,
+      "loss": 0.00014997426478657871,
+      "token_acc": 1.0,
+      "use_rollout": false
+    }
+  ],
+  "suppress_visible_reasoning_tokens": true,
+  "scheduled_sampling_prob": 0.0,
+  "scheduled_sampling_warmup_steps": 0,
+  "append_eos_target": true,
+  "next_action": "state-conditioned soft-prefix failed; redesign explicit value-state codec"
+}

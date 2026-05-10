@@ -1,0 +1,12 @@
+{
+  "families": [
+    "arithmetic_chain",
+    "boolean_logic",
+    "symbolic_binding"
+  ],
+  "finality_mode": "action_terminal",
+  "input_jsonl": "data/filtered/pure_recursive_latent_action_codebook_terminal_v2_family_holdout_list_train_terminality_aug.jsonl",
+  "max_depth": 8,
+  "output_jsonl": "data/filtered/pure_recursive_transition_joint_dense_terminality_aug_family_holdout_list_train.jsonl",
+  "rows": 320
+}

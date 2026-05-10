@@ -1,0 +1,78 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/transformer.py:382: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/617 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/617 [00:00<01:06,  9.28it/s]
+Loading weights:  13%|█▎        | 80/617 [00:00<00:01, 446.44it/s]
+Loading weights:  27%|██▋       | 168/617 [00:00<00:00, 638.20it/s]
+Loading weights:  42%|████▏     | 257/617 [00:00<00:00, 729.99it/s]
+Loading weights:  68%|██████▊   | 420/617 [00:00<00:00, 1048.38it/s]
+Loading weights: 100%|██████████| 617/617 [00:00<00:00, 1063.94it/s]
+
+  0%|          | 0/2 [00:00<?, ?it/s]
+loss=14.2828 depth_final_ce=0.0000 final_path_ce=1.6002 depth_all_ce=0.0000 depth_progress=0.0000 depth_trajectory_monotonic=0.0000 depth_trajectory_step_delta=0.0000 final_greedy_token_margin=1.2833 final_greedy_token_win_rate=0.6667 depth_greedy_token_margin=0.0000 depth_greedy_token_win_rate=0.0000 depth_final_acc=0.0000 final_path_acc=0.6667 depth_target_logp_delta=0.0000 core_role_value_vocab_renderer_ce=12.4225 core_role_value_vocab_renderer_acc=0.0000 core_role_value_vocab_renderer_greedy_token_margin=0.1000 core_role_value_vocab_renderer_greedy_token_win_rate=0.0000 core_role_value_vocab_renderer_primitive_final_contrast=0.0500 core_role_value_vocab_renderer_primitive_final_target_logp_delta=0.0000 core_role_value_answer_bridge_final_contrast=0.0684 core_role_value_answer_bridge_final_target_logp_delta=0.0042 core_primitive_role_value_answer_final_contrast=0.0500 core_primitive_role_value_answer_final_target_logp_delta=-0.0000 causal_prefix_examples=6.0000 causal_prefix_later_token_weight=0.8500 causal_prefix_self_rollout_examples=3.0000 causal_prefix_self_rollout_prefix_tokens=7.0000 causal_prefix_self_rollout_prefix_mismatch_rate=0.3333 core_world_model_weight=0.0000 core_steps=8.0000:   0%|          | 0/2 [00:30<?, ?it/s]
+loss=14.2828 depth_final_ce=0.0000 final_path_ce=1.6002 depth_all_ce=0.0000 depth_progress=0.0000 depth_trajectory_monotonic=0.0000 depth_trajectory_step_delta=0.0000 final_greedy_token_margin=1.2833 final_greedy_token_win_rate=0.6667 depth_greedy_token_margin=0.0000 depth_greedy_token_win_rate=0.0000 depth_final_acc=0.0000 final_path_acc=0.6667 depth_target_logp_delta=0.0000 core_role_value_vocab_renderer_ce=12.4225 core_role_value_vocab_renderer_acc=0.0000 core_role_value_vocab_renderer_greedy_token_margin=0.1000 core_role_value_vocab_renderer_greedy_token_win_rate=0.0000 core_role_value_vocab_renderer_primitive_final_contrast=0.0500 core_role_value_vocab_renderer_primitive_final_target_logp_delta=0.0000 core_role_value_answer_bridge_final_contrast=0.0684 core_role_value_answer_bridge_final_target_logp_delta=0.0042 core_primitive_role_value_answer_final_contrast=0.0500 core_primitive_role_value_answer_final_target_logp_delta=-0.0000 causal_prefix_examples=6.0000 causal_prefix_later_token_weight=0.8500 causal_prefix_self_rollout_examples=3.0000 causal_prefix_self_rollout_prefix_tokens=7.0000 causal_prefix_self_rollout_prefix_mismatch_rate=0.3333 core_world_model_weight=0.0000 core_steps=8.0000:  50%|█████     | 1/2 [00:30<00:30, 30.67s/it]
+loss=14.2828 depth_final_ce=0.0000 final_path_ce=1.6002 depth_all_ce=0.0000 depth_progress=0.0000 depth_trajectory_monotonic=0.0000 depth_trajectory_step_delta=0.0000 final_greedy_token_margin=1.2833 final_greedy_token_win_rate=0.6667 depth_greedy_token_margin=0.0000 depth_greedy_token_win_rate=0.0000 depth_final_acc=0.0000 final_path_acc=0.6667 depth_target_logp_delta=0.0000 core_role_value_vocab_renderer_ce=12.4225 core_role_value_vocab_renderer_acc=0.0000 core_role_value_vocab_renderer_greedy_token_margin=0.1000 core_role_value_vocab_renderer_greedy_token_win_rate=0.0000 core_role_value_vocab_renderer_primitive_final_contrast=0.0500 core_role_value_vocab_renderer_primitive_final_target_logp_delta=0.0000 core_role_value_answer_bridge_final_contrast=0.0684 core_role_value_answer_bridge_final_target_logp_delta=0.0042 core_primitive_role_value_answer_final_contrast=0.0500 core_primitive_role_value_answer_final_target_logp_delta=-0.0000 causal_prefix_examples=6.0000 causal_prefix_later_token_weight=0.8500 causal_prefix_self_rollout_examples=3.0000 causal_prefix_self_rollout_prefix_tokens=7.0000 causal_prefix_self_rollout_prefix_mismatch_rate=0.3333 core_world_model_weight=0.0000 core_steps=8.0000:  50%|█████     | 1/2 [00:54<00:54, 54.59s/it]
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/196_train_pure_recursive_depth_supervised.py", line 7947, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/196_train_pure_recursive_depth_supervised.py", line 5635, in main
+    outputs = model(
+              ^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/qtrm_model.py", line 3628, in forward
+    z_l, z_h, trajectory, core_halt_info = self.core(
+                                           ^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/core.py", line 320, in forward
+    z_l = self.fast_stack(z_l, attention_mask=attention_mask)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/blocks.py", line 65, in forward
+    x = layer(x, attention_mask=attention_mask)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/blocks.py", line 50, in forward
+    x = x + self.ffn(self.norm2(x))
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/ffn.py", line 16, in forward
+    return self.w3(self.dropout(F.silu(self.w1(x)) * self.w2(x)))
+                                       ^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 23.51 GiB of which 92.19 MiB is free. Including non-PyTorch memory, this process has 22.70 GiB memory in use. Of the allocated memory 22.20 GiB is allocated by PyTorch, and 28.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

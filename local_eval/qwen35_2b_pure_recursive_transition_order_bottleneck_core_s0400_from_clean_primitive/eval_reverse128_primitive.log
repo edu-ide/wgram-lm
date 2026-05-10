@@ -1,0 +1,8 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+[init] skipped shape-mismatched keys: primitive_transition_operation_head.0.weight
+[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
+Loading weights:   0%|          | 0/617 [00:00<?, ?it/s]Loading weights:   1%|          | 6/617 [00:00<00:11, 54.21it/s]Loading weights:  15%|█▌        | 95/617 [00:00<00:00, 523.35it/s]Loading weights:  31%|███       | 189/617 [00:00<00:00, 708.71it/s]Loading weights:  43%|████▎     | 263/617 [00:00<00:00, 718.94it/s]Loading weights:  70%|██████▉   | 430/617 [00:00<00:00, 1057.24it/s]Loading weights: 100%|██████████| 617/617 [00:00<00:00, 1074.15it/s]
+[donor] Frozen (all params requires_grad=False)
+[donor] params: 1,363,305,280 total, 0 trainable
+latent action codebook eval: rows=128 exact=74/128 step_acc=0.8564 finality_acc=0.9590 halted_exact=76/128

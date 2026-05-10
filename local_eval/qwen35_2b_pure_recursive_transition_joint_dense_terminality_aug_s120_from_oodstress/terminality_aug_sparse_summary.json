@@ -1,0 +1,17 @@
+{
+  "added_by_kind": {
+    "arithmetic_terminal_depth2": 64,
+    "symbolic_nonterminal_depth3": 64
+  },
+  "added_rows": 128,
+  "base_rows": 192,
+  "base_train_jsonl": "data/filtered/pure_recursive_latent_action_codebook_terminal_v2_family_holdout_list_train.jsonl",
+  "families": [
+    "arithmetic_chain",
+    "boolean_logic",
+    "symbolic_binding"
+  ],
+  "note": "Adds terminality counterfactuals without adding held-out list_transform training rows.",
+  "output_jsonl": "data/filtered/pure_recursive_latent_action_codebook_terminal_v2_family_holdout_list_train_terminality_aug.jsonl",
+  "total_rows": 320
+}

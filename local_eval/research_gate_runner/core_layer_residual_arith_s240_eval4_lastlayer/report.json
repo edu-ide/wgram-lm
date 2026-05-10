@@ -1,0 +1,72 @@
+{
+  "decision": "rejected",
+  "accepted": false,
+  "target_level": "L0/L1 donor-layer-residual renderer falsifier",
+  "major_bottleneck": "latent-core-to-autoregressive-text",
+  "adapter": {
+    "core_dim": 512,
+    "donor_dim": 2048,
+    "layer_index": 23,
+    "layer_count": 24,
+    "rank": 64,
+    "scale": 4.0,
+    "gate_init_bias": -1.0
+  },
+  "teacher_forced": {
+    "count": 4,
+    "layer_full_token_acc": 0.7058823529411765,
+    "layer_core_off_token_acc": 0.4117647058823529
+  },
+  "generation": {
+    "donor_only_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 4,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "layer_core_off_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 4,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "layer_full_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 4,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    }
+  },
+  "history": [
+    {
+      "step": 1,
+      "loss": 1.4267445802688599,
+      "token_acc": 0.5
+    },
+    {
+      "step": 60,
+      "loss": 1.2835959196090698,
+      "token_acc": 0.5
+    },
+    {
+      "step": 120,
+      "loss": 0.8572478890419006,
+      "token_acc": 0.75
+    },
+    {
+      "step": 180,
+      "loss": 1.3913886547088623,
+      "token_acc": 0.25
+    },
+    {
+      "step": 240,
+      "loss": 1.2520458698272705,
+      "token_acc": 0.5
+    }
+  ],
+  "suppress_visible_reasoning_tokens": true,
+  "next_action": "layer residual did not beat core_off/donor; reset renderer target or inspect layer/token positions"
+}

@@ -1,0 +1,320 @@
+{
+  "rows": 32,
+  "summary": {
+    "rows": 32,
+    "exact_rows": 0,
+    "trace_exact_accuracy": 0.0,
+    "correct_values": 209,
+    "total_values": 624,
+    "value_accuracy": 0.3349358974358974,
+    "exact_steps": 17,
+    "total_steps": 256,
+    "step_exact_accuracy": 0.06640625
+  },
+  "by_role": [
+    {
+      "key": "doubled_list_3",
+      "errors": 24,
+      "total": 24,
+      "error_rate": 1.0
+    },
+    {
+      "key": "scalar_residual",
+      "errors": 191,
+      "total": 192,
+      "error_rate": 0.9947916666666666
+    },
+    {
+      "key": "scalar_coeff",
+      "errors": 96,
+      "total": 192,
+      "error_rate": 0.5
+    },
+    {
+      "key": "doubled_list_0",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "doubled_list_1",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "doubled_list_2",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_0",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_1",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_2",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_3",
+      "errors": 8,
+      "total": 24,
+      "error_rate": 0.3333333333333333
+    }
+  ],
+  "by_step": [
+    {
+      "key": "3",
+      "errors": 48,
+      "total": 64,
+      "error_rate": 0.75
+    },
+    {
+      "key": "5",
+      "errors": 48,
+      "total": 64,
+      "error_rate": 0.75
+    },
+    {
+      "key": "6",
+      "errors": 48,
+      "total": 64,
+      "error_rate": 0.75
+    },
+    {
+      "key": "7",
+      "errors": 48,
+      "total": 64,
+      "error_rate": 0.75
+    },
+    {
+      "key": "8",
+      "errors": 48,
+      "total": 64,
+      "error_rate": 0.75
+    },
+    {
+      "key": "4",
+      "errors": 47,
+      "total": 64,
+      "error_rate": 0.734375
+    },
+    {
+      "key": "2",
+      "errors": 72,
+      "total": 120,
+      "error_rate": 0.6
+    },
+    {
+      "key": "1",
+      "errors": 56,
+      "total": 120,
+      "error_rate": 0.4666666666666667
+    }
+  ],
+  "by_action": [
+    {
+      "key": "4",
+      "errors": 192,
+      "total": 256,
+      "error_rate": 0.75
+    },
+    {
+      "key": "2",
+      "errors": 48,
+      "total": 64,
+      "error_rate": 0.75
+    },
+    {
+      "key": "3",
+      "errors": 47,
+      "total": 64,
+      "error_rate": 0.734375
+    },
+    {
+      "key": "1",
+      "errors": 72,
+      "total": 120,
+      "error_rate": 0.6
+    },
+    {
+      "key": "0",
+      "errors": 56,
+      "total": 120,
+      "error_rate": 0.4666666666666667
+    }
+  ],
+  "by_role_action": [
+    {
+      "key": "scalar_residual|action=4",
+      "errors": 128,
+      "total": 128,
+      "error_rate": 1.0
+    },
+    {
+      "key": "scalar_residual|action=2",
+      "errors": 32,
+      "total": 32,
+      "error_rate": 1.0
+    },
+    {
+      "key": "doubled_list_3|action=1",
+      "errors": 24,
+      "total": 24,
+      "error_rate": 1.0
+    },
+    {
+      "key": "scalar_residual|action=3",
+      "errors": 31,
+      "total": 32,
+      "error_rate": 0.96875
+    },
+    {
+      "key": "scalar_coeff|action=4",
+      "errors": 64,
+      "total": 128,
+      "error_rate": 0.5
+    },
+    {
+      "key": "doubled_list_0|action=1",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "doubled_list_1|action=1",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "doubled_list_2|action=1",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_0|action=0",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_1|action=0",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_2|action=0",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "scalar_coeff|action=2",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "scalar_coeff|action=3",
+      "errors": 16,
+      "total": 32,
+      "error_rate": 0.5
+    },
+    {
+      "key": "raw_list_3|action=0",
+      "errors": 8,
+      "total": 24,
+      "error_rate": 0.3333333333333333
+    }
+  ],
+  "examples": [
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 3,
+      "action": 2,
+      "role_index": 8,
+      "role": "scalar_coeff",
+      "predicted": 9,
+      "target": 7
+    },
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 3,
+      "action": 2,
+      "role_index": 9,
+      "role": "scalar_residual",
+      "predicted": 3,
+      "target": 19
+    },
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 4,
+      "action": 3,
+      "role_index": 8,
+      "role": "scalar_coeff",
+      "predicted": 9,
+      "target": 7
+    },
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 4,
+      "action": 3,
+      "role_index": 9,
+      "role": "scalar_residual",
+      "predicted": 3,
+      "target": 10
+    },
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 5,
+      "action": 4,
+      "role_index": 8,
+      "role": "scalar_coeff",
+      "predicted": 9,
+      "target": 7
+    },
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 5,
+      "action": 4,
+      "role_index": 9,
+      "role": "scalar_residual",
+      "predicted": 3,
+      "target": 10
+    },
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 6,
+      "action": 4,
+      "role_index": 8,
+      "role": "scalar_coeff",
+      "predicted": 9,
+      "target": 7
+    },
+    {
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "step": 6,
+      "action": 4,
+      "role_index": 9,
+      "role": "scalar_residual",
+      "predicted": 3,
+      "target": 10
+    }
+  ],
+  "input_json": "local_eval/research_gate_runner/primitive_field_heads_delta_codec_s90_lr5e4_seed11/value_eval_primitive_step_000030_full.json",
+  "rows_jsonl": "data/eval/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len579_eval50000_v6to7_len7_9.jsonl"
+}

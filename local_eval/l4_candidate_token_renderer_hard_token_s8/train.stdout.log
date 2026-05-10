@@ -1,0 +1,9 @@
+[seed] 4242
+[data] role_value_list_class_mode=source_position
+[data] shuffle_rows=true rows=23 seed=4242
+[init] missing keys: 9
+[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
+[donor] Frozen (all params requires_grad=False)
+[donor] params: 1,363,305,280 total, 0 trainable
+[trainable] policy=role_value_vocab_renderer_only params=6,417,924 tensors=30
+saved local_eval/l4_candidate_token_renderer_hard_token_s8/train/last.pt

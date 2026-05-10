@@ -1,0 +1,687 @@
+{
+  "by_mode": {
+    "qtrm_core_steps_4_no_evidence": {
+      "correct_final": 10,
+      "pre_subtract_sum": 6
+    },
+    "qtrm_core_steps_8_answer_halt_gate_off_no_evidence": {
+      "empty": 16
+    },
+    "qtrm_core_steps_8_no_evidence": {
+      "correct_final": 10,
+      "pre_subtract_sum": 6
+    },
+    "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence": {
+      "correct_final": 10,
+      "pre_subtract_sum": 6
+    }
+  },
+  "by_mode_family": {
+    "qtrm_core_steps_4_no_evidence": {
+      "mixed_list_arithmetic": {
+        "correct_final": 10,
+        "pre_subtract_sum": 6
+      }
+    },
+    "qtrm_core_steps_8_answer_halt_gate_off_no_evidence": {
+      "mixed_list_arithmetic": {
+        "empty": 16
+      }
+    },
+    "qtrm_core_steps_8_no_evidence": {
+      "mixed_list_arithmetic": {
+        "correct_final": 10,
+        "pre_subtract_sum": 6
+      }
+    },
+    "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence": {
+      "mixed_list_arithmetic": {
+        "correct_final": 10,
+        "pre_subtract_sum": 6
+      }
+    }
+  },
+  "labelled_records": [
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "300015",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "300015",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "400037",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "400037",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "300032",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "300032",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "400051",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "400051",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "300042",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "300042",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "400072",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "400072",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "300060",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "300060",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "400088",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress6",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "400088",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress7",
+      "mode": "qtrm_core_steps_4_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "300015",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "300015",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "400037",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "400037",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "300032",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "300032",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "400051",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "400051",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "300042",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "300042",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "400072",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "400072",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "300060",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "300060",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "400088",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "400088",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "EMPTY",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence",
+      "tail_error_class": "empty",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "300015",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300015"
+      ],
+      "completion": "300015",
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "400037",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400037"
+      ],
+      "completion": "400037",
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "300032",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300032"
+      ],
+      "completion": "300032",
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "400051",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400051"
+      ],
+      "completion": "400051",
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "300042",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300042"
+      ],
+      "completion": "300042",
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "correct_final",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "400072",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400065"
+      ],
+      "completion": "400072",
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "300060",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "300052"
+      ],
+      "completion": "300060",
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "400088",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress6",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    },
+    {
+      "answer_aliases": [
+        "400079"
+      ],
+      "completion": "400088",
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress7",
+      "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence",
+      "tail_error_class": "pre_subtract_sum",
+      "task_family": "mixed_list_arithmetic"
+    }
+  ],
+  "records": 64
+}

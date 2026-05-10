@@ -1,0 +1,10 @@
+[seed] 42
+[init] missing keys: 12
+[init] unexpected keys: 5
+[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
+[donor] Frozen (all params requires_grad=False)
+[donor] params: 1,363,305,280 total, 0 trainable
+[trainable] policy=core_and_answer_state_loop params=35,817,486 tensors=124
+saved local_eval/research_gate_runner/ouro_answer_recurrent_validation_gated_seed42/step_000020.pt
+saved local_eval/research_gate_runner/ouro_answer_recurrent_validation_gated_seed42/step_000040.pt
+saved local_eval/research_gate_runner/ouro_answer_recurrent_validation_gated_seed42/last.pt

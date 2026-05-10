@@ -1,0 +1,4050 @@
+{
+  "config": "configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_core_role_value_transition_joint_s120.yaml",
+  "checkpoint": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_core_role_value_state_joint_len579_s240_from_joint_s240/last.pt",
+  "data_jsonl": "data/eval/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len579_eval50000_v6to7_len7_9.jsonl",
+  "core_steps": 2,
+  "max_slots": 8,
+  "slot_vocab_size": 128,
+  "disable_transition_state": false,
+  "use_role_value_state": true,
+  "use_core_role_value_state": true,
+  "missing_keys": [
+    "core_role_value_transition_input_norm.weight",
+    "core_role_value_transition_input_norm.bias",
+    "core_role_value_transition_update.0.weight",
+    "core_role_value_transition_update.0.bias",
+    "core_role_value_transition_update.2.weight",
+    "core_role_value_transition_update.2.bias",
+    "core_role_value_transition_output_norm.weight",
+    "core_role_value_transition_output_norm.bias",
+    "core_role_value_transition_head.weight",
+    "core_role_value_transition_head.bias"
+  ],
+  "unexpected_keys": [],
+  "summary": {
+    "rows": 32,
+    "exact_rows": 0,
+    "trace_exact_accuracy": 0.0,
+    "correct_values": 96,
+    "total_values": 240,
+    "value_accuracy": 0.4,
+    "exact_steps": 16,
+    "total_steps": 64,
+    "step_exact_accuracy": 0.25
+  },
+  "by_family": {
+    "mixed_list_arithmetic": {
+      "rows": 32,
+      "exact_rows": 0,
+      "trace_exact_accuracy": 0.0,
+      "correct_values": 96,
+      "total_values": 240,
+      "value_accuracy": 0.4,
+      "exact_steps": 16,
+      "total_steps": 64,
+      "step_exact_accuracy": 0.25
+    }
+  },
+  "records": [
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50000-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          12,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50001-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          12,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50002-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50003-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50004-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50005-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 6,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50006-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          -100,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50007-len7-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50800-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50800-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50801-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50801-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50802-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50802-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50803-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50803-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50804-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50804-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50805-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50805-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50806-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 0,
+      "total_values": 8,
+      "value_accuracy": 0.0,
+      "exact_steps": 0,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 4,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 6,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 8,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 11,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 15,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50806-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          6,
+          8,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          11,
+          15,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50807-len9-mixedstress6",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    },
+    {
+      "correct_values": 6,
+      "total_values": 8,
+      "value_accuracy": 0.75,
+      "exact_steps": 1,
+      "total_steps": 2,
+      "step_exact_accuracy": 0.5,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 3,
+          "target": 3,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 2,
+          "predicted": 5,
+          "target": 5,
+          "correct": true
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 3,
+          "predicted": 7,
+          "target": 7,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 1,
+          "target": 1,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 9,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 6,
+          "predicted": 9,
+          "target": 9,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 7,
+          "predicted": 9,
+          "target": 13,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-50807-len9-mixedstress7",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          13,
+          1,
+          3,
+          1,
+          3,
+          7
+        ],
+        [
+          5,
+          1,
+          1,
+          1,
+          1,
+          9,
+          9,
+          9,
+          9,
+          1
+        ]
+      ],
+      "target_values": [
+        [
+          1,
+          3,
+          5,
+          7,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          1,
+          5,
+          9,
+          13,
+          -100,
+          -100
+        ]
+      ]
+    }
+  ]
+}

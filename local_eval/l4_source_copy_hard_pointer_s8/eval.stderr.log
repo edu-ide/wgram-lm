@@ -1,0 +1,13 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/transformer.py:382: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/617 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/617 [00:00<01:10,  8.72it/s]
+Loading weights:   7%|▋         | 46/617 [00:00<00:02, 243.80it/s]
+Loading weights:  14%|█▍        | 89/617 [00:00<00:01, 324.06it/s]
+Loading weights:  28%|██▊       | 171/617 [00:00<00:00, 511.81it/s]
+Loading weights:  42%|████▏     | 258/617 [00:00<00:00, 634.22it/s]
+Loading weights:  69%|██████▊   | 424/617 [00:00<00:00, 974.22it/s]
+Loading weights: 100%|██████████| 617/617 [00:00<00:00, 895.27it/s]

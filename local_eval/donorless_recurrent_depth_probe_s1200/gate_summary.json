@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-05-08T09:35:58",
+  "gate": "donorless_recurrent_depth",
+  "target_level": "L1 scaffold",
+  "major_bottleneck": "reset prerequisite for bottleneck 2 recursive depth scaling",
+  "profile": "standard",
+  "command": [
+    "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python",
+    "scripts/260_train_donorless_recurrent_depth_probe.py",
+    "--out-dir",
+    "local_eval/donorless_recurrent_depth_probe_s1200",
+    "--steps",
+    "1200",
+    "--train-cases",
+    "4096",
+    "--eval-cases",
+    "512",
+    "--batch-size",
+    "128",
+    "--log-every",
+    "200"
+  ],
+  "out_dir": "local_eval/donorless_recurrent_depth_probe_s1200",
+  "report_path": "local_eval/donorless_recurrent_depth_probe_s1200/report.json",
+  "exit_code": 0,
+  "decision": "rejected",
+  "accepted": false,
+  "next_action": "stop integrated donor-QTRM tuning; redesign the donorless recurrence/task until an isolated depth gain is accepted",
+  "decisive_metrics": {
+    "eval_metrics.depth8_final_exact": 0.08203125,
+    "eval_metrics.depth4_final_exact": 0.0234375,
+    "eval_metrics.depth1_final_exact": 0.005859375,
+    "ablations.state_reset.depth8_final_exact": 0.005859375,
+    "ablations.op_zero.depth8_final_exact": 0.00390625,
+    "ablations.op_shuffle.depth8_final_exact": 0.03125,
+    "last_loss": 0.5248516798019409
+  }
+}

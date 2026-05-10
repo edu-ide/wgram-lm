@@ -1,0 +1,80 @@
+{
+  "status": "complete",
+  "target_level": "L1 scaffold",
+  "decision": "accepted_l1",
+  "model_kind": "transition_table",
+  "last_loss": 2.115734338760376,
+  "train_metrics": {
+    "cases": 4096,
+    "ablation": "none",
+    "depth0_final_exact": 0.011962890625,
+    "depth0_prefix_exact": 1.0,
+    "depth1_final_exact": 0.0126953125,
+    "depth1_prefix_exact": 1.0,
+    "depth2_final_exact": 0.01123046875,
+    "depth2_prefix_exact": 1.0,
+    "depth4_final_exact": 0.02685546875,
+    "depth4_prefix_exact": 1.0,
+    "depth8_final_exact": 0.999755859375,
+    "depth8_prefix_exact": 0.999755859375
+  },
+  "eval_metrics": {
+    "cases": 512,
+    "ablation": "none",
+    "depth0_final_exact": 0.005859375,
+    "depth0_prefix_exact": 1.0,
+    "depth1_final_exact": 0.005859375,
+    "depth1_prefix_exact": 1.0,
+    "depth2_final_exact": 0.013671875,
+    "depth2_prefix_exact": 1.0,
+    "depth4_final_exact": 0.017578125,
+    "depth4_prefix_exact": 1.0,
+    "depth8_final_exact": 1.0,
+    "depth8_prefix_exact": 1.0
+  },
+  "ablations": {
+    "state_reset": {
+      "cases": 512,
+      "ablation": "state_reset",
+      "depth0_final_exact": 0.005859375,
+      "depth0_prefix_exact": 1.0,
+      "depth1_final_exact": 0.005859375,
+      "depth1_prefix_exact": 1.0,
+      "depth2_final_exact": 0.01171875,
+      "depth2_prefix_exact": 0.001953125,
+      "depth4_final_exact": 0.009765625,
+      "depth4_prefix_exact": 0.001953125,
+      "depth8_final_exact": 0.0078125,
+      "depth8_prefix_exact": 0.0078125
+    },
+    "op_zero": {
+      "cases": 512,
+      "ablation": "op_zero",
+      "depth0_final_exact": 0.005859375,
+      "depth0_prefix_exact": 1.0,
+      "depth1_final_exact": 0.01171875,
+      "depth1_prefix_exact": 0.017578125,
+      "depth2_final_exact": 0.01171875,
+      "depth2_prefix_exact": 0.01953125,
+      "depth4_final_exact": 0.01171875,
+      "depth4_prefix_exact": 0.009765625,
+      "depth8_final_exact": 0.01171875,
+      "depth8_prefix_exact": 0.01171875
+    },
+    "op_shuffle": {
+      "cases": 512,
+      "ablation": "op_shuffle",
+      "depth0_final_exact": 0.005859375,
+      "depth0_prefix_exact": 1.0,
+      "depth1_final_exact": 0.001953125,
+      "depth1_prefix_exact": 0.224609375,
+      "depth2_final_exact": 0.009765625,
+      "depth2_prefix_exact": 0.080078125,
+      "depth4_final_exact": 0.013671875,
+      "depth4_prefix_exact": 0.037109375,
+      "depth8_final_exact": 0.05078125,
+      "depth8_prefix_exact": 0.05078125
+    }
+  },
+  "checkpoint": "local_eval/research_gate_runner/donorless_recurrent_depth_transition_table_directce_standard/last.pt"
+}

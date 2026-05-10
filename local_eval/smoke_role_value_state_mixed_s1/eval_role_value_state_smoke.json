@@ -1,0 +1,215 @@
+{
+  "config": "configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_role_value_state_s120.yaml",
+  "checkpoint": "local_eval/smoke_role_value_state_mixed_s1/last.pt",
+  "data_jsonl": "local_eval/smoke_algorithmic_value_state_s2/mixed_one.jsonl",
+  "core_steps": 4,
+  "max_slots": 8,
+  "slot_vocab_size": 128,
+  "disable_transition_state": false,
+  "use_role_value_state": true,
+  "missing_keys": [],
+  "unexpected_keys": [],
+  "summary": {
+    "rows": 1,
+    "exact_rows": 0,
+    "trace_exact_accuracy": 0.0,
+    "correct_values": 1,
+    "total_values": 8,
+    "value_accuracy": 0.125,
+    "exact_steps": 0,
+    "total_steps": 4,
+    "step_exact_accuracy": 0.0
+  },
+  "by_family": {
+    "mixed_list_arithmetic": {
+      "rows": 1,
+      "exact_rows": 0,
+      "trace_exact_accuracy": 0.0,
+      "correct_values": 1,
+      "total_values": 8,
+      "value_accuracy": 0.125,
+      "exact_steps": 0,
+      "total_steps": 4,
+      "step_exact_accuracy": 0.0
+    }
+  },
+  "records": [
+    {
+      "correct_values": 1,
+      "total_values": 8,
+      "value_accuracy": 0.125,
+      "exact_steps": 0,
+      "total_steps": 4,
+      "step_exact_accuracy": 0.0,
+      "trace_exact": false,
+      "labelled_values": [
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 0,
+          "predicted": 4,
+          "target": 2,
+          "correct": false
+        },
+        {
+          "step_index": 0,
+          "depth": 1,
+          "role_index": 1,
+          "predicted": 4,
+          "target": 4,
+          "correct": true
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 4,
+          "predicted": 105,
+          "target": 3,
+          "correct": false
+        },
+        {
+          "step_index": 1,
+          "depth": 2,
+          "role_index": 5,
+          "predicted": 105,
+          "target": 7,
+          "correct": false
+        },
+        {
+          "step_index": 2,
+          "depth": 3,
+          "role_index": 8,
+          "predicted": 121,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 2,
+          "depth": 3,
+          "role_index": 9,
+          "predicted": 121,
+          "target": 9,
+          "correct": false
+        },
+        {
+          "step_index": 3,
+          "depth": 4,
+          "role_index": 8,
+          "predicted": 43,
+          "target": 5,
+          "correct": false
+        },
+        {
+          "step_index": 3,
+          "depth": 4,
+          "role_index": 9,
+          "predicted": 43,
+          "target": 4,
+          "correct": false
+        }
+      ],
+      "id": "mixed-list-arithmetic-40000-len5-mixedstress0-repeat0",
+      "family": "mixed_list_arithmetic",
+      "predicted_values": [
+        [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        [
+          105,
+          105,
+          105,
+          105,
+          105,
+          105,
+          113,
+          105,
+          105,
+          105
+        ],
+        [
+          121,
+          121,
+          121,
+          121,
+          121,
+          121,
+          121,
+          121,
+          121,
+          121
+        ],
+        [
+          43,
+          43,
+          43,
+          43,
+          43,
+          43,
+          43,
+          43,
+          43,
+          43
+        ]
+      ],
+      "target_values": [
+        [
+          2,
+          4,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          3,
+          7,
+          -100,
+          -100,
+          -100,
+          -100
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          5,
+          9
+        ],
+        [
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          -100,
+          5,
+          4
+        ]
+      ]
+    }
+  ]
+}

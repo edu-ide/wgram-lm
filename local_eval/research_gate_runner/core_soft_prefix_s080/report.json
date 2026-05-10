@@ -1,0 +1,70 @@
+{
+  "decision": "rejected",
+  "accepted": false,
+  "target_level": "L0/L1 donor-internal-renderer falsifier",
+  "major_bottleneck": "latent-core-to-autoregressive-text",
+  "adapter": {
+    "core_dim": 512,
+    "donor_dim": 2048,
+    "prefix_tokens": 4,
+    "rank": 64,
+    "scale": 4.0
+  },
+  "teacher_forced": {
+    "count": 4,
+    "soft_full_token_acc": 0.6666666666666666,
+    "soft_core_off_token_acc": 0.4583333333333333
+  },
+  "generation": {
+    "donor_only_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 4,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_core_off_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 4,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_full_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 4,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    }
+  },
+  "history": [
+    {
+      "step": 1,
+      "loss": 2.9122314453125,
+      "token_acc": 0.3333333432674408
+    },
+    {
+      "step": 20,
+      "loss": 0.08953756093978882,
+      "token_acc": 1.0
+    },
+    {
+      "step": 40,
+      "loss": 0.002239653142169118,
+      "token_acc": 1.0
+    },
+    {
+      "step": 60,
+      "loss": 3.218599158572033e-05,
+      "token_acc": 1.0
+    },
+    {
+      "step": 80,
+      "loss": 6.770858453819528e-05,
+      "token_acc": 1.0
+    }
+  ],
+  "suppress_visible_reasoning_tokens": true,
+  "next_action": "soft-prefix did not solve renderer; implement true donor residual layer hook or reset data/model"
+}

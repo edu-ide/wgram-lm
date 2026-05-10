@@ -1,0 +1,76 @@
+{
+  "decision": "accepted_l1_soft_prefix",
+  "accepted": true,
+  "target_level": "L0/L1 donor-internal-renderer falsifier",
+  "major_bottleneck": "latent-core-to-autoregressive-text",
+  "adapter": {
+    "core_dim": 512,
+    "donor_dim": 2048,
+    "prefix_tokens": 4,
+    "rank": 64,
+    "scale": 4.0
+  },
+  "teacher_forced": {
+    "count": 18,
+    "soft_full_token_acc": 0.5789473684210527,
+    "soft_core_off_token_acc": 0.07017543859649122
+  },
+  "generation": {
+    "donor_only_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 18,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_core_off_no_evidence": {
+      "hits": 0,
+      "exact": 0,
+      "total": 18,
+      "accuracy": 0.0,
+      "exact_accuracy": 0.0
+    },
+    "soft_full_no_evidence": {
+      "hits": 2,
+      "exact": 1,
+      "total": 18,
+      "accuracy": 0.1111111111111111,
+      "exact_accuracy": 0.05555555555555555
+    }
+  },
+  "history": [
+    {
+      "step": 1,
+      "loss": 3.1821069717407227,
+      "token_acc": 0.25,
+      "use_rollout": false
+    },
+    {
+      "step": 60,
+      "loss": 0.7545040249824524,
+      "token_acc": 0.75,
+      "use_rollout": false
+    },
+    {
+      "step": 120,
+      "loss": 0.18254496157169342,
+      "token_acc": 1.0,
+      "use_rollout": false
+    },
+    {
+      "step": 180,
+      "loss": 0.21440576016902924,
+      "token_acc": 0.75,
+      "use_rollout": false
+    },
+    {
+      "step": 240,
+      "loss": 0.01774817518889904,
+      "token_acc": 1.0,
+      "use_rollout": false
+    }
+  ],
+  "suppress_visible_reasoning_tokens": true,
+  "scheduled_sampling_prob": 0.0,
+  "next_action": "broaden held-out gate and add core_off/delta_off perturbations"
+}

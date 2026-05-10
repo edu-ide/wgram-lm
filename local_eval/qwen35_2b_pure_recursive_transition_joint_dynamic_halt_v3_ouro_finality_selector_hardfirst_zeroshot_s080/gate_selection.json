@@ -1,0 +1,67 @@
+{
+  "mode": "qtrm_core_steps_8_no_evidence",
+  "min_hits": 2,
+  "min_action_exact": 32,
+  "min_ablation_drop": 1,
+  "selected": {
+    "name": "s080_recurrent_baseline",
+    "checkpoint": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/last.pt",
+    "eval": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/lm_causal_forced_choice_smoke8.jsonl",
+    "action": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/action_code_eval32.json",
+    "mode": "qtrm_core_steps_8_no_evidence",
+    "lm_hits": 2,
+    "lm_total": 8,
+    "lm_accuracy": 0.25,
+    "action_exact": 32,
+    "action_rows": 32,
+    "action_trace_exact_accuracy": 1.0,
+    "ablation_mode": "qtrm_core_steps_8_answer_state_recurrent_off_no_evidence",
+    "ablation_hits": 0,
+    "ablation_total": 8,
+    "ablation_drop": 2,
+    "reject_reasons": [],
+    "accepted": true
+  },
+  "candidates": [
+    {
+      "name": "s080_recurrent_baseline",
+      "checkpoint": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/last.pt",
+      "eval": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/lm_causal_forced_choice_smoke8.jsonl",
+      "action": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/action_code_eval32.json",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "lm_hits": 2,
+      "lm_total": 8,
+      "lm_accuracy": 0.25,
+      "action_exact": 32,
+      "action_rows": 32,
+      "action_trace_exact_accuracy": 1.0,
+      "ablation_mode": "qtrm_core_steps_8_answer_state_recurrent_off_no_evidence",
+      "ablation_hits": 0,
+      "ablation_total": 8,
+      "ablation_drop": 2,
+      "reject_reasons": [],
+      "accepted": true
+    },
+    {
+      "name": "s080_hardfirst_finality_zeroshot",
+      "checkpoint": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/last.pt",
+      "eval": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_finality_selector_hardfirst_zeroshot_s080/lm_causal_forced_choice_smoke8.jsonl",
+      "action": "local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_finality_selector_hardfirst_zeroshot_s080/action_code_eval32.json",
+      "mode": "qtrm_core_steps_8_no_evidence",
+      "lm_hits": 2,
+      "lm_total": 8,
+      "lm_accuracy": 0.25,
+      "action_exact": 32,
+      "action_rows": 32,
+      "action_trace_exact_accuracy": 1.0,
+      "ablation_mode": "qtrm_core_steps_8_answer_finality_selector_off_no_evidence",
+      "ablation_hits": 2,
+      "ablation_total": 8,
+      "ablation_drop": 0,
+      "reject_reasons": [
+        "ablation_drop_below_min"
+      ],
+      "accepted": false
+    }
+  ]
+}

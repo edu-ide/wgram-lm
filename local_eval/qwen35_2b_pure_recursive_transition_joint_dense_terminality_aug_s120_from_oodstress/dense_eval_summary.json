@@ -1,0 +1,10 @@
+{
+  "families": [
+    "list_transform"
+  ],
+  "finality_mode": "action_terminal",
+  "input_jsonl": "data/eval/pure_recursive_latent_action_codebook_terminal_v2_family_holdout_list_eval.jsonl",
+  "max_depth": 8,
+  "output_jsonl": "data/eval/pure_recursive_transition_joint_dense_terminality_aug_family_holdout_list_eval.jsonl",
+  "rows": 64
+}
