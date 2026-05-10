@@ -478,6 +478,23 @@ checkpoint-selection follow-up:
   final checkpoint. The narrow answer-change gate appears late and then
   plateaus at 4/8 for this loss mix.
 
+length-coverage follow-up:
+  4498ae8 data(qtrm): add mixed length coverage curriculum
+  data/filtered/
+  pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len5791113_train40000_v0to5_mixed_only.jsonl
+  adds train lengths 5/7/9/11/13 with train surface variants 0-5.
+
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_fullpath_len5791113_coverage_s040_from_subtract_heavy
+  continued from the 4/8 subtract-heavy checkpoint with shuffled rows, lr=1e-5,
+  and the same final LM-path subtract-heavy loss.
+  qtrm_core_steps_4_no_evidence max_cases=8:
+    baseline step_000020: 4/8, gold-minus-pred mean -0.2316
+    length coverage s040: 2/8, gold-minus-pred mean -0.2443
+  This rejects the simple "add 11/13 train lengths" hypothesis for this loss
+  mix. The remaining blocker is more likely final subtract/offset binding in
+  the causal latent-to-LM path, not length coverage alone.
+
 decision:
   partial acceptance for the narrow answer-change prerequisite:
   the recurrent answer/core path can now change causal forced-choice answers
