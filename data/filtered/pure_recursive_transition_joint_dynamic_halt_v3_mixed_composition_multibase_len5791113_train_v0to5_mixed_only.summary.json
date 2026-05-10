@@ -1,0 +1,76 @@
+{
+  "composition_orders": [
+    "list_to_arithmetic"
+  ],
+  "eval_list_lengths": [
+    11,
+    13
+  ],
+  "eval_list_variants": [
+    6,
+    7
+  ],
+  "excluded_eval_start_index": 60000,
+  "filtered_to_task_family": "mixed_list_arithmetic",
+  "purpose": "Provide source-value scale diversity while keeping eval base 60000 and surfaces 6/7 held out, to test whether prompt/source binding failure was single-base overfitting.",
+  "source_script": "scripts/235_build_mixed_family_composition_gate.py",
+  "split_type": "mixed_family_composition_multibase_length_coverage_mixed_only",
+  "train_lengths_counter": {
+    "5": 288,
+    "7": 288,
+    "9": 288,
+    "11": 288,
+    "13": 288
+  },
+  "train_list_lengths": [
+    5,
+    7,
+    9,
+    11,
+    13
+  ],
+  "train_list_variants": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "train_offset_counter": {
+    "3": 204,
+    "4": 210,
+    "5": 204,
+    "6": 204,
+    "7": 204,
+    "8": 204,
+    "9": 210
+  },
+  "train_out": "data/filtered/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_multibase_len5791113_train_v0to5_mixed_only.jsonl",
+  "train_rows": 1440,
+  "train_start_counter": {
+    "10000": 240,
+    "20000": 240,
+    "30000": 240,
+    "40000": 240,
+    "50000": 240,
+    "70000": 240
+  },
+  "train_start_indices": [
+    10000,
+    20000,
+    30000,
+    40000,
+    50000,
+    70000
+  ],
+  "train_variant_counter": {
+    "0": 240,
+    "1": 240,
+    "2": 240,
+    "3": 240,
+    "4": 240,
+    "5": 240
+  },
+  "variant_overlap": []
+}
