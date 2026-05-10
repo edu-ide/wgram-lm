@@ -1793,6 +1793,66 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(model.core_source_position_binder_state_gate.requires_grad)
         self.assertFalse(model.text_embed.weight.requires_grad)
 
+    def test_source_slot_binder_answer_policy_trains_binding_and_lm_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            token_numeric_source_slot_embedding_enabled=True,
+            token_numeric_source_slot_vocab_size=3,
+            token_numeric_source_slot_max_slots=5,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=5,
+            core_role_value_state_vocab_size=16,
+            core_source_position_binder_enabled=True,
+            core_role_value_state_answer_bridge_enabled=True,
+            core_role_value_state_vocab_renderer_enabled=True,
+            answer_state_loop_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "source_slot_binder_answer_bridge_loop_vocab_renderer",
+        )
+
+        self.assertTrue(
+            any(name.startswith("token_numeric_source_slot_") for name in trainable)
+        )
+        self.assertTrue(
+            any(name.startswith("core_source_position_binder_") for name in trainable)
+        )
+        self.assertTrue(any(name.startswith("answer_state_loop_") for name in trainable))
+        self.assertTrue(
+            any(name.startswith("core_role_value_state_answer_") for name in trainable)
+        )
+        self.assertTrue(
+            any(
+                name.startswith("core_role_value_state_vocab_renderer_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.token_numeric_source_slot_embed.weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_head[-1].weight.requires_grad)
+        self.assertTrue(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_answer_gate.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_vocab_renderer_gate.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
     def test_transition_value_state_only_policy_freezes_core_and_action_head(self):
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel
         from qtrm_mm.training.train import configure_trainable_parameters

@@ -12150,3 +12150,42 @@ solved exact non-copy answer synthesis at all. The next architecture step must
 target a process-supervised scalar/list accumulator that feeds the normal LM
 logits path and is ablated causally.
 ```
+
+## 2026-05-10 Relative Source-Slot Trainable Policy Fix
+
+Audit finding:
+
+```text
+The relative source-slot L4 smoke changed the source-slot id space from
+absolute value classes to a compact parity vocabulary. That causes
+`token_numeric_source_slot_embed.weight` and some source-position binder
+parameters to initialize fresh when loading the source-copy checkpoint.
+
+The previous default L4 trainable policy only trained answer bridge / answer
+loop / vocab renderer parameters. It could leave those fresh source-binding
+parameters frozen, making the relative-mode smoke underpowered.
+```
+
+Implementation:
+
+```text
+Added trainable policy:
+  source_slot_binder_answer_bridge_loop_vocab_renderer
+
+It trains:
+  token_numeric_source_slot_*
+  core_source_position_binder_*
+  answer_state_loop_*
+  core_role_value_state_embed.*
+  core_role_value_state_answer_*
+  core_role_value_state_vocab_renderer_*
+```
+
+Interpretation:
+
+```text
+This is still the canonical prompt-token -> latent binder/core -> LM logits
+path. It is not a solver. It makes the next relative source-slot experiment a
+fairer test because newly initialized prompt-derived binding modules are no
+longer frozen.
+```

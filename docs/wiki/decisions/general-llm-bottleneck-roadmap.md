@@ -962,6 +962,13 @@ Latest source-binding / L4 audit:
   `list_transform` and `sequential_list_transform` generation scoring now use
   strict exact/normalized-exact matching. Offline strict rescore of that JSONL
   is `0/8` for donor, core-off, full, and all listed ablations.
+- The same audit found a training-policy issue for relative mode: changing the
+  source-slot id space can freshly initialize `token_numeric_source_slot_*` and
+  `core_source_position_binder_*` parameters, while the prior L4 policy trained
+  mostly answer bridge / answer loop / vocab renderer parameters. Added
+  `source_slot_binder_answer_bridge_loop_vocab_renderer` so the prompt-derived
+  source-binding path and LM answer path can be trained together in the next
+  run.
 - Next bottleneck: train the relative source-slot path long enough, or more
   likely add a scalar reduction/accumulator state, then require a causal drop
   under `primitive_off`, `source_slot_off`, `source_binder_off`, and

@@ -176,6 +176,14 @@ def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
             "core_role_value_state_answer_",
             "core_role_value_state_vocab_renderer_",
         ),
+        "source_slot_binder_answer_bridge_loop_vocab_renderer": (
+            "token_numeric_source_slot_",
+            "core_source_position_binder_",
+            "answer_state_loop_",
+            "core_role_value_state_embed.",
+            "core_role_value_state_answer_",
+            "core_role_value_state_vocab_renderer_",
+        ),
         "role_value_answer_bridge_adapter_only": (
             "answer_state_loop_lm_adapter_",
             "core_role_value_state_embed.",
