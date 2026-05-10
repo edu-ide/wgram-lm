@@ -12107,3 +12107,46 @@ input-path repair plus L4 smoke evidence, not promotion. The next useful gate
 must force scalar reduction/accumulator state to improve exact answers and drop
 under primitive/source-slot/source-binder/answer-bridge ablations.
 ```
+
+## 2026-05-10 List-Transform Eval Strictness Fix
+
+The follow-up 20-step relative source-slot smoke rejected:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/l4_relative_parity_smoke_s020
+
+reported before strict fix:
+  full_generation_accuracy:       1/8 = 0.125
+  donor_generation_accuracy:      1/8 = 0.125
+  core_off_generation_accuracy:   1/8 = 0.125
+  full_minus_donor:               0.0
+  full_minus_core_off:            0.0
+```
+
+Audit finding:
+
+```text
+The 1/8 hits were loose contains matches such as target "52" inside output
+"52,54". That is acceptable for open QA but invalid for algorithmic CSV
+answers. `list_transform` and `sequential_list_transform` now require strict
+exact/normalized-exact generation scoring, matching the existing
+source-copy strictness.
+```
+
+Offline strict rescore of the same JSONL:
+
+```text
+donor_only_no_evidence:                 0/8
+qtrm_core_off_no_evidence:              0/8
+qtrm_core_steps_8_no_evidence:          0/8
+all listed L4 ablations:                0/8
+```
+
+Interpretation:
+
+```text
+The current relative source-slot LM path can alter text, but it has not yet
+solved exact non-copy answer synthesis at all. The next architecture step must
+target a process-supervised scalar/list accumulator that feeds the normal LM
+logits path and is ablated causally.
+```

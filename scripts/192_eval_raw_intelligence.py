@@ -117,12 +117,17 @@ def score_answer(
 def _case_requires_strict_exact_answer(case: dict[str, Any]) -> bool:
     if bool(case.get("strict_answer_match", False)):
         return True
+    strict_labels = {
+        "source_copy_lexicalization",
+        "list_transform",
+        "sequential_list_transform",
+    }
     labels = {
         str(case.get("category") or ""),
         str(case.get("task_family") or ""),
         str(case.get("reasoning_family") or ""),
     }
-    return "source_copy_lexicalization" in labels
+    return bool(labels & strict_labels)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

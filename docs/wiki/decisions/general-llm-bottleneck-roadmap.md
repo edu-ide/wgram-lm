@@ -956,6 +956,12 @@ Latest source-binding / L4 audit:
   LM path can be perturbed by the QTRM path. This is not promotion because the
   change is not accuracy-positive and does not drop under primitive/source-slot
   or source-binder ablations.
+- The 20-step follow-up smoke also rejected. Before tightening scoring it
+  reported `full=1/8`, `donor=1/8`, `core_off=1/8`, but audit showed those
+  hits were loose contains matches such as target `52` inside output `52,54`.
+  `list_transform` and `sequential_list_transform` generation scoring now use
+  strict exact/normalized-exact matching. Offline strict rescore of that JSONL
+  is `0/8` for donor, core-off, full, and all listed ablations.
 - Next bottleneck: train the relative source-slot path long enough, or more
   likely add a scalar reduction/accumulator state, then require a causal drop
   under `primitive_off`, `source_slot_off`, `source_binder_off`, and

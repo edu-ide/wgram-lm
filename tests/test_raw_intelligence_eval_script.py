@@ -157,6 +157,28 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
         self.assertFalse(record["normalized_exact"])
         self.assertIn("strict_exact_miss", record["audit_reasons"])
 
+    def test_list_transform_generation_scoring_rejects_loose_contains_match(self) -> None:
+        module = _load_eval_module()
+
+        record = module.score_case_record(
+            {
+                "id": "case",
+                "category": "list_transform",
+                "task_family": "list_transform",
+                "reasoning_family": "sequential_list_transform",
+                "answer_aliases": ["52"],
+            },
+            mode="qtrm_core_steps_8_no_evidence",
+            completion="52,54",
+            runtime={"memoryos_used": False, "retrieval_used": False},
+            generated_tokens=4,
+        )
+
+        self.assertFalse(record["hit"])
+        self.assertTrue(record["normalized_contains"])
+        self.assertFalse(record["normalized_exact"])
+        self.assertIn("strict_exact_miss", record["audit_reasons"])
+
     def test_general_generation_scoring_still_allows_contains_match(self) -> None:
         module = _load_eval_module()
 
