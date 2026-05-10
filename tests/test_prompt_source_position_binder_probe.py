@@ -139,6 +139,17 @@ class PromptSourcePositionBinderProbeTests(unittest.TestCase):
         self.assertEqual(ids, (15, 32, 11, 0, 0))
         self.assertEqual(mask, (1, 1, 1, 0, 0))
 
+    def test_relative_source_slot_parity_ids_ignore_absolute_value(self):
+        module = load_module()
+
+        ids, mask = module.relative_source_slot_parity_ids(
+            {"list_value_start": 60001, "list_length": 4},
+            max_list_len=6,
+        )
+
+        self.assertEqual(ids, (1, 2, 1, 2, 0, 0))
+        self.assertEqual(mask, (1, 1, 1, 1, 0, 0))
+
     def test_token_numeric_value_ids_marks_source_number_spans(self):
         module = load_module()
 
@@ -295,6 +306,24 @@ class PromptSourcePositionBinderProbeTests(unittest.TestCase):
         )
 
         self.assertEqual(args.input_source, "token_numeric_source_slots")
+
+    def test_parser_accepts_relative_source_slot_parity_input_source(self):
+        module = load_module()
+
+        args = module.build_arg_parser().parse_args(
+            [
+                "--train-jsonl",
+                "train.jsonl",
+                "--eval-jsonl",
+                "eval.jsonl",
+                "--out-dir",
+                "out",
+                "--input-source",
+                "relative_source_slot_parity",
+            ]
+        )
+
+        self.assertEqual(args.input_source, "relative_source_slot_parity")
 
 
 if __name__ == "__main__":

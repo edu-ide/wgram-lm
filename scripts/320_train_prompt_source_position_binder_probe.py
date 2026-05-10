@@ -86,6 +86,25 @@ def numeric_value_ids(
     return tuple(ids), tuple(mask)
 
 
+def relative_source_slot_parity_ids(
+    row: dict[str, Any],
+    *,
+    max_list_len: int,
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    values = row_input_list(row)
+    if values is None:
+        raise ValueError("row has no input_list")
+    ids: list[int] = []
+    mask: list[int] = []
+    for value in values[: int(max_list_len)]:
+        ids.append(2 if int(value) % 2 == 0 else 1)
+        mask.append(1)
+    while len(ids) < int(max_list_len):
+        ids.append(0)
+        mask.append(0)
+    return tuple(ids), tuple(mask)
+
+
 class PromptSourcePositionBinder(nn.Module):
     """Slot-query prompt binder for ordered source-position targets.
 
@@ -207,6 +226,25 @@ def _states_from_batch(
                 row,
                 max_list_len=int(numeric_max_list_len),
                 value_vocab_size=int(numeric_value_vocab_size),
+            )
+            for row in rows
+        ]
+        ids = torch.tensor(
+            [item[0] for item in ids_and_masks],
+            dtype=torch.long,
+            device=device,
+        )
+        mask = torch.tensor(
+            [item[1] for item in ids_and_masks],
+            dtype=torch.long,
+            device=device,
+        )
+        return token_embed(ids), mask
+    if str(input_source) == "relative_source_slot_parity":
+        ids_and_masks = [
+            relative_source_slot_parity_ids(
+                row,
+                max_list_len=int(numeric_max_list_len),
             )
             for row in rows
         ]
@@ -410,6 +448,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "token_embedding",
             "donor_hidden",
             "numeric_value_embedding",
+            "relative_source_slot_parity",
             "token_plus_numeric_value",
             "token_numeric_source_slots",
         ],
@@ -462,7 +501,11 @@ def main() -> None:
 
     donor = None
     token_embed = None
-    if str(args.input_source) in {"numeric_value_embedding", "token_numeric_source_slots"}:
+    if str(args.input_source) in {
+        "numeric_value_embedding",
+        "relative_source_slot_parity",
+        "token_numeric_source_slots",
+    }:
         input_dim = int(args.token_embedding_dim)
         token_embed = nn.Embedding(int(args.numeric_value_vocab_size), input_dim).to(device)
     elif str(args.input_source) == "token_embedding":
