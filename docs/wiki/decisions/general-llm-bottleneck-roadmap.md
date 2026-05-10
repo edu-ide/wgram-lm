@@ -516,6 +516,15 @@ typed value-state diagnostic:
     causal for the normal LM answer path. Source/offset binding is the bottleneck
     to test before more final-answer margin tuning.
 
+depth-8 diagnostic:
+  same baseline checkpoint, max_cases=8:
+    core_steps_4: 4/8, gold-minus-pred mean -0.2316
+    core_steps_8: 0/8, gold-minus-pred mean -0.2451
+  The current narrow gate is not a clean "deeper recurrence improves reasoning"
+  result. It is a depth-4-local answer-change effect. This blocks promotion to
+  a stronger recursive-reasoning claim until recurrent state remains stable, or
+  halting reliably chooses the useful depth, under deeper core rollout.
+
 decision:
   partial acceptance for the narrow answer-change prerequisite:
   the recurrent answer/core path can now change causal forced-choice answers
