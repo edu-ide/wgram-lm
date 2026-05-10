@@ -444,6 +444,27 @@ failed follow-up:
   This rejects the simple "just add len11/13 surface training" hypothesis for
   this loss mix.
 
+shuffle follow-up:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_fullpath_subtract_heavy_shuffle_s020_from_s060
+  retrained the same subtract-heavy continuation from s060 with shuffled rows.
+  max_cases=8:
+    donor_only:              0/8
+    core_off:                0/8
+    core_steps_1:            2/8
+    core_steps_2:            4/8
+    recurrent_off:           2/8
+    full core_steps_4:       4/8
+  score-gap diagnostic max_cases=8:
+    donor gold-minus-pred mean:          -1.4534
+    core_steps_1 gold-minus-pred:        -0.2564
+    core_steps_2 gold-minus-pred:        -0.2062
+    recurrent_off gold-minus-pred:       -0.4244
+    full core_steps_4 gold-minus-pred:   -0.2028
+  This preserves the narrow answer-change result and slightly improves score
+  gaps, but it does not improve hit count over 4/8. Row order was not the
+  decisive bottleneck.
+
 decision:
   partial acceptance for the narrow answer-change prerequisite:
   the recurrent answer/core path can now change causal forced-choice answers
