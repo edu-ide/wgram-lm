@@ -1,0 +1,78 @@
+{
+  "allow_variant_overlap": false,
+  "architecture_note": "Mixed-family gate composes list filtering/doubling with arithmetic sum/subtract steps. Optional arithmetic_to_list reverses the order. Finality uses answer_match so halt is separated from action-code identity.",
+  "cases_per_family": 8,
+  "codebook_version": "dynamic_halt_v3",
+  "composition_orders": [
+    "list_to_arithmetic"
+  ],
+  "dense": true,
+  "eval_families": [
+    "mixed_list_arithmetic"
+  ],
+  "eval_list_lengths": [
+    11,
+    13
+  ],
+  "eval_list_variants": [
+    6,
+    7
+  ],
+  "eval_rows": 32,
+  "eval_start_index": 60000,
+  "filtered_to_task_family": "mixed_list_arithmetic",
+  "finality_mode": "answer_match",
+  "mixed_eval_rows": 32,
+  "mixed_repeat": 1,
+  "mixed_train_rows": 240,
+  "note": "Summary counters refer to the filtered mixed-only train file, not the unfiltered bundle returned by the generator.",
+  "purpose": "Cover train lengths 5/7/9/11/13 while keeping eval surfaces/values held out, to isolate length-OOD from latent subtract/final-answer failures.",
+  "source_script": "scripts/235_build_mixed_family_composition_gate.py",
+  "split_type": "mixed_family_composition_length_coverage_mixed_only",
+  "train_families": [
+    "mixed_list_arithmetic"
+  ],
+  "train_lengths_counter": {
+    "11": 48,
+    "13": 48,
+    "5": 48,
+    "7": 48,
+    "9": 48
+  },
+  "train_list_lengths": [
+    5,
+    7,
+    9,
+    11,
+    13
+  ],
+  "train_list_variants": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "train_offset_counter": {
+    "3": 30,
+    "4": 36,
+    "5": 36,
+    "6": 36,
+    "7": 36,
+    "8": 30,
+    "9": 36
+  },
+  "train_out": "data/filtered/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len5791113_train40000_v0to5_mixed_only.jsonl",
+  "train_rows": 240,
+  "train_start_index": 40000,
+  "train_variant_counter": {
+    "0": 40,
+    "1": 40,
+    "2": 40,
+    "3": 40,
+    "4": 40,
+    "5": 40
+  },
+  "variant_overlap": []
+}
