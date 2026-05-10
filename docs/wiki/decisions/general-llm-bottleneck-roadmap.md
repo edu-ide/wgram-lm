@@ -199,6 +199,52 @@ decision:
   not merely more steps on the same shallow bridge.
 ```
 
+Final LM choice-margin retry, 2026-05-10:
+
+```text
+implementation:
+  add final_choice_sequence_margin_loss to the training script.
+
+principle:
+  apply preference pressure only on the canonical final LM logits path:
+    chosen final answer > rejected row choices
+  compatible with --final-path-only-supervision.
+  no depth head, renderer, external solver, or candidate-time shortcut.
+
+smoke:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  smoke_typed_value_answer_bridge_final_choice_s1
+
+short run:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_answer_bridge_final_choice_s020_from_s040
+
+training signal:
+  final_choice_sequence_margin_final_path fell from 0.2256 to 0.0524 in the
+  observed log window; final_path_acc rose from 0.1429 to 0.2857.
+
+forced-choice max_cases=4:
+  donor_only:              0/4
+  core_off:                0/4
+  recurrent_off:           0/4
+  typed_bridge_off:        0/4
+  full bridge/recurrent:   0/4
+
+score-gap diagnostic:
+  donor gold-minus-pred mean:          -1.5316
+  recurrent_off gold-minus-pred mean:  -1.5696
+  full gold-minus-pred mean:           -0.8886
+  typed_bridge_off gold-minus-pred:    -0.8885
+
+decision:
+  rejected as an L2/L3 answer-change gate. The final LM choice-margin loss is
+  a useful canonical-path pressure because it improves the scalar answer score
+  gap, but the dominant output remains the doubled list and typed-bridge-off
+  matches full. The causal effect is currently in the answer recurrent path,
+  not in the typed value-state bridge, and it is not strong enough to flip the
+  selected answer.
+```
+
 ## Dual-Process Ordering
 
 QTRM may eventually become a dual-process architecture:

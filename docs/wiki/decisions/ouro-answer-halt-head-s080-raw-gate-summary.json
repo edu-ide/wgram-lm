@@ -1,0 +1,317 @@
+{
+  "gate_type": "pure_recursive_reasoning",
+  "claim": "QTRM recursive core depth should improve held-out reasoning without retrieval, MemoryOS, or hidden evidence shortcuts.",
+  "status": "accepted",
+  "donor_mode": "donor_only_no_evidence",
+  "core_off_mode": "qtrm_core_off_no_evidence",
+  "deepest_core_mode": "qtrm_core_steps_8_no_evidence",
+  "donor": {
+    "count": 8,
+    "hits": 0,
+    "accuracy": 0.0,
+    "mode": "donor_only_no_evidence"
+  },
+  "core_off": {
+    "count": 8,
+    "hits": 0,
+    "accuracy": 0.0,
+    "mode": "qtrm_core_off_no_evidence"
+  },
+  "deepest_core": {
+    "count": 8,
+    "hits": 8,
+    "accuracy": 1.0,
+    "mode": "qtrm_core_steps_8_no_evidence"
+  },
+  "transition_state_off": {},
+  "depth_ladder": [
+    {
+      "count": 8,
+      "hits": 0,
+      "accuracy": 0.0,
+      "mode": "qtrm_core_steps_1_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 0,
+      "accuracy": 0.0,
+      "mode": "qtrm_core_steps_2_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 8,
+      "accuracy": 1.0,
+      "mode": "qtrm_core_steps_4_no_evidence"
+    },
+    {
+      "count": 8,
+      "hits": 8,
+      "accuracy": 1.0,
+      "mode": "qtrm_core_steps_8_no_evidence"
+    }
+  ],
+  "depth_output_diversity": {
+    "measured": true,
+    "reason": "ok",
+    "case_count": 8,
+    "identical_case_count": 0,
+    "changed_case_count": 8,
+    "all_depth_outputs_identical": false,
+    "examples": [
+      {
+        "id": "mixed-list-arithmetic-50000-len7-mixedstress6",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "100004,100008,100012",
+          "qtrm_core_steps_2_no_evidence": "100004,100008,100012",
+          "qtrm_core_steps_4_no_evidence": "300015",
+          "qtrm_core_steps_8_no_evidence": "300015"
+        },
+        "all_identical": false
+      },
+      {
+        "id": "mixed-list-arithmetic-50000-len7-mixedstress7",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "100004,100008,100012",
+          "qtrm_core_steps_2_no_evidence": "100004,100008,100012",
+          "qtrm_core_steps_4_no_evidence": "300015",
+          "qtrm_core_steps_8_no_evidence": "300015"
+        },
+        "all_identical": false
+      },
+      {
+        "id": "mixed-list-arithmetic-50001-len7-mixedstress6",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "100004,100008,100012,100016",
+          "qtrm_core_steps_2_no_evidence": "100004,100008,100012,100016",
+          "qtrm_core_steps_4_no_evidence": "400037",
+          "qtrm_core_steps_8_no_evidence": "400037"
+        },
+        "all_identical": false
+      },
+      {
+        "id": "mixed-list-arithmetic-50001-len7-mixedstress7",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "100004,100008,100012,100016",
+          "qtrm_core_steps_2_no_evidence": "100004,100008,100012,100016",
+          "qtrm_core_steps_4_no_evidence": "400037",
+          "qtrm_core_steps_8_no_evidence": "400037"
+        },
+        "all_identical": false
+      },
+      {
+        "id": "mixed-list-arithmetic-50002-len7-mixedstress6",
+        "outputs": {
+          "qtrm_core_steps_1_no_evidence": "100008,100012,100016",
+          "qtrm_core_steps_2_no_evidence": "100008,100012,100016",
+          "qtrm_core_steps_4_no_evidence": "300032",
+          "qtrm_core_steps_8_no_evidence": "300032"
+        },
+        "all_identical": false
+      }
+    ]
+  },
+  "by_task_family": {
+    "mixed_list_arithmetic": {
+      "donor_only_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_answer_halt_gate_off_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence"
+      }
+    }
+  },
+  "by_reasoning_family": {
+    "sequential_list_arithmetic_composition": {
+      "donor_only_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_answer_halt_gate_off_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence"
+      }
+    }
+  },
+  "by_expected_paradigm": {
+    "hybrid_or_cot": {
+      "donor_only_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "donor_only_no_evidence"
+      },
+      "qtrm_core_off_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_off_no_evidence"
+      },
+      "qtrm_core_steps_1_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_1_no_evidence"
+      },
+      "qtrm_core_steps_2_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_2_no_evidence"
+      },
+      "qtrm_core_steps_4_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_4_no_evidence"
+      },
+      "qtrm_core_steps_8_answer_halt_gate_off_no_evidence": {
+        "count": 8,
+        "hits": 0,
+        "accuracy": 0.0,
+        "mode": "qtrm_core_steps_8_answer_halt_gate_off_no_evidence"
+      },
+      "qtrm_core_steps_8_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_8_no_evidence"
+      },
+      "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence": {
+        "count": 8,
+        "hits": 8,
+        "accuracy": 1.0,
+        "mode": "qtrm_core_steps_8_transition_joint_answer_bridge_off_no_evidence"
+      }
+    }
+  },
+  "donor_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "donor_only_no_evidence",
+    "candidate_hits": 8,
+    "baseline_hits": 0,
+    "candidate_count": 8,
+    "baseline_count": 8,
+    "hit_advantage": 8,
+    "accuracy_advantage": 1.0,
+    "candidate_beats_baseline": true
+  },
+  "core_off_comparison": {
+    "candidate_mode": "qtrm_core_steps_8_no_evidence",
+    "baseline_mode": "qtrm_core_off_no_evidence",
+    "candidate_hits": 8,
+    "baseline_hits": 0,
+    "candidate_count": 8,
+    "baseline_count": 8,
+    "hit_advantage": 8,
+    "accuracy_advantage": 1.0,
+    "candidate_beats_baseline": true
+  },
+  "transition_state_off_comparison": {},
+  "mode_semantics": {
+    "donor": "Donor baseline. QTRM residual logits are forced off and donor logits are used as the scoring policy; this is the real donor-only comparison.",
+    "core_off": "Internal QTRM ablation. The model still runs through the QTRM forward path with disable_core=True; donor fallback is not forced, so this is not equivalent to donor_only.",
+    "deepest_core": "QTRM candidate with recursive core enabled at the deepest evaluated core_steps value.",
+    "transition_state_off": "QTRM candidate with the recursive core still enabled but the explicit transition-state/code path disabled; this tests whether that state path is answer-causal."
+  },
+  "eval_contract": {
+    "scoring": [
+      "causal_forced_choice"
+    ],
+    "choice_score_normalization": [
+      "mean"
+    ]
+  },
+  "shortcut_records": [],
+  "missing_modes": [],
+  "failed_checks": [],
+  "passed_checks": [
+    "deep_core_beats_core_off",
+    "deep_core_beats_donor",
+    "depth_scaling_gain_present",
+    "depth_outputs_not_all_identical",
+    "no_retrieval_or_memoryos_shortcut"
+  ],
+  "recommendation": "Promote this result as raw-intelligence evidence only for the tested axis, then rerun on harder held-out cases before changing architecture."
+}
