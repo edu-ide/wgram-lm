@@ -736,6 +736,29 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=0.05,
     )
     parser.add_argument(
+        "--typed-value-answer-bridge-final-contrast-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Contrast final LM-path target log-prob against the same forward pass "
+            "with typed_algorithmic_value_state_answer_bridge disabled. This tests "
+            "whether typed latent value state causally improves the answer logits."
+        ),
+    )
+    parser.add_argument(
+        "--typed-value-answer-bridge-final-contrast-margin",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--typed-value-answer-bridge-final-contrast-all-prefix-tokens",
+        action="store_true",
+        help=(
+            "When causal-prefix supervision creates one example per answer token, "
+            "apply typed value answer-bridge final contrast to every prefix token."
+        ),
+    )
+    parser.add_argument(
         "--core-primitive-role-value-answer-final-contrast-weight",
         type=float,
         default=0.0,
@@ -5800,6 +5823,8 @@ def main() -> None:
                 role_bridge_off_depth_text_logits = None
                 role_bridge_off_final_text_logits = None
                 role_bridge_off_outputs = None
+                typed_value_bridge_off_final_text_logits = None
+                typed_value_bridge_off_outputs = None
                 primitive_role_value_off_final_text_logits = None
                 primitive_role_value_off_renderer_text_logits = None
                 primitive_role_value_off_outputs = None
@@ -6045,6 +6070,35 @@ def main() -> None:
                     if (
                         _should_apply_transition_joint_answer_bridge_contrast(
                             example_index,
+                            args.typed_value_answer_bridge_final_contrast_weight,
+                            all_prefix_tokens=bool(
+                                args.typed_value_answer_bridge_final_contrast_all_prefix_tokens
+                            ),
+                        )
+                    ):
+                        with torch.no_grad():
+                            typed_value_bridge_off_outputs = model(
+                                input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                token_numeric_value_ids=token_numeric_value_ids_tensor,
+                                token_numeric_source_slot_ids=token_numeric_source_slot_ids_tensor,
+                                token_numeric_source_slot_token_ids=token_numeric_source_slot_token_ids_tensor,
+                                token_numeric_source_slot_mask=token_numeric_source_slot_mask_tensor,
+                                **donor_forward_kwargs(donor_out),
+                                core_world_model_actions=core_world_model_actions,
+                                temporal_spatial_context=temporal_spatial_context,
+                                disable_typed_algorithmic_value_state_answer_bridge=True,
+                                return_core_depth_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                return_core_depth_text_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                logit_token_indices=logit_token_indices,
+                            )
+                    if (
+                        _should_apply_transition_joint_answer_bridge_contrast(
+                            example_index,
                             args.core_primitive_role_value_answer_final_contrast_weight,
                             all_prefix_tokens=bool(
                                 args.core_primitive_role_value_answer_final_contrast_all_prefix_tokens
@@ -6143,6 +6197,31 @@ def main() -> None:
                             role_bridge_offset + target_start - 1 : role_bridge_offset + target_end - 1,
                             :,
                         ]
+                if typed_value_bridge_off_outputs is not None:
+                    if bool(args.target_logit_positions_only):
+                        typed_value_bridge_off_final_text_logits = (
+                            typed_value_bridge_off_outputs["logits"]
+                        )
+                    else:
+                        typed_bridge_offset = (
+                            typed_value_bridge_off_outputs["logits"].shape[1]
+                            - input_ids.shape[1]
+                        )
+                        if typed_bridge_offset != offset:
+                            raise ValueError(
+                                "typed bridge-off and full logit offsets must match"
+                            )
+                        typed_value_bridge_off_final_text_logits = (
+                            typed_value_bridge_off_outputs["logits"][
+                                :,
+                                typed_bridge_offset
+                                + target_start
+                                - 1 : typed_bridge_offset
+                                + target_end
+                                - 1,
+                                :,
+                            ]
+                        )
                 if primitive_role_value_off_outputs is not None:
                     if bool(args.target_logit_positions_only):
                         primitive_role_value_off_final_text_logits = (
@@ -6685,6 +6764,30 @@ def main() -> None:
                         * role_final_contrast
                     )
                     example_metrics.update(role_final_metrics)
+                if typed_value_bridge_off_final_text_logits is not None and (
+                    _should_apply_transition_joint_answer_bridge_contrast(
+                        example_index,
+                        args.typed_value_answer_bridge_final_contrast_weight,
+                        all_prefix_tokens=bool(
+                            args.typed_value_answer_bridge_final_contrast_all_prefix_tokens
+                        ),
+                    )
+                ):
+                    typed_bridge_final_contrast, typed_bridge_final_metrics = (
+                        final_path_ablation_contrastive_loss(
+                            final_text_logits,
+                            typed_value_bridge_off_final_text_logits,
+                            target_ids,
+                            margin=args.typed_value_answer_bridge_final_contrast_margin,
+                            metric_prefix="typed_value_answer_bridge",
+                        )
+                    )
+                    example_loss = (
+                        example_loss
+                        + float(args.typed_value_answer_bridge_final_contrast_weight)
+                        * typed_bridge_final_contrast
+                    )
+                    example_metrics.update(typed_bridge_final_metrics)
                 if primitive_role_value_off_final_text_logits is not None and (
                     _should_apply_transition_joint_answer_bridge_contrast(
                         example_index,

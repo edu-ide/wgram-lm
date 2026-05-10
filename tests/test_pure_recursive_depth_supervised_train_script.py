@@ -2349,6 +2349,27 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
         self.assertEqual(args.final_choice_margin_weight, 0.7)
         self.assertEqual(args.final_choice_margin, 0.03)
 
+    def test_parser_accepts_typed_value_bridge_final_contrast(self):
+        module = _load_module()
+
+        args = module.build_arg_parser().parse_args(
+            [
+                "--config",
+                "config.yaml",
+                "--data-jsonl",
+                "rows.jsonl",
+                "--target-logit-positions-only",
+                "--final-path-only-supervision",
+                "--typed-value-answer-bridge-final-contrast-weight",
+                "0.8",
+                "--typed-value-answer-bridge-final-contrast-margin",
+                "0.04",
+            ]
+        )
+
+        self.assertEqual(args.typed_value_answer_bridge_final_contrast_weight, 0.8)
+        self.assertEqual(args.typed_value_answer_bridge_final_contrast_margin, 0.04)
+
     def test_transition_state_code_ce_loss_masks_unlabelled_depths(self):
         import torch
 
