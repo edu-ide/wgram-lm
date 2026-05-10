@@ -310,6 +310,55 @@ decision:
   blocker is final subtract/value-generalization, not text rendering alone.
 ```
 
+Final subtract-tail LM-margin retry, 2026-05-10:
+
+```text
+implementation:
+  2698945 feat(training): add final subtract-tail margin
+
+principle:
+  apply a final LM-path-only margin against subtract-tail counterfactuals:
+    chosen final scalar > pre-subtract sum and final +/- 1 variants
+  This is compatible with --final-path-only-supervision and does not use depth
+  logits, a renderer, or an external solver.
+
+smoke:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  smoke_final_subtract_tail_margin_s1
+  metric observed:
+    final_subtract_tail_counterfactual_margin_final_path=0.1619
+
+short run:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  final_subtract_tail_margin_s020_from_strong_s020
+
+forced-choice max_cases=4:
+  donor_only:              0/4
+  core_off:                0/4
+  recurrent_off:           0/4
+  typed_bridge_off:        0/4
+  full bridge/recurrent:   0/4
+
+score-gap diagnostic:
+  donor gold-minus-pred mean:          -1.5316
+  recurrent_off gold-minus-pred mean:  -1.5363
+  full gold-minus-pred mean:           -0.5628
+  typed_bridge_off gold-minus-pred:    -0.5705
+
+dominant full failures:
+  pre_subtract_sum:        2/4
+  doubled_list:            2/4
+
+decision:
+  rejected as a solved answer-change gate, but keep the result as a useful
+  causal-path diagnostic. The recurrent answer path now moves the final LM
+  choice distribution substantially away from donor/recurrent-off, while
+  typed-bridge-off remains very close to full. The next candidate should target
+  scalar value extrapolation or offset binding inside the latent state, because
+  answer-path margins alone are improving the score gap without crossing the
+  final scalar decision boundary.
+```
+
 ## Dual-Process Ordering
 
 QTRM may eventually become a dual-process architecture:
