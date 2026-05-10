@@ -66,9 +66,21 @@ def row_input_list(row: dict[str, Any]) -> list[int] | None:
     if raw is None:
         raw = row.get("list")
     if raw is None:
+        base = row_mixed_list_base(row)
+        raw_length = row.get("list_length")
+        if base is not None and raw_length is not None:
+            try:
+                length = int(raw_length)
+            except (TypeError, ValueError):
+                length = 0
+            if length > 0:
+                return [int(base) + offset for offset in range(length)]
+    if raw is None:
         for key in ("question", "prompt"):
             text = str(row.get(key) or "")
             match = re.search(r"\blist\s+(\[[^\]]+\])", text)
+            if match is None:
+                match = re.search(r"(\[[^\]]+\])", text)
             if match:
                 raw = match.group(1)
                 break

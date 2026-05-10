@@ -58,6 +58,57 @@ class PromptSourcePositionBinderProbeTests(unittest.TestCase):
             (5, 0, 0, 0),
         )
 
+    def test_source_position_targets_infer_list_from_mixed_metadata(self):
+        module = load_module()
+
+        row = {
+            "task_family": "mixed_list_arithmetic",
+            "list_value_start": 40001,
+            "list_length": 5,
+            "depth_targets": {
+                "1": "40002,40004",
+                "2": "80004,80008",
+            },
+        }
+
+        self.assertEqual(
+            module.source_position_targets(
+                row,
+                max_slots=4,
+                position_vocab_size=8,
+                target_depth=1,
+            ),
+            (2, 4, 0, 0),
+        )
+
+    def test_token_numeric_source_slots_infer_list_from_any_bracketed_prompt(self):
+        module = load_module()
+
+        row = {
+            "prompt": "Question: Use [40001, 40002], keep evens.",
+            "list_value_start": 40001,
+            "list_length": 2,
+        }
+        offsets = [
+            (0, 9),
+            (10, 13),
+            (14, 15),
+            (15, 20),
+            (20, 21),
+            (22, 27),
+            (27, 28),
+        ]
+
+        ids, mask = module.token_numeric_source_slot_ids(
+            row,
+            offsets=offsets,
+            max_list_len=4,
+            value_vocab_size=50000,
+        )
+
+        self.assertEqual(ids, (40002, 40003, 0, 0))
+        self.assertEqual(mask, (1, 1, 0, 0))
+
     def test_binder_returns_slot_logits(self):
         import torch
 
