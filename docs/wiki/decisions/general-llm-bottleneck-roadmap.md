@@ -530,6 +530,7 @@ prompt source-position binding probes:
     0ac2e9c fix(qtrm): infer mixed source lists for binders
     9a452a4 data(qtrm): add multibase mixed curriculum
     b140d85 data(qtrm): add holdout surface mixed curriculum
+    1e78132 feat(qtrm): add relative source parity binder probe
 
   single-base token source slots:
     /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
@@ -555,13 +556,27 @@ prompt source-position binding probes:
     final eval exact: 0.0000
     final eval slot/content acc: 0.6797 / 0.5729
 
+  relative source-slot parity, same multibase/surface-diverse train split:
+    prompt_source_position_mixed_relative_parity_holdout67_d1_s200
+    input: source slot sequence with absolute value removed:
+      0=pad, 1=odd source value, 2=even source value
+    held-out base 60000 and surface variants 6/7:
+      step 50 eval exact:   1.0000
+      step 100 eval exact:  1.0000
+      step 200 eval exact:  1.0000
+    This accepts the L1 source-binding scaffold as soon as absolute numeric
+    identity is replaced by relative source slots plus a learned/derived
+    numeric predicate.
+
   conclusion:
     even before final subtract and LM rendering, prompt-to-source binding is not
     exact under held-out value/surface shift. More base/surface diversity helps
-    slot accuracy, but does not close exact binding. The next source-binding
-    candidate should avoid absolute numeric id embeddings and should represent
-    relative source slots plus learned numeric predicates/offset variables inside
-    the token-derived recurrent state.
+    slot accuracy, but does not close exact binding when the representation is
+    absolute or donor-hidden only. Relative source slots plus parity/predicate
+    state closes the source-selection part of the bottleneck. The next QTRM
+    candidate should move this representation into the token-derived recurrent
+    state and add offset variables, then test whether that state causally changes
+    the normal LM answer path.
 
 decision:
   partial acceptance for the narrow answer-change prerequisite:
