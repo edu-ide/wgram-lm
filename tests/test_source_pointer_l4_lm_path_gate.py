@@ -153,6 +153,21 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertIn("--core-source-position-binder-raw-source-slots", command)
         self.assertNotIn("--token-numeric-value-features", command)
 
+    def test_train_command_can_use_relative_parity_source_slot_mode(self):
+        args = self.runner.build_arg_parser().parse_args(
+            [
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
+                "--token-numeric-source-slot-vocab-size",
+                "3",
+            ]
+        )
+        command = self.runner.train_command(args, Path("out/train"))
+        text = " ".join(command)
+
+        self.assertIn("--token-numeric-source-slot-id-mode relative_parity", text)
+        self.assertIn("--token-numeric-source-slot-vocab-size 3", text)
+
     def test_train_command_forwards_max_length_to_avoid_l4_oom(self):
         args = self.runner.build_arg_parser().parse_args(["--max-length", "256"])
         command = self.runner.train_command(args, Path("out/train"))
@@ -273,6 +288,25 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertIn(self.runner.SOURCE_SLOT_OFF_MODE, command)
         self.assertIn(self.runner.SOURCE_BINDER_OFF_MODE, command)
         self.assertIn(self.runner.ANSWER_NEXT_TOKEN_DECODER_OFF_MODE, command)
+
+    def test_eval_command_can_use_relative_parity_source_slot_mode(self):
+        args = self.runner.build_arg_parser().parse_args(
+            [
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
+                "--token-numeric-source-slot-vocab-size",
+                "3",
+            ]
+        )
+        command = self.runner.eval_command(
+            args,
+            Path("checkpoint.pt"),
+            Path("eval.jsonl"),
+        )
+        text = " ".join(command)
+
+        self.assertIn("--token-numeric-source-slot-id-mode relative_parity", text)
+        self.assertIn("--token-numeric-source-slot-vocab-size 3", text)
 
     def test_runner_exposes_post_train_probe_without_generation_eval(self):
         args = self.runner.build_arg_parser().parse_args(

@@ -204,6 +204,8 @@ class QTRMSourcePointerStateGateTests(unittest.TestCase):
                 "64",
                 "--token-numeric-source-slot-max-slots",
                 "7",
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
                 "--token-numeric-source-slot-gate-min",
                 "1.0",
                 "--token-numeric-source-slot-parity-ce-weight",
@@ -230,6 +232,7 @@ class QTRMSourcePointerStateGateTests(unittest.TestCase):
         self.assertIn("--token-numeric-source-slots", command)
         self.assertIn("--token-numeric-source-slot-vocab-size 64", text)
         self.assertIn("--token-numeric-source-slot-max-slots 7", text)
+        self.assertIn("--token-numeric-source-slot-id-mode relative_parity", text)
         self.assertIn("--token-numeric-source-slot-gate-min 1.0", text)
         self.assertIn("--token-numeric-source-slot-parity-ce-weight 0.7", text)
         self.assertIn("--token-numeric-source-slot-predicate-feedback", command)
@@ -411,6 +414,8 @@ class QTRMSourcePointerStateGateTests(unittest.TestCase):
                 "64",
                 "--token-numeric-source-slot-max-slots",
                 "7",
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
                 "--token-numeric-source-slot-gate-min",
                 "1.0",
             ]
@@ -441,6 +446,7 @@ class QTRMSourcePointerStateGateTests(unittest.TestCase):
         self.assertIn("--token-numeric-source-slots", full)
         self.assertIn("--token-numeric-source-slot-vocab-size 64", text)
         self.assertIn("--token-numeric-source-slot-max-slots 7", text)
+        self.assertIn("--token-numeric-source-slot-id-mode relative_parity", text)
         self.assertIn("--token-numeric-source-slot-gate-min 1.0", text)
         self.assertIn("--disable-token-numeric-source-slots", off)
 

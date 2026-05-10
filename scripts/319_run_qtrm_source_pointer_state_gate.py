@@ -105,6 +105,8 @@ def training_command(args: argparse.Namespace, *, train_out_dir: Path) -> list[s
                     str(int(args.token_numeric_source_slot_vocab_size)),
                     "--token-numeric-source-slot-max-slots",
                     str(int(args.token_numeric_source_slot_max_slots)),
+                    "--token-numeric-source-slot-id-mode",
+                    str(args.token_numeric_source_slot_id_mode),
                     "--token-numeric-source-slot-gate-min",
                     str(float(args.token_numeric_source_slot_gate_min)),
                     "--token-numeric-source-slot-parity-ce-weight",
@@ -297,6 +299,8 @@ def training_command(args: argparse.Namespace, *, train_out_dir: Path) -> list[s
                 str(int(args.token_numeric_source_slot_vocab_size)),
                 "--token-numeric-source-slot-max-slots",
                 str(int(args.token_numeric_source_slot_max_slots)),
+                "--token-numeric-source-slot-id-mode",
+                str(args.token_numeric_source_slot_id_mode),
                 "--token-numeric-source-slot-gate-min",
                 str(float(args.token_numeric_source_slot_gate_min)),
                 "--token-numeric-source-slot-parity-ce-weight",
@@ -388,6 +392,8 @@ def eval_command(
                 str(int(args.token_numeric_source_slot_vocab_size)),
                 "--token-numeric-source-slot-max-slots",
                 str(int(args.token_numeric_source_slot_max_slots)),
+                "--token-numeric-source-slot-id-mode",
+                str(args.token_numeric_source_slot_id_mode),
                 "--token-numeric-source-slot-gate-min",
                 str(float(args.token_numeric_source_slot_gate_min)),
             ]
@@ -1163,6 +1169,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--token-numeric-source-slots", action="store_true")
     parser.add_argument("--token-numeric-source-slot-vocab-size", type=int, default=128)
     parser.add_argument("--token-numeric-source-slot-max-slots", type=int, default=5)
+    parser.add_argument(
+        "--token-numeric-source-slot-id-mode",
+        choices=["absolute_value", "relative_parity"],
+        default="absolute_value",
+    )
     parser.add_argument("--token-numeric-source-slot-gate-min", type=float, default=0.0)
     parser.add_argument(
         "--token-numeric-source-slot-parity-ce-weight",

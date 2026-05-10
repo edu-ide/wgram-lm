@@ -104,6 +104,10 @@ class SourcePointerL3HardGateTests(unittest.TestCase):
                 "--data-jsonl",
                 "eval.jsonl",
                 "--token-numeric-source-slots",
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
+                "--token-numeric-source-slot-vocab-size",
+                "3",
                 "--token-numeric-source-slot-gate-min",
                 "1.0",
                 "--token-numeric-source-slot-predicate-feedback",
@@ -133,6 +137,8 @@ class SourcePointerL3HardGateTests(unittest.TestCase):
         text = " ".join(full)
 
         self.assertIn("--token-numeric-source-slots", full)
+        self.assertIn("--token-numeric-source-slot-id-mode relative_parity", text)
+        self.assertIn("--token-numeric-source-slot-vocab-size 3", text)
         self.assertIn("--token-numeric-source-slot-gate-min 1.0", text)
         self.assertIn("--token-numeric-source-slot-predicate-feedback", full)
         self.assertIn("--token-numeric-source-slot-predicate-gate-min 1.0", text)

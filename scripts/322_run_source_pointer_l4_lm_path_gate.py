@@ -378,6 +378,8 @@ def train_command(
         str(int(args.token_numeric_source_slot_vocab_size)),
         "--token-numeric-source-slot-max-slots",
         str(int(args.token_numeric_source_slot_max_slots)),
+        "--token-numeric-source-slot-id-mode",
+        str(args.token_numeric_source_slot_id_mode),
         "--token-numeric-source-slot-gate-min",
         str(float(args.token_numeric_source_slot_gate_min)),
         "--token-numeric-source-slot-predicate-feedback",
@@ -483,6 +485,8 @@ def eval_command(args: argparse.Namespace, checkpoint: Path, eval_jsonl: Path) -
         str(int(args.token_numeric_source_slot_vocab_size)),
         "--token-numeric-source-slot-max-slots",
         str(int(args.token_numeric_source_slot_max_slots)),
+        "--token-numeric-source-slot-id-mode",
+        str(args.token_numeric_source_slot_id_mode),
         "--token-numeric-source-slot-gate-min",
         str(float(args.token_numeric_source_slot_gate_min)),
         "--token-numeric-source-slot-predicate-feedback",
@@ -831,6 +835,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-eval-cases", type=int, default=32)
     parser.add_argument("--token-numeric-source-slot-vocab-size", type=int, default=128)
     parser.add_argument("--token-numeric-source-slot-max-slots", type=int, default=5)
+    parser.add_argument(
+        "--token-numeric-source-slot-id-mode",
+        choices=["absolute_value", "relative_parity"],
+        default="absolute_value",
+    )
     parser.add_argument("--token-numeric-source-slot-gate-min", type=float, default=1.0)
     parser.add_argument(
         "--token-numeric-source-slot-predicate-gate-min",
