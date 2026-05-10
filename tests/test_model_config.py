@@ -224,6 +224,95 @@ class ModelConfigTests(unittest.TestCase):
         )
         self.assertTrue(torch.allclose(core_off["logits"][:, offset:], donor_logits))
 
+    def test_core_loop_readout_can_require_a_running_core_with_donor_fallback(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        torch.manual_seed(0)
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_loop_readout_enabled=True,
+            core_loop_readout_requires_core=True,
+            qtrm_logits_scale=1.0,
+            donor_logits_scale=1.0,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.tensor([[1, 2, 3, 4]])
+        donor_logits = torch.randn(1, 4, cfg.vocab_size)
+
+        full = model(input_ids, donor_logits=donor_logits)
+        core_off = model(input_ids, donor_logits=donor_logits, disable_core=True)
+        offset = core_off["logits"].shape[1] - input_ids.shape[1]
+
+        self.assertGreater(float(full["qtrm_residual_logits"].detach().abs().max()), 0.0)
+        self.assertTrue(
+            torch.allclose(
+                core_off["qtrm_residual_logits"],
+                torch.zeros_like(core_off["qtrm_residual_logits"]),
+            )
+        )
+        self.assertTrue(torch.allclose(core_off["logits"][:, offset:], donor_logits))
+
+    def test_typed_algorithmic_value_state_bridge_exposes_answer_loop_tokens(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        torch.manual_seed(0)
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            typed_algorithmic_value_state_enabled=True,
+            typed_algorithmic_value_state_recurrent_enabled=True,
+            typed_algorithmic_value_state_scalar_vocab_size=17,
+            typed_algorithmic_value_state_answer_bridge_enabled=True,
+            typed_algorithmic_value_state_answer_bridge_gate_min=1.0,
+        )
+        model = QTRMMultimodalModel(cfg)
+        model.eval()
+        input_ids = torch.tensor([[1, 2, 3, 4]])
+
+        with torch.no_grad():
+            full = model(input_ids)
+            bridge_off = model(
+                input_ids,
+                disable_typed_algorithmic_value_state_answer_bridge=True,
+            )
+
+        tokens = full["typed_algorithmic_value_state_answer_bridge_tokens"]
+        gate_mean = full["typed_algorithmic_value_state_answer_bridge_gate_mean"]
+        off_tokens = bridge_off["typed_algorithmic_value_state_answer_bridge_tokens"]
+
+        self.assertEqual(tokens.shape, (1, cfg.outer_steps, 1, cfg.d_model))
+        self.assertEqual(gate_mean.shape, (1, cfg.outer_steps))
+        self.assertGreater(float(tokens.detach().abs().max()), 0.0)
+        self.assertTrue(torch.allclose(off_tokens, torch.zeros_like(off_tokens)))
+
     def test_coda_can_use_a_separate_attention_schedule_from_core(self):
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel
 
@@ -601,6 +690,80 @@ class ModelConfigTests(unittest.TestCase):
         self.assertTrue(torch.allclose(signal_off["controller_pooled"], torch.zeros_like(signal_off["controller_pooled"])))
         self.assertFalse(torch.equal(learned["controller_pooled"], signal_off["controller_pooled"]))
 
+    def test_learned_controller_signal_can_use_hidden_mlp_head(self):
+        import torch
+        from torch import nn
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            controller_signal_enabled=True,
+            controller_signal_dim=3,
+            controller_signal_source="learned_core",
+            controller_signal_hidden_dim=8,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        self.assertIsInstance(model.controller_signal_head, nn.Sequential)
+        out = model(torch.tensor([[1, 2, 3], [4, 5, 6]]))
+
+        self.assertEqual(out["controller_signal_logits"].shape, (2, 3))
+        self.assertEqual(out["controller_signal_pred"].shape, (2, 3))
+
+    def test_learned_controller_signal_can_use_core_trajectory_source(self):
+        import torch
+        from torch import nn
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=3,
+            visual_dim=16,
+            max_visual_tokens=4,
+            controller_signal_enabled=True,
+            controller_signal_dim=4,
+            controller_signal_source="learned_core_trajectory",
+            controller_signal_hidden_dim=8,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        self.assertIsInstance(model.controller_signal_head, nn.Sequential)
+        self.assertEqual(model.controller_signal_head[0].in_features, 16 * 3)
+        out = model(torch.tensor([[1, 2, 3], [4, 5, 6]]))
+        signal_off = model(
+            torch.tensor([[1, 2, 3], [4, 5, 6]]),
+            disable_controller_signal=True,
+        )
+
+        self.assertEqual(out["core_depth_states"].shape, (2, 3, 16))
+        self.assertEqual(out["controller_signal_logits"].shape, (2, 4))
+        self.assertEqual(out["controller_signal_pred"].shape, (2, 4))
+        self.assertEqual(float(out["controller_signal_used"].item()), 1.0)
+        self.assertEqual(float(signal_off["controller_signal_used"].item()), 0.0)
+
     def test_return_features_only_skips_vocab_logits_but_keeps_controller_features(self):
         import torch
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel
@@ -807,6 +970,64 @@ class ModelConfigTests(unittest.TestCase):
             float(out["qtrm_residual_gate"].item()),
             1.0 / (1.0 + math.exp(2.0)),
             places=5,
+        )
+
+    def test_residual_gate_can_be_disabled_for_causal_ablation(self):
+        import torch
+        from torch import nn
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        class FixedHead(nn.Module):
+            def __init__(self, vocab_size: int):
+                super().__init__()
+                self.vocab_size = vocab_size
+
+            def forward(self, hidden):
+                logits = hidden.new_zeros((*hidden.shape[:2], self.vocab_size))
+                logits[..., 2] = 4.0
+                return logits
+
+        cfg = QTRMConfig(
+            vocab_size=16,
+            d_model=16,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=32,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=3,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            qtrm_logits_scale=1.0,
+            donor_logits_scale=1.0,
+            qtrm_residual_gate_enabled=True,
+            qtrm_residual_gate_init_bias=-100.0,
+        )
+        model = QTRMMultimodalModel(cfg)
+        model.lm_head = FixedHead(cfg.vocab_size)
+        input_ids = torch.tensor([[1, 2, 3, 4]])
+        donor_logits = torch.zeros(1, 4, cfg.vocab_size)
+
+        gated = model(input_ids, donor_logits=donor_logits)
+        gate_off = model(
+            input_ids,
+            donor_logits=donor_logits,
+            disable_qtrm_residual_gate=True,
+        )
+        offset = gated["logits"].shape[1] - input_ids.shape[1]
+
+        self.assertTrue(torch.allclose(gated["qtrm_residual_gate"], torch.zeros(1)))
+        self.assertTrue(torch.allclose(gated["logits"][:, offset:], donor_logits))
+        self.assertTrue(torch.allclose(gate_off["qtrm_residual_gate"], torch.ones(1)))
+        self.assertTrue(
+            torch.allclose(
+                gate_off["logits"][:, offset:],
+                donor_logits + gate_off["qtrm_residual_logits"][:, offset:],
+            )
         )
 
     def test_residual_gate_normalizes_large_latents_before_linear(self):

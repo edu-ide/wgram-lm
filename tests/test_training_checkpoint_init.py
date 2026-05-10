@@ -234,6 +234,2258 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(model.transition_state_to_answer.weight.requires_grad)
         self.assertFalse(model.text_embed.weight.requires_grad)
 
+    def test_core_and_answer_state_loop_policy_includes_final_answer_binder(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_state_final_answer_binder_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "core_and_answer_state_loop")
+
+        self.assertIn("transition_state_final_answer_proj.weight", trainable)
+        self.assertTrue(model.transition_state_final_answer_proj.weight.requires_grad)
+        self.assertTrue(model.transition_state_final_answer_gate.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_transition_order_bottleneck_policy_freezes_everything_else(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_transition_order_bottleneck_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=7,
+            transition_state_finality_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_transition_order_bottleneck_and_readouts",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core_transition_order_bottleneck_")
+                or name.startswith("primitive_transition_")
+                or name.startswith("transition_state_finality_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core_transition_order_bottleneck_query.requires_grad)
+        self.assertTrue(model.primitive_transition_operation_head[-1].weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+        self.assertFalse(next(model.core.parameters()).requires_grad)
+
+    def test_core_and_transition_order_bottleneck_policy_includes_core(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_transition_order_bottleneck_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=7,
+            transition_state_finality_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_and_transition_order_bottleneck_and_readouts",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core.")
+                or name.startswith("core_transition_order_bottleneck_")
+                or name.startswith("primitive_transition_")
+                or name.startswith("transition_state_finality_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.core_transition_order_bottleneck_query.requires_grad)
+        self.assertTrue(model.primitive_transition_operation_head[-1].weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_answer_state_loop_only_policy_freezes_core_and_transition_state(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_enabled=True,
+            transition_state_dim=3,
+            transition_state_hidden_dim=16,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "answer_state_loop_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("answer_state_loop_") for name in trainable))
+        self.assertTrue(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_predictor.net[1].weight.requires_grad)
+        self.assertFalse(model.transition_state_to_answer.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_role_value_answer_bridge_loop_only_trains_bridge_and_answer_loop(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=4,
+            core_role_value_state_vocab_size=16,
+            core_role_value_state_answer_bridge_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "role_value_answer_bridge_loop_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("answer_state_loop_")
+                or name.startswith("core_role_value_state_embed.")
+                or name.startswith("core_role_value_state_answer_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_embed.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_answer_value_embed.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_answer_gate.weight.requires_grad)
+        self.assertFalse(model.core_role_value_state_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_primitive_role_value_answer_bridge_loop_policy_is_scoped(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            core_role_value_state_enabled=True,
+            core_role_value_state_prompt_extract_enabled=True,
+            core_role_value_state_num_roles=4,
+            core_role_value_state_vocab_size=16,
+            core_role_value_state_answer_bridge_enabled=True,
+            core_typed_register_executor_enabled=True,
+            core_typed_register_num_operations=3,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=3,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+            core_primitive_role_value_hidden_dim=32,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "primitive_role_value_answer_bridge_loop",
+        )
+
+        self.assertTrue(any(name.startswith("primitive_transition_") for name in trainable))
+        self.assertTrue(any(name.startswith("core_primitive_role_value_") for name in trainable))
+        self.assertTrue(any(name.startswith("answer_state_loop_") for name in trainable))
+        self.assertTrue(any(name.startswith("core_role_value_state_embed.") for name in trainable))
+        self.assertTrue(any(name.startswith("core_role_value_state_answer_") for name in trainable))
+        self.assertTrue(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_embed.weight.requires_grad)
+        self.assertTrue(model.core_primitive_role_value_head.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_answer_gate.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_role_value_answer_bridge_adapter_only_bottlenecks_shortcut(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_lm_adapter_enabled=True,
+            answer_state_loop_lm_adapter_rank=4,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=4,
+            core_role_value_state_vocab_size=16,
+            core_role_value_state_answer_bridge_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "role_value_answer_bridge_adapter_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("answer_state_loop_lm_adapter_")
+                or name.startswith("core_role_value_state_embed.")
+                or name.startswith("core_role_value_state_answer_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.answer_state_loop_lm_adapter_down.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_embed.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_answer_gate.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_role_value_vocab_renderer_only_policy_is_scoped(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=4,
+            core_role_value_state_vocab_size=16,
+            core_role_value_state_answer_bridge_enabled=True,
+            core_role_value_state_vocab_renderer_enabled=True,
+            core_role_value_state_vocab_renderer_rank=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "role_value_vocab_renderer_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core_role_value_state_embed.")
+                or name.startswith("core_role_value_state_answer_")
+                or name.startswith("core_role_value_state_vocab_renderer_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core_role_value_state_embed.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_vocab_renderer_up.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_answer_gate.weight.requires_grad)
+        self.assertFalse(model.core_role_value_state_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_answer_state_loop_only_policy_includes_talker_when_enabled(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_talker_enabled=True,
+            answer_state_loop_talker_layers=1,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "answer_state_loop_only")
+
+        self.assertIn("answer_state_loop_talker_gate.weight", trainable)
+        self.assertTrue(model.answer_state_loop_talker_gate.weight.requires_grad)
+        self.assertTrue(
+            model.answer_state_loop_talker_stack.layers[0].norm1.weight.requires_grad
+        )
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_answer_state_loop_only_policy_includes_mythos_update_when_enabled(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_recurrent_block_enabled=True,
+            answer_state_loop_mythos_update_enabled=True,
+            answer_state_loop_mythos_loop_index_enabled=True,
+            answer_state_loop_mythos_lora_rank=4,
+            answer_state_loop_halt_enabled=True,
+            answer_state_loop_mythos_act_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "answer_state_loop_only")
+
+        self.assertIn("answer_state_loop_mythos_log_A", trainable)
+        self.assertIn("answer_state_loop_mythos_log_dt", trainable)
+        self.assertIn("answer_state_loop_mythos_input_B", trainable)
+        self.assertIn("answer_state_loop_mythos_loop_index.weight", trainable)
+        self.assertIn("answer_state_loop_mythos_lora_down.weight", trainable)
+        self.assertTrue(model.answer_state_loop_mythos_log_A.requires_grad)
+        self.assertTrue(model.answer_state_loop_mythos_lora_up.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+        A = torch.exp(
+            -torch.exp(
+                model.answer_state_loop_mythos_log_dt
+                + model.answer_state_loop_mythos_log_A
+            )
+        )
+        self.assertTrue(torch.all(A > 0.0))
+        self.assertTrue(torch.all(A < 1.0))
+
+    def test_answer_state_loop_mythos_update_runs_forward_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=3,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_recurrent_block_enabled=True,
+            answer_state_loop_mythos_update_enabled=True,
+            answer_state_loop_mythos_loop_index_enabled=True,
+            answer_state_loop_mythos_lora_rank=4,
+            answer_state_loop_halt_enabled=True,
+            answer_state_loop_mythos_act_enabled=True,
+            answer_state_loop_next_token_decoder_enabled=True,
+            answer_state_loop_next_token_decoder_layers=1,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        out = model(torch.randint(0, cfg.vocab_size, (2, 6)))
+
+        self.assertEqual(out["answer_state_loop_logits"].shape, (2, 6, cfg.vocab_size))
+        self.assertEqual(out["answer_state_loop_halt_logits"].shape, (2, 3))
+        self.assertEqual(out["answer_state_loop_recurrent_gate_mean"].shape, (2, 3))
+
+    def test_answer_state_loop_talker_only_policy_freezes_answer_loop(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_talker_enabled=True,
+            answer_state_loop_talker_layers=1,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "answer_state_loop_talker_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("answer_state_loop_talker_") for name in trainable))
+        self.assertTrue(model.answer_state_loop_talker_gate.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_answer_state_loop_lm_adapter_only_policy_freezes_answer_core(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_lm_adapter_enabled=True,
+            answer_state_loop_lm_adapter_rank=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "answer_state_loop_lm_adapter_only",
+        )
+
+        self.assertEqual(
+            set(trainable),
+            {
+                "answer_state_loop_lm_adapter_down.weight",
+                "answer_state_loop_lm_adapter_up.weight",
+            },
+        )
+        self.assertTrue(model.answer_state_loop_lm_adapter_down.weight.requires_grad)
+        self.assertTrue(model.answer_state_loop_lm_adapter_up.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_answer_state_loop_next_token_decoder_only_policy_freezes_answer_core(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_next_token_decoder_enabled=True,
+            answer_state_loop_next_token_decoder_layers=1,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "answer_state_loop_next_token_decoder_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("answer_state_loop_next_token_decoder_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(
+            model.answer_state_loop_next_token_decoder_gate.weight.requires_grad
+        )
+        self.assertFalse(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_answer_state_loop_next_token_decoder_only_policy_requires_decoder(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        with self.assertRaisesRegex(ValueError, "next_token_decoder"):
+            configure_trainable_parameters(
+                model,
+                "answer_state_loop_next_token_decoder_only",
+            )
+
+    def test_lm_head_only_policy_requires_untied_lm_head(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            tie_embeddings=False,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "lm_head_only")
+
+        self.assertEqual(trainable, ["lm_head.weight"])
+        self.assertTrue(model.lm_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_lm_head_only_policy_rejects_tied_embedding_model(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            tie_embeddings=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        with self.assertRaisesRegex(ValueError, "tie_embeddings=false"):
+            configure_trainable_parameters(model, "lm_head_only")
+
+    def test_answer_state_loop_hidden_bridge_only_policy_freezes_head_and_core(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            answer_state_loop_hidden_bridge_enabled=True,
+            answer_state_loop_hidden_bridge_hidden_dim=16,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "answer_state_loop_hidden_bridge_only",
+        )
+
+        self.assertEqual(
+            set(trainable),
+            {
+                "answer_state_loop_hidden_bridge_norm.weight",
+                "answer_state_loop_hidden_bridge_down.weight",
+                "answer_state_loop_hidden_bridge_down.bias",
+                "answer_state_loop_hidden_bridge_up.weight",
+                "answer_state_loop_hidden_bridge_up.bias",
+            },
+        )
+        self.assertTrue(model.answer_state_loop_hidden_bridge_up.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.lm_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_answer_state_loop_hidden_bridge_only_policy_requires_bridge(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        with self.assertRaisesRegex(ValueError, "hidden_bridge"):
+            configure_trainable_parameters(
+                model,
+                "answer_state_loop_hidden_bridge_only",
+            )
+
+    def test_transition_state_sequence_only_policy_freezes_core_and_code_policy(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_state_sequence_enabled=True,
+            transition_state_sequence_max_tokens=5,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "transition_state_sequence_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(name.startswith("transition_state_sequence_") for name in trainable)
+        )
+        self.assertTrue(model.transition_state_sequence_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_transition_state_joint_only_policy_freezes_core_and_answer_loop(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_state_joint_prompt_context_enabled=True,
+            transition_state_joint_prompt_token_attention_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "transition_state_joint_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(name.startswith("transition_state_joint_") for name in trainable)
+        )
+        self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
+        self.assertTrue(
+            model.transition_state_joint_prompt_context_proj.weight.requires_grad
+        )
+        self.assertTrue(model.transition_state_joint_prompt_cross.q_proj.weight.requires_grad)
+        self.assertTrue(
+            model.transition_state_joint_prompt_cross_proj.weight.requires_grad
+        )
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.answer_state_loop_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_transition_state_joint_prompt_context_conditions_logits(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=8,
+            n_heads=2,
+            n_kv_heads=1,
+            d_ff=16,
+            n_prelude_layers=0,
+            n_core_layers=0,
+            n_coda_layers=0,
+            workspace_tokens=2,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=8,
+            max_visual_tokens=2,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=4,
+            transition_state_joint_prompt_context_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+        with torch.no_grad():
+            model.transition_state_joint_prompt_context_proj.weight.copy_(
+                torch.eye(cfg.d_model)
+            )
+            model.transition_state_joint_head.weight.zero_()
+            model.transition_state_joint_head.bias.zero_()
+            model.transition_state_joint_head.weight[0, 0] = 1.0
+
+        core_depth_states = torch.zeros(1, 2, cfg.d_model)
+        empty_context = torch.zeros(1, 3, cfg.d_model)
+        prompt_context = empty_context.clone()
+        prompt_context[0, :, 0] = 1.0
+        mask = torch.ones(1, 3)
+
+        without_context = model._compute_transition_state_joint_logits(
+            core_depth_states,
+            prompt_context_seq=empty_context,
+            prompt_context_mask=mask,
+        )
+        with_context = model._compute_transition_state_joint_logits(
+            core_depth_states,
+            prompt_context_seq=prompt_context,
+            prompt_context_mask=mask,
+        )
+
+        self.assertTrue(torch.allclose(without_context, torch.zeros_like(without_context)))
+        self.assertGreater(float(with_context[0, 0, 0]), 0.0)
+
+    def test_transition_state_joint_prompt_token_attention_is_zero_init_residual(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=4,
+            n_heads=2,
+            n_kv_heads=1,
+            d_ff=16,
+            n_prelude_layers=0,
+            n_core_layers=0,
+            n_coda_layers=0,
+            workspace_tokens=2,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=4,
+            max_visual_tokens=2,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=4,
+            transition_state_joint_prompt_context_enabled=True,
+            transition_state_joint_prompt_token_attention_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+        with torch.no_grad():
+            model.transition_state_joint_prompt_context_proj.weight.zero_()
+            model.transition_state_joint_head.weight.zero_()
+            model.transition_state_joint_head.bias.zero_()
+            model.transition_state_joint_head.weight[0, 0] = 1.0
+
+        core_depth_states = torch.zeros(1, 1, cfg.d_model)
+        core_depth_states[0, 0, 0] = 2.0
+        prompt_context = torch.zeros(1, 2, cfg.d_model)
+        prompt_context[0, 0, 0] = 2.0
+        prompt_context[0, 1, 1] = 2.0
+        mask = torch.ones(1, 2)
+
+        baseline_logits = model._compute_transition_state_joint_logits(
+            core_depth_states,
+            prompt_context_seq=None,
+            prompt_context_mask=None,
+        )
+        zero_init_logits = model._compute_transition_state_joint_logits(
+            core_depth_states,
+            prompt_context_seq=prompt_context,
+            prompt_context_mask=mask,
+        )
+
+        with torch.no_grad():
+            eye = torch.eye(cfg.d_model)
+            model.transition_state_joint_prompt_cross.q_proj.weight.copy_(eye)
+            model.transition_state_joint_prompt_cross.k_proj.weight.copy_(eye)
+            model.transition_state_joint_prompt_cross.v_proj.weight.copy_(eye)
+            model.transition_state_joint_prompt_cross.o_proj.weight.copy_(eye)
+            model.transition_state_joint_prompt_cross_proj.weight.copy_(eye)
+
+        cross_logits = model._compute_transition_state_joint_logits(
+            core_depth_states,
+            prompt_context_seq=prompt_context,
+            prompt_context_mask=mask,
+        )
+
+        self.assertTrue(torch.allclose(zero_init_logits, baseline_logits))
+        self.assertFalse(torch.allclose(cross_logits, baseline_logits))
+
+    def test_core_and_value_state_policy_preserves_joint_code_supervision_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_value_state_enabled=True,
+            transition_value_state_max_tokens=6,
+            transition_value_state_vocab_size=12,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "core_and_value_state")
+
+        self.assertTrue(trainable)
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
+        self.assertTrue(model.transition_value_state_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+        self.assertFalse(next(model.prelude.parameters()).requires_grad)
+
+    def test_primitive_transition_only_policy_preserves_existing_joint_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=11,
+            primitive_transition_prompt_context_enabled=True,
+            primitive_transition_prompt_token_attention_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "primitive_transition_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("primitive_transition_") for name in trainable))
+        self.assertTrue(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_primitive_transition_and_finality_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_state_finality_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=11,
+            primitive_transition_prompt_context_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "primitive_transition_and_finality"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("primitive_transition_")
+                or name.startswith("transition_state_finality_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertTrue(model.transition_state_finality_head.weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_transition_source_router_only_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=12,
+            transition_source_router_enabled=True,
+            transition_source_router_prompt_context_enabled=True,
+            transition_source_router_prompt_token_attention_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "transition_source_router_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("transition_source_router_") for name in trainable))
+        self.assertTrue(model.transition_source_router_head[0].weight.requires_grad)
+        self.assertTrue(model.transition_source_router_prompt_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_core_primitive_update_gate_only_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=4,
+            core_role_value_state_vocab_size=8,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=4,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+            core_primitive_role_value_update_gate_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "core_primitive_role_value_update_gate_only"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(name.startswith("core_primitive_role_value_update_gate.") for name in trainable)
+        )
+        self.assertTrue(model.core_primitive_role_value_update_gate.weight.requires_grad)
+        self.assertFalse(model.core_primitive_role_value_head.weight.requires_grad)
+        self.assertFalse(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_transition_state_joint_operation_residual_only_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_state_joint_operation_residual_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=12,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "transition_state_joint_operation_residual_only"
+        )
+
+        self.assertEqual(trainable, ["transition_state_joint_operation_residual.weight"])
+        self.assertTrue(model.transition_state_joint_operation_residual.weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_transition_phase_and_joint_phase_residual_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_phase_enabled=True,
+            transition_phase_num_classes=2,
+            transition_phase_prompt_context_enabled=True,
+            transition_phase_prompt_token_attention_enabled=True,
+            transition_state_joint_phase_residual_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "transition_phase_and_joint_phase_residual"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("transition_phase_")
+                or name.startswith("transition_state_joint_phase_residual")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.transition_phase_head[0].weight.requires_grad)
+        self.assertTrue(model.transition_phase_prompt_cross.q_proj.weight.requires_grad)
+        self.assertTrue(model.transition_state_joint_phase_residual[0].weight.requires_grad)
+        self.assertTrue(model.transition_state_joint_phase_residual[-1].weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_transition_phase_only_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_phase_enabled=True,
+            transition_phase_num_classes=2,
+            transition_phase_prompt_context_enabled=True,
+            transition_phase_global_prompt_query_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "transition_phase_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("transition_phase_") for name in trainable))
+        self.assertTrue(model.transition_phase_head[0].weight.requires_grad)
+        self.assertTrue(model.transition_phase_global_query.requires_grad)
+        self.assertTrue(model.transition_phase_global_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_transition_state_joint_phase_residual_only_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_phase_enabled=True,
+            transition_phase_num_classes=2,
+            transition_state_joint_phase_residual_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "transition_state_joint_phase_residual_only"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("transition_state_joint_phase_residual")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.transition_state_joint_phase_residual[0].weight.requires_grad)
+        self.assertFalse(model.transition_phase_head[0].weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_transition_state_code_and_joint_code_residual_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_code_enabled=True,
+            transition_state_codebook_size=5,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_state_joint_code_residual_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "transition_state_code_and_joint_code_residual"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("transition_state_code_")
+                or name.startswith("transition_state_joint_code_residual")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.transition_state_code_head.weight.requires_grad)
+        self.assertTrue(model.transition_state_joint_code_residual.weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+
+    def test_token_numeric_binder_primitive_policy_trains_internal_binder(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            token_numeric_value_embedding_enabled=True,
+            token_numeric_value_vocab_size=32,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=5,
+            core_role_value_state_vocab_size=16,
+            core_source_position_binder_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=6,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "token_numeric_context_binder_primitive_role_value_state_machine"
+        )
+
+        self.assertTrue(any(name.startswith("token_numeric_value_embed.") for name in trainable))
+        self.assertTrue(any(name.startswith("prelude.") for name in trainable))
+        self.assertTrue(any(name.startswith("core_source_position_binder_") for name in trainable))
+        self.assertTrue(any(name.startswith("core_primitive_role_value_") for name in trainable))
+        self.assertTrue(model.core_source_position_binder_head[-1].weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_value_embed.weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_state_gate.requires_grad)
+        self.assertTrue(model.token_numeric_value_embed.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_prompt_context_binder_primitive_policy_trains_internal_binder(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=5,
+            core_role_value_state_vocab_size=16,
+            core_source_position_binder_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=6,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "prompt_context_binder_primitive_role_value_state_machine",
+        )
+
+        self.assertTrue(any(name.startswith("prelude.") for name in trainable))
+        self.assertTrue(any(name.startswith("core_source_position_binder_") for name in trainable))
+        self.assertTrue(any(name.startswith("core_primitive_role_value_") for name in trainable))
+        self.assertTrue(model.core_source_position_binder_head[-1].weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_value_embed.weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_state_gate.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_token_numeric_source_slot_policy_trains_source_slots(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            token_numeric_source_slot_embedding_enabled=True,
+            token_numeric_source_slot_vocab_size=32,
+            token_numeric_source_slot_max_slots=5,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=5,
+            core_role_value_state_vocab_size=16,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=6,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "token_numeric_source_slot_context_primitive_role_value_state_machine",
+        )
+
+        self.assertTrue(
+            any(name.startswith("token_numeric_source_slot_embed.") for name in trainable)
+        )
+        self.assertTrue(any(name.startswith("prelude.") for name in trainable))
+        self.assertTrue(any(name.startswith("core_primitive_role_value_") for name in trainable))
+        self.assertTrue(model.token_numeric_source_slot_embed.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_token_numeric_source_slot_binder_policy_trains_internal_binder(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            token_numeric_source_slot_embedding_enabled=True,
+            token_numeric_source_slot_vocab_size=32,
+            token_numeric_source_slot_max_slots=5,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=5,
+            core_role_value_state_vocab_size=16,
+            core_source_position_binder_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=6,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "token_numeric_source_slot_context_binder_primitive_role_value_state_machine",
+        )
+
+        self.assertTrue(
+            any(name.startswith("token_numeric_source_slot_embed.") for name in trainable)
+        )
+        self.assertTrue(any(name.startswith("core_source_position_binder_") for name in trainable))
+        self.assertTrue(model.token_numeric_source_slot_embed.weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_head[-1].weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_value_embed.weight.requires_grad)
+        self.assertTrue(model.core_source_position_binder_state_gate.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_transition_value_state_only_policy_freezes_core_and_action_head(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            transition_value_state_enabled=True,
+            transition_value_state_max_tokens=6,
+            transition_value_state_vocab_size=12,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "transition_value_state_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("transition_value_state_") for name in trainable))
+        self.assertTrue(model.transition_value_state_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_factorized_value_state_only_policy_freezes_core_and_action_head(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            factorized_value_state_enabled=True,
+            factorized_value_state_max_tokens=6,
+            factorized_value_state_vocab_size=12,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "factorized_value_state_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("factorized_value_state_") for name in trainable))
+        self.assertTrue(model.factorized_value_state_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_role_value_state_only_policy_trains_role_and_value_slots(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            factorized_value_state_enabled=True,
+            factorized_value_state_max_tokens=6,
+            factorized_value_state_vocab_size=12,
+            role_value_state_enabled=True,
+            role_value_state_num_roles=10,
+            role_value_state_vocab_size=128,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "role_value_state_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("factorized_value_state_")
+                or name.startswith("role_value_state_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.role_value_state_head.weight.requires_grad)
+        self.assertTrue(model.factorized_value_state_init.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_role_value_state_only_policy_freezes_core_and_action_head(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=128,
+            core_role_value_transition_enabled=True,
+            core_state_carry_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_role_value_state_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core_role_value_state_")
+                or name.startswith("core_role_value_transition_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core_role_value_state_head.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_embed.weight.requires_grad)
+        self.assertTrue(model.core_role_value_transition_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_typed_algorithmic_value_state_only_policy_trains_field_heads(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            text_position_embed_enabled=True,
+            core_depth_readout_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            typed_algorithmic_value_state_enabled=True,
+            typed_algorithmic_value_state_max_list_slots=4,
+            typed_algorithmic_value_state_offset_vocab_size=17,
+            typed_algorithmic_value_state_scalar_vocab_size=19,
+            typed_algorithmic_value_state_recurrent_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "typed_algorithmic_value_state_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(all(name.startswith("typed_algorithmic_") for name in trainable))
+        self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
+        self.assertTrue(model.typed_algorithmic_recurrent_gate.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_and_typed_algorithmic_policy_trains_core_and_field_heads(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            text_position_embed_enabled=True,
+            core_depth_readout_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            typed_algorithmic_value_state_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_and_typed_algorithmic_value_state",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(model.core_depth_readout_query.requires_grad)
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
+        self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_answer_loop_and_typed_algorithmic_policy_trains_bridge_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            typed_algorithmic_value_state_enabled=True,
+            typed_algorithmic_value_state_answer_bridge_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_answer_loop_and_typed_algorithmic_value_state",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
+        self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
+        self.assertTrue(
+            model.typed_algorithmic_value_state_answer_bridge_proj.weight.requires_grad
+        )
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_token_embed_core_and_typed_policy_opens_token_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            text_position_embed_enabled=True,
+            core_depth_readout_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            typed_algorithmic_value_state_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "token_embed_core_and_typed_algorithmic_value_state",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(model.text_embed.weight.requires_grad)
+        self.assertTrue(model.text_position_embed.weight.requires_grad)
+        self.assertTrue(model.prelude.layers[0].norm1.weight.requires_grad)
+        self.assertTrue(model.workspace.workspace.requires_grad)
+        self.assertTrue(model.core_depth_readout_query.requires_grad)
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
+        self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
+
+    def test_primitive_and_typed_algorithmic_policy_trains_only_that_state_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=5,
+            typed_algorithmic_value_state_enabled=True,
+            typed_algorithmic_value_state_recurrent_enabled=True,
+            typed_algorithmic_value_state_primitive_conditioning_enabled=True,
+            typed_algorithmic_value_state_subregisters_enabled=True,
+            typed_algorithmic_value_state_residual_feedback_enabled=True,
+            typed_algorithmic_value_state_residual_delta_enabled=True,
+            typed_algorithmic_value_state_scalar_offset_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "primitive_and_typed_algorithmic_state_machine",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("primitive_transition_")
+                or name.startswith("typed_algorithmic_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
+        self.assertTrue(
+            model.typed_algorithmic_recurrent_primitive_proj.weight.requires_grad
+        )
+        self.assertTrue(
+            model.typed_algorithmic_scalar_subregister_update[0].weight.requires_grad
+        )
+        self.assertTrue(
+            model.typed_algorithmic_scalar_residual_feedback_proj.weight.requires_grad
+        )
+        self.assertTrue(
+            model.typed_algorithmic_scalar_residual_delta_head.weight.requires_grad
+        )
+        self.assertTrue(model.typed_algorithmic_scalar_offset_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_and_role_value_state_policy_trains_core_action_and_role_tokens(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=128,
+            core_role_value_transition_enabled=True,
+            core_state_carry_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_and_role_value_state",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_head.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_embed.weight.requires_grad)
+        self.assertTrue(model.core_role_value_transition_head.weight.requires_grad)
+        self.assertTrue(model.core.state_carry_update[0].weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+        self.assertTrue(
+            all(
+                name.startswith("core.")
+                or name.startswith("answer_state_loop_")
+                or name.startswith("transition_state_")
+                or name.startswith("core_role_value_state_")
+                or name.startswith("core_role_value_transition_")
+                for name in trainable
+            )
+        )
+
+    def test_core_state_carry_only_policy_freezes_existing_core_and_heads(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=128,
+            core_state_carry_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(model, "core_state_carry_only")
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core.state_carry_norm.")
+                or name.startswith("core.state_carry_update.")
+                or name.startswith("core.state_carry_gate.")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core.state_carry_norm.weight.requires_grad)
+        self.assertTrue(model.core.state_carry_update[0].weight.requires_grad)
+        self.assertTrue(model.core.state_carry_gate.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core_role_value_state_head.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_role_value_delta_only_policy_freezes_existing_core_and_heads(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=128,
+            core_role_value_delta_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_role_value_delta_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(name.startswith("core_role_value_delta_") for name in trainable)
+        )
+        self.assertTrue(model.core_role_value_delta_update[0].weight.requires_grad)
+        self.assertTrue(model.core_role_value_delta_gate.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core_role_value_state_head.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_value_delta_code_only_policy_freezes_existing_core_and_heads(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=128,
+            core_value_delta_code_enabled=True,
+            core_value_delta_codebook_size=128,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_value_delta_code_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(name.startswith("core_value_delta_code_") for name in trainable)
+        )
+        self.assertTrue(model.core_value_delta_code_head.weight.requires_grad)
+        self.assertTrue(model.core_value_delta_code_embed.weight.requires_grad)
+        self.assertTrue(model.core_value_delta_code_gate.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core_role_value_state_head.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_typed_register_executor_only_policy_freezes_existing_core_and_heads(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=128,
+            core_typed_register_executor_enabled=True,
+            core_typed_register_num_operations=6,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_typed_register_executor_only",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(name.startswith("core_typed_register_") for name in trainable)
+        )
+        self.assertTrue(model.core_typed_register_operation_head.weight.requires_grad)
+        self.assertTrue(model.core_typed_register_update[0].weight.requires_grad)
+        self.assertTrue(model.core_typed_register_value_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.core_role_value_state_head.weight.requires_grad)
+        self.assertFalse(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_typed_register_executor_and_prompt_extract_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            core_role_value_state_enabled=True,
+            core_role_value_state_prompt_extract_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=128,
+            core_typed_register_executor_enabled=True,
+            core_typed_register_num_operations=5,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_typed_register_executor_and_prompt_extract",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core_typed_register_")
+                or name.startswith("core_role_value_state_prompt_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core_typed_register_operation_head.weight.requires_grad)
+        self.assertTrue(model.core_role_value_state_prompt_cross.q_proj.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(model.core_role_value_state_head.weight.requires_grad)
+        self.assertFalse(model.transition_state_joint_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
     def test_core_and_primitive_transition_policy_freezes_everything_else(self):
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel
         from qtrm_mm.training.train import configure_trainable_parameters
@@ -272,6 +2524,229 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(model.primitive_transition_operation_head[0].weight.requires_grad)
         self.assertFalse(model.text_embed.weight.requires_grad)
         self.assertFalse(next(model.coda.parameters()).requires_grad)
+
+    def test_numeric_projector_primitive_role_value_policy_trains_projector(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=16,
+            core_role_value_state_prompt_extract_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=12,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "numeric_projector_primitive_role_value_state_machine",
+        )
+
+        self.assertTrue(any(name.startswith("projector.visual_") for name in trainable))
+        self.assertTrue(any(name.startswith("core_primitive_role_value_") for name in trainable))
+        self.assertTrue(model.projector.visual_proj.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_token_numeric_primitive_role_value_policy_trains_token_numeric_embed(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            token_numeric_value_embedding_enabled=True,
+            token_numeric_value_vocab_size=32,
+            core_role_value_state_enabled=True,
+            core_role_value_state_num_roles=10,
+            core_role_value_state_vocab_size=16,
+            core_role_value_state_prompt_extract_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=12,
+            core_primitive_role_value_executor_enabled=True,
+            core_primitive_role_value_mlp_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "token_numeric_context_primitive_role_value_state_machine",
+        )
+
+        self.assertTrue(any(name.startswith("token_numeric_value_embed.") for name in trainable))
+        self.assertTrue(any(name.startswith("prelude.") for name in trainable))
+        self.assertTrue(any(name.startswith("core_primitive_role_value_") for name in trainable))
+        self.assertTrue(model.token_numeric_value_embed.weight.requires_grad)
+        self.assertTrue(next(model.prelude.parameters()).requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_primitive_transition_and_finality_policy_freezes_everything_else(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=11,
+            transition_state_finality_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "core_primitive_transition_and_finality"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core.")
+                or name.startswith("primitive_transition_")
+                or name.startswith("transition_state_finality_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertTrue(model.transition_state_finality_head.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+        self.assertFalse(next(model.coda.parameters()).requires_grad)
+
+    def test_core_context_primitive_transition_and_finality_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_context_enabled=True,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=11,
+            transition_state_finality_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "core_context_primitive_transition_and_finality"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core.context_")
+                or name.startswith("primitive_transition_")
+                or name.startswith("transition_state_finality_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core.context_cross_l.q_proj.weight.requires_grad)
+        self.assertTrue(model.core.context_gate_h.weight.requires_grad)
+        self.assertTrue(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertTrue(model.transition_state_finality_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(next(model.core.fast_stack.parameters()).requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
+
+    def test_core_transition_feedback_and_readouts_policy_is_narrow(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            core_transition_feedback_enabled=True,
+            core_transition_feedback_num_operations=11,
+            primitive_transition_enabled=True,
+            primitive_transition_num_operations=11,
+            transition_state_finality_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model, "core_transition_feedback_and_readouts"
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(
+            all(
+                name.startswith("core.transition_feedback_")
+                or name.startswith("primitive_transition_")
+                or name.startswith("transition_state_finality_")
+                for name in trainable
+            )
+        )
+        self.assertTrue(model.core.transition_feedback_operation_head.weight.requires_grad)
+        self.assertTrue(model.core.transition_feedback_gate.weight.requires_grad)
+        self.assertTrue(model.primitive_transition_operation_head[0].weight.requires_grad)
+        self.assertTrue(model.transition_state_finality_head.weight.requires_grad)
+        self.assertFalse(model.core.z_l_init.requires_grad)
+        self.assertFalse(next(model.core.fast_stack.parameters()).requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_answer_state_loop_world_model_policy_freezes_everything_else(self):
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel
@@ -510,6 +2985,44 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(trainable, ["controller_signal_head.weight", "controller_signal_head.bias"])
         self.assertTrue(model.controller_signal_head.weight.requires_grad)
         self.assertFalse(model.controller_signal_proj.weight.requires_grad)
+        self.assertFalse(model.ctrl.action.weight.requires_grad)
+
+    def test_core_and_controller_signal_head_policy_trains_core_router_only(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=1,
+            visual_dim=16,
+            max_visual_tokens=4,
+            num_actions=10,
+            controller_signal_enabled=True,
+            controller_signal_source="learned_core",
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "core_and_controller_signal_head",
+        )
+
+        self.assertIn("controller_signal_head.weight", trainable)
+        self.assertTrue(any(name.startswith("core.") for name in trainable))
+        self.assertTrue(model.controller_signal_head.weight.requires_grad)
+        self.assertTrue(next(model.core.parameters()).requires_grad)
+        self.assertFalse(model.controller_signal_proj.weight.requires_grad)
+        self.assertFalse(model.text_embed.weight.requires_grad)
         self.assertFalse(model.ctrl.action.weight.requires_grad)
 
     def test_core_and_temporal_spatial_context_policy_trains_core_and_context_encoder(self):
@@ -961,6 +3474,164 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("workspace_off", cfg.train.canonical_causal_ablation_modes)
         self.assertIn("selective_gate", cfg.train.out_dir)
 
+    def test_donor_preserving_logit_guider_config_keeps_donor_as_base_policy(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config("configs/qwen35_2b_4090_donor_preserving_logit_guider_s120.yaml")
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertLessEqual(cfg.model.qtrm_logits_scale, 0.35)
+        self.assertLessEqual(cfg.model.qtrm_residual_clamp, 1.0)
+        self.assertTrue(cfg.model.qtrm_residual_gate_enabled)
+        self.assertLessEqual(cfg.model.qtrm_residual_gate_init_bias, -3.0)
+        self.assertFalse(cfg.train.workspace_evidence_injection)
+        self.assertEqual(cfg.train.donor_logits_scale_start, 1.0)
+        self.assertEqual(cfg.train.donor_logits_scale_end, 1.0)
+        self.assertGreater(cfg.train.loss_donor_kl_weight, 0.0)
+        self.assertGreater(cfg.train.loss_donor_correct_margin_weight, 0.0)
+        self.assertIn("core_off", cfg.train.canonical_causal_ablation_modes)
+        self.assertIn("donor_preserving_logit_guider", cfg.train.out_dir)
+
+    def test_donor_preserving_bounded_delta_nogate_config_removes_undertrained_gate(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_donor_preserving_bounded_delta_nogate_s120.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertLessEqual(cfg.model.qtrm_logits_scale, 0.35)
+        self.assertLessEqual(cfg.model.qtrm_residual_clamp, 1.0)
+        self.assertFalse(cfg.model.qtrm_residual_gate_enabled)
+        self.assertFalse(cfg.train.workspace_evidence_injection)
+        self.assertEqual(cfg.train.donor_logits_scale_start, 1.0)
+        self.assertEqual(cfg.train.donor_logits_scale_end, 1.0)
+        self.assertGreater(cfg.train.loss_donor_kl_weight, 0.0)
+        self.assertGreater(cfg.train.loss_donor_correct_margin_weight, 0.0)
+        self.assertIn("bounded_delta_nogate", cfg.train.out_dir)
+
+    def test_donor_preserving_pure_recursive_preference_config_targets_raw_reasoning(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_donor_preserving_pure_recursive_pref_s160.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertLessEqual(cfg.model.qtrm_logits_scale, 0.35)
+        self.assertLessEqual(cfg.model.qtrm_residual_clamp, 1.0)
+        self.assertFalse(cfg.model.qtrm_residual_gate_enabled)
+        self.assertFalse(cfg.train.workspace_evidence_injection)
+        self.assertGreater(cfg.train.loss_preference_weight, 0.0)
+        self.assertGreater(cfg.train.loss_canonical_causal_weight, 0.0)
+        self.assertIn("core_off", cfg.train.canonical_causal_ablation_modes)
+        self.assertIn("pure_recursive_pref", cfg.train.out_dir)
+
+    def test_donor_preserving_core_forced_readout_config_keeps_core_causal(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_s160.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertEqual(cfg.model.n_coda_layers, 0)
+        self.assertTrue(cfg.model.core_loop_readout_enabled)
+        self.assertTrue(cfg.model.core_loop_readout_requires_core)
+        self.assertFalse(cfg.model.answer_bottleneck_enabled)
+        self.assertFalse(cfg.model.qtrm_residual_gate_enabled)
+        self.assertLessEqual(cfg.model.qtrm_residual_clamp, 1.5)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_loop_readout")
+        self.assertFalse(cfg.train.workspace_evidence_injection)
+        self.assertGreaterEqual(cfg.train.loss_canonical_causal_weight, 1.0)
+        self.assertIn("core_off", cfg.train.canonical_causal_ablation_modes)
+        self.assertIn("core_forced_readout", cfg.train.out_dir)
+
+    def test_donor_preserving_core_forced_readout_outer4_config_trains_deeper_loop(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_outer4_s120.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertEqual(cfg.model.outer_steps, 4)
+        self.assertTrue(cfg.model.core_step_conditioning_enabled)
+        self.assertTrue(cfg.model.core_loop_readout_enabled)
+        self.assertTrue(cfg.model.core_loop_readout_requires_core)
+        self.assertEqual(cfg.model.n_coda_layers, 0)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_loop_readout")
+        self.assertLessEqual(cfg.train.lr, 1.0e-5)
+        self.assertGreaterEqual(cfg.train.loss_canonical_causal_weight, 1.0)
+        self.assertIn("outer4", cfg.train.out_dir)
+
+    def test_donor_preserving_core_forced_causal_prefix_sharpener_config(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_donor_preserving_core_forced_causal_prefix_sharpener_s080.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertTrue(cfg.model.core_loop_readout_enabled)
+        self.assertTrue(cfg.model.core_loop_readout_requires_core)
+        self.assertFalse(cfg.model.answer_bottleneck_enabled)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_loop_readout")
+        self.assertFalse(cfg.train.workspace_evidence_injection)
+        self.assertGreater(cfg.train.loss_greedy_token_margin_weight, 0.0)
+        self.assertFalse(cfg.train.greedy_token_margin_only_donor_errors)
+        self.assertIn("causal_prefix_sharpener", cfg.train.out_dir)
+
+    def test_donor_preserving_core_forced_variable_trajectory_config_uses_short_long_loss(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_donor_preserving_core_forced_variable_traj_s080.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertEqual(cfg.model.outer_steps, 4)
+        self.assertTrue(cfg.model.core_step_conditioning_enabled)
+        self.assertTrue(cfg.model.core_loop_readout_enabled)
+        self.assertTrue(cfg.model.core_loop_readout_requires_core)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_loop_readout")
+        self.assertGreater(cfg.train.loss_core_variable_trajectory_weight, 0.0)
+        self.assertEqual(cfg.train.core_variable_trajectory_short_steps, 1)
+        self.assertGreater(cfg.train.core_variable_trajectory_short_lm_weight, 0.0)
+        self.assertIn("variable_traj", cfg.train.out_dir)
+
+    def test_donor_preserving_core_forced_depth_text_ce_config_uses_process_credit(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_donor_preserving_core_forced_depth_text_ce_s080.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertEqual(cfg.model.outer_steps, 4)
+        self.assertTrue(cfg.model.core_loop_readout_enabled)
+        self.assertTrue(cfg.model.core_loop_readout_requires_core)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_loop_readout")
+        self.assertGreater(cfg.train.loss_core_depth_text_ce_weight, 0.0)
+        self.assertEqual(cfg.train.core_depth_text_ce_min_step, 1)
+        self.assertIn("depth_text_ce", cfg.train.out_dir)
+
+    def test_ouro_donor_guided_adapter_config_uses_donor_as_renderer(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_donor_guided_adapter_s060.yaml"
+        )
+
+        self.assertEqual(cfg.model.donor_logits_scale, 1.0)
+        self.assertEqual(cfg.model.qtrm_logits_scale, 0.0)
+        self.assertTrue(cfg.model.answer_state_loop_halt_gate_enabled)
+        self.assertTrue(cfg.model.answer_state_loop_lm_adapter_enabled)
+        self.assertLessEqual(cfg.model.qtrm_residual_clamp, 2.0)
+        self.assertEqual(cfg.train.trainable_param_policy, "answer_state_loop_lm_adapter_only")
+        self.assertFalse(cfg.train.workspace_evidence_injection)
+        self.assertIn("donor_guided_adapter", cfg.train.out_dir)
+
     def test_pure_recursive_transition_state_config_has_causal_state_ablation(self):
         from qtrm_mm.config import load_config
 
@@ -1015,6 +3686,64 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(cfg.train.trainable_param_policy, "core_and_answer_state_loop")
         self.assertIn("transition_state_off", cfg.train.canonical_causal_ablation_modes)
         self.assertIn("transition_finality", cfg.train.out_dir)
+
+    def test_pure_recursive_latent_action_codebook_finality_config_combines_code_and_halt(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_pure_recursive_latent_action_codebook_finality_s120.yaml"
+        )
+
+        self.assertTrue(cfg.model.transition_state_code_enabled)
+        self.assertEqual(cfg.model.transition_state_codebook_size, 4)
+        self.assertTrue(cfg.model.transition_state_finality_enabled)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_answer_state_loop")
+        self.assertIn("transition_state_off", cfg.train.canonical_causal_ablation_modes)
+        self.assertIn("latent_action_codebook_finality", cfg.train.out_dir)
+
+    def test_pure_recursive_transition_joint_config_uses_single_code_halt_head(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_pure_recursive_transition_joint_s120.yaml"
+        )
+
+        self.assertTrue(cfg.model.transition_state_joint_enabled)
+        self.assertEqual(cfg.model.transition_state_joint_size, 8)
+        self.assertFalse(cfg.model.transition_state_code_enabled)
+        self.assertFalse(cfg.model.transition_state_finality_enabled)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_answer_state_loop")
+        self.assertIn("transition_state_off", cfg.train.canonical_causal_ablation_modes)
+        self.assertIn("transition_joint", cfg.train.out_dir)
+
+    def test_pure_recursive_transition_joint_dense_config_uses_single_code_halt_head(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_s120.yaml"
+        )
+
+        self.assertTrue(cfg.model.transition_state_joint_enabled)
+        self.assertEqual(cfg.model.transition_state_joint_size, 8)
+        self.assertFalse(cfg.model.transition_state_code_enabled)
+        self.assertFalse(cfg.model.transition_state_finality_enabled)
+        self.assertEqual(cfg.train.trainable_param_policy, "core_and_answer_state_loop")
+        self.assertIn("transition_state_off", cfg.train.canonical_causal_ablation_modes)
+        self.assertIn("transition_joint_dense", cfg.train.out_dir)
+
+    def test_pure_recursive_transition_joint_dense_terminal_v2_config_uses_ten_joint_states(self):
+        from qtrm_mm.config import load_config
+
+        cfg = load_config(
+            "configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_s120.yaml"
+        )
+
+        self.assertTrue(cfg.model.transition_state_joint_enabled)
+        self.assertEqual(cfg.model.transition_state_codebook_size, 5)
+        self.assertEqual(cfg.model.transition_state_joint_size, 10)
+        self.assertFalse(cfg.model.transition_state_code_enabled)
+        self.assertFalse(cfg.model.transition_state_finality_enabled)
+        self.assertIn("transition_joint_dense_terminal_v2", cfg.train.out_dir)
 
     def test_pure_recursive_transition_text_config_enables_text_state_path(self):
         from qtrm_mm.config import load_config

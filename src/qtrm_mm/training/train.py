@@ -17,6 +17,13 @@ from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
 def load_initial_checkpoint(model, checkpoint_path: str, map_location):
     state = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
+    base_checkpoint = ""
+    if isinstance(state, dict):
+        base_checkpoint = str(state.get("base_checkpoint") or "").strip()
+    loaded_base = False
+    if base_checkpoint:
+        load_initial_checkpoint(model, base_checkpoint, map_location=map_location)
+        loaded_base = True
     loaded = state.get("model", state)
     current = model.state_dict()
     compatible = {}
@@ -27,6 +34,8 @@ def load_initial_checkpoint(model, checkpoint_path: str, map_location):
             continue
         compatible[name] = value
     missing, unexpected = model.load_state_dict(compatible, strict=False)
+    if loaded_base:
+        missing = []
     if skipped:
         print(f"[init] skipped shape-mismatched keys: {', '.join(skipped)}")
     return list(missing), list(unexpected)
@@ -154,6 +163,867 @@ def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
             )
         return trainable_names
 
+    simple_prefix_policies = {
+        "answer_state_loop_only": ("answer_state_loop_",),
+        "role_value_answer_bridge_loop_only": (
+            "answer_state_loop_",
+            "core_role_value_state_embed.",
+            "core_role_value_state_answer_",
+        ),
+        "role_value_answer_bridge_loop_vocab_renderer_only": (
+            "answer_state_loop_",
+            "core_role_value_state_embed.",
+            "core_role_value_state_answer_",
+            "core_role_value_state_vocab_renderer_",
+        ),
+        "role_value_answer_bridge_adapter_only": (
+            "answer_state_loop_lm_adapter_",
+            "core_role_value_state_embed.",
+            "core_role_value_state_answer_",
+        ),
+        "role_value_vocab_renderer_only": (
+            "core_role_value_state_embed.",
+            "core_role_value_state_answer_",
+            "core_role_value_state_vocab_renderer_",
+        ),
+        "answer_state_loop_talker_only": ("answer_state_loop_talker_",),
+        "answer_state_loop_lm_adapter_only": ("answer_state_loop_lm_adapter_",),
+        "answer_state_loop_next_token_decoder_only": (
+            "answer_state_loop_next_token_decoder_",
+        ),
+        "answer_state_loop_hidden_bridge_only": ("answer_state_loop_hidden_bridge_",),
+        "transition_state_sequence_only": ("transition_state_sequence_",),
+        "transition_state_joint_only": ("transition_state_joint_",),
+        "primitive_transition_only": ("primitive_transition_",),
+        "transition_source_router_only": ("transition_source_router_",),
+        "transition_state_joint_operation_residual_only": (
+            "transition_state_joint_operation_residual",
+        ),
+        "transition_phase_only": ("transition_phase_",),
+        "transition_state_joint_phase_residual_only": (
+            "transition_state_joint_phase_residual",
+        ),
+        "transition_value_state_only": ("transition_value_state_",),
+        "factorized_value_state_only": ("factorized_value_state_",),
+        "typed_algorithmic_value_state_only": ("typed_algorithmic_",),
+        "core_state_carry_only": (
+            "core.state_carry_norm.",
+            "core.state_carry_update.",
+            "core.state_carry_gate.",
+        ),
+        "core_role_value_delta_only": ("core_role_value_delta_",),
+        "core_value_delta_code_only": ("core_value_delta_code_",),
+        "core_role_value_template_only": ("core_role_value_template_",),
+        "core_typed_register_executor_only": ("core_typed_register_",),
+        "core_primitive_role_value_executor_only": (
+            "core_primitive_role_value_",
+        ),
+        "core_primitive_role_value_update_gate_only": (
+            "core_primitive_role_value_update_gate.",
+        ),
+        "core_primitive_typed_selector_only": (
+            "core_primitive_typed_selector",
+        ),
+    }
+    if policy in simple_prefix_policies:
+        prefixes = simple_prefix_policies[policy]
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not trainable_names:
+            raise ValueError(f"trainable_param_policy={policy} selected no parameters")
+        return trainable_names
+
+    if policy == "primitive_role_value_state_machine":
+        prefixes = (
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_embed.",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "numeric_projector_primitive_role_value_state_machine":
+        prefixes = (
+            "projector.visual_",
+            "projector.norm.",
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("projector.visual_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=numeric_projector_primitive_role_value_state_machine "
+                "requires model.projector visual parameters"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=numeric_projector_primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=numeric_projector_primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "token_numeric_primitive_role_value_state_machine":
+        prefixes = (
+            "token_numeric_value_",
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(
+            name.startswith("token_numeric_value_embed.") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_primitive_role_value_state_machine "
+                "requires model.token_numeric_value_embedding_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "token_numeric_context_primitive_role_value_state_machine":
+        prefixes = (
+            "token_numeric_value_",
+            "prelude.",
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(
+            name.startswith("token_numeric_value_embed.") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_primitive_role_value_state_machine "
+                "requires model.token_numeric_value_embedding_enabled=true"
+            )
+        if not any(name.startswith("prelude.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_primitive_role_value_state_machine "
+                "requires prelude parameters"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "token_numeric_context_binder_primitive_role_value_state_machine":
+        prefixes = (
+            "token_numeric_value_",
+            "token_numeric_source_slot_",
+            "prelude.",
+            "core_source_position_binder_",
+            "core_source_value_binder_",
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(
+            name.startswith("token_numeric_value_embed.") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_binder_primitive_role_value_state_machine "
+                "requires model.token_numeric_value_embedding_enabled=true"
+            )
+        if not any(name.startswith("prelude.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_binder_primitive_role_value_state_machine "
+                "requires prelude parameters"
+            )
+        if not any(
+            name.startswith("core_source_position_binder_")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_binder_primitive_role_value_state_machine "
+                "requires model.core_source_position_binder_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_binder_primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_context_binder_primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "prompt_context_binder_primitive_role_value_state_machine":
+        prefixes = (
+            "prelude.",
+            "core_source_position_binder_",
+            "core_source_value_binder_",
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("prelude.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=prompt_context_binder_primitive_role_value_state_machine "
+                "requires prelude parameters"
+            )
+        if not any(
+            name.startswith("core_source_position_binder_")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=prompt_context_binder_primitive_role_value_state_machine "
+                "requires model.core_source_position_binder_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=prompt_context_binder_primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=prompt_context_binder_primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "token_numeric_source_slot_context_primitive_role_value_state_machine":
+        prefixes = (
+            "token_numeric_source_slot_",
+            "prelude.",
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(
+            name.startswith("token_numeric_source_slot_embed.")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_primitive_role_value_state_machine "
+                "requires model.token_numeric_source_slot_embedding_enabled=true"
+            )
+        if not any(name.startswith("prelude.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_primitive_role_value_state_machine "
+                "requires prelude parameters"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "token_numeric_source_slot_context_binder_primitive_role_value_state_machine":
+        prefixes = (
+            "token_numeric_source_slot_",
+            "prelude.",
+            "core_source_position_binder_",
+            "core_source_value_binder_",
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(
+            name.startswith("token_numeric_source_slot_embed.")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_binder_primitive_role_value_state_machine "
+                "requires model.token_numeric_source_slot_embedding_enabled=true"
+            )
+        if not any(name.startswith("prelude.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_binder_primitive_role_value_state_machine "
+                "requires prelude parameters"
+            )
+        if not any(
+            name.startswith("core_source_position_binder_")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_binder_primitive_role_value_state_machine "
+                "requires model.core_source_position_binder_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_binder_primitive_role_value_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=token_numeric_source_slot_context_binder_primitive_role_value_state_machine "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "primitive_role_value_answer_bridge_loop":
+        prefixes = (
+            "primitive_transition_",
+            "core_primitive_role_value_",
+            "core_primitive_typed_selector",
+            "core_role_value_state_embed.",
+            "core_role_value_state_prompt_",
+            "core_typed_register_value_head.",
+            "core_role_value_state_answer_",
+            "answer_state_loop_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=primitive_role_value_answer_bridge_loop "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(
+            name.startswith("core_primitive_role_value_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=primitive_role_value_answer_bridge_loop "
+                "requires model.core_primitive_role_value_executor_enabled=true"
+            )
+        if not any(name.startswith("answer_state_loop_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=primitive_role_value_answer_bridge_loop "
+                "requires model.answer_state_loop_enabled=true"
+            )
+        if not any(
+            name.startswith("core_role_value_state_answer_")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=primitive_role_value_answer_bridge_loop "
+                "requires model.core_role_value_state_answer_bridge_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "primitive_and_typed_algorithmic_state_machine":
+        prefixes = (
+            "primitive_transition_",
+            "typed_algorithmic_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=primitive_and_typed_algorithmic_state_machine "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("typed_algorithmic_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=primitive_and_typed_algorithmic_state_machine "
+                "requires model.typed_algorithmic_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "lm_head_only":
+        if bool(getattr(model.cfg, "tie_embeddings", False)):
+            raise ValueError("trainable_param_policy=lm_head_only requires tie_embeddings=false")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name == "lm_head.weight"
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if trainable_names != ["lm_head.weight"]:
+            raise ValueError("trainable_param_policy=lm_head_only requires lm_head.weight")
+        return trainable_names
+
+    if policy == "primitive_transition_and_finality":
+        prefixes = ("primitive_transition_", "transition_state_finality_")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=primitive_transition_and_finality requires "
+                "model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("transition_state_finality_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=primitive_transition_and_finality requires "
+                "model.transition_state_finality_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "transition_phase_and_joint_phase_residual":
+        prefixes = ("transition_phase_", "transition_state_joint_phase_residual")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("transition_phase_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=transition_phase_and_joint_phase_residual "
+                "requires model.transition_phase_enabled=true"
+            )
+        if not any(
+            name.startswith("transition_state_joint_phase_residual")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=transition_phase_and_joint_phase_residual "
+                "requires model.transition_state_joint_phase_residual_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "transition_state_code_and_joint_code_residual":
+        prefixes = ("transition_state_code_", "transition_state_joint_code_residual")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("transition_state_code_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=transition_state_code_and_joint_code_residual "
+                "requires model.transition_state_code_enabled=true"
+            )
+        if not any(
+            name.startswith("transition_state_joint_code_residual")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=transition_state_code_and_joint_code_residual "
+                "requires model.transition_state_joint_code_residual_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_and_value_state":
+        prefixes = ("core.", "transition_state_joint_", "transition_value_state_")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("transition_value_state_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_value_state requires "
+                "model.transition_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "role_value_state_only":
+        prefixes = ("factorized_value_state_", "role_value_state_")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("role_value_state_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=role_value_state_only requires "
+                "model.role_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_role_value_state_only":
+        prefixes = ("core_role_value_state_", "core_role_value_transition_")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("core_role_value_state_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_role_value_state_only requires "
+                "model.core_role_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_and_typed_algorithmic_value_state":
+        prefixes = (
+            "core.",
+            "core_depth_readout_",
+            "transition_state_joint_",
+            "typed_algorithmic_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("typed_algorithmic_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_typed_algorithmic_value_state "
+                "requires model.typed_algorithmic_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_answer_loop_and_typed_algorithmic_value_state":
+        prefixes = (
+            "core.",
+            "core_depth_readout_",
+            "answer_state_loop_",
+            "transition_state_",
+            "typed_algorithmic_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("answer_state_loop_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_answer_loop_and_typed_algorithmic_value_state "
+                "requires model.answer_state_loop_enabled=true"
+            )
+        if not any(name.startswith("typed_algorithmic_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_answer_loop_and_typed_algorithmic_value_state "
+                "requires model.typed_algorithmic_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "token_embed_core_and_typed_algorithmic_value_state":
+        prefixes = (
+            "text_embed.",
+            "text_position_embed.",
+            "prelude.",
+            "workspace.",
+            "core.",
+            "core_depth_readout_",
+            "transition_state_joint_",
+            "typed_algorithmic_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("typed_algorithmic_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_embed_core_and_typed_algorithmic_value_state "
+                "requires model.typed_algorithmic_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_and_role_value_state":
+        prefixes = (
+            "core.",
+            "answer_state_loop_",
+            "transition_state_",
+            "core_role_value_state_",
+            "core_role_value_transition_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("core_role_value_state_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_role_value_state requires "
+                "model.core_role_value_state_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_typed_register_executor_and_prompt_extract":
+        prefixes = (
+            "core_typed_register_",
+            "core_role_value_state_prompt_",
+            "core_role_value_template_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("core_typed_register_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_typed_register_executor_and_prompt_extract "
+                "requires model.core_typed_register_executor_enabled=true"
+            )
+        if not any(
+            name.startswith("core_role_value_state_prompt_") for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=core_typed_register_executor_and_prompt_extract "
+                "requires model.core_role_value_state_prompt_extract_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_primitive_transition_and_finality":
+        prefixes = ("core.", "primitive_transition_", "transition_state_finality_")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_primitive_transition_and_finality "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("transition_state_finality_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_primitive_transition_and_finality "
+                "requires model.transition_state_finality_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_context_primitive_transition_and_finality":
+        prefixes = ("core.context_", "primitive_transition_", "transition_state_finality_")
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("core.context_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_context_primitive_transition_and_finality "
+                "requires model.core_context_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_context_primitive_transition_and_finality "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("transition_state_finality_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_context_primitive_transition_and_finality "
+                "requires model.transition_state_finality_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_transition_feedback_and_readouts":
+        prefixes = (
+            "core.transition_feedback_",
+            "primitive_transition_",
+            "transition_state_finality_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("core.transition_feedback_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_transition_feedback_and_readouts "
+                "requires model.core_transition_feedback_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_transition_feedback_and_readouts "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("transition_state_finality_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_transition_feedback_and_readouts "
+                "requires model.transition_state_finality_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_transition_order_bottleneck_and_readouts":
+        prefixes = (
+            "core_transition_order_bottleneck_",
+            "primitive_transition_",
+            "transition_state_finality_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(
+            name.startswith("core_transition_order_bottleneck_")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=core_transition_order_bottleneck_and_readouts "
+                "requires model.core_transition_order_bottleneck_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_transition_order_bottleneck_and_readouts "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("transition_state_finality_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_transition_order_bottleneck_and_readouts "
+                "requires model.transition_state_finality_enabled=true"
+            )
+        return trainable_names
+
+    if policy == "core_and_transition_order_bottleneck_and_readouts":
+        prefixes = (
+            "core.",
+            "core_transition_order_bottleneck_",
+            "primitive_transition_",
+            "transition_state_finality_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("core.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_transition_order_bottleneck_and_readouts "
+                "requires model.core"
+            )
+        if not any(
+            name.startswith("core_transition_order_bottleneck_")
+            for name in trainable_names
+        ):
+            raise ValueError(
+                "trainable_param_policy=core_and_transition_order_bottleneck_and_readouts "
+                "requires model.core_transition_order_bottleneck_enabled=true"
+            )
+        if not any(name.startswith("primitive_transition_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_transition_order_bottleneck_and_readouts "
+                "requires model.primitive_transition_enabled=true"
+            )
+        if not any(name.startswith("transition_state_finality_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_transition_order_bottleneck_and_readouts "
+                "requires model.transition_state_finality_enabled=true"
+            )
+        return trainable_names
+
     if policy == "core_and_temporal_spatial_context":
         trainable_names = []
         prefixes = (
@@ -231,6 +1101,26 @@ def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
             raise ValueError(
                 "trainable_param_policy=controller_signal_head_only requires "
                 "model.controller_signal_source to be a learned signal source"
+            )
+        return trainable_names
+
+    if policy == "core_and_controller_signal_head":
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith("core.") or name.startswith(
+                "controller_signal_head."
+            )
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("controller_signal_head.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_controller_signal_head requires "
+                "model.controller_signal_source to be a learned signal source"
+            )
+        if not any(name.startswith("core.") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=core_and_controller_signal_head requires model.core"
             )
         return trainable_names
 
