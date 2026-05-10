@@ -143,6 +143,34 @@ Kill criterion:
 - reject if the run improves only on the training surface without held-out
   length/order perturbation.
 
+Smoke result, 2026-05-10:
+
+```text
+implementation commit:
+  db596b6 feat(qtrm): add typed value answer bridge
+
+train smoke:
+  config:
+    configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_typed_value_answer_bridge_s040.yaml
+  init:
+    local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len1113_jointonly_s080_from_s720/last.pt
+  out:
+    local_eval/smoke_typed_value_answer_bridge_s1/last.pt
+  result:
+    one step completed; answer_state_loop_logit_ce and
+    typed_algorithmic_value_state_ce both contributed to the loss.
+
+eval smoke:
+  out:
+    local_eval/smoke_typed_value_answer_bridge_s1/eval_bridge_ablation.jsonl
+  modes:
+    qtrm_core_steps_4_no_evidence
+    qtrm_core_steps_4_typed_value_answer_bridge_off_no_evidence
+  result:
+    0/2 hits; both modes still prefer the doubled-list candidate after one
+    step. This is wiring validation only, not an accepted reasoning result.
+```
+
 ## Dual-Process Ordering
 
 QTRM may eventually become a dual-process architecture:
