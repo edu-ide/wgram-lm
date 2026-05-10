@@ -413,25 +413,51 @@ forced-choice max_cases=4 after subtract-heavy:
   typed_bridge_off:        2/4
   full bridge/recurrent:   2/4
 
+forced-choice max_cases=8 after subtract-heavy:
+  donor_only:              0/8
+  core_off:                0/8
+  core_steps_1:            2/8
+  core_steps_2:            4/8
+  recurrent_off:           2/8
+  full core_steps_4:       4/8
+
 score-gap diagnostic after subtract-heavy:
   donor gold-minus-pred mean:          -1.5316
   recurrent_off gold-minus-pred mean:  -0.7360
   full gold-minus-pred mean:           -0.4290
   typed_bridge_off gold-minus-pred:    -0.4292
 
+depth-sweep score-gap diagnostic max_cases=8:
+  donor gold-minus-pred mean:          -1.4534
+  core_steps_1 gold-minus-pred:        -0.3065
+  core_steps_2 gold-minus-pred:        -0.2582
+  recurrent_off gold-minus-pred:       -0.5035
+  full core_steps_4 gold-minus-pred:   -0.2319
+
+failed follow-up:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  typed_value_fullpath_len1113_surface_s020_from_subtract_heavy
+  trained on same length/surface family but held-out 40000-series values.
+  max_cases=8 regressed:
+    full core_steps_4:       4/8 -> 2/8
+    core_steps_2:            4/8 -> 2/8
+  This rejects the simple "just add len11/13 surface training" hypothesis for
+  this loss mix.
+
 decision:
   partial acceptance for the narrow answer-change prerequisite:
   the recurrent answer/core path can now change causal forced-choice answers
-  over donor-only, core-off, and recurrent-off on this 4-case mixed arithmetic
-  gate. This is not L3/L4/general LLM acceptance because the score is only
-  2/4, typed-bridge-off ties full, and the remaining len11 case still chooses
-  the pre-subtract sum. The scalar typed bridge is diagnostic, not yet causal.
+  over donor-only, core-off, shallower depth, and recurrent-off on this mixed
+  arithmetic gate. This is not L3/L4/general LLM acceptance because the
+  strongest held-out score is only 4/8, typed-bridge-off tied full on the
+  4-case check, and odd-start len11 cases still choose the pre-subtract sum.
+  The scalar typed bridge is diagnostic, not yet causal.
 
 next hypothesis:
   keep the canonical token/core/answer-loop policy, but stop relying on the
-  typed scalar bridge as the decisive mechanism. The next gate should make the
-  recurrent answer loop's internal subtract operation causal across both
-  starts, then expand beyond 4 cases.
+  typed scalar bridge as the decisive mechanism. The next gate should stabilize
+  final-answer selection under subtract-tail pressure without catastrophic
+  surface-continuation regression, then expand beyond 8 cases.
 ```
 
 ## Dual-Process Ordering
