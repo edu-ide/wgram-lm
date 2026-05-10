@@ -833,6 +833,36 @@ def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
             )
         return trainable_names
 
+    if policy == "token_core_answer_loop_and_typed_algorithmic_value_state":
+        prefixes = (
+            "text_embed.",
+            "text_position_embed.",
+            "prelude.",
+            "workspace.",
+            "core.",
+            "core_depth_readout_",
+            "answer_state_loop_",
+            "transition_state_",
+            "typed_algorithmic_",
+        )
+        trainable_names = []
+        for name, param in model.named_parameters():
+            trainable = name.startswith(prefixes)
+            param.requires_grad_(trainable)
+            if trainable:
+                trainable_names.append(name)
+        if not any(name.startswith("answer_state_loop_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_core_answer_loop_and_typed_algorithmic_value_state "
+                "requires model.answer_state_loop_enabled=true"
+            )
+        if not any(name.startswith("typed_algorithmic_") for name in trainable_names):
+            raise ValueError(
+                "trainable_param_policy=token_core_answer_loop_and_typed_algorithmic_value_state "
+                "requires model.typed_algorithmic_value_state_enabled=true"
+            )
+        return trainable_names
+
     if policy == "core_and_role_value_state":
         prefixes = (
             "core.",

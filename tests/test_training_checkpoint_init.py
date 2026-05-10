@@ -2127,6 +2127,56 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
         self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
 
+    def test_token_core_answer_loop_and_typed_policy_opens_full_lm_path(self):
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from qtrm_mm.training.train import configure_trainable_parameters
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            tie_embeddings=False,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=1,
+            n_core_layers=1,
+            n_coda_layers=1,
+            workspace_tokens=4,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+            text_position_embed_enabled=True,
+            core_depth_readout_enabled=True,
+            answer_state_loop_enabled=True,
+            transition_state_joint_enabled=True,
+            transition_state_joint_size=10,
+            typed_algorithmic_value_state_enabled=True,
+            typed_algorithmic_value_state_answer_bridge_enabled=True,
+        )
+        model = QTRMMultimodalModel(cfg)
+
+        trainable = configure_trainable_parameters(
+            model,
+            "token_core_answer_loop_and_typed_algorithmic_value_state",
+        )
+
+        self.assertTrue(trainable)
+        self.assertTrue(model.text_embed.weight.requires_grad)
+        self.assertTrue(model.text_position_embed.weight.requires_grad)
+        self.assertTrue(model.prelude.layers[0].norm1.weight.requires_grad)
+        self.assertTrue(model.workspace.workspace.requires_grad)
+        self.assertTrue(model.core_depth_readout_query.requires_grad)
+        self.assertTrue(model.core.z_l_init.requires_grad)
+        self.assertTrue(model.answer_state_loop_gate.weight.requires_grad)
+        self.assertTrue(model.transition_state_joint_head.weight.requires_grad)
+        self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
+        self.assertTrue(
+            model.typed_algorithmic_value_state_answer_bridge_proj.weight.requires_grad
+        )
+        self.assertFalse(model.lm_head.weight.requires_grad)
+
     def test_primitive_and_typed_algorithmic_policy_trains_only_that_state_path(self):
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel
         from qtrm_mm.training.train import configure_trainable_parameters
