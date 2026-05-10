@@ -1,0 +1,73 @@
+donor:
+  model_id: Qwen/Qwen3.5-2B-Base
+  load_in_4bit: true
+  freeze_donor: true
+  train_lora: false
+
+model:
+  vocab_size: 248320
+  d_model: 512
+  n_heads: 8
+  n_kv_heads: 4
+  d_ff: 1536
+  max_seq_len: 2048
+  n_prelude_layers: 2
+  n_core_layers: 4
+  n_coda_layers: 2
+  attn_every: 4
+  coda_attn_every: 1
+  workspace_tokens: 64
+  workspace_layers: 3
+  workspace_ff_mult: 2
+  workspace_include_latents_in_kv: true
+  h_cycles: 2
+  l_cycles: 2
+  outer_steps: 2
+  dropout: 0.0
+  rope_theta: 100000.0
+  delta_backend: torch_gated_delta
+  attention_backend: flash_attn
+  strict_backends: false
+  visual_dim: 2048
+  max_visual_tokens: 64
+  num_actions: 10
+  core_context_enabled: false
+  core_to_text_enabled: false
+  answer_bottleneck_enabled: false
+  qtrm_logits_scale: 0.30
+  donor_logits_scale: 1.0
+  qtrm_residual_clamp: 1.0
+  qtrm_residual_gate_enabled: false
+
+train:
+  batch_size: 1
+  seq_len: 512
+  steps: 120
+  lr: 2.0e-5
+  loss_lm_weight: 0.60
+  loss_student_lm_weight: 0.20
+  loss_donor_kl_weight: 0.20
+  donor_kl_beta: 0.0
+  donor_kl_temperature: 1.0
+  loss_jepa_weight: 0.0
+  loss_aux_weight: 0.0
+  loss_repeat_unlikelihood_weight: 0.02
+  loss_greedy_token_margin_weight: 0.35
+  greedy_token_margin: 0.40
+  greedy_token_margin_only_donor_errors: true
+  loss_donor_correct_margin_weight: 0.50
+  donor_correct_margin: 0.25
+  loss_canonical_causal_weight: 0.25
+  canonical_causal_beta: 2.0
+  canonical_causal_margin: 0.02
+  canonical_causal_ablation_modes:
+    - core_off
+    - workspace_off
+  trainable_param_policy: all
+  workspace_evidence_injection: false
+  donor_logits_scale_start: 1.0
+  donor_logits_scale_end: 1.0
+  device: auto
+  use_amp: true
+  log_every: 5
+  out_dir: /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_bounded_delta_nogate_s120
