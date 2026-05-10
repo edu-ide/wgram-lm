@@ -269,6 +269,70 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertEqual(int(batch["action_target"][0].item()), Action.VERIFY_EVIDENCE.id)
         self.assertGreater(int(batch["workspace_attention_mask"].sum().item()), 0)
 
+    def test_regular_rows_emit_controller_signal_targets(self):
+        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+
+        ds = JsonlTextVisionDataset(
+            files=[],
+            vocab_size=512,
+            seq_len=48,
+            visual_dim=8,
+            max_visual_tokens=1,
+            multimodal=False,
+        )
+
+        sample = ds._make_sample(
+            {
+                "prompt": "Question: choose a route.",
+                "controller_signal": [0.0, 1.0, 0.0],
+            }
+        )
+
+        self.assertIn("controller_signal", sample)
+        self.assertEqual(sample["controller_signal"].shape, (3,))
+
+        batch = collate_jsonl([sample])
+
+        self.assertIn("controller_signal", batch)
+        self.assertEqual(batch["controller_signal"].shape, (1, 3))
+
+    def test_controller_signal_only_rows_preserve_prompt_text_exactly(self):
+        import torch
+
+        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+
+        class CharTokenizer:
+            pad_token_id = 0
+            bos_token_id = 1
+            eos_token_id = 2
+
+            def __call__(self, text, **kwargs):
+                max_length = kwargs.get("max_length", 512)
+                ids = [self.bos_token_id]
+                ids.extend((ord(ch) % 250) + 3 for ch in str(text or "")[: max_length - 2])
+                ids.append(self.eos_token_id)
+                return {"input_ids": torch.tensor([ids[:max_length]], dtype=torch.long)}
+
+        prompt = "Question: choose a route."
+        ds = JsonlTextVisionDataset(
+            files=[],
+            vocab_size=512,
+            seq_len=48,
+            visual_dim=8,
+            max_visual_tokens=1,
+            multimodal=False,
+            tokenizer=CharTokenizer(),
+        )
+
+        sample = ds._make_sample(
+            {
+                "prompt": prompt,
+                "controller_signal": [0.0, 1.0, 0.0],
+            }
+        )
+
+        self.assertTrue(torch.equal(sample["input_ids"], ds.tok.encode(prompt, 48)))
+
     def test_trace_replay_rows_encode_step_and_state_in_action_input(self):
         import torch
 

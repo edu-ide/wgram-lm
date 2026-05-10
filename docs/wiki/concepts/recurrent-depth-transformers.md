@@ -36,6 +36,20 @@ Useful QTRM design ideas:
    factor, depth-sweep validation loss, and logit entropy. Without these, a
    repeated-token collapse can hide inside the recurrent block.
 
+7. LoopLM-style pretraining path.
+   Ouro is a stronger reference than task-specific TRM for general LLMs:
+   parameter-shared decoder blocks are applied recurrently during pretraining,
+   with learned/adaptive depth pressure. QTRM should treat this as the target
+   shape for a future donor-assisted looped decoder, not as a sidecar probe.
+   After the 2026-05-07 answer-loop joint decoder rejection, Ouro/Mythos-style
+   answer recurrence must not become a second reasoning core beside TRM.
+
+8. Entropy-regularized depth allocation.
+   Fixed depth sweeps are diagnostic, but a production recurrent LLM should
+   learn when extra latent computation is worth using. This maps to QTRM's
+   core halt/depth head plus an entropy/depth regularizer, gated by held-out
+   depth-improvement tests.
+
 Do not assume:
 
 - More loops always improve reasoning.
@@ -49,6 +63,10 @@ Current QTRM action:
 - Compare current `StableInject` with a Parcae-style diagonal injection behind a
   config flag.
 - Keep TRM carry/ACT and Parcae looped-LM recurrence as separate design axes.
+- Add Ouro/LoopLM as the general-LLM reference axis: recurrent latent compute
+  must train through the normal LM objective and return to LM logits.
+- Use TRM/QTRM as the canonical primary reasoning core. Use Parcae/Mythos only
+  as stable-update references inside the core or as renderer probes.
 
 ## Classification Wording
 

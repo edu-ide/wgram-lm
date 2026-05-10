@@ -232,6 +232,8 @@ class JsonlTextVisionDataset(IterableDataset):
                     prompt = visible_prompt
             prompt_prefix = f"{prompt}\n\n"
             text = f"{prompt_prefix}{answer}"
+        elif not text and "controller_signal" in row and prompt and not answer:
+            text = prompt
         elif not text:
             text = f"{prompt}\n\n{answer}"
         input_ids = self.tok.encode(text, self.seq_len)
@@ -310,6 +312,20 @@ class JsonlTextVisionDataset(IterableDataset):
         if "answer_decision_features" in row:
             sample["answer_decision_features"] = torch.tensor(
                 [float(value) for value in row["answer_decision_features"]],
+                dtype=torch.float32,
+            )
+        if "controller_signal" in row:
+            values = [float(value) for value in list(row["controller_signal"])]
+            sample["controller_signal"] = torch.tensor(values, dtype=torch.float32)
+        elif (
+            "controller_world_model_signal" in row
+            or "controller_verifier_signal" in row
+        ):
+            sample["controller_signal"] = torch.tensor(
+                [
+                    float(row.get("controller_world_model_signal", 0.0)),
+                    float(row.get("controller_verifier_signal", 0.0)),
+                ],
                 dtype=torch.float32,
             )
         return sample

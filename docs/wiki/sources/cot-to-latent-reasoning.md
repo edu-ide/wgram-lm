@@ -11,6 +11,7 @@ latent loops.
 | Area | Source | Local artifact | QTRM relevance |
 | --- | --- | --- | --- |
 | Continuous latent reasoning | Coconut, "Training Large Language Models to Reason in a Continuous Latent Space" | `references/papers/latent_reasoning/coconut_2412.06769.pdf` | Uses hidden states as continuous thoughts instead of decoding every reasoning step. Supports the idea that QTRM should not emit long CoT at inference. |
+| Latent thought pretraining | PonderLM-2, "Pretraining LLM with Latent Thoughts in Continuous Space" | `references/official/PonderLM-2` at `fa784be` | Trains an intermediate latent thought immediately before predicting the next token. This maps directly to QTRM's renderer bottleneck: answer-state hidden must be trained to improve LM-token prediction, not only forced-choice scoring. |
 | CoT compression | CODI, "Compressing Chain-of-Thought into Continuous Space via Self-Distillation" | `references/papers/latent_reasoning/codi_2025.emnlp-main.36.pdf`, `references/official/codi` at `2c23146` | Directly matches the QTRM training target: explicit CoT as teacher, latent state as student. |
 | Hybrid text/latent reasoning | HybridCoT | `references/papers/latent_reasoning/hybridcot_4mfGbMzTwu.pdf` | Warns against over-compressing all reasoning; critical symbols or operations may remain textual while semantic reasoning is latent. |
 | Looped latent thoughts | Reasoning with Latent Thoughts / Looped Transformers | `references/papers/recurrent_depth/reasoning_with_latent_thoughts_looped_transformers_2502.17416.pdf` | Theoretical and empirical support for looped models simulating CoT-like steps through repeated latent computation. |
@@ -22,6 +23,8 @@ latent loops.
 ## Paper Links
 
 - Coconut: <https://arxiv.org/abs/2412.06769>
+- PonderLM-2: <https://arxiv.org/abs/2509.23184>
+- PonderLM-2 code: <https://github.com/LUMIA-Group/PonderLM-2>
 - CODI: <https://aclanthology.org/2025.emnlp-main.36/>
 - CODI code: <https://github.com/zhenyi4/codi>
 - HybridCoT: <https://openreview.net/forum?id=4mfGbMzTwu>

@@ -13,52 +13,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -71,52 +71,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -129,52 +129,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -187,52 +187,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -245,52 +245,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -303,52 +303,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -361,52 +361,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -419,52 +419,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -477,52 +477,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -535,52 +535,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -593,52 +593,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -651,52 +651,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -709,52 +709,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -767,52 +767,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -825,52 +825,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -883,52 +883,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -941,52 +941,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -999,52 +999,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1057,52 +1057,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1115,52 +1115,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1173,52 +1173,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1231,52 +1231,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1289,52 +1289,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1347,52 +1347,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1405,52 +1405,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1463,52 +1463,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1521,52 +1521,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1579,52 +1579,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1637,52 +1637,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1695,52 +1695,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1753,52 +1753,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1811,52 +1811,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1869,52 +1869,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1927,52 +1927,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1985,52 +1985,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2043,52 +2043,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2101,52 +2101,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2159,52 +2159,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2217,52 +2217,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2275,52 +2275,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2333,52 +2333,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2391,52 +2391,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2449,52 +2449,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2507,52 +2507,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2565,52 +2565,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2623,52 +2623,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2681,52 +2681,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2739,52 +2739,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2797,52 +2797,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2855,52 +2855,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2913,52 +2913,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2971,52 +2971,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3029,52 +3029,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3087,52 +3087,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3145,52 +3145,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3203,52 +3203,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3261,52 +3261,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3319,52 +3319,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3377,52 +3377,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 381,
+          "predicted": 173318,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        381,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        381,
-        165469
+        173318,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3435,52 +3435,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3493,52 +3493,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3551,52 +3551,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3609,52 +3609,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 78824,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 197169,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        78824,
-        197169,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3667,52 +3667,52 @@
         {
           "correct": false,
           "depth": 1,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
-          "predicted": 165469,
+          "predicted": 151671,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
-          "predicted": 165469,
+          "predicted": 193503,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
-        165469,
-        165469,
-        165469,
-        165469,
-        197169,
-        165469,
-        196266,
-        165469
+        193503,
+        193503,
+        193503,
+        151671,
+        193503,
+        193503,
+        193503,
+        193503
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,

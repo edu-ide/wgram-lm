@@ -152,6 +152,91 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(good_metrics["controller_signal_acc"]), 1.0)
         self.assertEqual(float(bad_metrics["controller_signal_acc"]), 0.0)
 
+    def test_controller_signal_prediction_loss_trains_route_softmax(self):
+        from qtrm_mm.losses import controller_signal_prediction_loss
+
+        good_outputs = {
+            "controller_signal_logits": torch.tensor([[0.0, 0.0, 8.0]], dtype=torch.float32),
+            "logits": torch.zeros(1, 1, 4),
+        }
+        bad_outputs = {
+            "controller_signal_logits": torch.tensor([[8.0, 0.0, 0.0]], dtype=torch.float32),
+            "logits": torch.zeros(1, 1, 4),
+        }
+        target = torch.tensor([[0.0, 0.0, 1.0]], dtype=torch.float32)
+
+        good_loss, good_metrics = controller_signal_prediction_loss(
+            good_outputs,
+            target=target,
+            mode="softmax_ce",
+        )
+        bad_loss, bad_metrics = controller_signal_prediction_loss(
+            bad_outputs,
+            target=target,
+            mode="softmax_ce",
+        )
+
+        self.assertLess(float(good_loss), 0.01)
+        self.assertGreater(float(bad_loss), 7.0)
+        self.assertEqual(float(good_metrics["controller_signal_acc"]), 1.0)
+        self.assertEqual(float(bad_metrics["controller_signal_acc"]), 0.0)
+
+    def test_core_trajectory_shortcut_consistency_prefers_early_states_matching_final(self):
+        from qtrm_mm.losses import core_trajectory_shortcut_consistency_loss
+
+        good_outputs = {
+            "logits": torch.zeros(1, 1, 4),
+            "core_depth_states": torch.tensor(
+                [[[1.0, 0.0], [1.0, 0.0], [1.0, 0.0]]],
+                dtype=torch.float32,
+            ),
+        }
+        bad_outputs = {
+            "logits": torch.zeros(1, 1, 4),
+            "core_depth_states": torch.tensor(
+                [[[0.0, 1.0], [0.0, 1.0], [1.0, 0.0]]],
+                dtype=torch.float32,
+            ),
+        }
+
+        good_loss, good_metrics = core_trajectory_shortcut_consistency_loss(
+            good_outputs
+        )
+        bad_loss, bad_metrics = core_trajectory_shortcut_consistency_loss(
+            bad_outputs
+        )
+
+        self.assertLess(float(good_loss), 0.01)
+        self.assertGreater(float(bad_loss), 0.9)
+        self.assertGreater(float(good_metrics["core_trajectory_shortcut_cosine"]), 0.99)
+        self.assertLess(float(bad_metrics["core_trajectory_shortcut_cosine"]), 0.1)
+
+    def test_core_depth_text_ce_loss_trains_each_requested_depth(self):
+        from qtrm_mm.losses import core_depth_text_ce_loss
+
+        input_ids = torch.tensor([[1, 2, 3]])
+        depth_logits = torch.zeros(1, 2, 3, 5)
+        depth_logits[0, 0, 0, 4] = 8.0
+        depth_logits[0, 0, 1, 4] = 8.0
+        depth_logits[0, 1, 0, 2] = 8.0
+        depth_logits[0, 1, 1, 3] = 8.0
+        outputs = {
+            "logits": torch.zeros(1, 3, 5),
+            "core_depth_text_logits": depth_logits,
+        }
+
+        all_depths, all_metrics = core_depth_text_ce_loss(outputs, input_ids)
+        second_depth, second_metrics = core_depth_text_ce_loss(
+            outputs,
+            input_ids,
+            min_step=2,
+        )
+
+        self.assertGreater(float(all_depths), 3.0)
+        self.assertLess(float(second_depth), 0.01)
+        self.assertEqual(float(all_metrics["core_depth_text_ce_steps"]), 2.0)
+        self.assertEqual(float(second_metrics["core_depth_text_ce_steps"]), 1.0)
+
     def test_answer_decision_loss_trains_block_signal(self):
         from qtrm_mm.losses import answer_decision_loss
 
@@ -463,6 +548,7 @@ class LossTests(unittest.TestCase):
             jepa_weight=0.0,
             aux_weight=0.0,
             controller_signal_weight=1.0,
+            controller_signal_loss_mode="softmax_ce",
             controller_signal_target=target,
         )
 
@@ -1315,6 +1401,219 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(lm_only), float(metrics["lm"]), places=5)
         self.assertGreater(float(weighted), float(lm_only))
 
+    def test_qtrm_smoke_loss_adds_core_trajectory_shortcut_component(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+
+            def forward(self, input_ids, **kwargs):
+                logits = torch.zeros(1, 3, 5)
+                logits[0, 0, 2] = 8.0
+                logits[0, 1, 3] = 8.0
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(1, 2, 4),
+                    "jepa_target": torch.zeros(1, 2, 4),
+                    "jepa_mask": torch.ones(1, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(1, 3, 4),
+                    "jepa_latent_mask": torch.ones(1, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(1, 1),
+                    "action_logits": torch.zeros(1, 3),
+                    "core_depth_states": torch.tensor(
+                        [[[0.0, 1.0], [0.0, 1.0], [1.0, 0.0]]],
+                        dtype=torch.float32,
+                    ),
+                }
+
+        input_ids = torch.tensor([[1, 2, 3]])
+        disabled, _, _ = qtrm_smoke_loss(
+            FakeModel(),
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_trajectory_shortcut_weight=0.0,
+        )
+        enabled, metrics, _ = qtrm_smoke_loss(
+            FakeModel(),
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_trajectory_shortcut_weight=1.0,
+        )
+
+        self.assertIn("core_trajectory_shortcut", metrics)
+        self.assertGreater(float(metrics["core_trajectory_shortcut"]), 0.9)
+        self.assertGreater(float(enabled), float(disabled) + 0.9)
+
+    def test_qtrm_smoke_loss_adds_core_variable_trajectory_component(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type(
+                    "Cfg",
+                    (),
+                    {"jepa_sigreg_weight": 0.0, "outer_steps": 4},
+                )()
+                self.calls = []
+
+            def forward(self, input_ids, **kwargs):
+                self.calls.append(int(self.cfg.outer_steps))
+                logits = torch.zeros(1, 3, 5)
+                if self.cfg.outer_steps == 4:
+                    logits[0, 0, 2] = 8.0
+                    logits[0, 1, 3] = 8.0
+                    depth_states = torch.tensor(
+                        [[[0.0, 1.0], [0.2, 0.8], [0.8, 0.2], [1.0, 0.0]]],
+                        dtype=torch.float32,
+                    )
+                else:
+                    logits[0, 0, 4] = 8.0
+                    logits[0, 1, 4] = 8.0
+                    depth_states = torch.tensor([[[0.0, 1.0]]], dtype=torch.float32)
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(1, 2, 4),
+                    "jepa_target": torch.zeros(1, 2, 4),
+                    "jepa_mask": torch.ones(1, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(1, 3, 4),
+                    "jepa_latent_mask": torch.ones(1, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(1, 1),
+                    "action_logits": torch.zeros(1, 3),
+                    "core_depth_states": depth_states,
+                }
+
+        input_ids = torch.tensor([[1, 2, 3]])
+        model = FakeModel()
+        disabled, _, _ = qtrm_smoke_loss(
+            model,
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_variable_trajectory_weight=0.0,
+            core_variable_trajectory_short_steps=1,
+        )
+        self.assertEqual(model.calls, [4])
+
+        enabled, metrics, _ = qtrm_smoke_loss(
+            model,
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_variable_trajectory_weight=1.0,
+            core_variable_trajectory_short_steps=1,
+        )
+
+        self.assertEqual(model.calls[-2:], [4, 1])
+        self.assertEqual(model.cfg.outer_steps, 4)
+        self.assertIn("core_variable_trajectory", metrics)
+        self.assertIn("core_variable_trajectory_short_lm", metrics)
+        self.assertGreater(float(metrics["core_variable_trajectory"]), 2.0)
+        self.assertGreater(float(enabled), float(disabled) + 2.0)
+
+    def test_qtrm_smoke_loss_adds_core_depth_text_ce_component(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+                self.saw_return_core_depth_text_logits = None
+
+            def forward(self, input_ids, **kwargs):
+                self.saw_return_core_depth_text_logits = kwargs.get(
+                    "return_core_depth_text_logits"
+                )
+                logits = torch.zeros(1, 3, 5)
+                logits[0, 0, 2] = 8.0
+                logits[0, 1, 3] = 8.0
+                depth_logits = torch.zeros(1, 2, 3, 5)
+                depth_logits[:, :, 0, 4] = 8.0
+                depth_logits[:, :, 1, 4] = 8.0
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(1, 2, 4),
+                    "jepa_target": torch.zeros(1, 2, 4),
+                    "jepa_mask": torch.ones(1, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(1, 3, 4),
+                    "jepa_latent_mask": torch.ones(1, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(1, 1),
+                    "action_logits": torch.zeros(1, 3),
+                    "core_depth_text_logits": depth_logits,
+                }
+
+        input_ids = torch.tensor([[1, 2, 3]])
+        model = FakeModel()
+        disabled, _, _ = qtrm_smoke_loss(
+            model,
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_depth_text_ce_weight=0.0,
+        )
+        self.assertIsNone(model.saw_return_core_depth_text_logits)
+
+        enabled, metrics, _ = qtrm_smoke_loss(
+            model,
+            input_ids,
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_depth_text_ce_weight=1.0,
+        )
+
+        self.assertIs(model.saw_return_core_depth_text_logits, True)
+        self.assertIn("core_depth_text_ce", metrics)
+        self.assertGreater(float(metrics["core_depth_text_ce"]), 3.0)
+        self.assertGreater(float(enabled), float(disabled) + 3.0)
+
+    def test_core_depth_text_ce_is_not_requested_on_preference_rejected_forward(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+                self.depth_text_requests = []
+
+            def forward(self, input_ids, **kwargs):
+                self.depth_text_requests.append(
+                    kwargs.get("return_core_depth_text_logits")
+                )
+                logits = torch.zeros(input_ids.shape[0], input_ids.shape[1], 5)
+                logits[:, 0, 2] = 8.0
+                logits[:, 1, 3] = 8.0
+                depth_logits = torch.zeros(input_ids.shape[0], 2, input_ids.shape[1], 5)
+                depth_logits[:, :, 0, 4] = 8.0
+                depth_logits[:, :, 1, 4] = 8.0
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(input_ids.shape[0], 2, 4),
+                    "jepa_target": torch.zeros(input_ids.shape[0], 2, 4),
+                    "jepa_mask": torch.ones(input_ids.shape[0], 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(input_ids.shape[0], 3, 4),
+                    "jepa_latent_mask": torch.ones(input_ids.shape[0], 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(input_ids.shape[0], 1),
+                    "action_logits": torch.zeros(input_ids.shape[0], 3),
+                    "core_depth_text_logits": depth_logits,
+                }
+
+        model = FakeModel()
+        qtrm_smoke_loss(
+            model,
+            torch.tensor([[1, 2, 3]]),
+            preference_rejected_input_ids=torch.tensor([[1, 2, 3]]),
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            preference_weight=1.0,
+            core_depth_text_ce_weight=1.0,
+        )
+
+        self.assertEqual(model.depth_text_requests[:2], [True, None])
+
     def test_core_halt_loss_trains_q_halt_logits_against_targets(self):
         from qtrm_mm.losses import core_halt_loss
 
@@ -1330,6 +1629,38 @@ class LossTests(unittest.TestCase):
 
         self.assertLess(float(core_halt_loss(good, targets)), 0.1)
         self.assertGreater(float(core_halt_loss(bad, targets)), 2.0)
+
+    def test_core_halt_loss_can_train_q_value_halt_continue_targets(self):
+        from qtrm_mm.losses import core_halt_loss
+
+        good = {
+            "core_q_halt_logits": torch.tensor([[0.0, 1.0, 1.0]]),
+            "core_q_continue_logits": torch.tensor([[0.9, 0.0, 0.0]]),
+        }
+        bad = {
+            "core_q_halt_logits": torch.tensor([[1.0, 0.0, 0.0]]),
+            "core_q_continue_logits": torch.tensor([[0.0, 0.9, 0.9]]),
+        }
+        halt_targets = torch.tensor([[0.0, 1.0, 1.0]])
+        continue_targets = torch.tensor([[1.0, 0.0, 0.0]])
+
+        good_loss = core_halt_loss(
+            good,
+            halt_targets,
+            continue_targets,
+            mode="q_value",
+            q_value_gamma=0.9,
+        )
+        bad_loss = core_halt_loss(
+            bad,
+            halt_targets,
+            continue_targets,
+            mode="q_value",
+            q_value_gamma=0.9,
+        )
+
+        self.assertLess(float(good_loss), 1e-6)
+        self.assertGreater(float(bad_loss), 0.1)
 
     def test_qtrm_smoke_loss_adds_core_halt_loss_without_forwarding_targets(self):
         from qtrm_mm.losses import qtrm_smoke_loss
@@ -1681,6 +2012,51 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(metrics["core_halt"]), 0.1)
         self.assertIs(model.saw_enable_core_halt, False)
         self.assertIs(model.saw_return_core_depth_logits, True)
+
+    def test_qtrm_smoke_loss_can_use_q_value_core_halt_mode(self):
+        from qtrm_mm.losses import qtrm_smoke_loss
+
+        class FakeModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.cfg = type("Cfg", (), {"jepa_sigreg_weight": 0.0})()
+
+            def forward(self, input_ids, **kwargs):
+                logits = torch.zeros(1, 3, 5)
+                logits[:, 0, 2] = 8.0
+                logits[:, 1, 3] = 8.0
+                return {
+                    "logits": logits,
+                    "jepa_pred": torch.ones(1, 2, 4),
+                    "jepa_target": torch.zeros(1, 2, 4),
+                    "jepa_mask": torch.ones(1, 2, dtype=torch.bool),
+                    "jepa_latents": torch.ones(1, 3, 4),
+                    "jepa_latent_mask": torch.ones(1, 3, dtype=torch.bool),
+                    "halt_logits": torch.ones(1, 1),
+                    "action_logits": torch.zeros(1, 3),
+                    "core_q_halt_logits": torch.tensor([[0.0, 1.0, 1.0]]),
+                    "core_q_continue_logits": torch.tensor([[0.9, 0.0, 0.0]]),
+                    "core_depth_last_logits": torch.tensor(
+                        [[[0.0, 8.0, 0.0, 0.0, 0.0], [8.0, 0.0, 0.0, 0.0, 0.0], [8.0, 0.0, 0.0, 0.0, 0.0]]]
+                    ),
+                    "core_depth_states": torch.ones(1, 3, 4),
+                }
+
+        _, metrics, _ = qtrm_smoke_loss(
+            FakeModel(),
+            torch.tensor([[0, 2, 3]]),
+            labels=torch.tensor([[-100, 2, 3]]),
+            jepa_weight=0.0,
+            aux_weight=0.0,
+            core_halt_weight=1.0,
+            core_halt_auto_targets=True,
+            core_halt_target_mode="teacher_depth",
+            core_halt_loss_mode="q_value",
+            core_halt_q_value_gamma=0.9,
+            core_halt_teacher_depth_threshold=0.99,
+        )
+
+        self.assertLess(float(metrics["core_halt"]), 1e-6)
 
     def test_qtrm_smoke_loss_supervises_logical_evidence_and_causal_gate(self):
         from qtrm_mm.losses import qtrm_smoke_loss

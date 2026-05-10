@@ -106,6 +106,7 @@ def canonical_causal_ablation_loss(
 
 def _canonical_causal_forward_kwargs(model_kwargs: dict, mode: str) -> dict:
     ablation_kwargs = dict(model_kwargs)
+    _drop_auxiliary_return_flags(ablation_kwargs)
     if mode == "core_off":
         ablation_kwargs["disable_core"] = True
     elif mode == "workspace_off":
@@ -125,6 +126,11 @@ def _canonical_causal_forward_kwargs(model_kwargs: dict, mode: str) -> dict:
     else:
         raise ValueError(f"unknown canonical causal ablation mode: {mode}")
     return ablation_kwargs
+
+
+def _drop_auxiliary_return_flags(model_kwargs: dict) -> None:
+    model_kwargs.pop("return_core_depth_logits", None)
+    model_kwargs.pop("return_core_depth_text_logits", None)
 
 
 def donor_logit_distillation_loss(
@@ -282,6 +288,7 @@ def controller_signal_prediction_loss(
     *,
     target: Optional[torch.Tensor] = None,
     sample_weight: Optional[torch.Tensor] = None,
+    mode: str = "bce",
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     signal_logits = outputs.get("controller_signal_logits")
     if signal_logits is None or signal_logits.numel() == 0 or target is None:
@@ -293,6 +300,25 @@ def controller_signal_prediction_loss(
     target = target.to(device=logits.device, dtype=logits.dtype)
     if target.shape != logits.shape:
         raise ValueError("controller signal target must match signal logits shape")
+
+    mode = str(mode or "bce").lower()
+    if mode in {"softmax", "softmax_ce", "ce", "route_ce"}:
+        target_idx = target.argmax(dim=-1)
+        per_sample = F.cross_entropy(logits, target_idx, reduction="none")
+        if sample_weight is not None:
+            weights = sample_weight.to(device=logits.device, dtype=per_sample.dtype).view(-1)
+            weights = weights.clamp_min(0.0)
+            if not torch.any(weights > 0):
+                loss = per_sample.sum() * 0.0
+            else:
+                loss = (per_sample * weights).sum() / weights.sum().clamp_min(1e-8)
+        else:
+            loss = per_sample.mean()
+        pred = logits.argmax(dim=-1)
+        signal_acc = (pred == target_idx).to(dtype=logits.dtype).mean()
+        return loss, {"controller_signal_acc": signal_acc.detach()}
+    if mode != "bce":
+        raise ValueError("controller signal loss mode must be 'bce' or 'softmax_ce'")
 
     per_dim = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
     per_sample = per_dim.mean(dim=-1)
@@ -309,6 +335,218 @@ def controller_signal_prediction_loss(
     pred = (torch.sigmoid(logits) >= 0.5).to(dtype=target.dtype)
     signal_acc = (pred == target).to(dtype=logits.dtype).mean()
     return loss, {"controller_signal_acc": signal_acc.detach()}
+
+
+def core_trajectory_shortcut_consistency_loss(
+    outputs: dict[str, torch.Tensor],
+    *,
+    min_step: int = 1,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """Looped-core shortcut consistency from early depth states to final state."""
+    anchor = outputs["logits"]
+    depth_states = outputs.get("core_depth_states")
+    if depth_states is None or depth_states.ndim != 3 or depth_states.shape[1] < 2:
+        zero = anchor.sum() * 0.0
+        return zero, {
+            "core_trajectory_shortcut_cosine": zero,
+            "core_trajectory_shortcut_steps": zero,
+        }
+
+    states = depth_states.float()
+    steps = int(states.shape[1])
+    start = max(0, int(min_step) - 1)
+    end = steps - 1
+    if start >= end:
+        zero = anchor.sum() * 0.0
+        return zero, {
+            "core_trajectory_shortcut_cosine": zero,
+            "core_trajectory_shortcut_steps": zero,
+        }
+
+    early = F.normalize(states[:, start:end, :], dim=-1)
+    final = F.normalize(states[:, -1:, :].detach(), dim=-1).expand_as(early)
+    cosine = (early * final).sum(dim=-1)
+    loss = 1.0 - cosine.mean()
+    return loss.to(dtype=anchor.dtype), {
+        "core_trajectory_shortcut_cosine": cosine.mean().detach(),
+        "core_trajectory_shortcut_steps": anchor.new_tensor(float(end - start)),
+    }
+
+
+def core_depth_text_ce_loss(
+    outputs: dict[str, torch.Tensor],
+    input_ids: torch.Tensor,
+    *,
+    min_step: int = 1,
+    attention_mask: Optional[torch.Tensor] = None,
+    labels: Optional[torch.Tensor] = None,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """Process-credit CE over answer logits exposed at each recurrent depth."""
+    anchor = outputs["logits"]
+    depth_logits = outputs.get("core_depth_text_logits")
+    if depth_logits is None or depth_logits.ndim != 4 or depth_logits.shape[1] == 0:
+        zero = anchor.sum() * 0.0
+        return zero, {"core_depth_text_ce_steps": zero}
+
+    steps = int(depth_logits.shape[1])
+    start = max(0, int(min_step) - 1)
+    if start >= steps:
+        zero = anchor.sum() * 0.0
+        return zero, {"core_depth_text_ce_steps": zero}
+
+    selected = depth_logits[:, start:, :, :]
+    b, selected_steps, s, vocab = selected.shape
+    if input_ids.shape[1] != s:
+        raise ValueError("core_depth_text_logits sequence length must match input_ids")
+
+    flat_logits = selected.reshape(b * selected_steps, s, vocab)
+    flat_input_ids = (
+        input_ids[:, None, :]
+        .expand(b, selected_steps, s)
+        .reshape(b * selected_steps, s)
+    )
+    flat_attention_mask = None
+    if attention_mask is not None:
+        flat_attention_mask = (
+            attention_mask[:, None, :]
+            .expand(b, selected_steps, s)
+            .reshape(b * selected_steps, s)
+        )
+    flat_labels = None
+    if labels is not None:
+        flat_labels = (
+            labels[:, None, :]
+            .expand(b, selected_steps, s)
+            .reshape(b * selected_steps, s)
+        )
+    loss = next_token_lm_loss(
+        flat_logits,
+        flat_input_ids,
+        attention_mask=flat_attention_mask,
+        labels=flat_labels,
+    )
+    return loss, {
+        "core_depth_text_ce_steps": anchor.new_tensor(float(selected_steps)),
+    }
+
+
+def core_variable_trajectory_consistency_loss(
+    model,
+    input_ids: torch.Tensor,
+    long_outputs: dict[str, torch.Tensor],
+    model_kwargs: dict,
+    *,
+    short_steps: int = 1,
+    short_lm_weight: float = 1.0,
+    preference_weight: float = 0.0,
+    preference_margin: float = 0.0,
+    labels: Optional[torch.Tensor] = None,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """Two-pass short/long recurrent trajectory loss.
+
+    The long path is the ordinary forward already used for the main loss. This
+    function temporarily reruns the same prompt with fewer recursive outer
+    steps, then trains the short path to stay answer-capable and align to the
+    long path's final latent state.
+    """
+    anchor = long_outputs["logits"]
+    old_steps = getattr(getattr(model, "cfg", None), "outer_steps", None)
+    if old_steps is None:
+        zero = anchor.sum() * 0.0
+        return zero, {
+            "core_variable_trajectory_state": zero,
+            "core_variable_trajectory_short_lm": zero,
+            "core_variable_trajectory_long_pref": zero,
+            "core_variable_trajectory_state_cosine": zero,
+            "core_variable_trajectory_short_steps": zero,
+            "core_variable_trajectory_logp_margin": zero,
+        }
+
+    old_steps = int(old_steps)
+    short_steps = int(short_steps)
+    if short_steps <= 0 or short_steps >= old_steps:
+        zero = anchor.sum() * 0.0
+        return zero, {
+            "core_variable_trajectory_state": zero,
+            "core_variable_trajectory_short_lm": zero,
+            "core_variable_trajectory_long_pref": zero,
+            "core_variable_trajectory_state_cosine": zero,
+            "core_variable_trajectory_short_steps": zero,
+            "core_variable_trajectory_logp_margin": zero,
+        }
+
+    try:
+        model.cfg.outer_steps = short_steps
+        short_model_kwargs = dict(model_kwargs)
+        _drop_auxiliary_return_flags(short_model_kwargs)
+        short_outputs = model(input_ids=input_ids, **short_model_kwargs)
+    finally:
+        model.cfg.outer_steps = old_steps
+
+    long_states = long_outputs.get("core_depth_states")
+    short_states = short_outputs.get("core_depth_states")
+    if (
+        long_states is None
+        or short_states is None
+        or long_states.ndim != 3
+        or short_states.ndim != 3
+        or long_states.shape[1] == 0
+        or short_states.shape[1] == 0
+    ):
+        state = anchor.sum() * 0.0
+        state_cosine = state
+    else:
+        short_final = F.normalize(short_states[:, -1, :].float(), dim=-1)
+        long_final = F.normalize(long_states[:, -1, :].float().detach(), dim=-1)
+        cosine = (short_final * long_final).sum(dim=-1)
+        state = 1.0 - cosine.mean()
+        state = state.to(dtype=anchor.dtype)
+        state_cosine = cosine.mean().detach()
+
+    short_offset = short_outputs["logits"].shape[1] - input_ids.shape[1]
+    attention_mask = model_kwargs.get("attention_mask")
+    short_lm = next_token_lm_loss(
+        short_outputs["logits"],
+        input_ids,
+        offset=short_offset,
+        attention_mask=attention_mask,
+        labels=labels,
+    )
+    long_offset = long_outputs["logits"].shape[1] - input_ids.shape[1]
+    long_logps = sequence_average_logprob(
+        long_outputs["logits"],
+        input_ids,
+        offset=long_offset,
+        attention_mask=attention_mask,
+        labels=labels,
+    )
+    short_logps = sequence_average_logprob(
+        short_outputs["logits"],
+        input_ids,
+        offset=short_offset,
+        attention_mask=attention_mask,
+        labels=labels,
+    )
+    long_pref = simpo_margin_loss(
+        long_logps,
+        short_logps.detach(),
+        margin=float(preference_margin),
+    )
+    total = (
+        state
+        + float(short_lm_weight) * short_lm
+        + float(preference_weight) * long_pref
+    )
+    return total, {
+        "core_variable_trajectory_state": state.detach(),
+        "core_variable_trajectory_short_lm": short_lm.detach(),
+        "core_variable_trajectory_long_pref": long_pref.detach(),
+        "core_variable_trajectory_state_cosine": state_cosine,
+        "core_variable_trajectory_short_steps": anchor.new_tensor(float(short_steps)),
+        "core_variable_trajectory_logp_margin": (
+            long_logps - short_logps
+        ).mean().detach(),
+    }
 
 
 def answer_decision_loss(
@@ -421,6 +659,9 @@ def core_halt_loss(
     outputs: dict[str, torch.Tensor],
     target_halt: Optional[torch.Tensor] = None,
     target_continue: Optional[torch.Tensor] = None,
+    *,
+    mode: str = "bce",
+    q_value_gamma: float = 0.99,
 ) -> torch.Tensor:
     q_halt = outputs.get("core_q_halt_logits")
     if q_halt is None:
@@ -430,16 +671,35 @@ def core_halt_loss(
         return q_halt.sum() * 0.0
 
     halt_target = _expand_halt_target(target_halt, q_halt)
-    loss = F.binary_cross_entropy_with_logits(q_halt.float(), halt_target.float())
-
     q_continue = outputs.get("core_q_continue_logits")
-    if target_continue is not None and q_continue is not None and q_continue.numel() > 0:
+    mode = str(mode or "bce").strip().lower()
+    if mode == "bce":
+        loss = F.binary_cross_entropy_with_logits(q_halt.float(), halt_target.float())
+        if target_continue is not None and q_continue is not None and q_continue.numel() > 0:
+            continue_target = _expand_halt_target(target_continue, q_continue)
+            loss = loss + F.binary_cross_entropy_with_logits(
+                q_continue.float(),
+                continue_target.float(),
+            )
+        return loss
+
+    if mode == "q_value":
+        if q_continue is None or q_continue.numel() == 0:
+            raise ValueError("core_halt_loss mode=q_value requires core_q_continue_logits")
+        if q_continue.shape != q_halt.shape:
+            raise ValueError("q_halt and q_continue must have the same shape for q_value halt loss")
+        if target_continue is None:
+            target_continue = 1.0 - halt_target
         continue_target = _expand_halt_target(target_continue, q_continue)
-        loss = loss + F.binary_cross_entropy_with_logits(
-            q_continue.float(),
-            continue_target.float(),
+        gamma = max(0.0, min(float(q_value_gamma), 1.0))
+        q_values = torch.stack([q_halt.float(), q_continue.float()], dim=-1)
+        q_targets = torch.stack(
+            [halt_target.float(), continue_target.float() * gamma],
+            dim=-1,
         )
-    return loss
+        return F.smooth_l1_loss(q_values, q_targets)
+
+    raise ValueError(f"unknown core_halt_loss mode: {mode}")
 
 
 def _valid_next_token_mask(
@@ -902,6 +1162,8 @@ def qtrm_smoke_loss(
     core_halt_weight: float = 0.0,
     core_halt_auto_targets: bool = False,
     core_halt_target_mode: str = "exact",
+    core_halt_loss_mode: str = "bce",
+    core_halt_q_value_gamma: float = 0.99,
     core_halt_donor_kl_threshold: Optional[float] = None,
     core_halt_teacher_depth_threshold: float = 0.995,
     core_halt_teacher_depth_logit_kl_threshold: float = 0.05,
@@ -936,6 +1198,16 @@ def qtrm_smoke_loss(
     canonical_causal_ablation_modes: Optional[list[str]] = None,
     action_policy_weight: float = 0.0,
     controller_signal_weight: float = 0.0,
+    controller_signal_loss_mode: str = "bce",
+    core_trajectory_shortcut_weight: float = 0.0,
+    core_trajectory_shortcut_min_step: int = 1,
+    core_variable_trajectory_weight: float = 0.0,
+    core_variable_trajectory_short_steps: int = 1,
+    core_variable_trajectory_short_lm_weight: float = 1.0,
+    core_variable_trajectory_preference_weight: float = 0.0,
+    core_variable_trajectory_preference_margin: float = 0.0,
+    core_depth_text_ce_weight: float = 0.0,
+    core_depth_text_ce_min_step: int = 1,
     **kwargs,
 ):
     lm_weight = float(kwargs.pop("lm_weight", 1.0))
@@ -1004,6 +1276,8 @@ def qtrm_smoke_loss(
     if core_halt_auto_targets and core_halt_target_mode == "teacher_depth":
         model_kwargs.setdefault("enable_core_halt", False)
         model_kwargs.setdefault("return_core_depth_logits", True)
+    if float(core_depth_text_ce_weight) != 0.0:
+        model_kwargs.setdefault("return_core_depth_text_logits", True)
     outputs = model(input_ids=input_ids, **model_kwargs)
     offset = outputs["logits"].shape[1] - input_ids.shape[1]
     lm = next_token_lm_loss(
@@ -1121,12 +1395,50 @@ def qtrm_smoke_loss(
         outputs,
         target=controller_signal_target,
         sample_weight=controller_signal_sample_weight,
+        mode=controller_signal_loss_mode,
     )
+    core_trajectory_shortcut, core_trajectory_shortcut_metrics = (
+        core_trajectory_shortcut_consistency_loss(
+            outputs,
+            min_step=core_trajectory_shortcut_min_step,
+        )
+    )
+    core_depth_text_ce, core_depth_text_ce_metrics = core_depth_text_ce_loss(
+        outputs,
+        input_ids,
+        min_step=core_depth_text_ce_min_step,
+        attention_mask=model_kwargs.get("attention_mask"),
+        labels=labels,
+    )
+    core_variable_trajectory = outputs["logits"].sum() * 0.0
+    core_variable_trajectory_metrics = {
+        "core_variable_trajectory_state": core_variable_trajectory,
+        "core_variable_trajectory_short_lm": core_variable_trajectory,
+        "core_variable_trajectory_long_pref": core_variable_trajectory,
+        "core_variable_trajectory_state_cosine": core_variable_trajectory,
+        "core_variable_trajectory_short_steps": core_variable_trajectory,
+        "core_variable_trajectory_logp_margin": core_variable_trajectory,
+    }
+    if float(core_variable_trajectory_weight) != 0.0:
+        core_variable_trajectory, core_variable_trajectory_metrics = (
+            core_variable_trajectory_consistency_loss(
+                model,
+                input_ids,
+                outputs,
+                model_kwargs,
+                short_steps=core_variable_trajectory_short_steps,
+                short_lm_weight=core_variable_trajectory_short_lm_weight,
+                preference_weight=core_variable_trajectory_preference_weight,
+                preference_margin=core_variable_trajectory_preference_margin,
+                labels=labels,
+            )
+        )
     preference = outputs["logits"].sum() * 0.0
     preference_chosen_logps = preference
     preference_rejected_logps = preference
     if preference_rejected_input_ids is not None and float(preference_weight) != 0.0:
         rejected_model_kwargs = dict(model_kwargs)
+        _drop_auxiliary_return_flags(rejected_model_kwargs)
         if preference_rejected_attention_mask is not None:
             rejected_model_kwargs["attention_mask"] = preference_rejected_attention_mask
         else:
@@ -1175,6 +1487,7 @@ def qtrm_smoke_loss(
         )
     ):
         counterfactual_model_kwargs = dict(model_kwargs)
+        _drop_auxiliary_return_flags(counterfactual_model_kwargs)
         counterfactual_model_kwargs["workspace_text_states"] = workspace_counterfactual_text_states
         if workspace_counterfactual_attention_mask is not None:
             counterfactual_model_kwargs["workspace_attention_mask"] = (
@@ -1308,6 +1621,8 @@ def qtrm_smoke_loss(
         outputs,
         target_halt=core_halt_targets,
         target_continue=core_continue_targets,
+        mode=core_halt_loss_mode,
+        q_value_gamma=core_halt_q_value_gamma,
     )
     loss = (
         lm_weight * lm
@@ -1331,6 +1646,9 @@ def qtrm_smoke_loss(
         + float(canonical_causal_weight) * canonical_causal
         + float(action_policy_weight) * action_policy
         + float(controller_signal_weight) * controller_signal
+        + float(core_trajectory_shortcut_weight) * core_trajectory_shortcut
+        + float(core_variable_trajectory_weight) * core_variable_trajectory
+        + float(core_depth_text_ce_weight) * core_depth_text_ce
     )
     metrics = {
         "loss": loss.detach(),
@@ -1385,6 +1703,36 @@ def qtrm_smoke_loss(
         "action_acc": action_policy_metrics["action_acc"],
         "controller_signal": controller_signal.detach(),
         "controller_signal_acc": controller_signal_metrics["controller_signal_acc"],
+        "core_trajectory_shortcut": core_trajectory_shortcut.detach(),
+        "core_trajectory_shortcut_cosine": core_trajectory_shortcut_metrics[
+            "core_trajectory_shortcut_cosine"
+        ],
+        "core_trajectory_shortcut_steps": core_trajectory_shortcut_metrics[
+            "core_trajectory_shortcut_steps"
+        ],
+        "core_variable_trajectory": core_variable_trajectory.detach(),
+        "core_variable_trajectory_state": core_variable_trajectory_metrics[
+            "core_variable_trajectory_state"
+        ],
+        "core_variable_trajectory_short_lm": core_variable_trajectory_metrics[
+            "core_variable_trajectory_short_lm"
+        ],
+        "core_variable_trajectory_long_pref": core_variable_trajectory_metrics[
+            "core_variable_trajectory_long_pref"
+        ],
+        "core_variable_trajectory_state_cosine": core_variable_trajectory_metrics[
+            "core_variable_trajectory_state_cosine"
+        ],
+        "core_variable_trajectory_short_steps": core_variable_trajectory_metrics[
+            "core_variable_trajectory_short_steps"
+        ],
+        "core_variable_trajectory_logp_margin": core_variable_trajectory_metrics[
+            "core_variable_trajectory_logp_margin"
+        ],
+        "core_depth_text_ce": core_depth_text_ce.detach(),
+        "core_depth_text_ce_steps": core_depth_text_ce_metrics[
+            "core_depth_text_ce_steps"
+        ],
         "preference": preference.detach(),
         "preference_chosen_logp": preference_chosen_logps.mean().detach(),
         "preference_rejected_logp": preference_rejected_logps.mean().detach(),

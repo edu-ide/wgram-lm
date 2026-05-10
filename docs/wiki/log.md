@@ -1,5 +1,1364 @@
 # QTRM LLM Wiki Log
 
+## [2026-05-07] experiment | Mixed composition length 11/13 accepted
+
+Extended the accepted dynamic-halt mixed list-to-arithmetic Stage 1 gate from
+held-out list lengths 7/9 to 11/13.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-mixed-composition-len1113-s080.md
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len1113_jointonly_s080_from_s720/last.pt
+```
+
+Result:
+
+```text
+S720 baseline on len11/13:
+  trace exact:    32/32
+  halted exact:  30/32
+
+joint-only S080 recovery:
+  len11/13 full:             32/32
+  len11/13 transition-off:    0/32
+  len11/13 code-shuffle:      0/32
+  len11/13 code-dropout:      0/32
+  canonical len7/9 full:     32/32
+```
+
+Decision:
+
+```text
+Accept as a Stage 1 length-transfer extension. The fix used only
+transition-state joint CE; answer-token CE was disabled.
+```
+
+## [2026-05-07] experiment | Depth-text process CE rejected
+
+Goal: test whether direct process credit on every recurrent depth's answer
+logits can make deeper QTRM loops useful.
+
+Implementation:
+
+```text
+new loss:
+  core_depth_text_ce_loss
+
+main forward:
+  return_core_depth_text_logits=True when the loss is enabled
+
+memory fix:
+  drop return_core_depth_text_logits from preference rejected, counterfactual,
+  short-trajectory, and canonical ablation forwards
+
+config:
+  configs/qwen35_2b_4090_donor_preserving_core_forced_depth_text_ce_s080.yaml
+
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_core_forced_depth_text_ce_s080/last.pt
+  deleted after rejection; eval JSONL preserved
+
+eval:
+  /mnt/nvme0n1p2/qtrm-runs/eval/donor_preserving_core_forced_depth_text_ce_s080_causal_fc_24.jsonl
+```
+
+Training signal:
+
+```text
+core_depth_text_ce: about 11.44 -> 11.13
+```
+
+Held-out 24-case causal forced-choice:
+
+```text
+donor_only:              9/24
+core_off:                9/24
+core_steps_1:           14/24
+core_steps_2:            9/24
+core_steps_4:           12/24
+core_steps_8:            9/24
+delta_off step8:         9/24
+residual_gate_off step8: 9/24
+```
+
+Decision:
+
+```text
+Reject. The accepted baseline remains core_steps_1 14/24 and core_steps_4
+13/24. Depth-text CE did not create deeper-loop gains.
+```
+
+Branch decision:
+
+```text
+Depth router heads, shortcut consistency, variable trajectory, and depth-text
+process CE are all rejected for this donor-preserving controller branch.
+The next architecture must train explicit verifiable recurrent state updates.
+```
+
+## [2026-05-07] experiment | Variable-trajectory v1 rejected
+
+Goal: test the stronger version of the LoopFormer-inspired idea after
+same-run shortcut consistency failed.
+
+Implementation:
+
+```text
+long path:
+  normal forward with outer_steps=4
+
+short path:
+  second forward on the same batch with outer_steps=1
+
+new loss:
+  core_variable_trajectory_consistency_loss
+
+config:
+  configs/qwen35_2b_4090_donor_preserving_core_forced_variable_traj_s080.yaml
+
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_core_forced_variable_traj_s080/last.pt
+  deleted after rejection; eval JSONL preserved
+
+eval:
+  /mnt/nvme0n1p2/qtrm-runs/eval/donor_preserving_core_forced_variable_traj_s080_causal_fc_24.jsonl
+```
+
+Training proxy moved:
+
+```text
+state cosine: about 0.22 -> 0.43
+long-short logp margin: about -0.03 -> +0.27
+```
+
+Held-out 24-case causal forced-choice:
+
+```text
+donor_only:              9/24
+core_off:                9/24
+core_steps_1:           13/24
+core_steps_2:            9/24
+core_steps_4:           11/24
+core_steps_8:            8/24
+delta_off step8:         9/24
+residual_gate_off step8: 8/24
+```
+
+Decision:
+
+```text
+Reject. The accepted baseline remains core_steps_1 14/24 and core_steps_4
+13/24. Variable-trajectory v1 optimized internal proxy metrics but did not
+improve raw intelligence.
+```
+
+Next:
+
+```text
+Stop adding depth alignment/router heads for this branch.
+Move to a recurrent transition objective: each loop step must perform a
+verifiable state update, and the final answer path must lose the gain when
+that update path is ablated.
+```
+
+## [2026-05-07] experiment | Shortcut-consistency v1 rejected
+
+Goal: test whether a LoopFormer-inspired trajectory regularizer stabilizes the
+accepted donor-preserving core-forced readout across recursive depths.
+
+Implementation:
+
+```text
+new loss:
+  core_trajectory_shortcut_consistency_loss
+
+config:
+  configs/qwen35_2b_4090_donor_preserving_core_forced_shortcut_outer4_s120.yaml
+
+init checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_s160/last.pt
+
+trained checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_core_forced_shortcut_outer4_s120/last.pt
+  deleted after rejection; eval JSONL preserved
+
+eval:
+  /mnt/nvme0n1p2/qtrm-runs/eval/donor_preserving_core_forced_shortcut_outer4_s120_causal_fc_24.jsonl
+```
+
+Training signal was active:
+
+```text
+core_trajectory_shortcut cosine reached about 0.56 near the final log
+```
+
+24-case causal forced-choice result:
+
+```text
+donor_only:              9/24
+core_off:                9/24
+core_steps_1:           14/24
+core_steps_2:           10/24
+core_steps_4:           12/24
+core_steps_8:            9/24
+delta_off step8:         9/24
+residual_gate_off step8: 9/24
+```
+
+Decision:
+
+```text
+Reject shortcut-consistency v1 as a canonical improvement.
+It preserves the known step-1 gain but does not improve it, lowers step-4
+from 13/24 to 12/24, and collapses step-8 to donor/core_off.
+```
+
+Next:
+
+```text
+Do not add another post-hoc route head.
+Implement a true variable-trajectory short/long schedule experiment with
+correctness or verifier gating before claiming LoopFormer-style training.
+```
+
+## [2026-05-07] experiment | Adaptive halt probe on core-forced readout
+
+Goal: test whether the accepted core-forced donor-preserving readout can choose
+its own recursive depth instead of relying on unstable fixed-depth sweeps.
+
+Implementation and eval hygiene:
+
+```text
+raw eval:
+  fixed-depth modes now pass enable_core_halt=false explicitly
+  qtrm_core_halt_steps_N_no_evidence is the only halt-enabled mode
+  donor_only now disables the core instead of merely setting qtrm scale to 0
+  choice telemetry records actual core_steps_mean
+
+config:
+  configs/qwen35_2b_4090_donor_preserving_core_forced_readout_halt_teacher_depth_s080.yaml
+
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_core_forced_readout_halt_teacher_depth_s080/last.pt
+
+eval:
+  /mnt/nvme0n1p2/qtrm-runs/eval/donor_preserving_core_forced_halt_teacher_depth_s080_causal_fc_24_v2.jsonl
+```
+
+The halt probe initialized from the accepted core-forced checkpoint and trained
+only `core.halt_head.*` with teacher-depth stability targets. Training signal
+was real but mostly told the model to continue to step 8:
+
+```text
+core_halt loss: 1.23 -> 0.69
+teacher_depth_earliest_step_mean: 8.0
+teacher_depth_step1_stable_rate: 0.0
+```
+
+24-case causal forced-choice result:
+
+```text
+donor_only:          9/24, core_steps_mean=0
+core_off:            9/24, core_steps_mean=0
+core_steps_1:       14/24, core_steps_mean=1
+core_steps_2:        9/24, core_steps_mean=2
+core_steps_4:       13/24, core_steps_mean=4
+core_steps_8:       10/24, core_steps_mean=8
+core_halt_steps_8:  10/24, core_steps_mean=8
+delta_off:           9/24, core_steps_mean=8
+```
+
+Decision: reject teacher-depth stability halting as the next depth solution.
+It learned a valid no-early-exit policy and reproduced fixed depth 8, but it
+did not select the useful depths 1 or 4. The next depth selector must optimize
+answer correctness / verifier preference directly, not only final-depth logit
+stability.
+
+Next candidate:
+
+```text
+supervised depth router:
+  run fixed-depth candidates offline
+  label each case with the shallowest correct depth, or UNKNOWN if none
+  train a small router/verifier to select depth before answer scoring
+  keep donor/core_off/delta_off ablations
+```
+
+Implemented the first label builder:
+
+```text
+script:
+  scripts/depth_router_labels.py
+
+labels:
+  /mnt/nvme0n1p2/qtrm-runs/eval/donor_preserving_core_forced_depth_router_labels_24.jsonl
+
+summary:
+  cases: 24
+  donor_hits: 9
+  oracle fixed-depth hits: 16
+  causal_core_gains: 7
+  unknown_routes: 8
+
+target_route distribution:
+  donor: 9
+  core_steps_1: 5
+  core_steps_4: 1
+  core_steps_8: 1
+  unknown: 8
+```
+
+Interpretation: the fixed-depth oracle is already 16/24, so there is routeable
+signal above donor-only 9/24. The immediate bottleneck is learning/predicting
+the route, not inventing another core path.
+
+## [2026-05-06] experiment | Core-forced donor-preserving readout
+
+Tested the third donor-preserving controller candidate after v1/v2 failed:
+
+```text
+donor logits remain the base policy
+QTRM residual is bounded
+n_coda_layers = 0
+core_loop_readout_enabled = true
+core_loop_readout_requires_core = true
+```
+
+This makes the QTRM delta collapse to zero when `core_off`; the model can no
+longer get a raw-reasoning gain from a non-recursive coda side path.
+
+Pure-recursive preference run:
+
+```text
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_pure_recursive_pref_s160/last.pt
+
+24-case causal forced-choice:
+  donor_only:          9/24
+  core_off:           11/24
+  core_steps_1:       14/24
+  core_steps_2:       10/24
+  core_steps_4:       11/24
+  core_steps_8:       11/24
+  delta_off:           9/24
+  residual_gate_off:  11/24
+```
+
+Decision: partial signal only. The delta learned something because
+`delta_off` returns to donor, but `core_off` also beats donor. The recursive
+core is not yet the causal source.
+
+Core-forced run:
+
+```text
+config:
+  configs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_s160.yaml
+
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_s160/last.pt
+
+24-case causal forced-choice:
+  donor_only:          9/24
+  core_off:            9/24
+  core_steps_1:       14/24
+  core_steps_2:        9/24
+  core_steps_4:       13/24
+  core_steps_8:       10/24
+  delta_off:           9/24
+  residual_gate_off:  10/24
+```
+
+Decision: accept as a causal architecture improvement, not as a final raw
+recursive intelligence result. The gain now disappears under `core_off` and
+`delta_off`, so the improved modes depend on the core-forced QTRM delta.
+However, fixed deeper recursion is unstable: depth 1 and 4 help, depth 8
+degrades.
+
+Outer4 continuation:
+
+```text
+config:
+  configs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_outer4_s120.yaml
+
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_outer4_s120/last.pt
+
+24-case causal forced-choice:
+  donor_only:          9/24
+  core_off:            9/24
+  core_steps_1:       14/24
+  core_steps_2:        9/24
+  core_steps_4:       11/24
+  core_steps_8:        8/24
+  delta_off:           9/24
+  residual_gate_off:   8/24
+```
+
+Decision: reject. Fixed deeper training did not improve deeper inference; it
+regressed depth 4 and 8. Next candidate should be adaptive early-exit / depth
+selection over the core-forced donor-preserving readout, not longer fixed
+recursion.
+
+## [2026-05-06] implementation | Donor-preserving logit guider gate wired
+
+Implemented the first falsifier for the donor-preserving controller path:
+
+```text
+final logits = donor logits + bounded/gated QTRM residual delta
+```
+
+Added:
+
+```text
+forward ablation:
+  disable_qtrm_residual_gate
+
+raw eval modes:
+  qtrm_core_steps_8_delta_off_no_evidence
+  qtrm_core_steps_8_residual_gate_off_no_evidence
+
+canonical config:
+  configs/qwen35_2b_4090_donor_preserving_logit_guider_s120.yaml
+```
+
+Verification:
+
+```text
+tests.test_raw_intelligence_eval_script
+tests.test_model_config
+tests.test_training_checkpoint_init
+149 tests OK
+py_compile OK
+git diff --check OK
+```
+
+Next gate: train S120, then compare donor-only, guided, delta-off, gate-off,
+and core-off under no-retrieval raw-intelligence evaluation.
+
+Smoke result:
+
+```text
+checkpoint:
+  runs/qwen35_2b_4090_donor_preserving_logit_guider_s120/last.pt
+
+24-case causal forced-choice:
+  donor_only:          9/24
+  core_off:            9/24
+  core_steps_1:        9/24
+  core_steps_2:        9/24
+  core_steps_4:        9/24
+  core_steps_8:        9/24
+  delta_off:           9/24
+  residual_gate_off:  10/24
+```
+
+Decision: not accepted. The gate-off mode beating the full gated mode suggests
+the learned residual gate is currently too conservative or undertrained. Next
+candidate is KISS bounded delta without a learned residual gate; donor
+preservation remains enforced by donor scale 1.0, clamp, donor KL, and
+donor-correct margin.
+
+Follow-up v2:
+
+```text
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/qwen35_2b_4090_donor_preserving_bounded_delta_nogate_s120/last.pt
+
+24-case causal forced-choice:
+  donor_only:          9/24
+  core_off:            9/24
+  core_steps_1:        9/24
+  core_steps_2:        9/24
+  core_steps_4:        9/24
+  core_steps_8:        9/24
+  delta_off:           9/24
+  residual_gate_off:   9/24
+```
+
+Decision: v2 is also not accepted. Removing the gate did not create a causal
+raw-reasoning gain. Root hypothesis update: the first two runs trained on
+generic text/math/mm data, not on the pure-recursive preference data used by
+the raw-intelligence gate. Next candidate must train the donor-preserving delta
+on `data/filtered/pure_recursive_reasoning_preferences_train.jsonl`.
+
+## [2026-05-06] research | Donor-preserving controller method selected
+
+Web search over 2025-2026 reasoning-control prior found the best next path:
+
+```text
+ThinkLogit / Proxy-Tuning: logit arithmetic guider over frozen target
+ReFT / GLoRE / BREP: bounded representation interventions in frozen LMs
+BuPO: internal layer policies, especially relevant to Qwen-series structure
+Dead Weights: frozen LMs can communicate through learned residual hooks
+Speculative Thinking / Thinking Intervention: intervene only at reasoning points
+```
+
+Decision: implement the simpler bounded donor-logit guider before attempting
+Qwen residual-stream hooks.
+
+```text
+final_logits = donor_logits + alpha * gate * clamp(qtrm_delta_logits)
+```
+
+Artifact:
+
+```text
+docs/wiki/sources/donor-preserving-reasoning-control-2026.md
+docs/wiki/decisions/donor-preserving-controller-next-method.md
+```
+
+## [2026-05-06] renderer | Hidden bridge S080 rejected
+
+Added a zero-init answer-state hidden bridge and trained only that bridge from
+the accepted answer-halt S080 checkpoint.
+
+Result:
+
+```text
+generation smoke4:
+  full:              0/4
+  hidden_bridge_off: 0/4
+  halt_gate_off:     0/4
+
+causal forced-choice smoke4:
+  full:              0/4
+  hidden_bridge_off: 4/4
+```
+
+Decision: reject and delete the generated checkpoint. This is a strong
+root-architecture signal: the bridge does not open generation and actively
+damages the accepted forced-choice behavior. Next candidate should preserve the
+donor decoder/language path and inject QTRM as a residual cognitive controller,
+instead of stacking more private QTRM renderer patches.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-hidden-bridge-s080-reject.md
+```
+
+## [2026-05-06] renderer | LM-head-only decoder alignment rejected
+
+After donor-unembedding head surgery failed, added `trainable_param_policy:
+lm_head_only` to train only the untied final LM head from the accepted
+answer-halt S080 checkpoint.
+
+Result:
+
+```text
+generation smoke4:
+  full/gate_off: 0/8
+
+causal forced-choice smoke8:
+  full:          0/8
+  halt_gate_off: 0/5 observed before early stop
+```
+
+Decision: reject and delete the generated checkpoint. The update changed token
+priors but destroyed the accepted forced-choice reasoning signal and still did
+not make greedy generation correct. The next renderer candidate should align
+answer-state hidden vectors through an ablatable LM-compatible hidden bridge,
+not train only the final vocabulary head.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-lm-head-only-decoder-alignment.md
+```
+
+## [2026-05-06] renderer | Donor-unembedding head surgery rejected
+
+Web/prior search focused on output embedding geometry and latent-thought
+rendering:
+
+```text
+Press/Wolf output embedding
+Inan/Khosravi/Socher tied word vectors
+PonderLM-2 latent thoughts before token prediction
+Coconut official latent reasoning implementation
+```
+
+Implemented `scripts/246_build_donor_unembedding_aligned_checkpoint.py` to
+project Qwen donor output embeddings into QTRM width and replace only the
+untied LM head of the accepted Ouro answer-halt checkpoint.
+
+Result:
+
+```text
+pinv donor-output head:
+  generation smoke4: 0/8
+  causal forced-choice smoke8 full: 6/8
+
+direct projection donor-output head:
+  generation smoke4: 0/8
+```
+
+Decision: reject both and delete both generated checkpoint weights. The failure
+is not solved by vocab-head geometry alone; answer-state hidden vectors are not
+yet aligned to an LM-compatible hidden manifold. Next candidate should train a
+decoder/projection from answer-state hidden to tokenizer logits, PonderLM-style,
+instead of adding more small margin losses to the current head.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-donor-unembedding-head-probe.md
+```
+
+## [2026-05-06] renderer | Causal-prefix self-rollout rejected
+
+Added online self-rollout causal-prefix supervision to the Ouro answer renderer
+probe. The training path now can build prefix examples from the model's own
+greedy generated tokens, then supervise the next gold token from that generated
+prefix.
+
+Result:
+
+```text
+generation smoke4:
+  full/gate_off: 0/8
+
+causal forced-choice smoke8:
+  full:          8/8
+  halt_gate_off: 0/8
+```
+
+Decision: reject as renderer and delete the checkpoint. This preserves the
+accepted answer-halt forced-choice gate but does not make the model render the
+answer autoregressively. The active bottleneck is no longer teacher-forcing
+exposure bias alone; the answer-state-to-token rendering path itself is too
+weak.
+
+Additional beam diagnostic on the accepted S080 baseline:
+
+```text
+beam_width: 16
+max_new_tokens: 7
+heldout rows: 4
+hits: 0/4
+best samples: "1 1 1", "UNKNOWN 1 1"
+```
+
+Interpretation: the generation failure is not greedy-only decoding. Short beam
+search also collapses to the same invalid token priors, so the next renderer
+candidate should align answer-state hidden vectors to tokenizer logits more
+directly instead of adding another small CE patch.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-answer-halt-head-s080.md
+```
+
+## 2026-05-07 - Typed Algorithmic Value-State Probe
+
+Added a role-separated typed value-state probe for the accepted mixed
+composition len11/13 checkpoint:
+
+```text
+raw_list_offsets
+doubled_list_offsets
+scalar_coeff
+scalar_residual
+final_residual
+```
+
+Result:
+
+```text
+held-out len11/13 mixed-only:
+  content-field accuracy: 352/1024 = 0.34375
+  head-off content acc:     0/1024 = 0.0
+  trace exact:              0/32
+
+action-code:
+  len11/13 exact: 32/32
+  len7/9 exact:   32/32
+```
+
+Decision:
+
+```text
+Accept only as a causal Stage-2 probe improvement. The typed field path learns
+some value content and preserves the action controller, but it is not an exact
+neural transition model yet. Next step is a recurrent typed value-transition
+cell with delta-off/shuffle ablations.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/typed-algorithmic-value-state-len1113-s080.md
+```
+
+## [2026-05-06] raw-intelligence | Terminal-depth CE rejected
+
+Added terminal-only answer CE:
+
+```text
+--terminal-depth-ce-weight
+```
+
+Result on held-out mixed-composition smoke8:
+
+```text
+donor_only:   0/8
+core_off:     0/8
+core_steps 1: 2/8
+core_steps 2: 2/8
+core_steps 4: 2/8
+full core8:   4/8
+bridge_off:   4/8
+action-code: 32/32
+```
+
+Decision: reject. The terminal CE loss is active, but it only preserves the
+accepted 4/8 score and removes the full-vs-bridge-off causal gap. Next
+candidate should gate answer-state updates inside the recurrence with finality,
+not add another post-hoc CE or selector.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-terminal-depth-ce-s020-reject.md
+```
+
+## [2026-05-06] raw-intelligence | Subtract-tail counterfactual rejected, depth overshoot found
+
+Added train-only counterfactual negatives for mixed subtract-tail failures:
+
+```text
+--subtract-tail-counterfactual-margin-weight
+--subtract-tail-counterfactual-margin
+```
+
+Result on held-out mixed-composition smoke8:
+
+```text
+donor_only:   0/8
+core_off:     0/8
+core_steps 1: 2/8
+core_steps 2: 2/8
+core_steps 4: 4/8
+full core8:   3/8
+bridge_off:   2/8
+action-code: 32/32
+```
+
+Decision: reject. The bridge path is causal again, but full core8 regresses
+below the accepted 4/8 baseline. New bottleneck: recursive-depth overshoot.
+Depth 4 matches the baseline while depth 8 worsens.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-subtract-tail-counterfactual-s020-reject.md
+```
+
+## [2026-05-06] raw-intelligence | Trajectory monotonic process credit rejected
+
+Added adjacent-depth process-credit training:
+
+```text
+--depth-trajectory-monotonic-weight
+--depth-trajectory-monotonic-margin
+```
+
+Result on held-out mixed-composition smoke8:
+
+```text
+donor_only:   0/8
+core_off:     0/8
+core_steps 1: 2/8
+core_steps 2: 2/8
+core_steps 4: 2/8
+full core8:   4/8
+bridge_off:   4/8
+action-code: 32/32
+```
+
+Decision: reject. Full preserves the accepted 4/8 score but bridge-off matches
+full, so the objective does not prove a causal raw-intelligence gain. Logged
+`depth_trajectory_monotonic` was already 0.0000, which means this was not the
+active bottleneck.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-trajectory-monotonic-s020-reject.md
+```
+
+## [2026-05-06] raw-intelligence | Bridge contrast creates causal dependency
+
+Added `transition_joint_answer_bridge_contrastive_loss`, which contrasts the
+full answer path against the same path with
+`disable_transition_state_joint_answer_bridge=True`.
+
+Result:
+
+```text
+train:
+  final_path_ce: 4.0516 -> 2.6656
+  bridge contrast delta: -0.0525 -> -0.0059
+
+held-out LM forced-choice:
+  full:       2/8
+  bridge off: 0/8
+
+action-code:
+  exact: 32/32
+```
+
+Decision: accept as a smoke probe. This does not improve full accuracy over
+S80, but it fixes the previous bridge failure class: the transition-joint
+bridge is no longer ignorable under held-out ablation. Scale only with
+save-every validation and reject continuations where bridge-off matches full.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-transition-joint-answer-bridge-contrast-s020.md
+```
+
+Update: continued S020 for 60 more steps with validation checkpoints. Step20
+and step60 both preserve the same held-out causal pattern:
+
+```text
+full:       2/8
+bridge off: 0/8
+action-code at step60: 32/32
+```
+
+Decision: accept causal preservation through S080-from-S020, but do not claim
+quality improvement. The next objective needs to break the 2/8 smoke ceiling,
+not only preserve bridge causality.
+
+## [2026-05-06] raw-intelligence | Transition joint answer bridge rejected
+
+Implemented a direct causal bridge from `transition_state_joint_logits` into
+the recurrent answer-state loop and trained 20 steps from the accepted S80
+checkpoint.
+
+Result:
+
+```text
+train:
+  final_path_ce: 3.9788 -> 2.6370
+
+held-out LM forced-choice:
+  full:       2/8
+  bridge off: 2/8
+
+action-code:
+  exact: 32/32
+```
+
+Decision: reject as canonical. The answer path can now see the transition
+trace, but it does not causally depend on it under the current objective. Next
+candidate should add bridge-contrast or depth-wise answer-process supervision,
+then require full > bridge-off before any scale-up.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-transition-joint-answer-bridge-s020.md
+```
+
+## [2026-05-06] raw-intelligence | Finality selector rejected
+
+Tested whether the S80 Ouro recurrent checkpoint's already-correct
+transition-state finality signal can choose a better answer-state-loop depth
+without retraining.
+
+Result:
+
+```text
+soft selector:
+  full:         2/8
+  selector off: 2/8
+
+hard_first selector:
+  full:         2/8
+  selector off: 2/8
+  action-code:  32/32
+```
+
+Decision: reject as canonical. The transition trace remains correct, but a
+post-hoc selector does not causally improve answer-token logits. Next candidate
+should feed transition code/state into answer-state recurrence at every step.
+
+Artifact:
+
+```text
+docs/wiki/decisions/ouro-finality-selector-zeroshot.md
+```
+
+## 2026-05-05: Universal LLM Causal Path Principle Added
+
+Added a canonical principle for future QTRM architecture work:
+
+```text
+prompt/chat-template tokens
+-> tokenizer
+-> donor/token hidden states
+-> QTRM workspace/core/memory
+-> LM logits
+-> autoregressive text
+```
+
+Structured modules such as typed registers, operation selectors, verifier
+heads, and memory readers may be used only as learned and ablatable internal
+bottlenecks. They must not become external calculators, hidden answer channels,
+or runtime rule solvers that compute the final answer while the LLM only
+formats it.
+
+Artifacts:
+
+```text
+skill:
+  ~/.agents/skills/research-driven-architecture-debugging/SKILL.md
+
+wiki:
+  docs/wiki/architecture/universal-llm-causal-path-contract.md
+  docs/wiki/architecture/kiss-yagni-dry-ssot-contract.md
+  docs/wiki/architecture/canonical-architecture-matrix.md
+```
+
+Implication for the next typed-register executor:
+
+```text
+It must preserve the general LLM path. The verifier may judge register updates
+during training/eval, but the learned model must perform the update causally at
+inference and final answers must come through LM logits.
+```
+
+## [2026-05-05] raw-intelligence | Role-value slot candidate opened
+
+Added the role/filler variable-slot prior page and the next falsifiable
+candidate after generic algorithmic slots failed.
+
+Artifacts:
+
+```text
+docs/wiki/sources/role-filler-variable-slots.md
+docs/wiki/decisions/role-value-state-candidate.md
+references/papers/role_value_slots/
+```
+
+Decision status: active candidate. The next gate is a short role-value state
+train/eval: content role accuracy must beat the 0.05 generic-slot baseline,
+trace exact must rise above 0/32, and the accepted action-code path must remain
+32/32.
+
+Update: rejected after the 480-step gate. Value accuracy rose to 48/624
+(0.0769), but trace exact stayed 0/32 and step exact stayed 0/256. Action-code
+behavior remained 32/32. Next candidate: make role-bound values part of the
+mandatory recurrent state rather than a readout-only probe.
+
+## [2026-05-05] raw-intelligence | Core role-value state scaffold partially accepted
+
+Moved role-bound value tokens into the mandatory recurrent core and trained the
+new core-role path from the accepted mixed-composition action checkpoint.
+
+Result:
+
+```text
+held-out value:
+  trace exact:    0/32
+  step exact:     0/256
+  value accuracy: 100/624 = 0.1603
+
+action-code preservation:
+  trace exact:    32/32
+  halted exact:   32/32
+  step accuracy:  1.0000
+  finality acc:   1.0000
+```
+
+Decision: accept only as a scaffold. It beats readout-only role values
+(0.0769 -> 0.1603) without breaking the accepted action controller, but exact
+latent value-state remains 0/32. The next candidate is joint core training with
+action preservation plus core role-value CE, not another readout head.
+
+Artifact:
+
+```text
+docs/wiki/decisions/core-role-value-state-s480.md
+```
+
+## [2026-05-05] raw-intelligence | Joint core role-value training improves value accuracy
+
+Opened the recurrent core together with answer-state loop, transition-state
+joint head, and core role-value tokens. The objective preserved action-code
+behavior while continuing to train role-bound values.
+
+Result:
+
+```text
+held-out value:
+  trace exact:    0/32
+  step exact:     0/256
+  value accuracy: 144/624 = 0.2308
+
+action-code preservation:
+  trace exact:    32/32
+  halted exact:   32/32
+  step accuracy:  1.0000
+  finality acc:   1.0000
+```
+
+Decision: accept the direction, reject final exact-state claim. The progression
+is now 0.0500 -> 0.0769 -> 0.1603 -> 0.2308, while action-code stays 32/32.
+Next bottleneck: add explicit previous-role-state to next-role-state
+transition supervision.
+
+Artifact:
+
+```text
+docs/wiki/decisions/core-role-value-state-joint-s240.md
+```
+
+## [2026-05-05] raw-intelligence | Len579 gate exposes prompt-to-role binding bottleneck
+
+Found a gate/data confound: the previous value-state train split had mixed
+list length 5 only, while eval used lengths 7 and 9. Added
+`--train-list-lengths` to the mixed composition builder and generated a
+length-5/7/9 mixed-only train split.
+
+Result:
+
+```text
+held-out value:
+  trace exact:    0/32
+  step exact:     16/256 = 0.0625
+  value accuracy: 184/624 = 0.2949
+
+action-code preservation:
+  trace exact:    32/32
+  halted exact:   32/32
+  step accuracy:  1.0000
+  finality acc:   1.0000
+```
+
+Decision: current best value-state scaffold, still not final. The progression
+is now 0.0500 -> 0.0769 -> 0.1603 -> 0.2308 -> 0.2949, with first non-zero
+step exact. Next bottleneck is prompt-to-role binding: role tokens need a
+direct role-conditioned extraction path from prompt token states before the
+mandatory recurrent core.
+
+Artifact:
+
+```text
+docs/wiki/decisions/core-role-value-state-len579-s240.md
+```
+
+## [2026-05-05] raw-intelligence | Prompt-extract role binding candidate rejected
+
+Implemented gated role-conditioned prompt extraction before the recurrent core
+and trained it for 240 steps from the best len579 scaffold.
+
+Result:
+
+```text
+held-out value:
+  trace exact:    0/32
+  step exact:     16/256 = 0.0625
+  value accuracy: 130/624 = 0.2083
+
+action-code preservation:
+  trace exact:    32/32
+  halted exact:   32/32
+  step accuracy:  1.0000
+  finality acc:   1.0000
+```
+
+Decision: reject as implemented. It preserves action but regresses from the
+best len579 value accuracy of 0.2949. Keep the code as experimental; do not
+make it canonical without extractor pretraining or a better causal gate.
+
+Artifact:
+
+```text
+docs/wiki/decisions/core-role-value-state-prompt-extract-s240.md
+```
+
+## [2026-05-05] raw-intelligence | Algorithmic value-state slots rejected
+
+Tested structured neural-algorithmic value targets instead of digit strings:
+kind=list/scalar plus relative list/scalar slots.
+
+Result:
+
+```text
+pad-including CE:
+  kind acc:         1.0000
+  content slot acc: 0.0000
+  trace exact:      0/32
+
+content-slot CE:
+  kind acc:         1.0000
+  content slot acc: 0.0500
+  trace exact:      0/32
+
+action-code preservation:
+  trace exact:      32/32
+  halted exact:     32/32
+```
+
+Decision: reject. The model learns phase/kind but not exact value content.
+Next candidate is typed algorithmic fields rather than one generic slot head.
+
+Artifact:
+
+```text
+docs/wiki/decisions/algorithmic-value-state-s480.md
+```
+
+## [2026-05-05] raw-intelligence | Factorized value-state path rejected
+
+Implemented the first state-factorized candidate: separate recurrent value
+slots conditioned by prompt context and the frozen accepted action-state
+trajectory.
+
+Result:
+
+```text
+value-state:
+  trace exact: 0/32
+  token acc:   0.3713
+
+action-code preservation:
+  trace exact: 32/32
+  halted:      32/32
+```
+
+Decision: reject. The action policy is preserved, but digit-sequence CE still
+does not create exact algorithmic value state. Next step is structured
+neural-algorithmic state targets: list element slots, accumulator slots, masks,
+and explicit transition loss.
+
+## [2026-05-05] raw-intelligence | Value-state-only control rejected
+
+Ran the control from the state-factorized plan: freeze the accepted core/action
+path and train only the compact value-state head.
+
+Result:
+
+```text
+value-state:
+  trace exact: 0/32
+  token acc:   0.3794
+
+action-code preservation:
+  trace exact: 32/32
+  halted:      32/32
+```
+
+Decision: reject value-readout-only as a solution. The accepted action policy
+is preserved when frozen, but exact value content is not present in the current
+latent trajectory. Proceed to state-factorized core instead of more readout
+tuning.
+
+## [2026-05-05] raw-intelligence | State-factorized core plan opened
+
+Opened the research-backed architecture plan for the current bottleneck:
+preserve the accepted latent action controller while adding causal
+value-bearing recurrent state.
+
+Artifact:
+
+```text
+docs/wiki/decisions/state-factorized-qtrm-core-research-plan.md
+```
+
+Prior axes:
+
+```text
+Neural Algorithmic Reasoning: latent processor and intermediate state.
+Dreamer/RSSM: separated recurrent/action/value latent signals.
+Factored Latent Action World Models: factorized action/state transition.
+TRM/latent reasoning: recursive latent compute remains the raw-intelligence core.
+```
+
+Immediate experiment: freeze core/action and train only the compact
+value-state readout to test whether accepted latent trajectories already
+contain decodable value content.
+
+## [2026-05-05] raw-intelligence | Compact value-state head rejected
+
+Tested whether a compact digit/comma/minus value-state head can recover
+value-bearing latent state without damaging the accepted mixed-composition
+action policy.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-value-state-s480.md
+
+evaluator:
+  scripts/237_eval_qtrm_value_state.py
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_value_state_s480_from_mixed_s720/last.pt
+```
+
+Result:
+
+```text
+value-state:
+  trace exact:    0/32
+  token acc:      0.3713
+
+action-code preservation:
+  trace exact:   10/32
+  step acc:       0.8477
+```
+
+Decision: reject. The compact value probe partially learns digits, but joint
+training contaminates the accepted latent action policy. The next candidate
+must factor action-state and value-state so values become causal without
+regressing the action controller.
+
+## [2026-05-05] raw-intelligence | State-sequence bottleneck rejected
+
+Tested whether the accepted mixed-composition checkpoint contains decodable
+value-bearing internal state, not only a correct latent action code.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-state-sequence-bottleneck-s480.md
+
+evaluator:
+  scripts/236_eval_qtrm_core_state_sequence.py
+```
+
+Result:
+
+```text
+accepted action-code checkpoint:
+  state trace exact: 0/32
+  state token acc:   0.0040
+
+joint core/readout sequence CE:
+  state token acc:   0.3713
+  action-code exact: 0/32
+
+readout-only:
+  state token acc:   0.2273
+  action-code exact: 32/32
+
+direct transition-state sequence head:
+  state token acc:   0.1418
+  action-code exact: 32/32
+```
+
+Decision: reject state-content claims for the current core. The next bottleneck
+is value preservation inside the recurrent latent update, not another readout
+head.
+
+## [2026-05-05] raw-intelligence | Mixed-family composition gate accepted
+
+Accepted the next Stage 1 gate after list length/value transfer: list state now
+feeds an arithmetic aggregation/subtraction step.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-mixed-composition-s720.md
+
+builder:
+  scripts/235_build_mixed_family_composition_gate.py
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_balanced_interleave_s720_from_s240/last.pt
+```
+
+Result:
+
+```text
+full held-out:
+  exact:         32/32
+  halted exact:  32/32
+
+transition-state-off:
+  exact:         0/32
+  halted exact:  0/32
+
+code shuffle:
+  exact:         0/32
+  halted exact:  0/32
+
+code dropout:
+  exact:         0/32
+  halted exact:  0/32
+```
+
+Key architecture correction: `dynamic_halt_v3` separates action identity from
+halt/finality, and the mixed-train rows are interleaved because the training
+script consumes rows deterministically.
+
+## [2026-05-05] raw-intelligence | Long list transfer gate accepted
+
+Scaled the accepted list paraphrase transfer gate to held-out list lengths and
+value ranges.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-list-transfer-long-s120.md
+
+builder:
+  scripts/234_build_list_transfer_gate.py
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminal_v2_list_transfer_long_s120_from_oodstress/last.pt
+```
+
+Split:
+
+```text
+train:
+  list variants: 0, 1, 2, 3, 4, 5
+  list length:   5
+
+eval:
+  list variants: 6, 7
+  list lengths:  7, 9
+  rows:          32
+```
+
+Result:
+
+```text
+full:
+  exact:         32/32
+  halted exact:  32/32
+
+transition-state-off:
+  exact:         0/32
+  halted exact:  0/32
+
+code shuffle:
+  exact:         0/32
+  halted exact:  0/32
+
+code dropout:
+  exact:         0/32
+  halted exact:  0/32
+```
+
+Interpretation: accepted as within-family length/value/surface transfer. Do not
+promote to full operation-family zero-shot or open-ended reasoning.
+
 ## [2026-05-04] raw-intelligence | Prompt-conditioned primitive transition head
 
 Fixed a causal information-path failure in the QTRM primitive transition
@@ -7457,3 +8816,3234 @@ Decision:
 Accept the finality head only as a narrow causal signal. Reject it as Stage 1
 reasoning progress because trace exact is still 0/64 and action/semantic
 transition reasoning remains unsolved.
+
+## 2026-05-05: Transition-State Text S120 Rejection
+
+Trained a transition-state text head on the same list-family holdout split.
+This tests semantic intermediate-state token prediction without fixed operation
+ids.
+
+Artifacts:
+
+```text
+config:
+  configs/qwen35_2b_4090_pure_recursive_transition_text_s120.yaml
+
+eval script:
+  scripts/231_eval_qtrm_transition_state_text.py
+
+low-lr checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_text_s120_from_oodstress/last.pt
+
+high-lr checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_text_lr1e3_s120_from_oodstress/last.pt
+```
+
+Results:
+
+```text
+lr=5e-5:
+  full step_acc:                 0.0000
+  transition-state-off step_acc: 0.0000
+  trace exact:                   0/64
+
+lr=1e-3:
+  full step_acc:                 0.2500
+  transition-state-off step_acc: 0.0000
+  trace exact:                   0/64
+```
+
+Decision:
+Accept only the narrow causal semantic-token signal from the high-lr run.
+Reject recursive semantic transition because the model collapses to the depth-1
+token at every depth and does not learn the depth-varying state update.
+
+## 2026-05-05: Transition-State Text Depth-Contrast Rejection
+
+Added a row-local depth-contrast loss to separate labelled intermediate-state
+tokens across recurrent depths.
+
+Artifacts:
+
+```text
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_text_depthcontrast_lr1e3_s120_from_oodstress/last.pt
+
+eval:
+  local_eval/qwen35_2b_pure_recursive_transition_text_depthcontrast_lr1e3_s120_from_oodstress/eval_transition_text_list_holdout_full.json
+  local_eval/qwen35_2b_pure_recursive_transition_text_depthcontrast_lr1e3_s120_from_oodstress/eval_transition_text_list_holdout_transition_off.json
+```
+
+Results:
+
+```text
+full step_acc:                 0.2500
+transition-state-off step_acc: 0.0000
+trace exact:                   0/64
+```
+
+Decision:
+Reject this as Stage 1 progress. The path is causal, but it still predicts the
+same depth-1 content token at every depth. Do not keep stacking scalar losses
+onto the frozen full-vocabulary projection. The next candidate is a compact
+semantic state head or state embedding that the recurrent core must update
+before any language-vocabulary readout.
+
+## 2026-05-05: Code+Finality And Joint-State Rejection
+
+Tested two compact alternatives after the full-vocabulary transition-text path
+collapsed:
+
+```text
+code + finality checkpoint:
+  local_eval/qwen35_2b_pure_recursive_latent_action_codebook_finality_s120_from_oodstress/last.pt
+
+joint checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_s120_from_oodstress/last.pt
+```
+
+Results on the held-out list-family split:
+
+```text
+code + finality:
+  full code step_acc:      0.7500
+  full finality step_acc:  0.7500
+  full halted exact:       0/64
+  off code/finality acc:   0.2500 / 0.2500
+
+joint:
+  full code step_acc:      0.7500
+  full finality step_acc:  0.7500
+  full halted exact:       0/64
+  off code/finality acc:   0.2500 / 0.2500
+```
+
+Decision:
+Reject both as Stage 1 promotion. They prove a causal transition-state path,
+but strict trace exact and halted exact remain 0/64. The joint head shows the
+current bottleneck more clearly: it gets the list prefix right, then fires a
+final/hold state at an unlabelled intermediate step. The next experiment should
+use dense 1..N transition targets instead of sparse 1/2/4/8 labels.
+
+## 2026-05-05: Dense Joint-State Rejection
+
+Added dense 1..N transition targets and retrained compact joint-state heads for
+both role_v1 and terminal_v2 codebooks.
+
+Artifacts:
+
+```text
+builder:
+  scripts/232_build_dense_transition_targets.py
+
+decision:
+  docs/wiki/decisions/transition-joint-dense-s120.md
+
+role_v1 checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_s120_from_oodstress/last.pt
+
+terminal_v2 checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminal_v2_s120_from_oodstress/last.pt
+```
+
+Results:
+
+```text
+role_v1 dense:
+  full step_acc:      0.8750
+  off step_acc:       0.1250
+  halted exact:       0/64
+
+terminal_v2 dense:
+  full step_acc:      0.7500
+  off step_acc:       0.1250
+  halted exact:       0/64
+```
+
+Decision:
+Reject as Stage 1 promotion. Dense targets prove the transition-state path is
+causal, but held-out list still maps to the arithmetic/nonterminal compose path
+at depth 2 and strict halted trace exact remains 0/64. The next bottleneck is
+prompt-grounded terminal routing and semantic family transfer, not just sparse
+transition labels.
+
+## 2026-05-05: Terminality Fix And All-Families Sanity Control
+
+Added terminality counterfactual data and an action-terminal finality mode for
+dense targets.
+
+Artifacts:
+
+```text
+builder:
+  scripts/233_build_terminality_counterfactual_targets.py
+
+decision:
+  docs/wiki/decisions/transition-joint-terminality-and-sanity-s120.md
+```
+
+Results:
+
+```text
+terminality augmentation, list still fully held out:
+  full step_acc:      0.7500
+  off step_acc:       0.1250
+  halted exact:       0/64
+
+all-families sanity control, list included in train but held out by index:
+  full step_acc:      1.0000
+  off step_acc:       0.1250
+  halted exact:       64/64
+```
+
+Decision:
+Accept only the all-families mechanism sanity control. The recurrent
+transition-state path can learn list traces and is causally necessary, but full
+list-family zero-shot transfer remains rejected.
+
+## 2026-05-05: Core Role-Value Transition Auxiliary Rejected
+
+Added a disabled-by-default `core_role_value_transition_logits` path and
+`--algorithmic-role-value-transition-ce-weight` to test whether previous
+role-state to next-role-state supervision improves the mandatory latent loop.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/core-role-value-transition-aux-s120.md
+
+config:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_core_role_value_transition_joint_s120.yaml
+
+rejected checkpoints:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_core_role_value_transition_len579_s120_from_len579_s240/last.pt
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_core_role_value_transition_len579_s120_w01_from_len579_s240/last.pt
+```
+
+Results:
+
+```text
+canonical baseline:
+  value:     184/624 = 0.2949
+  step exact: 16/256 = 0.0625
+
+transition aux weight 1.0:
+  value:      96/624 = 0.1538
+  step exact:  0/256
+
+transition aux weight 0.1:
+  value:      96/624 = 0.1538
+  step exact:  0/256
+
+baseline loaded with transition-enabled config:
+  value:     184/624 = 0.2949
+  step exact: 16/256 = 0.0625
+```
+
+Decision:
+Reject the transition auxiliary as canonical. The module presence is safe, but
+auxiliary training regresses held-out value state. Core-step sweep also shows
+that current role-value slots are a structured probe/scaffold, not yet a
+depth-improving raw recursive reasoning mechanism.
+
+## 2026-05-05: List Paraphrase Transfer Gate Accepted
+
+Built a fairer Stage 1 list transfer gate where list_transform is present in
+train, but list paraphrase variants 6 and 7 are held out.
+
+Artifacts:
+
+```text
+builder:
+  scripts/234_build_list_transfer_gate.py
+
+decision:
+  docs/wiki/decisions/transition-joint-list-transfer-s120.md
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminal_v2_list_transfer_s120_from_oodstress/last.pt
+```
+
+Results:
+
+```text
+full:
+  exact:         16/16
+  halted exact:  16/16
+
+transition-state-off:
+  exact:         0/16
+  halted exact:  0/16
+
+code shuffle:
+  exact:         0/16
+  halted exact:  0/16
+
+code dropout:
+  exact:         0/16
+  halted exact:  0/16
+```
+
+Decision:
+Accept as within-family list-surface transfer. Do not claim full family-zero-shot
+reasoning; that remains rejected.
+
+## 2026-05-05: Core State-Carry Role-Value Rejected
+
+Added a gated recurrent carry update on the core role-value token slice plus a
+`core_state_carry_only` trainable policy to separate architecture damage from
+baseline-preserving adapter training.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/core-state-carry-role-value-s120.md
+
+configs:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_core_role_value_state_carry_joint_s120.yaml
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_core_state_carry_only_s120.yaml
+
+eval ablation:
+  scripts/238_eval_qtrm_algorithmic_value_state.py --disable-core-state-carry
+```
+
+Results:
+
+```text
+canonical baseline:
+  value:      184/624 = 0.2949
+  step exact:  16/256 = 0.0625
+  action:      32/32
+
+core_and_role_value_state + carry:
+  value:       80/624 = 0.1282
+  step exact:   0/256
+
+same checkpoint, carry disabled at eval:
+  value:       80/624 = 0.1282
+  step exact:   0/256
+
+core_state_carry_only:
+  value:      158/624 = 0.2532
+  step exact:  16/256 = 0.0625
+  action:      32/32
+```
+
+Decision:
+Reject state-carry as canonical. Carry-only proves the safer baseline-preserving
+workflow, but the module does not beat the held-out value-state baseline. The
+next candidate should be a compact value-delta state rather than a free MLP
+carry over role tokens.
+
+## 2026-05-05: Core Role-Value Delta-Only Rejected
+
+Added a small recurrent delta adapter over core role-value token trajectories,
+plus `core_role_value_delta_only` training and a delta-off value eval ablation.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/core-role-value-delta-only-s120.md
+
+config:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_core_role_value_delta_only_s120.yaml
+
+checkpoints:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_core_role_value_delta_only_len579_s120_from_len579_s240/last.pt
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_core_role_value_delta_only_len579_s120_lr1e5_from_len579_s240/last.pt
+```
+
+Results:
+
+```text
+baseline / untrained delta config:
+  value:      184/624 = 0.2949
+  step exact:  16/256
+
+delta-only lr 1e-4:
+  value:      112/624 = 0.1795
+  step exact:   0/256
+  delta off:  184/624 = 0.2949
+  action:      32/32
+
+delta-only lr 1e-5:
+  value:      184/624 = 0.2949
+  step exact:  16/256
+```
+
+Decision:
+Reject as canonical. The adapter is isolated and baseline-preserving, but it
+does not improve held-out value-state reasoning. The next candidate should make
+the missing state variable explicit: action code -> typed value-delta code ->
+value-state update -> role-value logits.
+
+## 2026-05-05: Breakthrough-Prior Architecture Pivot
+
+The repeated failure of local carry/delta MLPs triggers the big-structure doubt
+gate. The next candidate is no longer another continuous hidden-state adapter.
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/breakthrough-prior-next-architecture.md
+
+downloaded papers:
+  references/papers/recurrent_depth/loopformer_2602.11451.pdf
+  references/papers/recurrent_depth/ouro_looplm_2510.25741.pdf
+  references/papers/recurrent_depth/rltt_latent_thought_trajectory_2602.10520.pdf
+  references/papers/recurrent_depth/looprpt_2603.19714.pdf
+  references/papers/role_value_slots/discrete_neural_algorithmic_reasoning_icml2025.pdf
+  references/papers/role_value_slots/transnar_transformers_meet_nar_2406.09308.pdf
+
+official code:
+  references/official/loopformer @ 59a8ae8
+  references/official/dnar @ 12f3f0b
+  references/official/clrs @ bfd042f
+```
+
+Prior-backed pivot:
+
+```text
+Discrete NAR-style typed execution bottleneck
++ LoopFormer/Ouro/RLTT-style trajectory credit
++ QTRM mandatory recursive core
+```
+
+Next falsifiable experiment:
+
+```text
+core_depth_state
+-> value_delta_code_logits
+-> straight-through one-hot value_delta_code
+-> typed register update features
+-> role-value logits
+```
+
+Implementation scaffold:
+
+```text
+config:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_core_value_delta_code_only_s120.yaml
+
+model:
+  core_value_delta_code_logits
+  core_value_delta_code_gate_mean
+
+training:
+  trainable_param_policy: core_value_delta_code_only
+  --core-value-delta-code-ce-weight
+
+eval:
+  --disable-core-value-delta-code
+```
+
+Acceptance:
+
+```text
+held-out value accuracy > 184/624
+step exact             > 16/256
+trace exact            > 0/32
+action-code exact      = 32/32
+delta-code ablation    drops below full
+depth 8                beats depth 1 on held-out value/step metrics
+```
+
+## 2026-05-05: Core Value-Delta Code Only S120 Rejection
+
+Decision:
+
+```text
+docs/wiki/decisions/core-value-delta-code-only-s120.md
+```
+
+Result:
+
+```text
+full trained path:
+  value accuracy: 184/624 = 0.2948717949
+  step exact:      16/256 = 0.0625
+  trace exact:      0/32
+
+code-off ablation:
+  value accuracy: 184/624 = 0.2948717949
+  step exact:      16/256 = 0.0625
+  trace exact:      0/32
+
+direct code-logit readout:
+  value accuracy:  63/624 = 0.1009615385
+  step exact:       0/256 = 0.0
+  trace exact:      0/32
+
+action-code:
+  exact: 32/32
+```
+
+Decision:
+
+```text
+Reject as canonical. The finite code path does not carry held-out value-state
+signal, and deeper recurrence does not improve value-state accuracy.
+```
+
+Next:
+
+```text
+Stop adding local hidden-state adapters for value execution. Rebuild the next
+candidate as a TransNAR/CLRS-style typed register executor:
+
+prompt -> role binder -> mandatory core -> operation selector ->
+typed registers -> verifier-checked update -> role-value readout
+```
+
+## 2026-05-05: Typed Register Executor Only S120 Rejection
+
+Decision:
+
+```text
+docs/wiki/decisions/typed-register-executor-only-s120.md
+```
+
+Implemented the first persistent typed-register executor while preserving the
+universal LLM causal path:
+
+```text
+prompt tokens
+-> QTRM core trajectory
+-> learned operation selector
+-> persistent typed registers
+-> role-value logits
+```
+
+Results:
+
+```text
+untrained typed-register:
+  value accuracy:   0/624 = 0.0
+
+trained full:
+  value accuracy: 106/624 = 0.1698717949
+  step exact:       0/256
+  trace exact:      0/32
+
+typed-register-off:
+  value accuracy: 184/624 = 0.2948717949
+  step exact:      16/256
+
+action-code:
+  exact: 32/32
+```
+
+Decision:
+
+```text
+Reject as canonical. The executor is causal but harmful: disabling it restores
+the stronger baseline. Keep the scaffold, but the next candidate needs
+operation/process supervision rather than value CE alone.
+```
+
+## 2026-05-05: Typed Register Executor V2 Process-Credit Rejection
+
+Decision:
+
+```text
+docs/wiki/decisions/typed-register-executor-v2-process-credit-plan.md
+```
+
+Research-driven update:
+
+```text
+Use LoopLM/latent lookahead/process-credit prior to add training-only process
+CE on the existing typed-register operation selector.
+```
+
+Implementation target:
+
+```text
+core_typed_register_operation_logits
++ transition_state_codes[depth] CE
++ role-value CE
+```
+
+Result:
+
+```text
+full value accuracy:       102/624 = 0.1634615385
+typed-register-off:        184/624 = 0.2948717949
+full step exact:             0/256
+typed-register-off exact:   16/256
+action-code exact:          32/32
+```
+
+Decision:
+
+```text
+Reject. Process-code CE preserves the action controller but the typed-register
+value path remains harmful. Next candidate needs register-transition
+consistency and latent-lookahead/process reward, not another isolated value
+head.
+```
+
+## 2026-05-05: Typed Register Prompt Binder S120 Rejection
+
+Decision:
+
+```text
+docs/wiki/decisions/typed-register-prompt-binder-s120.md
+```
+
+Hypothesis tested:
+
+```text
+Maybe typed registers fail because they only see mean-pooled context and cannot
+bind exact prompt values.
+```
+
+Result:
+
+```text
+baseline value accuracy:      184/624
+prompt-binder full:           104/624
+prompt-binder register-off:   168/624
+action-code exact:             32/32
+```
+
+Decision:
+
+```text
+Reject. Token-addressed prompt access alone is not enough and also disturbs the
+previous role-value baseline. The next candidate should make exact value update
+a recurrent transition objective, not another readout/binder patch.
+```
+
+## 2026-05-05: Typed Register Transition Consistency S120 Rejection
+
+Decision:
+
+```text
+docs/wiki/decisions/typed-register-transition-consistency-s120.md
+```
+
+Hypothesis:
+
+```text
+The typed-register path needs teacher-forced recurrent value-transition credit:
+register_state[t] -> role_value_state[t+1].
+```
+
+Implementation:
+
+```text
+core_typed_register_transition_logits
+--core-typed-register-transition-ce-weight
+```
+
+Result:
+
+```text
+full value accuracy:      104/624
+typed-register-off:       184/624
+action-code exact:         32/32
+trace exact:                0/32
+```
+
+Decision:
+
+```text
+Reject. The transition head was auxiliary and did not become the evaluated
+value path. Next candidate must make depth>1 value readout come from the
+previous-register transition prediction itself.
+```
+
+## 2026-05-05: Typed Register Strict Transition Readout S120 Plan
+
+Decision:
+
+```text
+docs/wiki/decisions/typed-register-strict-transition-readout-s120.md
+```
+
+Hypothesis:
+
+```text
+Depth > 1 role-value logits must be the transition prediction itself, not an
+auxiliary head beside the evaluated value head.
+```
+
+Implementation:
+
+```text
+core_typed_register_transition_readout_enabled
+```
+
+Result:
+
+```text
+full value accuracy:      64/624 = 0.1025641026
+typed-register-off:      184/624 = 0.2948717949
+full step exact:           0/256
+typed-register-off exact: 16/256
+action-code exact:        32/32
+```
+
+Decision:
+
+```text
+Reject. Making the transition head the causal value readout worsens the value
+path. Since typed-register-off restores the baseline exactly, the bottleneck is
+not prompt access or auxiliary loss wiring; the typed-register value mechanism
+itself is the wrong local patch. Next work should move back to the universal
+LLM causal path and test a root latent-state candidate instead of another
+parallel role-vocab head.
+```
+
+## 2026-05-05: Final Answer Bridge S120 Opened
+
+Decision:
+
+```text
+docs/wiki/decisions/final-answer-bridge-s120.md
+```
+
+Failure:
+
+```text
+The best len579 value-state checkpoint scores 0/32 on mixed-composition
+causal forced-choice for every tested mode. It ranks intermediate list states
+above final scalar answers.
+```
+
+Next experiment:
+
+```text
+Train answer_state_loop LM logits with causal-prefix final-answer CE while
+preserving transition_state_joint CE. No typed-register or role-value answer
+channel is active.
+```
+
+Result:
+
+```text
+action-code heldout:
+  exact:        32/32
+  step_acc:      1.0000
+  finality_acc:  1.0000
+
+LM causal forced-choice smoke8:
+  donor_only:   0/8
+  core_off:     0/8
+  core_steps_1: 0/8
+  core_steps_8: 0/8
+```
+
+Decision:
+
+```text
+Reject. Final-answer CE lowers training loss and preserves the action policy,
+but it does not transfer to held-out final-value answers. The next candidate
+must put a neural value-state transition into the causal answer path; answer
+rendering alone is not enough.
+```
+
+## 2026-05-05: Role-Value Answer Bridge S120 Opened
+
+Decision:
+
+```text
+docs/wiki/decisions/role-value-answer-bridge-s120.md
+```
+
+Architecture change:
+
+```text
+core_role_value_state_logits
+-> soft value embeddings + role embeddings
+-> gated internal answer-loop tokens
+-> answer_state_loop LM logits
+```
+
+Why:
+
+```text
+The previous final-answer bridge trained the renderer but did not make the
+computed value state causal. This probe forces the answer loop to read the
+core's role-value state through a learned, ablatable internal bottleneck.
+```
+
+Promotion gate:
+
+```text
+action-code exact remains 32/32
+core_steps_8 LM forced-choice beats donor_only and core_off
+role_value_answer_bridge_off causes a held-out drop
+```
+
+Result:
+
+```text
+S80 checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_role_value_answer_bridge_len579_s080_from_len579_s240/last.pt
+
+action-code heldout:
+  exact:        32/32
+  step_acc:      1.0000
+  finality_acc:  1.0000
+
+LM causal forced-choice smoke8:
+  donor_only:              0/8
+  core_off:                0/8
+  core_steps_8:            0/8
+  core_steps_8 bridge_off: 0/8
+```
+
+Decision:
+
+```text
+Reject. The bridge trains and preserves action-code, but bridge-off does not
+change held-out LM answer selection. Next candidate should move to an
+Ouro/LoopLM-style recurrent answer-hidden-state block with depth allocation,
+not another side-head bridge.
+```
+
+## 2026-05-06: Ouro Answer Recurrent S080 Opened
+
+Decision:
+
+```text
+docs/wiki/decisions/ouro-answer-recurrent-s080.md
+```
+
+Architecture change:
+
+```text
+answer_state_loop cross-attention
+-> shared causal recurrent answer block
+-> LM logits
+```
+
+Why:
+
+```text
+Ouro/LoopLM is the better general-LLM prior than task-specific TRM. The next
+probe updates the answer hidden state itself instead of feeding side-state
+tokens into an otherwise unchanged answer loop.
+```
+
+Promotion gate:
+
+```text
+action-code exact remains 32/32
+core_steps_8 beats donor_only/core_off on held-out LM causal forced-choice
+answer_state_recurrent_off drops versus full
+```
+
+Result:
+
+```text
+S80 checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s080_from_len579_s240/last.pt
+
+training:
+  final_path_ce: 10.9580 -> 2.6068
+  transition_state_joint_acc: 1.0000
+
+action-code heldout:
+  exact:        32/32
+  step_acc:      1.0000
+  finality_acc:  1.0000
+  halted_exact: 32/32
+
+LM causal forced-choice smoke8:
+  donor_only:                         0/8
+  core_off:                           0/8
+  core_steps_8:                       2/8
+  core_steps_8 answer_recurrent_off:  0/8
+```
+
+Decision:
+
+```text
+Accept as a smoke-level causal gain. This is not a general reasoning claim yet,
+but it is the first positive answer-path ablation in this branch. Continue to
+S240/S480 before adding a SubQ/MSA-like selective context router.
+```
+
+S240 continuation result:
+
+```text
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_len579_s240_from_s080/last.pt
+
+training:
+  final_path_ce: 4.3030 -> 1.0415
+  transition_state_joint_acc: 1.0000
+
+action-code heldout:
+  exact:        32/32
+  step_acc:      1.0000
+  finality_acc:  1.0000
+  halted_exact: 32/32
+
+LM causal forced-choice smoke8:
+  donor_only:                         0/8
+  core_off:                           0/8
+  core_steps_8:                       0/8
+  core_steps_8 answer_recurrent_off:  0/8
+```
+
+Decision update:
+
+```text
+Reject S240 continuation. CE-only continuation improves in-sample loss but
+erases the S80 held-out answer-path gain. Keep S80 as the best observed
+checkpoint and add validation-gated selection or stronger final-value/ranking
+loss before longer training.
+```
+
+Implementation follow-up:
+
+```text
+Added --save-every to scripts/196_train_pure_recursive_depth_supervised.py.
+Future recurrent-answer runs should save step snapshots and evaluate LM
+causal forced-choice before overwriting the best observed answer-path state.
+```
+
+Choice-margin continuation result:
+
+```text
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_recurrent_choice_margin_len579_s080_from_s080/step_000080.pt
+
+training:
+  final_path_ce: 0.9753 on final logged batch
+  final_path_acc: 1.0000
+  transition_state_joint_acc: 1.0000
+
+action-code heldout:
+  exact:        32/32
+  step_acc:      1.0000
+  finality_acc:  1.0000
+  halted_exact: 32/32
+
+LM causal forced-choice smoke8:
+  step40 core_steps_8:                       0/8
+  step40 core_steps_8 answer_recurrent_off:  0/8
+  step80 core_steps_8:                       0/8
+```
+
+Decision update:
+
+```text
+Reject choice-margin continuation as a canonical recurrent-answer objective.
+The implementation is useful infrastructure, but this run repeats the S240
+failure: transition/action state remains perfect while held-out LM answer
+selection loses the accepted S80 causal gain.
+```
+
+## 2026-05-06: Ablation-Aware Checkpoint Gate And Selective Router Probe
+
+Added an evaluation artifact selector:
+
+```text
+scripts/240_select_qtrm_checkpoint_by_gate.py
+```
+
+It selects checkpoints by held-out LM causal forced-choice, action-code
+preservation, and optional component ablation drop. This prevents accepting a
+lower training CE or equal-score component that is not causally useful.
+
+Selector result:
+
+```text
+S80 baseline:
+  full:            2/8
+  recurrent_off:   0/8
+  action-code:     32/32
+  accepted:        true
+
+S240 CE-only:
+  full:            0/8
+  action-code:     32/32
+  accepted:        false
+
+choice-margin step80:
+  full:            0/8
+  action-code:     32/32
+  accepted:        false
+```
+
+Implemented the minimal SubQ/SSA-style answer selective context router:
+
+```text
+answer hidden state
++ core/workspace states
++ prompt states
+-> learned top-k selector
+-> answer-state cross-attention
+-> recurrent answer block
+-> LM logits
+```
+
+Probe result:
+
+```text
+config:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_selective_context_s080.yaml
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_selective_context_len579_s020_from_s080/step_000020.pt
+
+LM causal forced-choice:
+  full:       2/8
+  router_off: 2/8
+
+action-code:
+  exact:        32/32
+  step_acc:      1.0000
+  finality_acc:  1.0000
+```
+
+Decision:
+
+```text
+Reject selective_s020 as a causal architecture gain. It preserves S80 but
+router-off does not hurt. Keep the router code as a scaffold; future router
+runs need dense-vs-sparse alignment or explicit router supervision before
+claiming a SubQ/SSA-style improvement.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-selective-context-s020.md
+```
+
+Dense-alignment v2 update:
+
+```text
+change:
+  added force_answer_state_loop_dense_context
+  added --answer-selective-context-alignment-weight
+  added answer_selective_context_alignment_loss
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_selective_context_align_len579_s020_from_s080/step_000020.pt
+
+training:
+  final_path_ce: 4.3567 -> 2.0881
+  answer_selective_context_alignment_kl: 0.0228 -> 0.0198
+
+LM causal forced-choice:
+  full:       2/8
+  router_off: 2/8
+
+action-code:
+  exact:        32/32
+  step_acc:      1.0000
+  finality_acc:  1.0000
+```
+
+Decision:
+
+```text
+Reject dense-alignment S020. The KL teacher path is implemented, but router-off
+still ties full mode, so the router has no causal answer-path contribution.
+S80 Ouro recurrent remains the selected baseline.
+```
+
+## 2026-05-06 - Ouro Causal-Prefix Tail S020
+
+Failure isolated:
+
+```text
+mixed-list arithmetic often computes the doubled sum but skips the final
+subtract step, e.g. gold 300015 vs model 300024.
+```
+
+The hard negative was already present in `choices`, so the next falsifier used
+causal-prefix multi-token supervision and sequence margin instead of another
+dataset-only change.
+
+Artifacts:
+
+```text
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_prefix_tail_s020_from_mixedrepeat/last.pt
+
+eval:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_prefix_tail_s020_from_mixedrepeat/lm_causal_forced_choice_smoke8_with_baselines.jsonl
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_prefix_tail_s020_from_mixedrepeat/action_code_eval32.json
+```
+
+Result:
+
+```text
+donor_only:   0/8
+core_off:     0/8
+bridge_off:   3/8
+full core8:   4/8
+action-code: 32/32
+```
+
+Tail breakdown:
+
+```text
+full core8:
+  correct_final:     4
+  pre_subtract_sum:  4
+
+bridge_off:
+  correct_final:     3
+  pre_subtract_sum:  4
+  tie:               1
+```
+
+Decision:
+
+```text
+Accept as a smoke improvement, not a broad breakthrough.
+The next bottleneck remains final subtract-tail retention.
+```
+
+Storage hygiene:
+
+```text
+Deleted generated local_eval/**/step_*.pt snapshots after / reached 100%.
+Kept last.pt checkpoints and eval JSON artifacts.
+```
+
+## 2026-05-06 - All-Prefix Bridge Tail Reject
+
+Implemented:
+
+```text
+--transition-joint-answer-bridge-contrast-all-prefix-tokens
+```
+
+Rationale:
+
+```text
+The accepted tail checkpoint improved full to 4/8, but bridge-off also reached
+3/8. The hypothesis was that bridge contrast only touched the first answer
+token, while the final subtract error lives in later answer digits.
+```
+
+Result:
+
+```text
+donor_only:   0/8
+core_off:     0/8
+bridge_off:   2/8
+full core8:   2/8
+action-code: 32/32
+```
+
+Tail breakdown:
+
+```text
+full core8:
+  correct_final:     2
+  pre_subtract_sum:  4
+  doubled_list:      2
+```
+
+Decision:
+
+```text
+Reject. All-prefix bridge contrast preserves the action controller but regresses
+the answer path and eliminates the full-vs-bridge-off gap.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-allprefix-bridge-tail-s020-reject.md
+```
+
+## 2026-05-06 - Tail-Negative S020
+
+Implemented a narrow preterminal-state negative objective:
+
+```text
+--tail-negative-margin-weight
+--tail-negative-margin
+--tail-negative-family-filter
+```
+
+Accepted smoke:
+
+```text
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_tailneg_s020_from_tail_s020/last.pt
+
+donor_only:   0/8
+core_off:     0/8
+bridge_off:   2/8
+full core8:   4/8
+action-code: 32/32
+```
+
+Tail breakdown:
+
+```text
+full core8:
+  correct_final:     4
+  pre_subtract_sum:  4
+
+bridge_off:
+  correct_final:     2
+  pre_subtract_sum:  6
+```
+
+Decision:
+
+```text
+Accept as causal-gap improvement only. It keeps full 4/8 and lowers bridge-off
+from 3/8 to 2/8, but it does not reduce full pre-subtract failures.
+```
+
+Rejected follow-up:
+
+```text
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_tailneg_mixedx4_s040_from_tail_s020/last.pt
+
+mixedx4 S040:
+  donor_only:   0/8
+  core_off:     0/8
+  bridge_off:   4/8
+  full core8:   3/8
+  action-code: 32/32
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-tail-negative-s020.md
+```
+
+## 2026-05-06 - Ouro Final-Answer Binder Reject
+
+Implemented an ablatable final-answer binder and tested two variants:
+
+```text
+v1: transition joint-code/finality distribution -> answer delta
+v2: finality-weighted core_depth_state -> answer delta
+```
+
+Both were trained for S020 from the accepted tail-negative checkpoint and
+evaluated with the same smoke8 causal forced-choice gate.
+
+Results:
+
+```text
+v1:
+  donor_only:        0/8
+  core_off:          0/8
+  full core8:        2/8
+  binder_off:        2/8
+  joint_bridge_off:  2/8
+
+v2:
+  donor_only:        0/8
+  core_off:          0/8
+  full core8:        2/8
+  binder_off:        2/8
+  joint_bridge_off:  2/8
+```
+
+Decision:
+
+```text
+Reject. The accepted baseline is still 4/8, and binder-off ties full. The next
+architecture step should train latent trajectory quality directly, using
+LoopLM/COCONUT/LoopFormer/LoopRPT-style process credit rather than adding
+another answer-side readout patch.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-final-answer-binder-s020-reject.md
+```
+
+## 2026-05-06 - Ouro Answer Halt Head S080 Accepted
+
+Implemented a PonderNet/ACT-style answer-state halt head and tested two
+variants:
+
+```text
+rejected:
+  transition finality -> in-loop answer freeze
+  result: full 2/8, gate_off 4/8
+
+accepted:
+  answer hidden -> learned halt head
+  train with halt gate disabled
+  eval with hard-first in-loop halt gate
+```
+
+Key metrics:
+
+```text
+smoke8:
+  core_steps4:       8/8
+  core_steps8 full:  8/8
+  halt_gate_off:     0/8
+  bridge_off:        8/8
+
+smoke16:
+  core_steps4:       10/16
+  core_steps8 full:  10/16
+  halt_gate_off:      0/16
+  bridge_off:        10/16
+
+action-code:
+  exact:             32/32
+  step_acc:          1.0
+  finality_acc:      1.0
+  halted_exact:      32/32
+
+generation smoke4:
+  full/gate_off:      0/8
+```
+
+Decision:
+
+```text
+Accept as the current Ouro raw-recursive answer-path candidate. The answer
+halt gate is causal because disabling it collapses the answer path to 0/16.
+Demote transition_joint_answer_bridge for this checkpoint because bridge_off
+ties full. Do not claim generation readiness: greedy generation still fails.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-answer-halt-head-s080.md
+```
+
+## 2026-05-07 - Typed CE Demoted To Probe-Only
+
+Scope correction:
+
+```text
+typed algorithmic CE is not a universal LLM objective.
+```
+
+It remains useful for diagnosing numeric/register binding, but canonical QTRM
+claims must improve the single prompt-token-to-LM-logits path.
+
+The current canonical raw-recursive answer-path baseline is now recorded as a
+machine gate:
+
+```text
+docs/wiki/decisions/ouro-answer-halt-head-s080-raw-gate.md
+
+donor_only: 0/8
+core_off:   0/8
+depth1:     0/8
+depth2:     0/8
+depth4:     8/8
+depth8:     8/8
+```
+
+Next bottleneck:
+
+```text
+greedy autoregressive rendering remains 0/8 while forced-choice is accepted.
+Improve the answer-token path without typed answer channels or donor-logit
+shortcuts.
+```
+
+## 2026-05-07 - Ouro Halt-Head Partial Scale32 Depth Gate
+
+Attempted a full scale32 forced-choice sweep for the accepted halt-head
+checkpoint. The full 8-mode sweep was stopped after 170/256 rows because it was
+too slow for the current loop.
+
+The completed depth4 subset was preserved as a partial gate:
+
+```text
+docs/wiki/decisions/ouro-answer-halt-head-s080-depth4-scale32-partial-gate.md
+
+donor_only: 0/32
+core_off:   0/32
+depth1:     4/32
+depth2:     4/32
+depth4:    16/32
+```
+
+Decision:
+
+```text
+accept as partial depth-scaling evidence only.
+not accepted as full scale32 halt-off/depth8 verification.
+```
+
+## 2026-05-07 - Renderer Root Redesign Toward Latent Lookahead
+
+Web-search-backed prior check:
+
+```text
+Latent Lookahead Training
+PonderLM-2
+Reasoning with Latent Tokens in Diffusion LMs
+Parcae stable looped models
+Autoregressive LMs as EBMs
+Hidden Capacity for One-Step Text Generation
+Draft/Verify/Improve and Weaver
+```
+
+New diagnostic:
+
+```text
+scripts/247_probe_qtrm_gold_token_ranks.py
+```
+
+Accepted halt-head rank probe, 4 cases:
+
+```text
+core_steps_4:
+  first@1: 4/4
+  all@1:   0/4
+  all<=10: 0/4
+  max-rank mean: 740
+
+example answer 300015:
+  ranks: [1, 14, 5, 5, 5, 4, 1222]
+```
+
+Donor-preserving core-forced generation smoke:
+
+```text
+hits: 0/48
+```
+
+Decision:
+
+```text
+Stop stacking LM-head/bridge/logit-scale patches.
+Next candidate is same-prefix latent lookahead / future-token auxiliary:
+the answer-state loop must learn the next K answer tokens from the same
+prefix, while runtime output remains normal LM logits/autoregressive text.
+```
+
+Docs:
+
+```text
+docs/wiki/sources/latent-lookahead-renderer.md
+docs/wiki/decisions/qtrm-renderer-root-redesign-latent-lookahead.md
+```
+
+## 2026-05-07 - Depth Router Heads Rejected, Trajectory Training Promoted
+
+Result:
+
+```text
+fixed-depth oracle from core-forced readout:
+  16/24
+
+best final-state route head:
+  12/24
+
+best core_depth_states trajectory route head:
+  12/24
+```
+
+Decision:
+
+```text
+Reject route-head-only as the depth selector path.
+The core has useful fixed-depth behavior, but frozen core states do not expose
+a reliable routing signal to a small classifier.
+```
+
+Implementation note:
+
+```text
+Added controller_signal_source=learned_core_trajectory so diagnostic heads can
+read the full core_depth_states sequence.
+```
+
+Next candidate:
+
+```text
+LoopFormer-style variable trajectory / shortcut-consistency training for the
+recursive core itself, with depth sweeps and core-off/delta-off ablations.
+```
+
+Decision/source docs:
+
+```text
+docs/wiki/decisions/donor-preserving-controller-next-method.md
+docs/wiki/sources/adaptive-depth-test-time-compute.md
+```
+
+## 2026-05-06 - Ouro Renderer Probes Rejected
+
+Tested three ways to turn the accepted answer-halt S080 forced-choice scorer
+into a greedy autoregressive renderer:
+
+```text
+naive answer-loop CE:
+  generation:           0/8
+  causal forced-choice: 0/8
+  decision:             reject, checkpoint deleted
+
+zero-init LM adapter:
+  generation:           0/8
+  causal forced-choice: full 8/8, halt_gate_off 0/8
+  decision:             reject as renderer, checkpoint deleted
+
+greedy-margin adapter:
+  generation:           0/8
+  causal forced-choice: full 4/8, halt_gate_off 0/8
+  sample:               "24434264752"
+  decision:             reject, checkpoint deleted
+
+donor-logit fusion sanity:
+  donor_logits_scale=1.0, qtrm_logits_scale=1.0
+  generation: 0/4
+```
+
+Conclusion:
+
+```text
+The halt-head checkpoint remains canonical for raw forced-choice reasoning.
+Greedy rendering is a separate causal bottleneck. Output-only patches either
+do nothing or damage the accepted gate. The next candidate needs
+autoregressive rollout/prefix training while preserving the halt-head
+forced-choice baseline.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-answer-halt-head-s080.md
+```
+
+## 2026-05-07 - Latent Lookahead Renderer Scaffold
+
+Implemented the next renderer falsifier:
+
+```text
+src/qtrm_mm/config.py
+src/qtrm_mm/qtrm_model.py
+scripts/196_train_pure_recursive_depth_supervised.py
+scripts/247_probe_qtrm_gold_token_ranks.py
+scripts/248_run_qtrm_ouro_future_token_lookahead_s040.sh
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_future_token_lookahead_s040.yaml
+```
+
+Decision:
+
+```text
+same-prefix future-token lookahead is auxiliary-only
+runtime answer path remains outputs["logits"] autoregressive LM generation
+future-token CE requires causal-prefix supervision to avoid answer leakage
+rank probe now separates strict rank from unique_top1 to avoid all-zero tie false positives
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/qtrm-renderer-root-redesign-latent-lookahead.md
+```
+
+## 2026-05-07 - Causal Talker S040 Reject
+
+Implemented a canonical-path Talker renderer:
+
+```text
+QTRM answer-state hidden + latent trajectory summary
+-> causal Talker block
+-> LM head
+-> autoregressive logits
+```
+
+Artifacts:
+
+```text
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_talker_s040.yaml
+scripts/249_run_qtrm_ouro_causal_talker_s040.sh
+local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_talker_s040_from_halt_s080/
+```
+
+Result:
+
+```text
+generation smoke8:
+  donor/core_off/core4/core8: 0/8
+
+causal forced-choice smoke4:
+  donor/core_off/core4/core8/halt_off: 0/4
+```
+
+Decision:
+
+```text
+reject S040 as a checkpoint.
+The code path is cleaner than aux lookahead, but answer-loop-only S040 training
+does not create a usable LM-compatible renderer and regresses the accepted
+forced-choice signal.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-causal-talker-s040-reject.md
+```
+
+## 2026-05-07 - Causal Talker-Only S080 Reject
+
+Narrowed the previous Talker experiment by freezing the accepted halt-head
+checkpoint and training only the new causal Talker parameters.
+
+Artifacts:
+
+```text
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_talker_only_s080.yaml
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_talker_only_eval_gate.yaml
+scripts/250_run_qtrm_ouro_causal_talker_only_s080.sh
+local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_talker_only_s080_from_halt_s080/
+```
+
+Result:
+
+```text
+generation smoke8:
+  donor/core_off/core4/core8/core8_halt_off/core8_talker_off: 0/8
+
+causal forced-choice smoke4 with answer halt gate enabled:
+  donor/core_off: 0/4
+  core4: 4/4
+  core8: 4/4
+  core8_halt_off: 0/4
+  core8_talker_off: 4/4
+```
+
+Decision:
+
+```text
+reject as a promoted renderer checkpoint.
+The forced-choice signal is preserved by the answer halt gate, not caused by
+the Talker, and greedy generation remains 0/8.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-causal-talker-only-s080-reject.md
+```
+
+## 2026-05-07 - Donor-Guided Adapter S060 Reject
+
+Fixed the depth-supervised trainer so donor-preserving configs actually pass
+donor logits into the QTRM forward path. Then tested a low-rank answer-state LM
+adapter with Qwen as the renderer:
+
+```text
+final_logits = donor_logits + clamp(answer_halt_state_adapter_delta)
+qtrm_logits_scale = 0.0
+donor_logits_scale = 1.0
+trainable = answer_state_loop_lm_adapter_only
+```
+
+Artifacts:
+
+```text
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_donor_guided_adapter_s060.yaml
+scripts/251_run_qtrm_ouro_donor_guided_adapter_s060.sh
+local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_donor_guided_adapter_s060_from_halt_s080/
+```
+
+Result:
+
+```text
+generation smoke8:
+  donor/core_off/core4/core8/delta_off/halt_off: 0/8
+
+causal forced-choice smoke4:
+  donor/core_off/core4/core8/delta_off/halt_off: 0/4
+```
+
+Decision:
+
+```text
+reject as a promoted renderer checkpoint.
+The donor-logit path is now correctly trained, but the adapter reinforces
+intermediate trace strings instead of final answers and destroys the accepted
+halt-gated forced-choice signal.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-donor-guided-adapter-s060-reject.md
+```
+
+## 2026-05-07 - Donor-Guided Adapter Final-Only S060 Reject
+
+Retested the donor-guided adapter after removing the staged-target
+contamination risk. This run trained only final-answer tokens at depth 8:
+
+```text
+target_mode = final
+depth_steps = 8
+final_logits = donor_logits + clamp(answer_halt_state_adapter_delta)
+qtrm_logits_scale = 0.0
+donor_logits_scale = 1.0
+trainable = answer_state_loop_lm_adapter_only
+```
+
+Artifacts:
+
+```text
+scripts/252_run_qtrm_ouro_donor_guided_adapter_final_s060.sh
+local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_donor_guided_adapter_final_s060_from_halt_s080/
+```
+
+Result:
+
+```text
+generation smoke8:
+  donor/core_off/core8/delta_off/halt_off: 0/8
+
+causal forced-choice smoke4:
+  donor/core_off/core8/delta_off/halt_off: 0/4
+
+gold-token rank probe:
+  accepted halt-head core8 first_unique@1: 4/4
+  accepted halt-head core8 all<=10:        0/4
+  hard-negative core8 all<=10:             1/4
+  hard-negative donor/delta-off all<=10:   3/4
+```
+
+Decision:
+
+```text
+reject as a promoted renderer checkpoint.
+Final-only supervision removes the obvious trace-string contamination but
+does not recover the accepted halt-gated forced-choice signal or open greedy
+generation. The next target should be a token-local final-answer
+discriminator/scorer with hard negatives, not another blind adapter sweep.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-donor-guided-adapter-final-s060-reject.md
+```
+
+## 2026-05-07 - Donor-Guided Hard-Negative S080 Reject
+
+Tested the next donor-renderer falsifier with final-only causal-prefix
+supervision plus explicit hard negatives:
+
+```text
+choice negatives from row.choices
+preterminal trace negatives
+final-answer +/- 1 numeric counterfactuals
+```
+
+Artifacts:
+
+```text
+scripts/253_run_qtrm_ouro_donor_guided_hardneg_s080.sh
+local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_donor_guided_hardneg_s080_from_halt_s080/
+```
+
+Result:
+
+```text
+generation smoke8:
+  donor/core_off/core8/delta_off/halt_off: 0/8
+
+causal forced-choice smoke4:
+  donor/core_off/core8/delta_off/halt_off: 0/4
+```
+
+Representative core8 misses:
+
+```text
+300015 -> 100002
+300015 -> 50001
+400037 -> 100000
+400037 -> 50004
+```
+
+Decision:
+
+```text
+reject as a promoted renderer checkpoint.
+Hard negatives did not recover generation or forced-choice. The bottleneck is
+not only final-answer-vs-trace discrimination; answer-state hidden is not
+renderer-ready for autoregressive numeric generation under adapter-only tuning.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-donor-guided-hardneg-s080-reject.md
+```
+
+## 2026-05-07 - Ouro Next-Token Decoder S080 Reject
+
+Added an in-loop tokenizer-aligned answer decoder before the shared LM head and
+trained only that decoder from the accepted answer-halt checkpoint.
+
+Artifacts:
+
+```text
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_next_token_decoder_s080.yaml
+scripts/254_run_qtrm_ouro_next_token_decoder_s080.sh
+/mnt/nvme1n1p2/qtrm-runs/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_next_token_decoder_s080_from_halt_s080/
+```
+
+Training signal at step 80:
+
+```text
+final_path_ce=3.3559
+final_path_acc=0.4286
+final_greedy_token_margin=0.4388
+causal_prefix_self_rollout_examples=0
+```
+
+Gold-token rank probe:
+
+```text
+donor_only:    first_unique@1 0/4, all<=10 3/4
+core_off:      first_unique@1 0/4, all<=10 4/4
+core8 full:    first_unique@1 4/4, all<=10 2/4
+decoder_off:   first_unique@1 4/4, all<=10 0/4
+halt_gate_off: first_unique@1 0/4, all<=10 0/4
+```
+
+Smoke gates:
+
+```text
+generation smoke8:
+  donor/core_off/core8/decoder_off/halt_off: 0/8
+
+causal forced-choice smoke4:
+  donor/core_off/core8/halt_off: 0/4
+  decoder_off: 4/4
+```
+
+Decision:
+
+```text
+reject as a promoted renderer checkpoint.
+The decoder improves some teacher-forced rank diagnostics, but the full
+runtime path still fails generation and regresses the accepted forced-choice
+signal. The next falsifier should add self-rollout causal-prefix correction
+instead of another decoder-only sweep.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-next-token-decoder-s080-reject.md
+```
+
+## 2026-05-07 - Ouro Next-Token Decoder Self-Rollout S040 Reject
+
+Tested generated-prefix correction for the in-loop tokenizer-aligned decoder.
+
+Artifacts:
+
+```text
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_next_token_decoder_selfrollout_s040.yaml
+scripts/255_run_qtrm_ouro_next_token_decoder_selfrollout_s040.sh
+/mnt/nvme1n1p2/qtrm-runs/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_next_token_decoder_selfrollout_s040_from_s080/
+```
+
+Training signal:
+
+```text
+step 1 self-rollout mismatch rate: 1.0000
+around step 10 final_path_acc: 0.5000
+final step 40 final_path_acc: 1.0000
+final step 40 self-rollout mismatch rate: 0.0000
+```
+
+Gold-token rank probe:
+
+```text
+donor_only:    first_unique@1 0/4, all<=10 3/4
+core_off:      first_unique@1 0/4, all<=10 4/4
+core8 full:    first_unique@1 4/4, all<=10 2/4
+decoder_off:   first_unique@1 4/4, all<=10 0/4
+halt_gate_off: first_unique@1 0/4, all<=10 0/4
+```
+
+Smoke gates:
+
+```text
+generation smoke8:
+  donor/core_off/core8/decoder_off/halt_off: 0/8
+
+causal forced-choice smoke4:
+  donor/core_off/core8/halt_off: 0/4
+  decoder_off: 4/4
+```
+
+Representative full core8 failure:
+
+```text
+300015 -> 1600000
+400037 -> 1600000
+300032 -> 1600000
+400051 -> 1600000
+```
+
+Decision:
+
+```text
+reject as a promoted renderer checkpoint.
+Self-rollout is wired and train metrics move, but decoder-only continuation
+does not repair held-out generation or sequence scoring. The next attempt
+must train answer-state recurrent block, halt gate, and decoder jointly.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/ouro-next-token-decoder-selfrollout-s040-reject.md
+```
+
+## 2026-05-07 - TRM Canonical Core / Mythos Demotion
+
+Architecture decision:
+
+```text
+TRM/QTRM recursive core = primary reasoning core
+answer-state loop = readout/renderer/control
+Mythos/OpenMythos recurrence = stability reference or rejected probe, not a
+second answer-side reasoning core
+```
+
+Reason:
+
+```text
+The Mythos-style answer-loop joint decoder S040 experiment still has
+generation smoke8 0/8, and forced-choice smoke4 shows core8 full 2/4 while
+decoder_off reaches 4/4.
+```
+
+Decision docs:
+
+```text
+docs/wiki/decisions/trm-canonical-core-mythos-demotion.md
+docs/wiki/decisions/ouro-answer-loop-joint-decoder-s040-reject.md
+```
+
+## 2026-05-07 - TRM Core ACT Runtime Scaffold
+
+Implemented two official-TRM-aligned core mechanics behind config flags:
+
+```text
+core_halt_init_bias=-5.0
+core_trm_no_grad_inner_cycles_enabled=true
+core_halt_freeze_halted_state_enabled=true
+core_halt_exploration_prob/core_halt_exploration_min_steps
+QTRMCoreCarry continuation API
+```
+
+Verification:
+
+```text
+halt-head conservative init test: OK
+TRM no-grad inner-cycle test: OK
+outer torch.no_grad preservation test: OK
+per-sequence halt freeze test: OK
+detached carry continuation tests: OK
+model forward carry reuse test: OK
+halt exploration train-only delay test: OK
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/trm-core-act-runtime-scaffold.md
+```
+
+## 2026-05-07 - TRM Halt Q-Value Loss
+
+Implemented optional q-value supervision for the core halt head:
+
+```text
+core_halt_loss_mode=q_value
+core_halt_q_value_gamma
+```
+
+Meaning:
+
+```text
+q_halt     -> value of stopping at the current recurrent depth
+q_continue -> discounted value of continuing one more depth step
+runtime    -> halt when q_halt > q_continue
+```
+
+This closes the first Q-style halt/continue training gap. It is still only a
+training mechanism until a held-out depth/ACT gate proves raw-reasoning gain.
+
+## 2026-05-07 - Core Carry Eval Harness
+
+Added raw-intelligence eval mode:
+
+```text
+qtrm_core_halt_carry_steps_N_no_evidence
+```
+
+This mode keeps retrieval/MemoryOS off, enables core halt, and reuses
+`core_carry` across token/prefix forwards in causal forced-choice and
+generation scoring. It is the first runtime harness for testing whether QTRM's
+latent recurrent state continuation helps raw reasoning beyond fixed-depth
+recomputation.
+
+Status:
+
+```text
+harness wired: yes
+promotion: pending held-out carry > no-carry/core-off/donor gate
+```
+
+## 2026-05-07 - Core Carry ACT Smoke4 Result
+
+Ran the accepted S080 checkpoint with the correct eval-gate config:
+
+```text
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_halt_head_eval_gate.yaml
+```
+
+Result:
+
+```text
+donor_only:                    0/4
+core_off:                      0/4
+core_steps8:                   4/4
+answer_halt_gate_off:          0/4
+core_halt_carry_steps8:        2/4
+core_steps4:                   4/4
+core_halt_carry_steps4:        4/4
+```
+
+Decision:
+
+```text
+carry harness is valid, but depth8 carry is rejected for this fixed-depth-4
+smoke because it drifts toward an intermediate answer. Depth4 carry preserves
+the accepted raw-recursive behavior.
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/core-carry-act-smoke4.md
+```
+
+## 2026-05-07 - Core Carry Mixed-Depth ACT Gate
+
+Ran mixed-depth causal forced-choice gate on:
+
+```text
+data/eval/pure_recursive_reasoning_heldout_72.jsonl
+```
+
+Smoke8 result:
+
+```text
+donor_only:                 2/8
+core_off:                   0/8
+core_steps2:                3/8
+core_steps4:                3/8
+core_steps8:                2/8
+core_halt_carry_steps2:     3/8
+core_halt_carry_steps4:     3/8
+core_halt_carry_steps8:     2/8
+answer_halt_gate_off:       2/8
+```
+
+Decision:
+
+```text
+reject S080 as a promoted mixed-depth ACT checkpoint. The carry harness is
+useful diagnostically, but no carry mode beats the best fixed-depth modes at
+smoke8.
+```
+
+Runner:
+
+```text
+scripts/257_run_core_carry_mixed_depth_act_gate.sh
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/core-carry-mixed-depth-act-gate.md
+```
+
+## 2026-05-07 - Mixed-Depth ACT S160 Training
+
+Fixed the depth-supervised training path for `pure_recursive_reasoning_*` rows:
+
+```text
+answer_aliases[0] is accepted as canonical answer
+terminal depth can be inferred from depth_targets matching the final answer
+staged choice-margin excludes the current staged answer from rejects
+eval telemetry records answer-state-loop halt logits
+```
+
+Results:
+
+```text
+answer_loop_only_s160:
+  core_steps8:          3/8
+  halt_gate_off steps8: 3/8
+  decision: reject as ACT
+
+core_joint_ce_s160:
+  core_steps8:          4/8
+  halt_gate_off steps8: 4/8
+  decision: partial fixed-depth raw-core improvement, reject as ACT
+```
+
+Decision doc:
+
+```text
+docs/wiki/decisions/mixed-depth-act-s160-results.md
+```
+
+## 2026-05-07 - List Transform Process S096 Reject
+
+Added a list-transform failure summarizer and ran a list-focused process-state
+experiment.
+
+Failure ledger on the core-joint CE S160 checkpoint:
+
+```text
+list_transform qtrm_core_steps8: 0/2
+errors:
+  filtered_state_selected: 1
+  reversed_final_selected: 1
+```
+
+Process-state run:
+
+```text
+init: core_joint_ce_s160
+steps: 96
+family_repeat: list_transform=6
+staged_internal_sequence_ce_weight: 0.45
+policy: core_and_answer_state_loop
+```
+
+Result:
+
+```text
+core_steps8:       3/8
+list_transform:    0/2
+decision: reject
+```
+
+The rejected checkpoint was deleted; eval JSON and ledgers were preserved.
+
+Decision docs:
+
+```text
+docs/wiki/decisions/list-transform-failure-ledger-smoke8.md
+docs/wiki/decisions/list-transform-process-s096-reject.md
+```
+## [2026-05-07] experiment | Reverse mixed composition prompt-context ledger
+
+Added
+`docs/wiki/decisions/transition-joint-reverse-composition-prompt-context.md`.
+
+The accepted list-to-arithmetic checkpoint fails the reverse
+arithmetic-to-list order by emitting the old fixed action code sequence.
+Head-only S240 and prompt-context S240 both reject at `32/64`, while
+prompt-context repeat4 S1000 improves reverse step accuracy to `0.6914` but
+still has reverse exact `0/32`. The active gate remains exact trace transfer,
+not partial step accuracy.
+## 2026-05-07 General LLM Bottleneck Roadmap
+
+- Added `docs/wiki/decisions/general-llm-bottleneck-roadmap.md`.
+- Decision: reverse-composition accept would clear only the first major
+  bottleneck: prompt-conditioned latent operation order.
+- Remaining gates are now tracked as 10 bottlenecks: recursive depth/halting,
+  value binding, latent-to-text rendering, donor override, trainable memory,
+  reasoning-memory composition, metacognition, context routing, and
+  agentic/multimodal grounding.
+
+## 2026-05-07 Reverse Composition Token-Attention Reject
+
+- Checkpoint:
+  `local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_reverse_promptctx_tokattn_aug_joint_only_s5500_from_len1113`.
+- Gate:
+  `data/eval/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_reverse_eval82000_v6to7_len1113_aug.jsonl`.
+- Result: `26/64` overall.
+- Family split: `mixed_arithmetic_list=26/32`,
+  `mixed_list_arithmetic=0/32`.
+- Decision: reject and delete checkpoint weights. Prompt token-attention alone
+  made the reverse family better than the original baseline but catastrophically
+  regressed the old-order policy. Next candidate should factorize operation
+  order/phase rather than adding more prompt-attention capacity to the same
+  joint code head.
+
+## 2026-05-08 Reverse Composition Source-Router Rejects
+
+Updated
+`docs/wiki/decisions/transition-joint-reverse-composition-prompt-context.md`
+with primitive/source-router experiments.
+
+Results on the 128-case reverse mixed-composition holdout:
+
+```text
+joint on primitive checkpoint:       113/128
+primitive source only:                60/128
+mean source router S500:             113/128
+token-attention source router S800:   88/128
+mean+token router S800 aug lengths:   87/128
+```
+
+Decision: reject source-router promotion. Primitive operation factorization is
+useful for reverse order, but routing between joint and primitive policies is
+not robust; token attention learns a length/OOD shortcut and sends len13 old
+order to primitive. Next candidate should fold operation factorization into
+the canonical joint transition policy rather than using a separate source
+classifier.
+
+## 2026-05-08 Reverse Composition Operation-Residual Best Partial
+
+Added an internal operation residual:
+
+```text
+primitive operation probabilities -> zero-init residual -> joint transition logits
+```
+
+Best result so far:
+
+```text
+checkpoint:
+local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_reverse_joint_opres_scale05_joint_s0400_from_opres/last.pt
+
+eval config scale: 0.45
+holdout: 128 cases, eval lengths 11/13
+overall: 123/128
+reverse arithmetic_to_list: 62/64
+old list_to_arithmetic: 61/64
+```
+
+Decision: best partial, still reject. This is better than source routing
+because the improvement stays inside the canonical joint transition path.
+Remaining failures require phase/order-state pressure rather than path
+selection.
+
+Follow-up hard-range fine-tune at train start index `174000` rejected:
+
+```text
+overall: 102/128
+reverse arithmetic_to_list: 58/64
+old list_to_arithmetic: 44/64
+```
+
+The rejected checkpoint was deleted. Broader value-range exposure alone is not
+the next lever.
+
+Transition-state code residual also rejected:
+
+```text
+overall: 64/128
+reverse arithmetic_to_list: 0/64
+old list_to_arithmetic: 64/64
+```
+
+The checkpoint was deleted and the default experiment config now keeps
+`transition_state_code_enabled=false` and
+`transition_state_joint_code_residual_enabled=false`. A plain state-code
+auxiliary path collapses back to the old canonical order.
+
+Joint order-contrast S200 also rejected:
+
+```text
+overall: 119/128
+reverse arithmetic_to_list: 62/64
+old list_to_arithmetic: 57/64
+```
+
+The checkpoint was deleted. The best active partial remains the operation
+residual checkpoint at eval scale `0.45`: `123/128`.
+## 2026-05-09 Source-Pointer L2 Local Acceptance
+
+Fixed two target/architecture blockers in the QTRM source-position pointer
+gate:
+
+- `role_value_list_class_mode` is now applied to every loaded row, so
+  `source_position` is not silently overridden by row metadata.
+- `list_transform` single-number states such as `"8"` are interpreted as
+  one-element list states, not scalar arithmetic states.
+- The accepted gate uses 12 role/value state roles, giving five raw source
+  slots, five doubled slots, and two scalar slots for length-5 list data.
+
+Accepted local gate:
+
+```text
+run: /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/qtrm_l2_source_pointer_roles12_targetfix_s120
+checkpoint: accepted_l2_source_pointer_roles12_step_000040.pt
+full trace exact: 23/128 = 0.1796875
+full value accuracy: 0.5093123209169055
+primitive-off value accuracy: 0.0
+source-binder-off value accuracy: 0.03939828080229226
+decision: accepted_l2
+```
+
+Scope: L2 local state/probe acceptance only. This is not L3/L4 and does not
+yet prove canonical LM answer rendering or token-numeric causal dependence.
+
+## 2026-05-09 Source-Pointer Primitive-Core L3 Acceptance
+
+Added an L3 hard perturbation gate and found a real state-codec bug: list
+targets did not supervise padded/null roles, so cardinality was weakly
+specified. Hard rows now use `role_value_supervise_null_slots=true`, which
+labels padded source-pointer list roles as class `0`.
+
+Accepted primitive-core L3:
+
+```text
+run: /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/qtrm_l3_source_pointer_roles12_null_tune_s200
+checkpoint: train/accepted_l3_primitive_core_null_step_000050.pt
+report: manual_l3_null_decision_step_000050.json
+audit report:
+  /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+  qtrm_l3_source_pointer_roles12_null_step50_l3_audit/report.json
+```
+
+Key metrics:
+
+```text
+full trace exact: 0.2890625
+full value accuracy: 0.63125
+primitive-off value accuracy: 0.0
+primitive value drop: 0.63125
+variant value accuracy:
+  duplicate_even_binding: 1.0
+  fifth_position_single_even: 0.4
+  range_shift_v32to63: 0.58125
+  surface_paraphrase: 0.54375
+```
+
+Important caveat: strict source-binder causality is still rejected
+(`source_binder_value_drop = 0.115625`). Treat the source binder as auxiliary;
+the canonical L3 claim is the primitive recurrent core plus null-slot state
+codec.
+
+## 2026-05-09 L4 Canonical LM Path Candidate Rejected
+
+Added the first post-L3 LM-path runner:
+
+```text
+config: configs/qwen35_2b_4090_source_pointer_l4_lm_bridge_roles12_s080.yaml
+runner: scripts/322_run_source_pointer_l4_lm_path_gate.py
+report:
+  /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+  qtrm_l4_source_pointer_lm_path_s080/report.json
+```
+
+Result:
+
+```text
+decision: rejected_l4_candidate
+full greedy generation: 3/32 = 0.09375
+donor-only: 5/32 = 0.15625
+core-off: 5/32 = 0.15625
+primitive-off: 3/32 = 0.09375
+bridge-off: 4/32 = 0.125
+```
+
+Follow-up diagnostics:
+
+```text
+causal forced-choice:
+  full = donor = core-off = primitive-off = bridge-off = 10/32
+
+donor scale sweep:
+  full default: 3/32
+  donor_scale_0.25: 0/32
+  qtrm_scale_1.0 donor_scale_0.25: 0/32
+  qtrm_only: 0/32
+```
+
+Conclusion: L4 is still open. The accepted L3 primitive state exists, but the
+current answer bridge/LM adapter does not causally render that state into token
+logits. Next work must focus on a better state-to-token renderer, not MemoryOS,
+RAG, MSA, or larger-scale training.
+
+## 2026-05-09 L4 Bridge Family Rejected
+
+Ran three post-L4 follow-ups against the accepted L3 source-pointer checkpoint:
+
+```text
+primitive-only bridge S020:
+  report: /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+          qtrm_l4_source_pointer_primitive_lm_path_s020/report.json
+  full: 3/16
+  donor/core-off: 2/16
+  primitive-off/bridge-off/final-binder-off: 3/16
+  decision: rejected_l4_candidate
+
+forced bridge S020:
+  report: /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+          qtrm_l4_source_pointer_forced_bridge_s020/report.json
+  full: 3/12
+  donor/core-off: 2/12
+  primitive-off/bridge-off/final-binder-off: 3/12
+  decision: rejected_l4_candidate
+
+forced bridge + adapter-only bottleneck S020:
+  report: /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+          qtrm_l4_source_pointer_bridge_adapter_only_s020/report.json
+  full: 2/12
+  donor/core-off: 2/12
+  primitive-off/bridge-off/final-binder-off: 2/12
+  decision: rejected_l4_candidate
+```
+
+Do not count the 5-step adapter-only smoke as L4 acceptance; it used relaxed
+negative thresholds and all causal margins were zero.
+
+Code changes:
+
+```text
+configs/qwen35_2b_4090_source_pointer_l4_forced_bridge_roles12_s080.yaml
+scripts/322_run_source_pointer_l4_lm_path_gate.py
+src/qtrm_mm/training/train.py
+tests/test_training_checkpoint_init.py
+```
+
+Validation:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_training_checkpoint_init tests.test_raw_intelligence_eval_script
+
+116 tests OK
+```
+
+Conclusion: the current bridge-token cross-attention renderer family is the
+wrong L4 path. Some runs perturb generation above donor/core-off, but the
+primitive/bridge/final-binder ablations do not drop, so the accepted L3 state is
+not the causal source. Next candidate should be a state-to-vocab pointer/copy
+residual that feeds the canonical LM logits and has its own renderer-off
+ablation.
+
+## 2026-05-09 L4 State-to-Vocab Renderer Diagnostics
+
+Implemented and tested a direct `core_role_value_state_vocab_renderer` path:
+
+```text
+canonical input tokens
+-> donor hidden states / QTRM core
+-> role-value answer bridge tokens
+-> direct state-to-vocab residual logits
+-> donor-fused LM logits
+-> autoregressive generation
+```
+
+Code changes:
+
+```text
+src/qtrm_mm/config.py
+src/qtrm_mm/qtrm_model.py
+src/qtrm_mm/training/train.py
+scripts/196_train_pure_recursive_depth_supervised.py
+scripts/322_run_source_pointer_l4_lm_path_gate.py
+tests/test_core_halting.py
+tests/test_pure_recursive_depth_supervised_train_script.py
+tests/test_raw_intelligence_eval_script.py
+```
+
+Key fixes:
+
+```text
+1. Added direct renderer-off eval mode.
+2. Added renderer-only trainable policy.
+3. Added direct renderer CE / greedy-margin loss.
+4. Removed unnecessary core-depth vocab logits from final-path-only training to avoid OOM.
+5. Added primitive-off renderer contrast loss.
+6. Added optional primitive-operation tokens to renderer cross-attention memory.
+7. Added generation completion-delta reporting to the L4 runner.
+```
+
+Representative reports:
+
+```text
+S005/S010 direct renderer:
+  /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+    qtrm_l4_source_pointer_vocab_renderer_s005/report.json
+    qtrm_l4_source_pointer_vocab_renderer_lr1e3_s010/report.json
+  result: rejected; full == donor == core-off == renderer-off
+
+direct CE S008:
+  /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+    qtrm_l4_source_pointer_vocab_renderer_direct_ce_s008/report.json
+  result: rejected; full accuracy ties donor, but full generations differ
+          from bridge-off/renderer-off on several cases.
+
+direct CE + primitive contrast S008:
+  /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+    qtrm_l4_source_pointer_vocab_renderer_direct_ce_primitive_contrast_s008/report.json
+  result: rejected; primitive-off still does not drop in accuracy.
+
+focused S024:
+  /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+    qtrm_l4_source_pointer_vocab_renderer_direct_ce_primitive_contrast_s024_focus/report.json
+  result: rejected; full accuracy drops to 0/4, indicating prompt/source-copy collapse.
+
+operation-context S008:
+  /mnt/nvme1n1p2/qtrm-runs/research_gate_runner/
+    qtrm_l4_vocab_renderer_opctx_direct_ce_s008/report.json
+  result: rejected; operation tokens did not change the held-out generation pattern.
+```
+
+Current root cause:
+
+```text
+The renderer is now causal enough to alter generated strings, but it is not
+yet a correct reasoning renderer. It tends to copy source numbers or partial
+intermediate values instead of rendering the final transformed answer.
+```
+
+Important warning:
+
+```text
+The L3 checkpoint chain still prints:
+  [init] skipped shape-mismatched keys: core_role_value_state_embed.weight
+
+The older base checkpoint used a 10-role embed while the current source-pointer
+configs use 12 roles. L4 runs train/save a fresh 12-role embed, but the accepted
+L3 baseline should not be treated as a fully clean full-state checkpoint.
+```
+
+Conclusion: L4 is still open. The next architecture should not merely make the
+renderer stronger; it must make the final LM logits depend on the primitive
+recurrent state in a way that renders transformed values, not source-copy
+tokens.
+
+## 2026-05-10 Source-Copy Renderer Role-Mask Repair
+
+Found and fixed a contract mismatch between the source-copy alignment probe and
+the actual LM renderer. The probe scored answer roles `0..3`, but the renderer
+was preserving the later doubled-role block and masking the answer roles to
+NULL. This made an alignment success look stronger than what generation really
+used.
+
+Changes:
+
+```text
+src/qtrm_mm/qtrm_model.py
+tests/test_source_pointer_l4_lm_path_gate.py
+```
+
+The corrected test now requires the renderer to preserve answer roles `0..3`
+and null out non-answer roles. Targeted tests passed.
+
+Corrected source-copy alignment:
+
+```text
+S002:
+  row_content_exact 83/128, rejected
+
+S002 source-binder-off:
+  row_content_exact 0/128, causal drop confirmed
+
+S040 final-state CE:
+  row_content_exact 128/128, accepted as L2 source-copy alignment diagnostic
+
+S020 staged CE:
+  row_content_exact 84/128, rejected
+```
+
+Generation still rejects L4:
+
+```text
+S040 after mask fix, smoke8:
+  donor/core_off/vocab_renderer_off/source_binder_off: 5/8
+  primitive_off: 4/8
+  full: 3/8
+
+S003 renderer-only continuation from S040:
+  same smoke8 result, full 3/8
+  failed checkpoint deleted; eval JSONL preserved
+```
+
+Gold-token rank probe shows the correct tokens are not hopelessly far away:
+
+```text
+S040 maskfix smoke8:
+  donor/core_off/vocab_renderer_off all<=10: 8/8
+  full all<=10: 8/8
+  full all@1: 2/8, donor all@1: 3/8
+```
+
+Conclusion: exact source-position state is achievable, but the answer-role
+decoder/query still fails to render that state into autoregressive LM tokens.
+The next candidate should be a pointer-generator style decoder/cursor pressure
+on the canonical LM path, not more MemoryOS/RAG/MSA work.
+
+## 2026-05-10 Source-Copy Strict Scoring Repair
+
+Found an evaluation weakness in `scripts/192_eval_raw_intelligence.py`: generation
+hits were based on `normalized_contains`. For source-copy lexicalization this
+can mark an overlong answer as correct, for example a completion that contains
+the gold comma list as a substring but includes an extra copied source value.
+
+Fix:
+
+```text
+source_copy_lexicalization now requires:
+  exact_match or normalized_exact
+
+general QA keeps the previous contains-based scoring.
+```
+
+Strict-rescored S040 maskfix smoke8:
+
+```text
+report:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  qtrm_source_copy_generation_state_ce_s040_maskfix_smoke8/eval.strict.jsonl
+
+donor/core_off/vocab_renderer_off/source_binder_off: 5/8
+primitive_off: 4/8
+full: 2/8
+```
+
+This makes the L4 rejection stronger. The previous full 3/8 included one loose
+substring hit.
+
+## 2026-05-10 Source-Copy Cursor Bias Rejected
+
+Implemented an optional visible-prefix cursor bias for the source-copy renderer:
+
+```text
+config fields:
+  core_role_value_state_vocab_renderer_source_copy_cursor_enabled
+  core_role_value_state_vocab_renderer_source_copy_cursor_bias
+
+code:
+  QTRMMultimodalModel._compute_source_copy_cursor_role_bias
+```
+
+The idea was prior-backed by pointer-generator/copy-attention cursor or coverage
+bias: use the visible generated prefix only to decide which answer role should
+be read next, while still relying on the learned source-position state for the
+actual copied value.
+
+Smoke result on S040:
+
+```text
+report:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  qtrm_source_copy_generation_state_ce_s040_cursor_smoke8/eval.jsonl
+
+donor/core_off/vocab_renderer_off/source_binder_off: 5/8
+primitive_off: 2/8
+full: 1/8
+```
+
+Strict rescoring keeps the same full result:
+
+```text
+report:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  qtrm_source_copy_generation_state_ce_s040_cursor_smoke8/eval.strict.jsonl
+
+full: 1/8
+donor/core_off/vocab_renderer_off/source_binder_off: 5/8
+```
+
+Decision: reject as canonical default. The cursor over-biases copy tokens and
+worsens autoregressive generation. The optional code path remains for controlled
+ablation, but `configs/qwen35_2b_4090_source_copy_pointer_renderer_scaffold.yaml`
+keeps it disabled.
+
+## 2026-05-10 Source-Copy Span Lexicalization Repair
+
+Root cause narrowed further: source-copy was keeping only the first tokenizer
+piece for each source slot. Under Qwen tokenization, values such as `44`,
+`40`, and `32` are multi-token spans:
+
+```text
+44,40,32 -> ["4", "4", ",", "4", "0", ",", "3", "2"]
+```
+
+Implemented the canonical-path span repair:
+
+```text
+src/qtrm_mm/algorithmic_value_state.py
+  token_numeric_source_slot_token_spans(...)
+  preserves all tokenizer pieces per compact source slot.
+
+src/qtrm_mm/qtrm_model.py
+  token_numeric_source_slot_token_span_ids / mask forward inputs
+  _compute_source_copy_span_next_token_ids(...)
+  source-copy renderer can continue the next token piece of the selected
+  source span instead of copying only the first piece.
+
+configs/qwen35_2b_4090_source_copy_pointer_renderer_scaffold.yaml
+  core_role_value_state_vocab_renderer_source_copy_span_enabled: true
+```
+
+This is still not a hidden answer channel: source positions must come from the
+QTRM source-position state, and the result still enters LM logits through the
+autoregressive renderer.
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_prompt_source_position_binder_probe \
+  tests.test_source_pointer_l4_lm_path_gate \
+  tests.test_raw_intelligence_eval_script \
+  tests.test_qtrm_source_copy_alignment_probe \
+  tests.test_model_config
+
+108 tests OK
+```
+
+Partial smoke on S040 with span-copy enabled:
+
+```text
+report:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  qtrm_source_copy_generation_state_ce_s040_spancopy_smoke8/eval.jsonl
+
+completed before manual stop:
+  donor_only: 5/8
+  core_off: 5/8
+  full QTRM: 3/8
+  vocab_renderer_off: 3/3 partial
+```
+
+Decision: do not promote. Span-copy fixed one lexicalization failure
+(`full 2/8 -> 3/8` versus strict S040), but full QTRM still loses to
+donor/core-off. The remaining bottleneck is answer-role/order selection during
+generation: the model can emit complete source spans more faithfully, but it
+still chooses extra or wrong source slots in several cases.
+
+## 2026-05-10 Source-Copy Answer-Role Cursor Candidate
+
+Implemented a second, narrower pointer-generator style cursor after the
+span-copy repair. The rejected visible-prefix cursor counted source token ids
+and failed on multi-token/duplicate source values. The new cursor counts
+completed source spans beyond the prompt source list and uses separators only
+to decide which answer role should be read next.
+
+Code:
+
+```text
+src/qtrm_mm/config.py
+  core_role_value_state_vocab_renderer_source_copy_answer_role_cursor_enabled
+  core_role_value_state_vocab_renderer_source_copy_answer_role_cursor_bias
+  core_role_value_state_vocab_renderer_source_copy_answer_role_separator_token_ids
+
+src/qtrm_mm/qtrm_model.py
+  _compute_source_copy_answer_role_cursor_bias(...)
+```
+
+Canonical boundary:
+
+```text
+Allowed:
+  prompt token spans + visible generated prefix choose the active answer role.
+
+Still required:
+  QTRM source-position state chooses which source slot that role copies.
+
+Not allowed:
+  computing the final answer as a hidden side channel.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_prompt_source_position_binder_probe \
+  tests.test_source_pointer_l4_lm_path_gate \
+  tests.test_raw_intelligence_eval_script \
+  tests.test_qtrm_source_copy_alignment_probe \
+  tests.test_model_config
+
+111 tests OK
+```
+
+S040 smoke with role cursor enabled:
+
+```text
+full QTRM:
+  first4: 4/4
+  tail4 was split because full 8-case process exited early after 4 rows:
+    eval_tail4 first2: 2/2
+    eval_tail2 remaining2: 2/2
+  combined smoke8: 8/8
+
+previous span-only S040:
+  full: 3/8
+  donor/core_off: 5/8
+
+tail4 ablations on the harder second source group:
+  renderer_off: 1/4
+  source_binder_off: 1/4
+  primitive_off tail2: 0/2
+```
+
+Artifacts:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  qtrm_source_copy_generation_state_ce_s040_rolecursor_smoke8/
+```
+
+Decision: promising L4 candidate, not promotion yet. It passes the local
+smoke pattern and shows causal drops on the harder tail subset, but the full
+held-out gate must still run in one reproducible command over a broader split
+with donor/core_off/renderer_off/source_binder_off/primitive_off on the same
+cases.
+
+## 2026-05-10 Source-Copy Rolecursor L4 Smoke8 Accepted Candidate
+
+The rolecursor L4 gate was made reproducible with a chunked/resumable runner:
+
+```text
+scripts/329_run_source_copy_rolecursor_l4_eval.py
+```
+
+Reason for the runner: repeated full generation evals can terminate or compete
+for GPU with stale sessions. The runner executes each mode/chunk as an isolated
+process, reuses complete chunks with `--resume`, and writes the full command log
+to `report.json` while keeping stdout compact.
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_source_copy_rolecursor_l4_eval \
+  tests.test_prompt_source_position_binder_probe \
+  tests.test_source_pointer_l4_lm_path_gate \
+  tests.test_raw_intelligence_eval_script \
+  tests.test_qtrm_source_copy_alignment_probe \
+  tests.test_model_config
+
+115 tests OK
+```
+
+Accepted smoke8 result:
+
+```text
+report:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  qtrm_source_copy_rolecursor_l4_eval_smoke8/report.json
+
+full QTRM:        8/8 = 1.000
+donor-only:       5/8 = 0.625
+core-off:         5/8 = 0.625
+primitive-off:    3/8 = 0.375
+source-slot-off:  5/8 = 0.625
+source-binder-off:5/8 = 0.625
+vocab-renderer-off:5/8 = 0.625
+```
+
+Interpretation:
+
+```text
+full - donor/core_off/source_binder_off/renderer_off = +0.375
+full - primitive_off = +0.625
+```
+
+This is the first clean L4 source-copy LM-path smoke acceptance for the
+rolecursor path: the recursive/core path, source binding, and vocab renderer
+are all causally needed on the same eight cases, and the final answer is
+emitted through autoregressive text generation.
+
+Boundary:
+
+```text
+Accepted: smoke8 L4 candidate.
+Not accepted yet: broad 16/32/128 case L4 promotion or general LM reasoning.
+```
+
+Next action: run the same resumable gate on 16/32/128 cases, then add
+mixed-family cases where the answer cannot be solved by source-copy alone.
+
+## 2026-05-10 Source-Copy Rolecursor L4 Smoke16 Accepted Candidate
+
+The same resumable L4 gate was expanded from 8 to 16 held-out source-copy
+lexicalization cases.
+
+Command:
+
+```text
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src \
+  .venv/bin/python scripts/329_run_source_copy_rolecursor_l4_eval.py \
+  --max-cases 16 \
+  --chunk-size 2 \
+  --out-dir /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/qtrm_source_copy_rolecursor_l4_eval_smoke16 \
+  --resume
+```
+
+Report:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+qtrm_source_copy_rolecursor_l4_eval_smoke16/report.json
+```
+
+Result:
+
+```text
+decision: accepted_l4_candidate
+
+full QTRM:         15/16 = 0.9375
+donor-only:         8/16 = 0.5000
+core-off:           8/16 = 0.5000
+primitive-off:      6/16 = 0.3750
+source-slot-off:    8/16 = 0.5000
+source-binder-off:  8/16 = 0.5000
+vocab-renderer-off: 8/16 = 0.5000
+```
+
+Interpretation:
+
+```text
+full - donor/core_off/source_slot/source_binder/renderer_off = +0.4375
+full - primitive_off = +0.5625
+```
+
+This strengthens the smoke8 result. The rolecursor source-copy path is now a
+repeatable 16-case L4 candidate where the canonical LM output depends on the
+recursive primitive state, source binding, source slots, and vocab renderer.
+
+Boundary remains unchanged:
+
+```text
+Accepted: source-copy lexicalization L4 candidate at 16-case smoke scale.
+Not accepted yet: 32/128 broad gate, mixed-family general reasoning, or
+general-purpose LLM promotion.
+```
+
+## 2026-05-10 Source-Copy Rolecursor L4 Smoke32 Accepted Candidate
+
+The same gate was expanded to 32 cases.
+
+Command:
+
+```text
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src \
+  .venv/bin/python scripts/329_run_source_copy_rolecursor_l4_eval.py \
+  --max-cases 32 \
+  --chunk-size 2 \
+  --out-dir /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/qtrm_source_copy_rolecursor_l4_eval_smoke32 \
+  --resume
+```
+
+Report:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+qtrm_source_copy_rolecursor_l4_eval_smoke32/report.json
+```
+
+Result:
+
+```text
+decision: accepted_l4_candidate
+
+full QTRM:         27/32 = 0.84375
+donor-only:        14/32 = 0.43750
+core-off:          14/32 = 0.43750
+primitive-off:     12/32 = 0.37500
+source-slot-off:   14/32 = 0.43750
+source-binder-off: 14/32 = 0.43750
+vocab-renderer-off:14/32 = 0.43750
+```
+
+Interpretation:
+
+```text
+full - donor/core_off/source_slot/source_binder/renderer_off = +0.40625
+full - primitive_off = +0.46875
+```
+
+The 32-case run confirms the source-copy rolecursor path is not just an 8/16
+case artifact. Accuracy drops as cases broaden, but the causal margin remains
+large and all required ablations collapse to donor/core-off scale.
+
+Updated boundary:
+
+```text
+Accepted: reproducible 32-case source-copy L4 candidate.
+Still not accepted: 128-case standard source-copy gate or mixed-family
+general reasoning.
+```
+
+## 2026-05-10 Source-Copy Rolecursor L4 Standard128 Accepted
+
+The full 128-case source-copy lexicalization gate passed.
+
+Command:
+
+```text
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src \
+  .venv/bin/python scripts/329_run_source_copy_rolecursor_l4_eval.py \
+  --max-cases 128 \
+  --chunk-size 4 \
+  --out-dir /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/qtrm_source_copy_rolecursor_l4_eval_standard128 \
+  --resume
+```
+
+Report:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+qtrm_source_copy_rolecursor_l4_eval_standard128/report.json
+```
+
+Result:
+
+```text
+decision: accepted_l4_candidate
+
+full QTRM:          100/128 = 0.78125
+donor-only:          44/128 = 0.34375
+core-off:            44/128 = 0.34375
+primitive-off:       37/128 = 0.28906
+source-slot-off:     41/128 = 0.32031
+source-binder-off:   41/128 = 0.32031
+vocab-renderer-off:  44/128 = 0.34375
+```
+
+Interpretation:
+
+```text
+full - donor/core_off/renderer_off = +0.43750
+full - primitive_off = +0.49219
+full - source_slot/source_binder_off = +0.46094
+```
+
+This completes the source-copy lexicalization L4 standard gate. The canonical
+LM path emits the answer autoregressively, and the gain disappears when the
+recursive primitive state, source slots, source binder, or vocab renderer are
+ablated.
+
+Boundary:
+
+```text
+Accepted: source-copy lexicalization L4 standard128.
+Still not accepted: broad/general LM promotion.
+Next required gate: mixed-family/non-copy reasoning where the answer cannot be
+obtained by lexical source-copy.
+```
+
+## 2026-05-10 Source-Copy Pointer L2 Accepted
+
+A contract mismatch was found in the source-copy trainer: the probe/renderer
+reads final answer roles `4..7`, but source-copy CE was still aimed at the
+early/raw roles. The trainer now has
+`--core-role-value-source-copy-answer-role-targets` to supervise the same answer
+role block that inference reads.
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_source_pointer_batch_trainer \
+  tests.test_source_position_logits_probe \
+  tests.test_source_pointer_l4_lm_path_gate
+
+54 tests OK
+```
+
+Accepted source-copy probe:
+
+```text
+checkpoint:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  qtrm_source_copy_pointer_batch_s020_b2_answerroles_from_s060/train/last.pt
+
+eval128:
+  full copy answer accuracy: 1.000
+  source-slot-off copy answer accuracy: 0.000
+  source-binder-off copy answer accuracy: 0.000
+```
+
+Decision: accept L2 source-position/copy-logits prerequisite only. L4 remains
+rejected because a post-L2 generation smoke still degraded full autoregressive
+generation:
+
+```text
+partial smoke:
+  donor_only: 5/8
+  core_off: 5/8
+  full QTRM: 2/8
+```
+
+Next bottleneck: repair vocab renderer / donor fusion. The pointer state is now
+causal and correct; generation is the failing layer.
+
+## 2026-05-10 Mixed Non-Copy LM Gate Rejected
+
+Added a reproducible post-source-copy diagnostic:
+
+```text
+scripts/330_run_mixed_noncopy_lm_gate.py
+tests/test_mixed_noncopy_lm_gate.py
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest tests.test_mixed_noncopy_lm_gate
+
+5 tests OK
+```
+
+Run:
+
+```text
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src \
+  .venv/bin/python scripts/330_run_mixed_noncopy_lm_gate.py \
+  --max-cases 16 \
+  --chunk-size 4 \
+  --out-dir /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/qtrm_mixed_noncopy_lm_gate_diag16 \
+  --resume
+```
+
+Report:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+qtrm_mixed_noncopy_lm_gate_diag16/report.json
+```
+
+Result:
+
+```text
+decision: rejected_noncopy_lm_gate
+
+full QTRM:  0/16 = 0.0
+donor-only: 0/16 = 0.0
+core-off:   0/16 = 0.0
+```
+
+Interpretation:
+
+```text
+The source-copy L4 standard128 result is real but narrow. It does not solve
+computed mixed-family answers. The next bottleneck is non-copy answer synthesis
+from latent state into the canonical autoregressive LM path.
+```
+
+Forced-choice follow-up:
+
+```text
+cases: 4 mixed-family non-copy rows
+modes: donor_only, core_off, full QTRM
+result: 0/12 hits
+tail class: 12/12 doubled_list
+```
+
+This rules out a pure greedy-rendering explanation. Even with candidates
+provided, the model prefers the intermediate doubled list over the final scalar
+answer. The next gate must target scalar reduction/accumulator/final-answer
+state in the recurrent path before another broad LM renderer run.
+
+## 2026-05-10 Ouro Recurrent L2 Len11/13 Recheck Rejected
+
+The preserved L2 recurrent-answer checkpoint was rechecked on the harder
+mixed-family non-copy split:
+
+```text
+checkpoint:
+  local_eval/research_gate_runner/ouro_answer_recurrent_validation_gated_seed0_s40_eval4/accepted.pt
+
+eval:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  ouro_answer_recurrent_l2_len1113_forced_choice8.jsonl
+
+tail summary:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  ouro_answer_recurrent_l2_len1113_tail_error_summary8.json
+```
+
+Result:
+
+```text
+donor_only:        0/8
+core_off:          0/8
+recurrent_off:     0/8
+full recurrent:    0/8
+
+full tail classes:
+  doubled_list:      6/8
+  pre_subtract_sum:  2/8
+```
+
+Interpretation:
+
+```text
+The earlier len7 recurrent-answer success was a narrow local L2 result. It
+does not scale to len11/13 non-copy reductions. The next architecture gate
+must train and test length-stable scalar reduction plus final subtract
+retention, not another source-copy or private renderer patch.
+```
+
+## 2026-05-10 Ouro Recurrent Len11/13 From Joint Controller Rejected
+
+Ran the orthodox retry: start from the accepted len11/13 transition-joint
+controller and train only the Ouro/LoopLM recurrent answer path.
+
+```text
+out:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  ouro_answer_recurrent_len1113_s020_eval4_from_jointonly
+
+train:
+  steps=20
+  final_logit_ce=1.0
+  depth_final_ce=1.0
+  validation gate: causal forced-choice, eval4
+```
+
+Result:
+
+```text
+decision: rejected
+
+donor_only:        0/4
+core_off:          0/4
+recurrent_off:     0/4
+full recurrent:    0/4
+
+action/finality sanity:
+  trace exact:     32/32
+  finality exact:  32/32
+  halted exact:    32/32
+
+tail summary:
+  full recurrent:  doubled_list=4/4
+```
+
+Interpretation:
+
+```text
+The transition/action controller is not the blocker. More final-token CE on
+the same answer loop does not make the model prefer the final scalar. The next
+architecture must add a causal value accumulator / process-supervised scalar
+state update that the recurrent answer path actually consumes.
+```

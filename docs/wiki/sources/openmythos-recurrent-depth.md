@@ -35,6 +35,22 @@ QTRM relevance:
   not a blanket replacement for visible/token-level CoT. QTRM must evaluate
   parallelizable and stochastic/sequential task families separately.
 
+## 2026-05-07 Demotion Rule
+
+OpenMythos/Mythos-style recurrence is not the canonical QTRM reasoning core.
+The canonical core is the TRM/QTRM recursive latent state. OpenMythos and
+Parcae are stability references only unless a future ablation proves an
+answer-side loop improves held-out raw reasoning and autoregressive generation
+through the same LM-logit path.
+
+Local result causing this demotion:
+
+```text
+scripts/256_run_qtrm_ouro_answer_loop_joint_decoder_s040.sh
+generation smoke8: 0/8
+forced-choice smoke4: core8 full 2/4, decoder_off 4/4
+```
+
 ## 2026-05-01 QTRM Design Mapping
 
 Observed QTRM failure:

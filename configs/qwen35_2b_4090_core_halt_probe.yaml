@@ -47,6 +47,8 @@ train:
   loss_core_halt_weight: 0.1
   core_halt_auto_targets: true
   core_halt_target_mode: teacher_depth
+  core_halt_loss_mode: q_value
+  core_halt_q_value_gamma: 0.9
   core_halt_donor_kl_threshold: 0.5
   core_halt_teacher_depth_threshold: 0.9995
   core_halt_teacher_depth_logit_kl_threshold: 0.05

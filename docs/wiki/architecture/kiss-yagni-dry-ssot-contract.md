@@ -11,6 +11,12 @@ debug.
 Only the simplest single-stream path is allowed to make a model claim.
 ```
 
+This contract is now paired with the
+[Universal LLM Causal Path Contract](universal-llm-causal-path-contract.md):
+QTRM may add latent reasoning, memory, typed state, and metacognition, but the
+canonical claim must still run from prompt tokens to model logits to
+autoregressive text.
+
 The canonical answer path is:
 
 ```text
@@ -85,6 +91,12 @@ MemoryOS/retrieval/rerank may run before the model, but their output must be
 compiled into that stream. Source metadata may annotate stream tokens for
 evaluation, but it must not become a second hidden reality for model claims.
 
+Typed registers, operation selectors, verifier heads, and memory readers follow
+the same rule. They may be internal train/eval bottlenecks, but they must be
+derived from the canonical token stream or QTRM latent state and must feed the
+causal answer path. They must not become external calculators or hidden answer
+channels.
+
 ## Promotion Gate
 
 A new component can move from probe-only to canonical only if:
@@ -94,6 +106,7 @@ full QTRM > donor-only
 full QTRM > core_off/workspace_off/evidence_bottleneck_off
 held-out result, not only training or smoke data
 greedy autoregressive answer, not span-copy extraction
+no sidecar/rule solver computes the final answer outside the LLM path
 ```
 
 If those checks fail, the component stays diagnostic.

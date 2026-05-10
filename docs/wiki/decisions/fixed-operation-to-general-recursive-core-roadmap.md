@@ -443,6 +443,373 @@ Next candidates:
    roles appear under more diverse surfaces before retrying family holdout.
 ```
 
+### Stage 1.2: Dense Joint-State S120 Rejection
+
+Artifacts:
+
+```text
+builder:
+  scripts/232_build_dense_transition_targets.py
+
+decision:
+  docs/wiki/decisions/transition-joint-dense-s120.md
+
+role_v1 checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_s120_from_oodstress/last.pt
+
+terminal_v2 checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminal_v2_s120_from_oodstress/last.pt
+```
+
+Results:
+
+```text
+role_v1 dense:
+  full step_acc:      0.8750
+  off step_acc:       0.1250
+  halted exact:       0/64
+
+terminal_v2 dense:
+  full step_acc:      0.7500
+  off step_acc:       0.1250
+  halted exact:       0/64
+```
+
+Interpretation:
+
+```text
+Dense 1..N transition supervision fixes the previous sparse-label ambiguity and
+proves the compact transition-state path is causal. However, Stage 1 still
+fails because held-out list prompts choose the arithmetic/nonterminal compose
+state at depth 2 and only halt one step late.
+
+The next bottleneck is prompt-grounded terminal routing and semantic family
+transfer. More scalar heads are unlikely to solve it unless the training
+distribution contains counterfactual terminal/nonterminal examples that force
+the recurrent state to condition on prompt semantics.
+```
+
+Next candidates:
+
+```text
+1. Mixed terminality augmentation with similar surfaces requiring different
+   halt/compose depths.
+2. Counterfactual terminality pairs where prompt semantics, not family name,
+   decide whether depth 2 should halt.
+3. If this fails, replace action-code supervision with direct neural
+   transition-state content prediction.
+```
+
+### Stage 1.3: Terminality Fix And All-Families Sanity Control
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-terminality-and-sanity-s120.md
+
+terminality counterfactual builder:
+  scripts/233_build_terminality_counterfactual_targets.py
+
+terminality-aug checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminality_aug_s120_from_oodstress/last.pt
+
+all-families sanity checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminal_v2_allfamilies_s120_from_oodstress/last.pt
+```
+
+Result:
+
+```text
+terminality augmentation, list fully held out:
+  full step_acc:      0.7500
+  off step_acc:       0.1250
+  halted exact:       0/64
+
+all-families sanity, list present in train and held out by index:
+  full step_acc:      1.0000
+  off step_acc:       0.1250
+  halted exact:       64/64
+```
+
+Interpretation:
+
+```text
+The dense joint-state path is capable of learning list_transform recurrent
+traces when the family is present in training, and the transition path is
+causally necessary. The full list-family holdout failure is therefore not proof
+that the architecture cannot learn list transitions. It is proof that the
+current compact codebook does not zero-shot transfer terminal list semantics
+from arithmetic/symbolic/boolean examples alone.
+```
+
+Decision:
+
+```text
+Accept as Stage 1 mechanism sanity control.
+Reject as broad Stage 1 family-transfer promotion.
+```
+
+Next candidates:
+
+```text
+1. Hold out list value ranges and paraphrase clusters rather than the entire
+   list family.
+2. Run action-code shuffle/dropout ablations on the accepted sanity checkpoint.
+3. If held-out list-surface transfer passes, move to neural state-content
+   transition targets instead of stronger action-code classifiers.
+```
+
+### Stage 1.4: List Paraphrase Transfer Accepted
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-list-transfer-s120.md
+
+builder:
+  scripts/234_build_list_transfer_gate.py
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminal_v2_list_transfer_s120_from_oodstress/last.pt
+```
+
+Split:
+
+```text
+train:
+  all four primitive families
+  list_transform variants: 0, 1, 2, 3, 4, 5
+
+eval:
+  list_transform only
+  list_transform variants: 6, 7
+```
+
+Result:
+
+```text
+full:
+  exact:         16/16
+  halted exact:  16/16
+
+transition-state-off:
+  exact:         0/16
+  halted exact:  0/16
+
+code shuffle:
+  exact:         0/16
+  halted exact:  0/16
+
+code dropout:
+  exact:         0/16
+  halted exact:  0/16
+```
+
+Interpretation:
+
+```text
+The dense terminal_v2 joint-state path can generalize within the list family to
+held-out paraphrase clusters, and the result depends on the transition-state
+path plus action-code semantics. This is accepted as within-family surface
+transfer, not full operation-family zero-shot reasoning.
+```
+
+Next candidates:
+
+```text
+1. Increase list transfer eval size and include multiple held-out variant
+   clusters.
+2. Add held-out list value ranges and longer list lengths.
+3. Add mixed-family multi-step tasks.
+4. Move to neural transition-state content prediction after the action-code
+   transfer gate remains stable.
+```
+
+### Stage 1.5: Long List Value/Length Transfer Accepted
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-list-transfer-long-s120.md
+
+builder:
+  scripts/234_build_list_transfer_gate.py
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dense_terminal_v2_list_transfer_long_s120_from_oodstress/last.pt
+```
+
+Split:
+
+```text
+train:
+  all four primitive families
+  list_transform variants: 0, 1, 2, 3, 4, 5
+  list length: 5
+
+eval:
+  list_transform only
+  list_transform variants: 6, 7
+  list lengths: 7, 9
+  disjoint value range starting at 30001+
+```
+
+Result:
+
+```text
+full:
+  exact:         32/32
+  halted exact:  32/32
+
+transition-state-off:
+  exact:         0/32
+  halted exact:  0/32
+
+code shuffle:
+  exact:         0/32
+  halted exact:  0/32
+
+code dropout:
+  exact:         0/32
+  halted exact:  0/32
+```
+
+Interpretation:
+
+```text
+The dense terminal_v2 joint-state path is not only memorizing exact list
+length, exact values, or seen list paraphrase variants. It survives train
+length 5 -> eval lengths 7 and 9 under a disjoint value range, and the result
+collapses when the transition-state path or action-code semantics are removed.
+
+This remains a within-family result. It should be promoted only as a stronger
+Stage 1 transfer gate, not as unseen operation invention or open-ended
+reasoning.
+```
+
+Next candidates:
+
+```text
+1. Add mixed-family multi-step composition tasks.
+2. Add held-out chain/list lengths with donor-only/core-off/state-off/code
+   shuffle baselines.
+3. Move to neural transition-state content prediction after composition
+   remains stable.
+```
+
+### Stage 1.6: Mixed-Family Composition Accepted
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-mixed-composition-s720.md
+
+builder:
+  scripts/235_build_mixed_family_composition_gate.py
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_balanced_interleave_s720_from_s240/last.pt
+```
+
+Architecture correction:
+
+```text
+terminal_v2:
+  action code partly encoded terminality
+
+dynamic_halt_v3:
+  action code and halt/finality are separated
+  finality is trained by answer_match
+```
+
+Accepted trace:
+
+```text
+codes:    0, 1, 2, 3, 4, 4, 4, 4
+finality: 0, 0, 0, 1, 1, 1, 1, 1
+```
+
+Result:
+
+```text
+held-out mixed list->arithmetic, variants 6/7, lengths 7/9:
+  full exact:             32/32
+  transition-state-off:    0/32
+  code shuffle:            0/32
+  code dropout:            0/32
+
+train mixed only:
+  full exact:            240/240
+```
+
+Interpretation:
+
+```text
+The recurrent transition-state path can now compose a list intermediate state
+into an arithmetic aggregation/subtraction trace under held-out surfaces and
+lengths. This is a real Stage 1 progression beyond isolated list transfer.
+
+It remains a supervised synthetic latent-action gate, not open-ended neural
+state transition or natural-language reasoning.
+```
+
+### Stage 1.7: Mixed Composition Length 11/13 Accepted
+
+Artifacts:
+
+```text
+decision:
+  docs/wiki/decisions/transition-joint-mixed-composition-len1113-s080.md
+
+checkpoint:
+  local_eval/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len1113_jointonly_s080_from_s720/last.pt
+```
+
+Baseline S720 on held-out list lengths 11/13:
+
+```text
+trace exact:    32/32
+halted exact:  30/32
+```
+
+The two misses were finality/halt errors, not action-code errors. A short
+joint-only recovery run fixed that without answer-token CE:
+
+```text
+full:
+  trace exact:    32/32
+  finality acc:   1.0000
+  halted exact:  32/32
+
+transition-state-off:
+  trace exact:     0/32
+  halted exact:   0/32
+
+code shuffle:
+  trace exact:     0/32
+  halted exact:   0/32
+
+code dropout:
+  trace exact:     0/32
+  halted exact:   0/32
+
+canonical len7/9 regression:
+  full exact:     32/32
+```
+
+Interpretation:
+
+```text
+The dynamic-halt transition-state path survives a longer held-out list-length
+transfer probe. This strengthens Stage 1, but does not remove the Stage 2
+requirement: the model still predicts latent action/finality codes rather than
+neural state contents.
+```
+
 ### Stage 2: Neural Transition Model
 
 Replace the symbolic executor with a learned state transition:
@@ -461,6 +828,10 @@ Acceptance checklist:
 - [ ] Counterfactual state/action swaps change the final answer predictably.
 - [ ] Longer chain lengths degrade gracefully, not catastrophically.
 - [ ] Core depth improves transition quality or answer quality.
+- [x] Reject answer-renderer-only final CE because it preserves action-code
+      32/32 but leaves LM causal forced-choice at 0/8.
+- [x] Reject role-value answer bridge because S80 preserves action-code 32/32
+      but LM causal forced-choice remains 0/8 and bridge-off matches core8.
 
 Kill criterion:
 
@@ -468,6 +839,66 @@ Kill criterion:
 If transition MSE improves but answer accuracy does not move, the target is
 not semantic enough. Redesign the transition target before scaling.
 ```
+
+Stage-2 clarification from `final-answer-bridge-s120`:
+
+```text
+The blocker is not only answer formatting. The final answer renderer cannot
+generalize held-out arithmetic values unless a neural value-state transition
+computes the state that should be rendered. Final-answer CE without that state
+is rejected as a local patch.
+```
+
+Rejected Stage-2 candidate from `role-value-answer-bridge-s120`:
+
+```text
+Convert core role-value logits into learned internal tokens and feed them to
+the same answer-state loop that produces LM logits. S80 preserved action-code
+but did not move held-out LM forced-choice and had no bridge-off causal drop.
+Role-value states therefore remain probe telemetry rather than reasoning state.
+```
+
+Typed-field Stage-2 probe from `typed-algorithmic-value-state-len1113-s080`:
+
+```text
+field-specific heads:
+  raw list offsets
+  doubled list offsets
+  scalar coefficient
+  scalar residual
+  final residual
+
+held-out len11/13 mixed-only:
+  content-field accuracy: 352/1024 = 0.34375
+  head-off content acc:     0/1024 = 0.0
+  trace exact:              0/32
+
+action-code preservation:
+  len11/13 exact: 32/32
+  len7/9 exact:   32/32
+```
+
+Decision:
+
+```text
+Accept only as a causal probe improvement. The typed head learns some value
+content without damaging the action controller, but trace exact remains 0/32.
+Do not add another readout-only value head as the next canonical candidate.
+Typed CE is not a universal LLM objective. Keep it as probe-only unless the
+typed state causally improves LM logits/text answers.
+```
+
+Next Stage-2 candidate:
+
+```text
+Universal LM-path recurrent answer/transition candidate:
+prompt/donor hidden -> recurrent QTRM answer/core state -> LM logits/text
+```
+
+Auxiliary typed/process targets may be used during training, but promotion
+requires donor/core-off/depth/module-off ablations to show that the universal
+LM answer path improved. A typed register or field head that computes the
+answer outside LM logits remains a rejected architecture claim.
 
 ### Stage 3: Open-Ended Recursive Reasoning Core
 
@@ -574,12 +1005,57 @@ between Stage 0 and Stage 1:
 - [ ] Add mixed-family tasks requiring two different primitive families.
 - [x] Build a family-agnostic latent action codebook dataset.
 - [x] Train/evaluate transition_state_code S120; rejected on list-family trace exact.
+- [x] Accept within-family list paraphrase transfer with held-out variants.
+- [x] Accept within-family list transfer with held-out lengths and value range.
+- [x] Accept mixed list-to-arithmetic composition with dynamic halt/finality.
+- [x] Reject role-value transition auxiliary training because it regresses
+      held-out value-state accuracy and does not prove monotonic core-step
+      improvement.
+- [x] Train/evaluate role-value answer bridge S80 with bridge-off ablation;
+      rejected on held-out LM causal forced-choice.
+- [x] Design/train/evaluate an Ouro/LoopLM-style recurrent answer-state
+      candidate with recurrent-answer-state-off and depth-sweep ablations.
+      S80 accepted as a smoke result; S240/choice-margin continuations
+      rejected.
+- [x] Promote the answer-halt-head variant as the current canonical
+      forced-choice baseline: smoke8 full 8/8 vs donor/core-off/depth1/2
+      0/8, smoke16 full 10/16 vs halt-gate-off 0/16.
+- [x] Run a partial scale32 depth4 gate: donor/core-off 0/32, depth1/2 4/32,
+      depth4 16/32. Treat as partial only because depth8/halt-off scale32 was
+      stopped incomplete.
+- [x] Demote typed CE to probe-only because it is not a universal LLM
+      objective and trace exact remains 0/32.
+- [ ] Improve greedy autoregressive rendering while preserving the accepted
+      answer-halt forced-choice gate.
 - [x] Train/evaluate transition_state_finality S120; accepted as a narrow causal
       finality signal but rejected as a Stage 1 reasoning promotion.
+- [x] Train/evaluate transition_state_text S120; accepted as a narrow causal
+      semantic-token signal at high LR but rejected because it collapses to the
+      depth-1 token and trace exact remains 0/64.
+- [x] Train/evaluate transition_state_text depth-contrast S120; rejected
+      because the held-out prediction still collapses to the same depth-1 token
+      and trace exact remains 0/64.
+- [x] Train/evaluate compact code+finality and joint code/finality heads;
+      rejected because held-out strict trace exact and halted exact remain 0/64.
 - [ ] Evaluate action-code shuffle and action-code dropout.
-- [ ] Evaluate neural transition prediction without the symbolic executor.
-- [ ] Document whether the next bottleneck is prompt routing, action collapse,
+- [x] Build dense 1..N transition targets from solver traces, then retry the
+      joint state head with strict halted exact and transition-state-off gates.
+- [x] Document whether the next bottleneck is prompt routing, action collapse,
       transition semantics, or answer rendering.
+- [ ] Build mixed terminality augmentation and counterfactual terminality pairs.
+- [ ] Evaluate action-code shuffle and action-code dropout on the dense joint
+      head before any Stage 1 promotion claim.
+- [x] Add action-terminal finality mode to remove answer-match process ambiguity.
+- [x] Run terminality augmentation; rejected because list-family zero-shot still
+      has halted exact 0/64.
+- [x] Run all-families list sanity control; accepted as a mechanism sanity
+      result because full reaches 64/64 and transition-state-off reaches 0/64.
+- [x] Build a fair list transfer gate: hold out value ranges or paraphrase
+      clusters, not the entire list family.
+- [x] Run transition-state-off, code-shuffle, and code-dropout ablations on the
+      list transfer gate.
+- [ ] Scale list transfer to longer lists, held-out value ranges, and larger
+      eval sets.
 
 ## Claim Boundary
 

@@ -21,6 +21,7 @@ ROLE_V1_OPERATION_TO_LATENT_ACTION: dict[str, str] = {
     "first_mapping": "extract_or_unary_transform",
     "not_q": "extract_or_unary_transform",
     "filter_even": "extract_or_unary_transform",
+    "filter_above_threshold": "compose_from_previous",
     "multiply_sum": "compose_from_previous",
     "second_mapping": "compose_from_previous",
     "and_with_p": "compose_from_previous",
@@ -43,6 +44,7 @@ TERMINAL_V2_OPERATION_TO_LATENT_ACTION: dict[str, str] = {
     "first_mapping": "extract_or_unary_nonterminal",
     "not_q": "extract_or_unary_nonterminal",
     "filter_even": "extract_or_unary_nonterminal",
+    "filter_above_threshold": "compose_from_previous_nonterminal",
     "second_mapping": "compose_from_previous_terminal",
     "double_filtered": "compose_from_previous_terminal",
     "multiply_sum": "compose_from_previous_nonterminal",
@@ -52,14 +54,39 @@ TERMINAL_V2_OPERATION_TO_LATENT_ACTION: dict[str, str] = {
     "hold_final": "hold_final",
 }
 
+DYNAMIC_HALT_V3_LATENT_ACTION_CODEBOOK: dict[str, int] = {
+    "extract_or_unary_transform": 0,
+    "compose_from_previous": 1,
+    "aggregate_from_previous": 2,
+    "final_compose_from_previous": 3,
+    "hold_final": 4,
+}
+
+DYNAMIC_HALT_V3_OPERATION_TO_LATENT_ACTION: dict[str, str] = {
+    "add_operands": "extract_or_unary_transform",
+    "first_mapping": "extract_or_unary_transform",
+    "not_q": "extract_or_unary_transform",
+    "filter_even": "extract_or_unary_transform",
+    "filter_above_threshold": "compose_from_previous",
+    "second_mapping": "compose_from_previous",
+    "double_filtered": "compose_from_previous",
+    "multiply_sum": "aggregate_from_previous",
+    "and_with_p": "aggregate_from_previous",
+    "subtract_offset": "final_compose_from_previous",
+    "or_with_r": "final_compose_from_previous",
+    "hold_final": "hold_final",
+}
+
 LATENT_ACTION_CODEBOOKS: dict[str, dict[str, int]] = {
     "role_v1": ROLE_V1_LATENT_ACTION_CODEBOOK,
     "terminal_v2": TERMINAL_V2_LATENT_ACTION_CODEBOOK,
+    "dynamic_halt_v3": DYNAMIC_HALT_V3_LATENT_ACTION_CODEBOOK,
 }
 
 OPERATION_TO_LATENT_ACTION_BY_VERSION: dict[str, dict[str, str]] = {
     "role_v1": ROLE_V1_OPERATION_TO_LATENT_ACTION,
     "terminal_v2": TERMINAL_V2_OPERATION_TO_LATENT_ACTION,
+    "dynamic_halt_v3": DYNAMIC_HALT_V3_OPERATION_TO_LATENT_ACTION,
 }
 
 

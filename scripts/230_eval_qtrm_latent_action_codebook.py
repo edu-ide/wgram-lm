@@ -7,6 +7,37 @@ from pathlib import Path
 from typing import Any
 
 
+PRIMITIVE_TRANSITION_OPERATION_ORDER = (
+    "add_operands",
+    "multiply_sum",
+    "subtract_offset",
+    "hold_final",
+    "filter_even",
+    "double_filtered",
+    "first_mapping",
+    "second_mapping",
+    "not_q",
+    "and_with_p",
+    "or_with_r",
+    "filter_above_threshold",
+)
+
+PRIMITIVE_OPERATION_TO_DYNAMIC_HALT_CODE = {
+    "add_operands": 0,
+    "first_mapping": 0,
+    "not_q": 0,
+    "filter_even": 0,
+    "filter_above_threshold": 1,
+    "second_mapping": 1,
+    "double_filtered": 1,
+    "multiply_sum": 2,
+    "and_with_p": 2,
+    "subtract_offset": 3,
+    "or_with_r": 3,
+    "hold_final": 4,
+}
+
+
 def load_rows(path: str | Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with Path(path).open("r", encoding="utf-8") as f:
@@ -116,10 +147,139 @@ def score_finality_predictions(
     }
 
 
+def score_halted_transition_predictions(
+    *,
+    predicted_codes: list[int],
+    target_codes: list[int],
+    finality_logits: list[float],
+    target_finality: list[float],
+) -> dict[str, Any]:
+    if len(predicted_codes) != len(target_codes):
+        raise ValueError("predicted_codes and target_codes must have the same length")
+    if len(finality_logits) != len(target_finality):
+        raise ValueError("finality_logits and target_finality must have the same length")
+    if len(predicted_codes) != len(finality_logits):
+        raise ValueError("code and finality predictions must have the same length")
+    predicted_finality = [1.0 if float(logit) > 0.0 else 0.0 for logit in finality_logits]
+    halt_index = next(
+        (index for index, value in enumerate(predicted_finality) if value == 1.0),
+        None,
+    )
+    if halt_index is None:
+        return {
+            "halted_trace_exact": False,
+            "halted_depth": None,
+            "halted_prefix_steps": 0,
+        }
+    if halt_index >= len(target_finality) or float(target_finality[halt_index]) != 1.0:
+        return {
+            "halted_trace_exact": False,
+            "halted_depth": halt_index + 1,
+            "halted_prefix_steps": 0,
+        }
+    checked = 0
+    for index in range(halt_index + 1):
+        if int(target_codes[index]) >= 0:
+            checked += 1
+            if int(predicted_codes[index]) != int(target_codes[index]):
+                return {
+                    "halted_trace_exact": False,
+                    "halted_depth": halt_index + 1,
+                    "halted_prefix_steps": checked,
+                }
+        if float(target_finality[index]) >= 0.0 and predicted_finality[index] != float(
+            target_finality[index]
+        ):
+            return {
+                "halted_trace_exact": False,
+                "halted_depth": halt_index + 1,
+                "halted_prefix_steps": checked,
+            }
+    return {
+        "halted_trace_exact": bool(checked > 0),
+        "halted_depth": halt_index + 1,
+        "halted_prefix_steps": checked,
+    }
+
+
 def predicted_codes_from_logits(logits: Any) -> list[int]:
     if logits.ndim != 3 or int(logits.shape[-1]) == 0:
         return []
     return logits.detach().float().argmax(dim=-1)[0].cpu().tolist()
+
+
+def predicted_joint_states_from_logits(logits: Any) -> list[int]:
+    if logits.ndim != 3 or int(logits.shape[-1]) == 0:
+        return []
+    return logits.detach().float().argmax(dim=-1)[0].cpu().tolist()
+
+
+def predicted_operation_ids_from_logits(logits: Any) -> list[int]:
+    if logits.ndim != 3 or int(logits.shape[-1]) == 0:
+        return []
+    return logits.detach().float().argmax(dim=-1)[0].cpu().tolist()
+
+
+def transition_codes_from_primitive_operations(operation_ids: list[int]) -> list[int]:
+    codes: list[int] = []
+    for operation_id in operation_ids:
+        if int(operation_id) < 0 or int(operation_id) >= len(
+            PRIMITIVE_TRANSITION_OPERATION_ORDER
+        ):
+            raise ValueError(f"unknown primitive operation id: {operation_id}")
+        operation = PRIMITIVE_TRANSITION_OPERATION_ORDER[int(operation_id)]
+        codes.append(int(PRIMITIVE_OPERATION_TO_DYNAMIC_HALT_CODE[operation]))
+    return codes
+
+
+def predicted_source_ids_from_logits(logits: Any) -> list[int]:
+    if logits.ndim != 3 or int(logits.shape[-1]) == 0:
+        return []
+    return logits.detach().float().argmax(dim=-1)[0].cpu().tolist()
+
+
+def parse_code_permutation(value: str) -> dict[int, int] | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    out: dict[int, int] = {}
+    for part in text.split(","):
+        item = part.strip()
+        if not item:
+            continue
+        if ":" not in item:
+            raise ValueError(f"invalid code permutation item: {item!r}")
+        src, dst = item.split(":", 1)
+        out[int(src.strip())] = int(dst.strip())
+    if not out:
+        return None
+    expected = set(range(max(out) + 1))
+    if set(out) != expected:
+        raise ValueError(
+            f"code permutation keys must be contiguous 0..N, got {sorted(out)}"
+        )
+    return out
+
+
+def apply_predicted_code_ablation(
+    predicted_codes: list[int],
+    *,
+    code_permutation: dict[int, int] | None = None,
+    drop_codes_to: int | None = None,
+) -> list[int]:
+    if code_permutation is not None and drop_codes_to is not None:
+        raise ValueError("code permutation and code dropout cannot both be enabled")
+    if drop_codes_to is not None:
+        return [int(drop_codes_to)] * len(predicted_codes)
+    if code_permutation is None:
+        return [int(value) for value in predicted_codes]
+    out: list[int] = []
+    for value in predicted_codes:
+        code = int(value)
+        if code not in code_permutation:
+            raise ValueError(f"predicted code {code} is missing from permutation")
+        out.append(int(code_permutation[code]))
+    return out
 
 
 def _prepare_prompt(tokenizer: Any, prompt: str, *, max_length: int, device: str):
@@ -149,6 +309,7 @@ def _summarize_records(records: list[dict[str, Any]]) -> dict[str, Any]:
     finality_total_steps = sum(int(record.get("finality_total_steps", 0)) for record in records)
     finality_correct_steps = sum(int(record.get("finality_correct_steps", 0)) for record in records)
     finality_exact_rows = sum(int(bool(record.get("finality_trace_exact", False))) for record in records)
+    halted_exact_rows = sum(int(bool(record.get("halted_trace_exact", False))) for record in records)
     by_family: dict[str, dict[str, Any]] = {}
     for record in records:
         family = str(record["task_family"])
@@ -168,6 +329,9 @@ def _summarize_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         )
         bucket["finality_exact_rows"] = bucket.get("finality_exact_rows", 0) + int(
             bool(record.get("finality_trace_exact", False))
+        )
+        bucket["halted_exact_rows"] = bucket.get("halted_exact_rows", 0) + int(
+            bool(record.get("halted_trace_exact", False))
         )
     for bucket in by_family.values():
         bucket["step_accuracy"] = (
@@ -190,6 +354,11 @@ def _summarize_records(records: list[dict[str, Any]]) -> dict[str, Any]:
             if int(bucket["rows"])
             else 0.0
         )
+        bucket["halted_trace_exact_accuracy"] = (
+            float(bucket["halted_exact_rows"]) / float(bucket["rows"])
+            if int(bucket["rows"])
+            else 0.0
+        )
     return {
         "rows": len(records),
         "exact_rows": exact_rows,
@@ -202,6 +371,10 @@ def _summarize_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         "finality_exact_rows": finality_exact_rows,
         "finality_trace_exact_accuracy": (
             float(finality_exact_rows) / float(len(records)) if records else 0.0
+        ),
+        "halted_exact_rows": halted_exact_rows,
+        "halted_trace_exact_accuracy": (
+            float(halted_exact_rows) / float(len(records)) if records else 0.0
         ),
         "finality_correct_steps": finality_correct_steps,
         "finality_total_steps": finality_total_steps,
@@ -225,6 +398,9 @@ def evaluate_rows(
     core_steps: int = 8,
     max_cases: int = 0,
     disable_transition_state: bool = False,
+    predicted_code_permutation: str = "",
+    drop_predicted_codes_to: int | None = None,
+    prediction_source: str = "joint",
 ) -> dict[str, Any]:
     import torch
     from transformers import AutoTokenizer
@@ -256,6 +432,12 @@ def evaluate_rows(
     max_len = int(max_length or cfg.train.seq_len)
     records: list[dict[str, Any]] = []
     old_outer_steps = int(model.cfg.outer_steps)
+    code_permutation = parse_code_permutation(predicted_code_permutation)
+    prediction_source = str(prediction_source or "joint").lower()
+    if prediction_source not in {"joint", "primitive", "routed", "core_feedback"}:
+        raise ValueError(
+            "prediction_source must be 'joint', 'primitive', 'routed', or 'core_feedback'"
+        )
     model.cfg.outer_steps = int(core_steps)
     try:
         with torch.no_grad():
@@ -284,6 +466,62 @@ def evaluate_rows(
                     )
                 logits = outputs["transition_state_code_logits"]
                 predicted = predicted_codes_from_logits(logits)
+                joint_logits = outputs.get("transition_state_joint_logits")
+                predicted_joint = (
+                    predicted_joint_states_from_logits(joint_logits)
+                    if joint_logits is not None
+                    else []
+                )
+                if not predicted and predicted_joint:
+                    predicted = [int(value) // 2 for value in predicted_joint]
+                predicted_operation_ids = []
+                primitive_predicted = []
+                if prediction_source in {"primitive", "routed", "core_feedback"}:
+                    primitive_logits = outputs.get(
+                        "core_transition_feedback_operation_logits"
+                        if prediction_source == "core_feedback"
+                        else "primitive_transition_operation_logits"
+                    )
+                    if primitive_logits is None:
+                        raise ValueError(
+                            f"prediction_source={prediction_source} requires "
+                            + (
+                                "core_transition_feedback_operation_logits"
+                                if prediction_source == "core_feedback"
+                                else "primitive_transition_operation_logits"
+                            )
+                        )
+                    predicted_operation_ids = predicted_operation_ids_from_logits(
+                        primitive_logits
+                    )
+                    primitive_predicted = transition_codes_from_primitive_operations(
+                        predicted_operation_ids
+                    )
+                    if prediction_source in {"primitive", "core_feedback"}:
+                        predicted = primitive_predicted
+                predicted_source_ids = []
+                if prediction_source == "routed":
+                    source_logits = outputs.get("transition_source_router_logits")
+                    if source_logits is None:
+                        raise ValueError(
+                            "prediction_source=routed requires "
+                            "transition_source_router_logits"
+                        )
+                    predicted_source_ids = predicted_source_ids_from_logits(source_logits)
+                    joint_predicted = [int(value) for value in predicted]
+                    if len(joint_predicted) != len(primitive_predicted):
+                        raise ValueError("joint and primitive predictions differ in length")
+                    predicted = [
+                        primitive_predicted[index]
+                        if int(predicted_source_ids[index]) == 1
+                        else joint_predicted[index]
+                        for index in range(len(joint_predicted))
+                    ]
+                predicted = apply_predicted_code_ablation(
+                    [int(value) for value in predicted],
+                    code_permutation=code_permutation,
+                    drop_codes_to=drop_predicted_codes_to,
+                )
                 targets = code_targets_from_row(row, num_steps=len(predicted))
                 score = score_code_predictions(
                     predicted_codes=[int(value) for value in predicted],
@@ -298,6 +536,11 @@ def evaluate_rows(
                     if "transition_state_finality_logits" in outputs
                     else []
                 )
+                if not finality_logits and predicted_joint:
+                    finality_logits = [
+                        1.0 if int(value) % 2 == 1 else -1.0
+                        for value in predicted_joint
+                    ]
                 finality_targets = finality_targets_from_row(
                     row,
                     num_steps=len(finality_logits),
@@ -306,16 +549,32 @@ def evaluate_rows(
                     finality_logits=[float(value) for value in finality_logits],
                     target_values=finality_targets,
                 )
+                halted_score = score_halted_transition_predictions(
+                    predicted_codes=[int(value) for value in predicted],
+                    target_codes=targets,
+                    finality_logits=[float(value) for value in finality_logits],
+                    target_finality=finality_targets,
+                )
                 records.append(
                     {
                         "id": row.get("id", ""),
                         "task_family": _family(row),
                         "predicted_codes": [int(value) for value in predicted],
                         "target_codes": targets,
+                        "predicted_joint_states": [
+                            int(value) for value in predicted_joint
+                        ],
+                        "predicted_operation_ids": [
+                            int(value) for value in predicted_operation_ids
+                        ],
+                        "predicted_source_ids": [
+                            int(value) for value in predicted_source_ids
+                        ],
                         "finality_logits": [float(value) for value in finality_logits],
                         "finality_targets": finality_targets,
                         **score,
                         **finality_score,
+                        **halted_score,
                     }
                 )
     finally:
@@ -328,6 +587,9 @@ def evaluate_rows(
         "data_jsonl": data_jsonl,
         "core_steps": int(core_steps),
         "disable_transition_state": bool(disable_transition_state),
+        "prediction_source": prediction_source,
+        "predicted_code_permutation": dict(code_permutation or {}),
+        "drop_predicted_codes_to": drop_predicted_codes_to,
         "missing_keys": len(missing),
         "unexpected_keys": len(unexpected),
         "summary": summary,
@@ -356,6 +618,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--core-steps", type=int, default=8)
     parser.add_argument("--max-cases", type=int, default=0)
     parser.add_argument("--disable-transition-state", action="store_true")
+    parser.add_argument(
+        "--prediction-source",
+        choices=["joint", "primitive", "routed", "core_feedback"],
+        default="joint",
+    )
+    parser.add_argument("--predicted-code-permutation", default="")
+    parser.add_argument("--drop-predicted-codes-to", type=int, default=None)
     return parser
 
 
@@ -371,13 +640,17 @@ def main() -> None:
         core_steps=args.core_steps,
         max_cases=args.max_cases,
         disable_transition_state=args.disable_transition_state,
+        prediction_source=args.prediction_source,
+        predicted_code_permutation=args.predicted_code_permutation,
+        drop_predicted_codes_to=args.drop_predicted_codes_to,
     )
     summary = result["summary"]
     print(
         "latent action codebook eval: "
         f"rows={summary['rows']} exact={summary['exact_rows']}/{summary['rows']} "
         f"step_acc={summary['step_accuracy']:.4f} "
-        f"finality_acc={summary['finality_step_accuracy']:.4f}"
+        f"finality_acc={summary['finality_step_accuracy']:.4f} "
+        f"halted_exact={summary['halted_exact_rows']}/{summary['rows']}"
     )
 
 

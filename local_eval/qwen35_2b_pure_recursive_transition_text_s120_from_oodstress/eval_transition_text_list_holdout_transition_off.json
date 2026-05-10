@@ -15,28 +15,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -51,14 +51,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -73,28 +73,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -109,14 +109,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -131,28 +131,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -167,14 +167,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -189,28 +189,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -225,14 +225,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -247,28 +247,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -283,14 +283,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -305,28 +305,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -341,14 +341,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -363,28 +363,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -399,14 +399,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -421,28 +421,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -457,14 +457,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -479,28 +479,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -515,14 +515,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -537,28 +537,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -573,14 +573,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -595,28 +595,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -631,14 +631,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -653,28 +653,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -689,14 +689,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -711,28 +711,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -747,14 +747,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -769,28 +769,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -805,14 +805,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -827,28 +827,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -863,14 +863,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -885,28 +885,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -921,14 +921,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -943,28 +943,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -979,14 +979,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1001,28 +1001,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1037,14 +1037,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1059,28 +1059,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1095,14 +1095,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1117,28 +1117,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1153,14 +1153,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1175,28 +1175,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1211,14 +1211,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1233,28 +1233,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1269,14 +1269,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1291,28 +1291,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1327,14 +1327,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1349,28 +1349,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1385,14 +1385,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1407,28 +1407,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1443,14 +1443,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1465,28 +1465,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1501,14 +1501,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1523,28 +1523,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1559,14 +1559,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1581,28 +1581,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1617,14 +1617,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1639,28 +1639,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1675,14 +1675,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1697,28 +1697,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1733,14 +1733,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1755,28 +1755,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1791,14 +1791,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1813,28 +1813,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1849,14 +1849,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1871,28 +1871,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1907,14 +1907,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1929,28 +1929,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -1965,14 +1965,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -1987,28 +1987,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2023,14 +2023,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2045,28 +2045,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2081,14 +2081,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2103,28 +2103,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2139,14 +2139,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2161,28 +2161,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2197,14 +2197,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2219,28 +2219,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2255,14 +2255,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2277,28 +2277,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2313,14 +2313,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2335,28 +2335,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2371,14 +2371,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2393,28 +2393,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2429,14 +2429,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2451,28 +2451,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2487,14 +2487,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2509,28 +2509,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2545,14 +2545,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2567,28 +2567,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2603,14 +2603,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2625,28 +2625,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2661,14 +2661,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2683,28 +2683,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2719,14 +2719,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2741,28 +2741,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2777,14 +2777,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2799,28 +2799,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2835,14 +2835,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2857,28 +2857,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2893,14 +2893,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2915,28 +2915,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -2951,14 +2951,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -2973,28 +2973,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3009,14 +3009,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3031,28 +3031,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3067,14 +3067,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3089,28 +3089,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3125,14 +3125,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3147,28 +3147,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3183,14 +3183,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3205,28 +3205,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3241,14 +3241,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3263,28 +3263,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3299,14 +3299,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3321,28 +3321,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3357,14 +3357,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3379,28 +3379,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3415,14 +3415,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3437,28 +3437,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3473,14 +3473,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3495,28 +3495,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3531,14 +3531,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3553,28 +3553,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3589,14 +3589,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3611,28 +3611,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3647,14 +3647,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
@@ -3669,28 +3669,28 @@
           "depth": 1,
           "predicted": 0,
           "step_index": 0,
-          "target": 220
+          "target": 16
         },
         {
           "correct": false,
           "depth": 2,
           "predicted": 0,
           "step_index": 1,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 4,
           "predicted": 0,
           "step_index": 3,
-          "target": 220
+          "target": 18
         },
         {
           "correct": false,
           "depth": 8,
           "predicted": 0,
           "step_index": 7,
-          "target": 220
+          "target": 18
         }
       ],
       "predicted_tokens": [
@@ -3705,14 +3705,14 @@
       ],
       "step_accuracy": 0.0,
       "target_tokens": [
-        220,
-        220,
+        16,
+        18,
         -100,
-        220,
+        18,
         -100,
         -100,
         -100,
-        220
+        18
       ],
       "task_family": "list_transform",
       "total_steps": 4,
