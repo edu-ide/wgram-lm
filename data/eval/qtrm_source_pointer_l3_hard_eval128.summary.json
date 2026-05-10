@@ -1,0 +1,19 @@
+{
+  "split_type": "source_pointer_l3_hard_perturbation",
+  "target_level": "L3 major bottleneck candidate",
+  "rows": 128,
+  "count_per_variant": 32,
+  "seed": 321,
+  "by_variant": {
+    "duplicate_even_binding": 32,
+    "fifth_position_single_even": 32,
+    "range_shift_v32to63": 32,
+    "surface_paraphrase": 32
+  },
+  "variants": [
+    "range_shift_v32to63",
+    "fifth_position_single_even",
+    "duplicate_even_binding",
+    "surface_paraphrase"
+  ]
+}

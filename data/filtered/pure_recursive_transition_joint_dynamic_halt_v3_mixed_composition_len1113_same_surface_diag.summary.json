@@ -1,0 +1,50 @@
+{
+  "allow_variant_overlap": true,
+  "architecture_note": "Mixed-family gate composes list filtering/doubling with arithmetic sum/subtract steps. Optional arithmetic_to_list reverses the order. Finality uses answer_match so halt is separated from action-code identity.",
+  "cases_per_family": 8,
+  "codebook_version": "dynamic_halt_v3",
+  "composition_orders": [
+    "list_to_arithmetic"
+  ],
+  "dense": true,
+  "eval_families": [
+    "mixed_list_arithmetic"
+  ],
+  "eval_list_lengths": [
+    11,
+    13
+  ],
+  "eval_list_variants": [
+    6,
+    7
+  ],
+  "eval_rows": 32,
+  "eval_start_index": 60000,
+  "finality_mode": "answer_match",
+  "mixed_eval_rows": 32,
+  "mixed_repeat": 1,
+  "mixed_train_rows": 32,
+  "split_type": "mixed_family_composition_holdout",
+  "train_families": [
+    "arithmetic_chain",
+    "boolean_logic",
+    "list_transform",
+    "mixed_list_arithmetic",
+    "symbolic_binding"
+  ],
+  "train_list_lengths": [
+    5,
+    11,
+    13
+  ],
+  "train_list_variants": [
+    6,
+    7
+  ],
+  "train_rows": 240,
+  "train_start_index": 40000,
+  "variant_overlap": [
+    6,
+    7
+  ]
+}

@@ -1,0 +1,379 @@
+{
+  "rank_probe": "local_eval/l4_source_copy_pointer_s4/eval_donor_rank_probe64.jsonl",
+  "cases": "data/eval/qtrm_source_copy_lexicalization_eval128.jsonl",
+  "out": "data/eval/qtrm_source_copy_hard_token_eval64_from_probe.jsonl",
+  "mode": "donor_only_no_evidence",
+  "min_content_first_rank": 2,
+  "min_max_rank": 0,
+  "source_case_count": 128,
+  "rank_record_count": 64,
+  "selected_count": 13,
+  "selected_ids": [
+    "source-copy-eval-pair-s100326-0001-p00",
+    "source-copy-eval-pair-s100326-0001-p01",
+    "source-copy-eval-pair-s100326-0001-p03",
+    "source-copy-eval-pair-s100326-0002-p02",
+    "source-copy-eval-pair-s100326-0003-p03",
+    "source-copy-eval-pair-s100326-0005-p03",
+    "source-copy-eval-pair-s100326-0007-p00",
+    "source-copy-eval-pair-s100326-0008-p00",
+    "source-copy-eval-pair-s100326-0009-p00",
+    "source-copy-eval-pair-s100326-0009-p01",
+    "source-copy-eval-pair-s100326-0010-p00",
+    "source-copy-eval-pair-s100326-0013-p02",
+    "source-copy-eval-pair-s100326-0014-p02"
+  ],
+  "selected_reasons": {
+    "source-copy-eval-pair-s100326-0001-p00": {
+      "mode": "donor_only_no_evidence",
+      "answer": "54,44,60",
+      "target_tokens": [
+        " ",
+        "5",
+        "4",
+        ",",
+        "4",
+        "4",
+        ",",
+        "6",
+        "0"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0001-p01": {
+      "mode": "donor_only_no_evidence",
+      "answer": "54,60,44",
+      "target_tokens": [
+        " ",
+        "5",
+        "4",
+        ",",
+        "6",
+        "0",
+        ",",
+        "4",
+        "4"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0001-p03": {
+      "mode": "donor_only_no_evidence",
+      "answer": "54,44,60",
+      "target_tokens": [
+        " ",
+        "5",
+        "4",
+        ",",
+        "4",
+        "4",
+        ",",
+        "6",
+        "0"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0002-p02": {
+      "mode": "donor_only_no_evidence",
+      "answer": "58,46,38",
+      "target_tokens": [
+        " ",
+        "5",
+        "8",
+        ",",
+        "4",
+        "6",
+        ",",
+        "3",
+        "8"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0003-p03": {
+      "mode": "donor_only_no_evidence",
+      "answer": "60,44,58",
+      "target_tokens": [
+        " ",
+        "6",
+        "0",
+        ",",
+        "4",
+        "4",
+        ",",
+        "5",
+        "8"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        4,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0005-p03": {
+      "mode": "donor_only_no_evidence",
+      "answer": "62,52,50",
+      "target_tokens": [
+        " ",
+        "6",
+        "2",
+        ",",
+        "5",
+        "2",
+        ",",
+        "5",
+        "0"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0007-p00": {
+      "mode": "donor_only_no_evidence",
+      "answer": "56,34,36",
+      "target_tokens": [
+        " ",
+        "5",
+        "6",
+        ",",
+        "3",
+        "4",
+        ",",
+        "3",
+        "6"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0008-p00": {
+      "mode": "donor_only_no_evidence",
+      "answer": "60,54,34",
+      "target_tokens": [
+        " ",
+        "6",
+        "0",
+        ",",
+        "5",
+        "4",
+        ",",
+        "3",
+        "4"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0009-p00": {
+      "mode": "donor_only_no_evidence",
+      "answer": "60,58,34",
+      "target_tokens": [
+        " ",
+        "6",
+        "0",
+        ",",
+        "5",
+        "8",
+        ",",
+        "3",
+        "4"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        3,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0009-p01": {
+      "mode": "donor_only_no_evidence",
+      "answer": "60,34,58",
+      "target_tokens": [
+        " ",
+        "6",
+        "0",
+        ",",
+        "3",
+        "4",
+        ",",
+        "5",
+        "8"
+      ],
+      "ranks": [
+        1,
+        5,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 5
+    },
+    "source-copy-eval-pair-s100326-0010-p00": {
+      "mode": "donor_only_no_evidence",
+      "answer": "46,36,42",
+      "target_tokens": [
+        " ",
+        "4",
+        "6",
+        ",",
+        "3",
+        "6",
+        ",",
+        "4",
+        "2"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0013-p02": {
+      "mode": "donor_only_no_evidence",
+      "answer": "48,38,52",
+      "target_tokens": [
+        " ",
+        "4",
+        "8",
+        ",",
+        "3",
+        "8",
+        ",",
+        "5",
+        "2"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    },
+    "source-copy-eval-pair-s100326-0014-p02": {
+      "mode": "donor_only_no_evidence",
+      "answer": "62,54,58",
+      "target_tokens": [
+        " ",
+        "6",
+        "2",
+        ",",
+        "5",
+        "4",
+        ",",
+        "5",
+        "8"
+      ],
+      "ranks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_first_rank": 2
+    }
+  }
+}
