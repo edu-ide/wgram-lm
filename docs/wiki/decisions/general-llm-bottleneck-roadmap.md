@@ -525,6 +525,44 @@ depth-8 diagnostic:
   a stronger recursive-reasoning claim until recurrent state remains stable, or
   halting reliably chooses the useful depth, under deeper core rollout.
 
+prompt source-position binding probes:
+  supporting fixes/data:
+    0ac2e9c fix(qtrm): infer mixed source lists for binders
+    9a452a4 data(qtrm): add multibase mixed curriculum
+    b140d85 data(qtrm): add holdout surface mixed curriculum
+
+  single-base token source slots:
+    /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+    prompt_source_position_mixed_len1113_token_slots_d1_s300
+    train exact: 1.0000
+    eval exact:  0.0000
+    eval slot/content acc: 0.4375 / 0.2500
+    Absolute numeric source-slot ids overfit train values and do not generalize
+    from 40000-series train values to 60000-series eval values.
+
+  single-base donor hidden:
+    prompt_source_position_mixed_len1113_donor_hidden_d1_s300
+    best eval exact: 0.0000
+    final eval slot/content acc: 0.4844 / 0.3125
+
+  multibase donor hidden:
+    prompt_source_position_mixed_multibase_donor_hidden_d1_s500
+    final eval exact: 0.0000
+    final eval slot/content acc: 0.6094 / 0.4792
+
+  multibase + surface-diverse donor hidden, variants 6/7 still held out:
+    prompt_source_position_mixed_multibase_holdout67_donor_hidden_d1_s600
+    final eval exact: 0.0000
+    final eval slot/content acc: 0.6797 / 0.5729
+
+  conclusion:
+    even before final subtract and LM rendering, prompt-to-source binding is not
+    exact under held-out value/surface shift. More base/surface diversity helps
+    slot accuracy, but does not close exact binding. The next source-binding
+    candidate should avoid absolute numeric id embeddings and should represent
+    relative source slots plus learned numeric predicates/offset variables inside
+    the token-derived recurrent state.
+
 decision:
   partial acceptance for the narrow answer-change prerequisite:
   the recurrent answer/core path can now change causal forced-choice answers
