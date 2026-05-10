@@ -12047,3 +12047,63 @@ the same answer loop does not make the model prefer the final scalar. The next
 architecture must add a causal value accumulator / process-supervised scalar
 state update that the recurrent answer path actually consumes.
 ```
+
+## 2026-05-10 Relative Source-Slot LM Path Smoke
+
+Implemented and smoke-tested relative source-slot ids through the canonical
+QTRM LM path.
+
+Commits:
+
+```text
+b39f72f feat(qtrm): add relative parity source slot mode
+afc8694 feat(qtrm): propagate source slot id mode through gates
+48ea7b2 fix(qtrm): preserve source copy spans for relative slots
+```
+
+Run:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/l4_relative_parity_smoke_s001
+
+flags:
+  --token-numeric-source-slot-id-mode relative_parity
+  --token-numeric-source-slot-vocab-size 3
+  --steps 1
+  --max-eval-cases 4
+```
+
+Result:
+
+```text
+decision: rejected_l4_candidate
+full_generation_accuracy:                    0.25
+donor_generation_accuracy:                   0.25
+core_off_generation_accuracy:                0.25
+source_slot_off_generation_accuracy:         0.25
+source_binder_off_generation_accuracy:       0.25
+
+full_minus_donor:                            0.0
+full_minus_core_off:                         0.0
+full_minus_source_slot_off:                  0.0
+full_minus_source_binder_off:                0.0
+```
+
+Observed completion perturbation:
+
+```text
+surface_paraphrase:
+  donor/core_off: 2,
+  full:           56,
+```
+
+Interpretation:
+
+```text
+The relative source-slot path is executable and can perturb LM output, but it
+is not yet a causal reasoning improvement. The same 1/4 hit rate appears under
+donor/core-off/source-slot-off/source-binder-off ablations. Treat this as an
+input-path repair plus L4 smoke evidence, not promotion. The next useful gate
+must force scalar reduction/accumulator state to improve exact answers and drop
+under primitive/source-slot/source-binder/answer-bridge ablations.
+```

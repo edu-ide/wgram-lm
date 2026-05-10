@@ -934,3 +934,29 @@ Latest source-binding / L4 audit:
   final-answer state before LM generation. LeWM, MemoryOS, MSA, larger donors,
   and agent loops remain downstream extensions; they must not mask failure of
   the canonical latent-state-to-text path.
+
+2026-05-10 relative source-slot integration update:
+
+- Implemented prompt-derived relative parity source-slot ids in the shared
+  QTRM train/eval path:
+  `b39f72f feat(qtrm): add relative parity source slot mode`.
+- Propagated the id mode through the L3/L4 gate runners:
+  `afc8694 feat(qtrm): propagate source slot id mode through gates`.
+- Preserved visible-prompt token/span copy while using relative ids:
+  `48ea7b2 fix(qtrm): preserve source copy spans for relative slots`.
+- Smoke run:
+  `/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/l4_relative_parity_smoke_s001`
+  with `--token-numeric-source-slot-id-mode relative_parity`,
+  `--token-numeric-source-slot-vocab-size 3`, `steps=1`, `max_eval_cases=4`.
+- Result: executable but rejected. All measured modes scored `1/4 = 0.25`;
+  `full_minus_donor=0.0`, `full_minus_core_off=0.0`,
+  `full_minus_source_slot_off=0.0`, `full_minus_source_binder_off=0.0`.
+- Important nuance: full generation did change one completion vs donor/core-off
+  (`surface_paraphrase`: donor/core-off `2,`, full `56,`), so the canonical
+  LM path can be perturbed by the QTRM path. This is not promotion because the
+  change is not accuracy-positive and does not drop under primitive/source-slot
+  or source-binder ablations.
+- Next bottleneck: train the relative source-slot path long enough, or more
+  likely add a scalar reduction/accumulator state, then require a causal drop
+  under `primitive_off`, `source_slot_off`, `source_binder_off`, and
+  `answer_bridge_off`. Mere completion perturbation is not sufficient.
