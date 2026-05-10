@@ -987,6 +987,50 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
         self.assertIn("subtract_tail_counterfactual_margin_all_depth", metrics)
         self.assertIn("subtract_tail_counterfactual_margin_final_path", metrics)
 
+    def test_final_subtract_tail_counterfactual_margin_uses_final_lm_path_only(self):
+        import torch
+
+        module = _load_module()
+
+        final_logits = torch.zeros(1, 1, 4)
+        chosen = torch.tensor([[2]])
+        rejected = torch.tensor([[1]])
+
+        loss, metrics = module.final_subtract_tail_counterfactual_sequence_margin_loss(
+            final_logits,
+            chosen,
+            rejected,
+            margin=0.1,
+        )
+
+        self.assertGreater(float(loss), 0.0)
+        self.assertIn("final_subtract_tail_counterfactual_margin_final_path", metrics)
+
+    def test_parser_accepts_final_subtract_tail_counterfactual_margin(self):
+        module = _load_module()
+
+        args = module.build_arg_parser().parse_args(
+            [
+                "--config",
+                "config.yaml",
+                "--data-jsonl",
+                "rows.jsonl",
+                "--causal-prefix-supervision",
+                "--target-logit-positions-only",
+                "--final-path-only-supervision",
+                "--final-subtract-tail-counterfactual-margin-weight",
+                "0.9",
+                "--final-subtract-tail-counterfactual-margin",
+                "0.07",
+                "--final-subtract-tail-counterfactual-family-filter",
+                "",
+            ]
+        )
+
+        self.assertEqual(args.final_subtract_tail_counterfactual_margin_weight, 0.9)
+        self.assertEqual(args.final_subtract_tail_counterfactual_margin, 0.07)
+        self.assertEqual(args.final_subtract_tail_counterfactual_family_filter, "")
+
     def test_parser_accepts_save_every_for_validation_checkpoint_selection(self):
         module = _load_module()
 

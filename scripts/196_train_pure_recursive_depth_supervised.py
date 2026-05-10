@@ -662,6 +662,29 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "final-answer +/- 1 variants."
         ),
     )
+    parser.add_argument(
+        "--final-subtract-tail-counterfactual-margin-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Final LM-path-only margin against subtract-tail counterfactuals "
+            "such as the pre-subtract sum and final-answer +/- 1 variants. "
+            "Compatible with --final-path-only-supervision."
+        ),
+    )
+    parser.add_argument(
+        "--final-subtract-tail-counterfactual-margin",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--final-subtract-tail-counterfactual-family-filter",
+        default="mixed_list_arithmetic",
+        help=(
+            "Task family for final LM-path subtract-tail counterfactual margin. "
+            "Empty means all supported families."
+        ),
+    )
     parser.add_argument("--temporal-spatial-context-contrast-weight", type=float, default=0.0)
     parser.add_argument("--temporal-spatial-context-contrast-margin", type=float, default=0.10)
     parser.add_argument("--transition-state-contrast-weight", type=float, default=0.0)
@@ -4907,6 +4930,25 @@ def subtract_tail_counterfactual_sequence_margin_loss(
     }
 
 
+def final_subtract_tail_counterfactual_sequence_margin_loss(
+    final_text_logits,
+    chosen_target_ids,
+    rejected_target_ids,
+    *,
+    margin: float,
+):
+    loss, metrics = final_choice_sequence_margin_loss(
+        final_text_logits,
+        chosen_target_ids,
+        rejected_target_ids,
+        margin=margin,
+    )
+    return loss, {
+        key.replace("final_choice_sequence", "final_subtract_tail_counterfactual"): value
+        for key, value in metrics.items()
+    }
+
+
 def main() -> None:
     args = build_arg_parser().parse_args()
     if (
@@ -4922,6 +4964,14 @@ def main() -> None:
     ):
         raise ValueError(
             "--subtract-tail-counterfactual-margin-weight requires "
+            "--causal-prefix-supervision"
+        )
+    if (
+        float(args.final_subtract_tail_counterfactual_margin_weight) != 0.0
+        and not bool(args.causal_prefix_supervision)
+    ):
+        raise ValueError(
+            "--final-subtract-tail-counterfactual-margin-weight requires "
             "--causal-prefix-supervision"
         )
     if (
@@ -6507,6 +6557,83 @@ def main() -> None:
                         )
                         for key, value in final_choice_metric_sums.items():
                             example_metrics[key] = value / final_choice_count
+                final_subtract_tail_weight = float(
+                    args.final_subtract_tail_counterfactual_margin_weight
+                )
+                if final_subtract_tail_weight != 0.0:
+                    final_subtract_tail_rejected_texts = (
+                        subtract_tail_counterfactual_rejected_texts(
+                            row,
+                            current_answer=answer,
+                            family_filter=(
+                                args.final_subtract_tail_counterfactual_family_filter
+                            ),
+                        )
+                    )
+                else:
+                    final_subtract_tail_rejected_texts = []
+                if final_subtract_tail_rejected_texts:
+                    final_subtract_tail_losses = []
+                    final_subtract_tail_metric_sums: dict[str, Any] = {}
+                    target_len = int(target_ids.shape[1])
+                    for rejected_text in final_subtract_tail_rejected_texts:
+                        rejected_ids = causal_prefix_answer_token_ids(
+                            tokenizer,
+                            rejected_text,
+                            skip_leading_whitespace_targets=bool(
+                                args.causal_prefix_skip_leading_whitespace_targets
+                            ),
+                        )
+                        rejected_start = int(example_index)
+                        rejected_end = rejected_start + target_len
+                        if rejected_end > len(rejected_ids):
+                            continue
+                        rejected_target_ids = input_ids.new_tensor(
+                            [rejected_ids[rejected_start:rejected_end]]
+                        )
+                        (
+                            final_subtract_tail_loss,
+                            final_subtract_tail_metrics,
+                        ) = final_subtract_tail_counterfactual_sequence_margin_loss(
+                            final_text_logits,
+                            target_ids,
+                            rejected_target_ids,
+                            margin=args.final_subtract_tail_counterfactual_margin,
+                        )
+                        final_subtract_tail_losses.append(final_subtract_tail_loss)
+                        for key, value in final_subtract_tail_metrics.items():
+                            final_subtract_tail_metric_sums[key] = (
+                                final_subtract_tail_metric_sums.get(
+                                    key,
+                                    value.detach() * 0.0,
+                                )
+                                + value
+                            )
+                    if final_subtract_tail_losses:
+                        final_subtract_tail_count = float(
+                            len(final_subtract_tail_losses)
+                        )
+                        averaged_final_subtract_tail = final_subtract_tail_losses[0]
+                        for extra_final_subtract_tail in (
+                            final_subtract_tail_losses[1:]
+                        ):
+                            averaged_final_subtract_tail = (
+                                averaged_final_subtract_tail
+                                + extra_final_subtract_tail
+                            )
+                        averaged_final_subtract_tail = (
+                            averaged_final_subtract_tail
+                            / final_subtract_tail_count
+                        )
+                        example_loss = (
+                            example_loss
+                            + final_subtract_tail_weight
+                            * averaged_final_subtract_tail
+                        )
+                        for key, value in final_subtract_tail_metric_sums.items():
+                            example_metrics[key] = (
+                                value / final_subtract_tail_count
+                            )
                 if (
                     float(args.core_role_value_vocab_renderer_ce_weight) != 0.0
                     or float(
