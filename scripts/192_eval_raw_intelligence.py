@@ -1028,7 +1028,13 @@ def _token_numeric_source_slots_for_prompt_prefix(
             case,
             max_list_len=int(max_slots),
         )
-        slot_token_ids = tuple(0 for _ in range(int(max_slots)))
+        slot_token_ids = token_numeric_source_slot_token_ids(
+            case,
+            offsets=enc["offset_mapping"][0].tolist(),
+            input_ids=enc["input_ids"][0].tolist(),
+            max_list_len=int(max_slots),
+            value_vocab_size=int(value_vocab_size),
+        )
     elif mode == "absolute_value":
         ids, mask = token_numeric_source_slot_ids(
             case,
@@ -1074,20 +1080,7 @@ def _token_numeric_source_slot_spans_for_prompt_prefix(
     )
     if row_input_list(case) is None:
         return None, None
-    if str(id_mode or "absolute_value") == "relative_parity":
-        span_ids = tuple(
-            tuple(0 for _ in range(int(max_token_pieces)))
-            for _ in range(int(max_slots))
-        )
-        span_mask = tuple(
-            tuple(0 for _ in range(int(max_token_pieces)))
-            for _ in range(int(max_slots))
-        )
-        return (
-            torch.tensor([span_ids], dtype=torch.long, device=device),
-            torch.tensor([span_mask], dtype=torch.long, device=device),
-        )
-    if str(id_mode or "absolute_value") != "absolute_value":
+    if str(id_mode or "absolute_value") not in {"absolute_value", "relative_parity"}:
         raise ValueError(
             f"unknown token numeric source slot id mode: {id_mode}"
         )

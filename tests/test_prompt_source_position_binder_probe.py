@@ -249,6 +249,37 @@ class PromptSourcePositionBinderProbeTests(unittest.TestCase):
 
         self.assertEqual(token_ids, (206, 309, 0, 0))
 
+    def test_token_numeric_source_slot_token_ids_do_not_require_value_class_vocab(self):
+        module = load_module()
+
+        row = {
+            "prompt": "Question: From the list [60001, 60002], return evens.",
+            "list_value_start": 60001,
+            "list_length": 2,
+        }
+        offsets = [
+            (0, 9),
+            (10, 14),
+            (15, 18),
+            (19, 23),
+            (24, 25),
+            (25, 30),
+            (30, 32),
+            (33, 38),
+            (38, 39),
+        ]
+        input_ids = [101, 102, 103, 104, 105, 206, 207, 308, 309]
+
+        token_ids = module.token_numeric_source_slot_token_ids(
+            row,
+            offsets=offsets,
+            input_ids=input_ids,
+            max_list_len=4,
+            value_vocab_size=3,
+        )
+
+        self.assertEqual(token_ids, (206, 308, 0, 0))
+
     def test_token_numeric_source_slot_token_spans_keep_all_token_pieces(self):
         module = load_module()
 

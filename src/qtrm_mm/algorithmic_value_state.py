@@ -137,6 +137,35 @@ def source_numeric_value_spans(
     return tuple(spans)
 
 
+def source_numeric_prompt_spans(row: dict[str, Any]) -> tuple[tuple[int, int, int], ...]:
+    """Map source-list values to prompt spans using source order as class id.
+
+    Unlike `source_numeric_value_spans`, this does not encode absolute numeric
+    value classes. It is for prompt token copy/span alignment when the compact
+    source-slot ids use a relative representation such as parity.
+    """
+
+    prompt = str(row.get("prompt") or "")
+    values = row_input_list(row)
+    if values is None:
+        raise ValueError("row has no input_list")
+    list_start = prompt.find("[")
+    list_end = prompt.find("]", list_start + 1) if list_start >= 0 else -1
+    if list_start < 0 or list_end < 0:
+        raise ValueError("prompt does not contain a bracketed source list")
+    spans: list[tuple[int, int, int]] = []
+    cursor = list_start + 1
+    for index, value in enumerate(values, start=1):
+        text = str(int(value))
+        start = prompt.find(text, cursor, list_end)
+        if start < 0:
+            raise ValueError(f"could not align source value in prompt: {text}")
+        end = start + len(text)
+        spans.append((start, end, int(index)))
+        cursor = end
+    return tuple(spans)
+
+
 def token_numeric_value_ids(
     row: dict[str, Any],
     *,
@@ -238,10 +267,7 @@ def token_numeric_source_slot_token_ids(
 ) -> tuple[int, ...]:
     """Return tokenizer ids for the first token piece of each compact source slot."""
 
-    spans = source_numeric_value_spans(
-        row,
-        value_vocab_size=int(value_vocab_size),
-    )
+    spans = source_numeric_prompt_spans(row)
     input_id_list = [int(token_id) for token_id in input_ids]
     if len(input_id_list) != len(offsets):
         raise ValueError("input_ids and offsets must have the same length")
@@ -290,10 +316,7 @@ def token_numeric_source_slot_token_spans(
 
     if int(max_token_pieces) <= 0:
         raise ValueError("max_token_pieces must be positive")
-    spans = source_numeric_value_spans(
-        row,
-        value_vocab_size=int(value_vocab_size),
-    )
+    spans = source_numeric_prompt_spans(row)
     input_id_list = [int(token_id) for token_id in input_ids]
     if len(input_id_list) != len(offsets):
         raise ValueError("input_ids and offsets must have the same length")

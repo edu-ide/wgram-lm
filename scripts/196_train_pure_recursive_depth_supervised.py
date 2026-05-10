@@ -1661,7 +1661,13 @@ def _token_numeric_source_slots_for_prompt(
             row,
             max_list_len=int(max_slots),
         )
-        slot_token_ids = tuple(0 for _ in range(int(max_slots)))
+        slot_token_ids = token_numeric_source_slot_token_ids(
+            row,
+            offsets=enc["offset_mapping"][0].tolist(),
+            input_ids=enc["input_ids"][0].tolist(),
+            max_list_len=int(max_slots),
+            value_vocab_size=int(value_vocab_size),
+        )
     elif mode == "absolute_value":
         ids, mask = token_numeric_source_slot_ids(
             row,

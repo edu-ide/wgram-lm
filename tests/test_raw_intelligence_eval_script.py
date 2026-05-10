@@ -133,7 +133,7 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
         )
 
         self.assertEqual(source_slot_ids.tolist(), [[1, 2, 0, 0]])
-        self.assertEqual(source_slot_token_ids.tolist(), [[0, 0, 0, 0]])
+        self.assertEqual(source_slot_token_ids.tolist(), [[2, 4, 0, 0]])
         self.assertEqual(source_slot_mask.tolist(), [[1, 1, 0, 0]])
 
     def test_source_copy_generation_scoring_rejects_loose_contains_match(self) -> None:
