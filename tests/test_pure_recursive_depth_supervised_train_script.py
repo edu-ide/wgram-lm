@@ -413,6 +413,47 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
         self.assertEqual(second_target.tolist(), [[22]])
         self.assertEqual((second_start, second_end), (3, 4))
 
+    def test_prepare_causal_prefix_answer_examples_can_append_eos_target(self):
+        import torch
+
+        module = _load_module()
+
+        class FakeTokenizer:
+            eos_token_id = 99
+
+            def __call__(
+                self,
+                text,
+                return_tensors="pt",
+                truncation=True,
+                max_length=None,
+                padding=False,
+                add_special_tokens=True,
+            ):
+                return {
+                    "input_ids": torch.tensor([[11, 12]]),
+                    "attention_mask": torch.ones(1, 2, dtype=torch.long),
+                }
+
+            def encode(self, text, add_special_tokens=False):
+                return [21, 22]
+
+        examples = module._prepare_causal_prefix_answer_examples(
+            FakeTokenizer(),
+            "Question?",
+            "42",
+            max_length=16,
+            device="cpu",
+            max_target_tokens=3,
+            append_eos_token_id=99,
+        )
+
+        self.assertEqual(len(examples), 3)
+        third_input, _, third_target, third_start, third_end = examples[2]
+        self.assertEqual(third_input.tolist(), [[11, 12, 21, 22]])
+        self.assertEqual(third_target.tolist(), [[99]])
+        self.assertEqual((third_start, third_end), (4, 5))
+
     def test_prepare_causal_prefix_rollout_examples_use_generated_prefix(self):
         import torch
 
@@ -559,6 +600,7 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
                 "--causal-prefix-later-token-weight",
                 "0.1",
                 "--causal-prefix-skip-leading-whitespace-targets",
+                "--causal-prefix-append-eos-target",
                 "--causal-prefix-self-rollout-weight",
                 "0.2",
                 "--causal-prefix-self-rollout-max-target-tokens",
@@ -718,6 +760,7 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
         self.assertEqual(args.answer_state_loop_future_token_max_target_tokens, 6)
         self.assertEqual(args.causal_prefix_later_token_weight, 0.1)
         self.assertTrue(args.causal_prefix_skip_leading_whitespace_targets)
+        self.assertTrue(args.causal_prefix_append_eos_target)
         self.assertEqual(args.causal_prefix_self_rollout_weight, 0.2)
         self.assertEqual(args.causal_prefix_self_rollout_max_target_tokens, 3)
         self.assertEqual(args.teacher_checkpoint, "teacher.pt")

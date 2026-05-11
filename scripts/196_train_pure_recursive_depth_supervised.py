@@ -114,17 +114,39 @@ def answer_token_ids(tokenizer: Any, answer: str) -> list[int]:
     return [int(token_id) for token_id in token_ids]
 
 
+def append_eos_target_token_id(
+    token_ids: list[int],
+    append_eos_token_id: int | None = None,
+) -> list[int]:
+    if append_eos_token_id is None:
+        return [int(token_id) for token_id in token_ids]
+    eos_token_id = int(append_eos_token_id)
+    if eos_token_id < 0:
+        return [int(token_id) for token_id in token_ids]
+    normalized = [int(token_id) for token_id in token_ids]
+    if normalized and normalized[-1] == eos_token_id:
+        return normalized
+    return [*normalized, eos_token_id]
+
+
 def causal_prefix_answer_token_ids(
     tokenizer: Any,
     answer: str,
     *,
     skip_leading_whitespace_targets: bool = False,
+    append_eos_token_id: int | None = None,
 ) -> list[int]:
     if bool(skip_leading_whitespace_targets):
         token_ids = tokenizer.encode(str(answer).strip(), add_special_tokens=False)
         if token_ids:
-            return [int(token_id) for token_id in token_ids]
-    return answer_token_ids(tokenizer, answer)
+            return append_eos_target_token_id(
+                [int(token_id) for token_id in token_ids],
+                append_eos_token_id=append_eos_token_id,
+            )
+    return append_eos_target_token_id(
+        answer_token_ids(tokenizer, answer),
+        append_eos_token_id=append_eos_token_id,
+    )
 
 
 def _choice_margin_normalize_text(text: Any) -> str:
@@ -1176,6 +1198,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--causal-prefix-append-eos-target",
+        action="store_true",
+        help=(
+            "Append tokenizer.eos_token_id as the final causal-prefix target so "
+            "autoregressive probes learn to stop after the answer."
+        ),
+    )
+    parser.add_argument(
         "--causal-prefix-self-rollout-weight",
         type=float,
         default=0.0,
@@ -1718,6 +1748,7 @@ def _prepare_causal_prefix_answer_examples(
     device: str,
     max_target_tokens: int,
     skip_leading_whitespace_targets: bool = False,
+    append_eos_token_id: int | None = None,
 ):
     import torch
 
@@ -1738,6 +1769,7 @@ def _prepare_causal_prefix_answer_examples(
         tokenizer,
         answer,
         skip_leading_whitespace_targets=bool(skip_leading_whitespace_targets),
+        append_eos_token_id=append_eos_token_id,
     )
 
     examples = []
@@ -1781,6 +1813,7 @@ def _prepare_causal_prefix_rollout_answer_examples(
     device: str,
     max_target_tokens: int,
     skip_leading_whitespace_targets: bool = False,
+    append_eos_token_id: int | None = None,
 ):
     import torch
 
@@ -1801,6 +1834,7 @@ def _prepare_causal_prefix_rollout_answer_examples(
         tokenizer,
         answer,
         skip_leading_whitespace_targets=bool(skip_leading_whitespace_targets),
+        append_eos_token_id=append_eos_token_id,
     )
     rollout_ids = [int(token_id) for token_id in rollout_prefix_ids]
 
@@ -5194,6 +5228,13 @@ def main() -> None:
     )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    causal_prefix_append_eos_token_id: int | None = None
+    if bool(args.causal_prefix_append_eos_target):
+        if tokenizer.eos_token_id is None:
+            raise ValueError(
+                "--causal-prefix-append-eos-target requires tokenizer.eos_token_id"
+            )
+        causal_prefix_append_eos_token_id = int(tokenizer.eos_token_id)
 
     model = QTRMMultimodalModel(cfg.model).to(device)
     init_missing_keys: list[str] = []
@@ -5733,6 +5774,7 @@ def main() -> None:
                 skip_leading_whitespace_targets=bool(
                     args.causal_prefix_skip_leading_whitespace_targets
                 ),
+                append_eos_token_id=causal_prefix_append_eos_token_id,
             )
             train_example_weights = [
                 _causal_prefix_example_loss_weight(
@@ -5818,6 +5860,7 @@ def main() -> None:
                 skip_leading_whitespace_targets=bool(
                     args.causal_prefix_skip_leading_whitespace_targets
                 ),
+                append_eos_token_id=causal_prefix_append_eos_token_id,
             )
             train_examples.extend(rollout_examples)
             train_example_weights.extend(
@@ -5855,6 +5898,7 @@ def main() -> None:
                 skip_leading_whitespace_targets=bool(
                     args.causal_prefix_skip_leading_whitespace_targets
                 ),
+                append_eos_token_id=causal_prefix_append_eos_token_id,
             )
             compare_count = min(len(rollout_prefix_ids), len(gold_prefix_ids))
             if compare_count > 0:
@@ -6576,6 +6620,7 @@ def main() -> None:
                             skip_leading_whitespace_targets=bool(
                                 args.causal_prefix_skip_leading_whitespace_targets
                             ),
+                            append_eos_token_id=causal_prefix_append_eos_token_id,
                         )
                         rejected_start = int(example_index)
                         rejected_end = rejected_start + target_len
@@ -6639,6 +6684,7 @@ def main() -> None:
                             skip_leading_whitespace_targets=bool(
                                 args.causal_prefix_skip_leading_whitespace_targets
                             ),
+                            append_eos_token_id=causal_prefix_append_eos_token_id,
                         )
                         rejected_start = int(example_index)
                         rejected_end = rejected_start + target_len
