@@ -2473,11 +2473,34 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
                 "0.8",
                 "--typed-value-answer-bridge-final-contrast-margin",
                 "0.04",
+                "--typed-value-answer-bridge-final-contrast-train-ablation",
             ]
         )
 
         self.assertEqual(args.typed_value_answer_bridge_final_contrast_weight, 0.8)
         self.assertEqual(args.typed_value_answer_bridge_final_contrast_margin, 0.04)
+        self.assertTrue(args.typed_value_answer_bridge_final_contrast_train_ablation)
+
+    def test_final_path_ablation_contrast_can_train_ablation_branch(self):
+        import torch
+
+        module = _load_module()
+        final_logits = torch.zeros(1, 1, 3, requires_grad=True)
+        ablated_logits = torch.zeros(1, 1, 3, requires_grad=True)
+        target_ids = torch.tensor([[1]])
+
+        loss, _metrics = module.final_path_ablation_contrastive_loss(
+            final_logits,
+            ablated_logits,
+            target_ids,
+            margin=0.5,
+            metric_prefix="typed_value_answer_bridge",
+            detach_ablation=False,
+        )
+        loss.backward()
+
+        self.assertIsNotNone(ablated_logits.grad)
+        self.assertGreater(float(ablated_logits.grad.abs().sum()), 0.0)
 
     def test_transition_state_code_ce_loss_masks_unlabelled_depths(self):
         import torch

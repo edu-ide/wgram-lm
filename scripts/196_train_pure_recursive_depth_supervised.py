@@ -805,6 +805,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--typed-value-answer-bridge-final-contrast-train-ablation",
+        action="store_true",
+        help=(
+            "Backpropagate through the typed-value bridge-off branch for final "
+            "contrast. This penalizes the shortcut path directly instead of only "
+            "raising the full-path target log-prob."
+        ),
+    )
+    parser.add_argument(
         "--core-primitive-role-value-answer-final-contrast-weight",
         type=float,
         default=0.0,
@@ -2563,6 +2572,7 @@ def final_path_ablation_contrastive_loss(
     *,
     margin: float,
     metric_prefix: str,
+    detach_ablation: bool = True,
 ):
     import torch
 
@@ -2575,7 +2585,9 @@ def final_path_ablation_contrastive_loss(
     off_logp = _sequence_target_log_probs(
         ablated_final_text_logits.unsqueeze(1),
         target_ids,
-    )[:, -1].detach()
+    )[:, -1]
+    if bool(detach_ablation):
+        off_logp = off_logp.detach()
     delta = on_logp - off_logp
     loss = torch.relu(float(margin) - delta).mean()
     return loss, {
@@ -6226,7 +6238,9 @@ def main() -> None:
                             ),
                         )
                     ):
-                        with torch.no_grad():
+                        if bool(
+                            args.typed_value_answer_bridge_final_contrast_train_ablation
+                        ):
                             typed_value_bridge_off_outputs = model(
                                 input_ids=input_ids,
                                 attention_mask=attention_mask,
@@ -6246,6 +6260,27 @@ def main() -> None:
                                 ),
                                 logit_token_indices=logit_token_indices,
                             )
+                        else:
+                            with torch.no_grad():
+                                typed_value_bridge_off_outputs = model(
+                                    input_ids=input_ids,
+                                    attention_mask=attention_mask,
+                                    token_numeric_value_ids=token_numeric_value_ids_tensor,
+                                    token_numeric_source_slot_ids=token_numeric_source_slot_ids_tensor,
+                                    token_numeric_source_slot_token_ids=token_numeric_source_slot_token_ids_tensor,
+                                    token_numeric_source_slot_mask=token_numeric_source_slot_mask_tensor,
+                                    **donor_forward_kwargs(donor_out),
+                                    core_world_model_actions=core_world_model_actions,
+                                    temporal_spatial_context=temporal_spatial_context,
+                                    disable_typed_algorithmic_value_state_answer_bridge=True,
+                                    return_core_depth_logits=not bool(
+                                        args.final_path_only_supervision
+                                    ),
+                                    return_core_depth_text_logits=not bool(
+                                        args.final_path_only_supervision
+                                    ),
+                                    logit_token_indices=logit_token_indices,
+                                )
                     if (
                         _should_apply_transition_joint_answer_bridge_contrast(
                             example_index,
@@ -7009,6 +7044,9 @@ def main() -> None:
                             target_ids,
                             margin=args.typed_value_answer_bridge_final_contrast_margin,
                             metric_prefix="typed_value_answer_bridge",
+                            detach_ablation=not bool(
+                                args.typed_value_answer_bridge_final_contrast_train_ablation
+                            ),
                         )
                     )
                     example_loss = (
