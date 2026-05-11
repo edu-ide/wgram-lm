@@ -69,6 +69,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             module.BRIDGE_OFF_MODE: [False, False, False, False],
             module.TYPED_VALUE_BRIDGE_OFF_MODE: [False, False, False, False],
             module.VOCAB_RENDERER_OFF_MODE: [False, False, False, False],
+            module.CORE_STATE_ZERO_MODE: [False, False, False, False],
             module.ANSWER_RECURRENT_OFF_MODE: [False, False, False, False],
         }
         for mode, hits in mode_hits.items():
@@ -115,6 +116,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             module.BRIDGE_OFF_MODE: [False, False, False, False],
             module.TYPED_VALUE_BRIDGE_OFF_MODE: [False, False, False, False],
             module.VOCAB_RENDERER_OFF_MODE: [False, False, False, False],
+            module.CORE_STATE_ZERO_MODE: [False, False, False, False],
             module.ANSWER_RECURRENT_OFF_MODE: [False, False, False, False],
         }
         for mode, hits in mode_hits.items():
@@ -272,6 +274,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
         self.assertIn(module.BRIDGE_OFF_MODE, module.DEFAULT_MODES)
         self.assertIn(module.TYPED_VALUE_BRIDGE_OFF_MODE, module.DEFAULT_MODES)
         self.assertIn(module.VOCAB_RENDERER_OFF_MODE, module.DEFAULT_MODES)
+        self.assertIn(module.CORE_STATE_ZERO_MODE, module.DEFAULT_MODES)
         self.assertIn(module.ANSWER_RECURRENT_OFF_MODE, module.DEFAULT_MODES)
 
     def test_run_command_creates_log_parent_directories(self):

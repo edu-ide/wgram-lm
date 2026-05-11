@@ -64,6 +64,16 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
             4,
         )
 
+    def test_zero_core_trajectory_ablation_mode_is_forwarded(self) -> None:
+        script = Path("scripts/192_eval_raw_intelligence.py").read_text(encoding="utf-8")
+
+        self.assertIn(
+            "qtrm_core_steps_(\\d+)_core_state_zero_no_evidence",
+            script,
+        )
+        self.assertIn('"zero_core_trajectory": True', script)
+        self.assertGreaterEqual(script.count("zero_core_trajectory=bool("), 4)
+
     def test_source_pointer_token_numeric_features_are_forwarded(self) -> None:
         script = Path("scripts/192_eval_raw_intelligence.py").read_text(encoding="utf-8")
 

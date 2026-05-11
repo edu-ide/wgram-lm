@@ -1184,6 +1184,34 @@ class ModelConfigTests(unittest.TestCase):
         self.assertEqual(out["z_h"].shape, (2, cfg.workspace_tokens, cfg.d_model))
         self.assertEqual(int(out["trajectory_len"].item()), 0)
 
+    def test_zero_core_trajectory_preserves_depth_count_but_removes_state_content(self):
+        import torch
+        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+
+        cfg = QTRMConfig(
+            vocab_size=64,
+            d_model=32,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=64,
+            n_prelude_layers=0,
+            n_core_layers=1,
+            n_coda_layers=0,
+            workspace_tokens=5,
+            h_cycles=1,
+            l_cycles=1,
+            outer_steps=2,
+            visual_dim=16,
+            max_visual_tokens=4,
+        )
+        model = QTRMMultimodalModel(cfg)
+        input_ids = torch.randint(0, cfg.vocab_size, (2, 7))
+
+        out = model(input_ids, zero_core_trajectory=True)
+
+        self.assertEqual(int(out["trajectory_len"].item()), cfg.outer_steps)
+        self.assertTrue(torch.allclose(out["core_depth_states"], torch.zeros_like(out["core_depth_states"])))
+
     def test_core_to_text_injection_directly_conditions_text_logits_without_coda_attention(self):
         import torch
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel

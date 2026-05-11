@@ -2796,6 +2796,7 @@ class QTRMMultimodalModel(nn.Module):
         disable_workspace_memory_gate: bool = False,
         disable_core_context: bool = False,
         disable_core_state_carry: bool = False,
+        zero_core_trajectory: bool = False,
         disable_core_role_value_delta: bool = False,
         disable_core_value_delta_code: bool = False,
         disable_typed_algorithmic_value_state: bool = False,
@@ -3731,6 +3732,10 @@ class QTRMMultimodalModel(nn.Module):
                         core_transition_order_bottleneck_info["token"]
                     ),
                 )
+                if bool(zero_core_trajectory):
+                    z_l = torch.zeros_like(z_l)
+                    z_h = torch.zeros_like(z_h)
+                    trajectory = [torch.zeros_like(state) for state in trajectory]
                 core_state_mask = core_workspace_mask
                 core_context_gate_mean = core_halt_info["context_gate_mean"]
                 core_role_value_state_logits = self._compute_core_role_value_state_logits(

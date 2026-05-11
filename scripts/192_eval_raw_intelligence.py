@@ -414,6 +414,21 @@ def mode_runtime(mode: str) -> dict[str, Any]:
             "disable_token_numeric_source_slots": True,
         }
     match = re.fullmatch(
+        r"qtrm_core_steps_(\d+)_core_state_zero_no_evidence",
+        mode,
+    )
+    if match:
+        return {
+            "mode": mode,
+            "disable_core": False,
+            "core_steps_override": int(match.group(1)),
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+            "zero_core_trajectory": True,
+        }
+    match = re.fullmatch(
         r"qtrm_core_steps_(\d+)_core_source_position_binder_off_no_evidence",
         mode,
     )
@@ -807,6 +822,7 @@ def score_case_record(
         "disable_temporal_spatial_context": disable_temporal_spatial_context,
         "temporal_spatial_context_token_count": temporal_spatial_context_token_count,
         "disable_transition_state": bool(runtime.get("disable_transition_state", False)),
+        "zero_core_trajectory": bool(runtime.get("zero_core_trajectory", False)),
         "disable_token_numeric_source_slots": bool(
             runtime.get("disable_token_numeric_source_slots", False)
         ),
@@ -1374,6 +1390,7 @@ def _answer_choice_logprob(
                 **extra,
                 **_core_carry_forward_kwargs(runtime, core_carry),
                 disable_core=bool(runtime.get("disable_core", False)),
+                zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                 enable_core_halt=_runtime_enable_core_halt(runtime),
                 disable_qtrm_residual=bool(runtime.get("disable_qtrm_residual", False)),
                 disable_qtrm_residual_gate=bool(
@@ -1559,6 +1576,7 @@ def _answer_choice_causal_logprob(
                     **extra,
                     **_core_carry_forward_kwargs(runtime, core_carry),
                     disable_core=bool(runtime.get("disable_core", False)),
+                    zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                     enable_core_halt=_runtime_enable_core_halt(runtime),
                     disable_qtrm_residual=bool(
                         runtime.get("disable_qtrm_residual", False)
@@ -1878,6 +1896,7 @@ def _generate_case(
                     **extra,
                     **_core_carry_forward_kwargs(runtime, core_carry),
                     disable_core=bool(runtime.get("disable_core", False)),
+                    zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                     enable_core_halt=_runtime_enable_core_halt(runtime),
                     disable_qtrm_residual=bool(
                         runtime.get("disable_qtrm_residual", False)
@@ -2089,6 +2108,7 @@ def _beam_generate_case(
                         token_numeric_source_slot_mask=source_slot_mask,
                         **extra,
                         disable_core=bool(runtime.get("disable_core", False)),
+                        zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                         enable_core_halt=_runtime_enable_core_halt(runtime),
                         disable_qtrm_residual=bool(
                             runtime.get("disable_qtrm_residual", False)
