@@ -130,6 +130,15 @@ def _case_requires_strict_exact_answer(case: dict[str, Any]) -> bool:
     return bool(labels & strict_labels)
 
 
+def _case_gold_answer(case: dict[str, Any]) -> str:
+    for key in ("answer", "chosen"):
+        value = case.get(key)
+        if value is not None and str(value).strip():
+            return str(value)
+    aliases = [str(alias) for alias in case.get("answer_aliases", []) if str(alias).strip()]
+    return aliases[0] if aliases else ""
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run no-retrieval raw-intelligence QTRM eval modes."
@@ -624,6 +633,21 @@ def mode_runtime(mode: str) -> dict[str, Any]:
             "disable_answer_state_loop_next_token_decoder": True,
         }
     match = re.fullmatch(
+        r"qtrm_core_steps_(\d+)_answer_free_transformer_latent_off_no_evidence",
+        mode,
+    )
+    if match:
+        return {
+            "mode": mode,
+            "disable_core": False,
+            "core_steps_override": int(match.group(1)),
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+            "disable_answer_state_loop_free_transformer_latent": True,
+        }
+    match = re.fullmatch(
         r"qtrm_core_steps_(\d+)_answer_talker_off_no_evidence",
         mode,
     )
@@ -779,6 +803,7 @@ def score_case_record(
         expected_unknown=bool(case.get("expected_unknown", False)),
         strict_exact=_case_requires_strict_exact_answer(case),
     )
+    canonical_completion = score.get("canonical_answer", "")
     disable_temporal_spatial_context = bool(
         runtime.get("disable_temporal_spatial_context", False)
     )
@@ -802,9 +827,11 @@ def score_case_record(
         "serial_trace_length_estimate": case.get("serial_trace_length_estimate"),
         "question": case.get("question", ""),
         "prompt": case.get("prompt") or case.get("question", ""),
+        "gold_answer": _case_gold_answer(case),
         "answer_aliases": case.get("answer_aliases", []),
         "expected_unknown": bool(case.get("expected_unknown", False)),
         "completion": completion,
+        "canonical_completion": canonical_completion,
         "generated_tokens": int(generated_tokens),
         "core_steps_requested": runtime.get("core_steps_override"),
         "enable_core_halt": _runtime_enable_core_halt(runtime),
@@ -864,6 +891,9 @@ def score_case_record(
         ),
         "disable_answer_state_loop_next_token_decoder": bool(
             runtime.get("disable_answer_state_loop_next_token_decoder", False)
+        ),
+        "disable_answer_state_loop_free_transformer_latent": bool(
+            runtime.get("disable_answer_state_loop_free_transformer_latent", False)
         ),
         "disable_answer_state_loop_talker": bool(
             runtime.get("disable_answer_state_loop_talker", False)
@@ -1447,6 +1477,9 @@ def _answer_choice_logprob(
                 disable_answer_state_loop_next_token_decoder=bool(
                     runtime.get("disable_answer_state_loop_next_token_decoder", False)
                 ),
+                disable_answer_state_loop_free_transformer_latent=bool(
+                    runtime.get("disable_answer_state_loop_free_transformer_latent", False)
+                ),
                 disable_answer_state_loop_talker=bool(
                     runtime.get("disable_answer_state_loop_talker", False)
                 ),
@@ -1635,6 +1668,9 @@ def _answer_choice_causal_logprob(
                     ),
                     disable_answer_state_loop_next_token_decoder=bool(
                         runtime.get("disable_answer_state_loop_next_token_decoder", False)
+                    ),
+                    disable_answer_state_loop_free_transformer_latent=bool(
+                        runtime.get("disable_answer_state_loop_free_transformer_latent", False)
                     ),
                     disable_answer_state_loop_talker=bool(
                         runtime.get("disable_answer_state_loop_talker", False)
@@ -2169,6 +2205,9 @@ def _beam_generate_case(
                         ),
                         disable_answer_state_loop_next_token_decoder=bool(
                             runtime.get("disable_answer_state_loop_next_token_decoder", False)
+                        ),
+                        disable_answer_state_loop_free_transformer_latent=bool(
+                            runtime.get("disable_answer_state_loop_free_transformer_latent", False)
                         ),
                         disable_answer_state_loop_talker=bool(
                             runtime.get("disable_answer_state_loop_talker", False)

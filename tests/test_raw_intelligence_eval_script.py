@@ -64,6 +64,33 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
             4,
         )
 
+    def test_answer_next_token_decoder_ablation_mode_is_forwarded(self) -> None:
+        script = Path("scripts/192_eval_raw_intelligence.py").read_text(encoding="utf-8")
+
+        self.assertIn(
+            "qtrm_core_steps_(\\d+)_answer_next_token_decoder_off_no_evidence",
+            script,
+        )
+        self.assertIn(
+            '"disable_answer_state_loop_next_token_decoder": True',
+            script,
+        )
+        self.assertGreaterEqual(
+            script.count("disable_answer_state_loop_next_token_decoder=bool("),
+            4,
+        )
+
+    def test_mode_runtime_maps_answer_next_token_decoder_off(self) -> None:
+        module = _load_eval_module()
+
+        runtime = module.mode_runtime(
+            "qtrm_core_steps_8_answer_next_token_decoder_off_no_evidence"
+        )
+
+        self.assertFalse(runtime["disable_core"])
+        self.assertEqual(runtime["core_steps_override"], 8)
+        self.assertTrue(runtime["disable_answer_state_loop_next_token_decoder"])
+
     def test_zero_core_trajectory_ablation_mode_is_forwarded(self) -> None:
         script = Path("scripts/192_eval_raw_intelligence.py").read_text(encoding="utf-8")
 
@@ -206,6 +233,29 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
 
         self.assertTrue(record["hit"])
         self.assertEqual(record["match_type"], "normalized_contains")
+
+    def test_generation_record_keeps_gold_answer_separate_from_completion(self) -> None:
+        module = _load_eval_module()
+
+        record = module.score_case_record(
+            {
+                "id": "case",
+                "category": "mixed_list_arithmetic",
+                "task_family": "mixed_list_arithmetic",
+                "answer": "600054",
+                "chosen": "600054",
+                "answer_aliases": ["600054"],
+            },
+            mode="qtrm_core_steps_8_no_evidence",
+            completion="00000000",
+            runtime={"memoryos_used": False, "retrieval_used": False},
+            generated_tokens=8,
+        )
+
+        self.assertEqual(record["gold_answer"], "600054")
+        self.assertEqual(record["canonical_completion"], "00000000")
+        self.assertEqual(record["canonical_answer"], "00000000")
+        self.assertFalse(record["hit"])
 
 
 if __name__ == "__main__":

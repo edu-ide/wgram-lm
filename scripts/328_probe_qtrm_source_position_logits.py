@@ -2,10 +2,17 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
 from typing import Any
+
+KNOWN_CHECKPOINT_SHA256 = {
+    "local_eval/research_gate_runner/primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt": (
+        "9a9204a9b01001713772294afcf30ae5753b0e3cd3877adabb83918caf52747d"
+    ),
+}
 
 
 def _load_raw_eval_module():
@@ -92,6 +99,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
 def load_jsonl(path: str | Path, *, max_cases: int = 0) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with Path(path).open("r", encoding="utf-8") as handle:
@@ -103,6 +114,145 @@ def load_jsonl(path: str | Path, *, max_cases: int = 0) -> list[dict[str, Any]]:
             if int(max_cases) > 0 and len(rows) >= int(max_cases):
                 break
     return rows
+
+
+def resolve_checkpoint_path(path: str | Path, *, root: Path) -> Path:
+    checkpoint = Path(path)
+    if checkpoint.is_absolute():
+        return checkpoint
+    return root / checkpoint
+
+
+def missing_checkpoint_base_chain(
+    checkpoint: str | Path,
+    *,
+    root: Path,
+    load_state=None,
+) -> list[str]:
+    return [
+        str(issue["path"])
+        for issue in checkpoint_base_chain_issues(
+            checkpoint,
+            root=root,
+            load_state=load_state,
+        )
+        if issue["issue"] == "missing"
+    ]
+
+
+def _known_checkpoint_sha256(path: Path, *, root: Path) -> str:
+    candidates = [str(path)]
+    try:
+        candidates.append(str(path.relative_to(root)))
+    except ValueError:
+        pass
+    for candidate in candidates:
+        expected = KNOWN_CHECKPOINT_SHA256.get(candidate)
+        if expected:
+            return expected
+    return ""
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def checkpoint_base_chain_issues(
+    checkpoint: str | Path,
+    *,
+    root: Path,
+    load_state=None,
+) -> list[dict[str, str]]:
+    if load_state is None:
+        import torch
+
+        def load_state(path: Path):
+            return torch.load(path, map_location="cpu", weights_only=False)
+
+    issues: list[dict[str, str]] = []
+    seen: set[str] = set()
+    current = Path(checkpoint)
+    while True:
+        resolved = resolve_checkpoint_path(current, root=root)
+        resolved_key = str(resolved)
+        if resolved_key in seen:
+            break
+        seen.add(resolved_key)
+        if not resolved.exists():
+            issues.append({"issue": "missing", "path": resolved_key})
+            break
+        expected_sha256 = _known_checkpoint_sha256(resolved, root=root)
+        if expected_sha256:
+            actual_sha256 = _sha256_file(resolved)
+            if actual_sha256 != expected_sha256:
+                issues.append(
+                    {
+                        "issue": "sha256_mismatch",
+                        "path": resolved_key,
+                        "expected_sha256": expected_sha256,
+                        "actual_sha256": actual_sha256,
+                    }
+                )
+                break
+        state = load_state(resolved)
+        base_checkpoint = ""
+        if isinstance(state, dict):
+            base_checkpoint = str(state.get("base_checkpoint") or "").strip()
+        if not base_checkpoint:
+            break
+        current = Path(base_checkpoint)
+    return issues
+
+
+def requested_checkpoint_chain_issues(args: argparse.Namespace, *, root: Path) -> list[dict[str, str]]:
+    issues: list[dict[str, str]] = []
+    for checkpoint in (args.base_checkpoint, args.checkpoint):
+        if not checkpoint:
+            continue
+        for issue in checkpoint_base_chain_issues(checkpoint, root=root):
+            if issue not in issues:
+                issues.append(issue)
+    return issues
+
+
+def checkpoint_chain_missing_report(
+    args: argparse.Namespace,
+    *,
+    issues: list[dict[str, str]],
+) -> dict[str, Any]:
+    missing = [issue["path"] for issue in issues if issue["issue"] == "missing"]
+    decision = (
+        "checkpoint_chain_missing"
+        if missing
+        else "checkpoint_chain_sha256_mismatch"
+    )
+    report = {
+        "decision": decision,
+        "accepted": False,
+        "target_level": "L2 diagnostic: QTRM source-position logits replace oracle positions",
+        "major_bottleneck": "checkpoint hygiene: trainable-delta base chain missing",
+        "config": str(args.config),
+        "checkpoint": str(args.checkpoint),
+        "base_checkpoint": args.base_checkpoint,
+        "cases": str(args.cases),
+        "missing_base_checkpoints": missing,
+        "checkpoint_chain_issues": issues,
+        "next_action": (
+            "restore the exact checkpoint by sha256 or materialize a "
+            "self-contained checkpoint after replayed gate acceptance"
+        ),
+    }
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return report
 
 
 def normalize_answer(value: Any) -> str:
@@ -546,6 +696,10 @@ def _build_decision(summary: dict[str, dict[str, Any]]) -> dict[str, Any]:
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    issues = requested_checkpoint_chain_issues(args, root=repo_root())
+    if issues:
+        return checkpoint_chain_missing_report(args, issues=issues)
+
     import torch
     from transformers import AutoTokenizer
 

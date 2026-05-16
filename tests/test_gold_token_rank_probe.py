@@ -75,19 +75,25 @@ class GoldTokenRankProbeTests(unittest.TestCase):
 
         kwargs = module._model_disable_kwargs_from_runtime(
             {
+                "zero_core_trajectory": True,
                 "disable_core": True,
                 "disable_core_source_position_binder": True,
                 "disable_core_primitive_role_value_executor": True,
                 "disable_core_role_value_vocab_renderer": True,
+                "disable_typed_algorithmic_value_state_answer_bridge": True,
                 "disable_answer_state_loop_halt_gate": True,
+                "disable_answer_state_loop_free_transformer_latent": True,
             }
         )
 
+        self.assertTrue(kwargs["zero_core_trajectory"])
         self.assertTrue(kwargs["disable_core"])
         self.assertTrue(kwargs["disable_core_source_position_binder"])
         self.assertTrue(kwargs["disable_core_primitive_role_value_executor"])
         self.assertTrue(kwargs["disable_core_role_value_vocab_renderer"])
+        self.assertTrue(kwargs["disable_typed_algorithmic_value_state_answer_bridge"])
         self.assertTrue(kwargs["disable_answer_state_loop_halt_gate"])
+        self.assertTrue(kwargs["disable_answer_state_loop_free_transformer_latent"])
         self.assertFalse(kwargs["disable_core_role_value_answer_bridge"])
 
     def test_parser_exposes_base_checkpoint_for_delta_probe(self):
@@ -109,6 +115,25 @@ class GoldTokenRankProbeTests(unittest.TestCase):
         )
 
         self.assertEqual(args.base_checkpoint, "base.pt")
+
+    def test_target_token_ids_can_skip_leading_whitespace_and_append_eos(self):
+        module = _load_module()
+
+        class TinyTokenizer:
+            eos_token_id = 99
+
+            def encode(self, text, add_special_tokens=False):
+                table = {" ": 0, "6": 6, "0": 10}
+                return [table[ch] for ch in text]
+
+        token_ids = module._target_token_ids(
+            TinyTokenizer(),
+            "600",
+            skip_leading_whitespace_targets=True,
+            append_eos_target=True,
+        )
+
+        self.assertEqual(token_ids, [6, 10, 10, 99])
 
 
 if __name__ == "__main__":

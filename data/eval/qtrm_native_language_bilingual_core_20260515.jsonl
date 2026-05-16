@@ -1,0 +1,12 @@
+{"prompt": "Why should evidence be checked before trusting a claim?", "expected_keyword_groups": [["evidence", "support"], ["claim"], ["trust", "trustworthy"]]}
+{"prompt": "How can short sentences make writing clearer?", "expected_keyword_groups": [["sentences", "sentence"], ["writing", "reader"], ["clear", "clearer", "confusing"]]}
+{"prompt": "What should an answer do when facts are uncertain?", "expected_keyword_groups": [["facts", "fact", "information"], ["uncertain", "uncertainty", "missing", "gap"], ["guess", "avoid"]]}
+{"prompt": "Why does the date of a source matter?", "expected_keyword_groups": [["date", "time", "old"], ["source", "fact"], ["current", "reliability", "reliable", "changes", "checked"]]}
+{"prompt": "How can a comparison help choose between two claims?", "expected_keyword_groups": [["comparison", "compare"], ["claims"], ["support", "stronger", "differ"]]}
+{"prompt": "What makes a repeated test useful?", "expected_keyword_groups": [["repeated", "repeating", "again"], ["test", "experiment"], ["stable", "fair", "reliable"]]}
+{"prompt": "주장을 믿기 전에 왜 근거를 확인해야 하나요?", "expected_keyword_groups": [["주장"], ["근거"], ["신뢰", "믿"]]}
+{"prompt": "짧은 문장은 글을 어떻게 더 분명하게 만드나요?", "expected_keyword_groups": [["문장", "생각"], ["글", "뜻"], ["분명", "쉽게"]]}
+{"prompt": "사실이 불확실할 때 답변은 어떻게 해야 하나요?", "expected_keyword_groups": [["사실", "정보", "근거", "거짓 확신"], ["불확실", "부족", "약", "아는 척"], ["추측", "피해야", "단정", "확인"]]}
+{"prompt": "출처의 날짜는 왜 중요한가요?", "expected_keyword_groups": [["날짜"], ["출처"], ["현재", "맞는지"]]}
+{"prompt": "두 주장을 비교하면 무엇을 알 수 있나요?", "expected_keyword_groups": [["주장", "설명"], ["비교", "차이"], ["근거", "사실", "판단"]]}
+{"prompt": "반복 실험은 왜 결과 판단에 도움이 되나요?", "expected_keyword_groups": [["반복"], ["실험", "측정"], ["안정", "우연", "다시", "패턴"]]}

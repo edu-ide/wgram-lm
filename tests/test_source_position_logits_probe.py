@@ -1,6 +1,9 @@
 from pathlib import Path
+import hashlib
 import importlib.util
+import json
 from types import SimpleNamespace
+from tempfile import TemporaryDirectory
 import unittest
 
 import torch
@@ -210,6 +213,104 @@ class SourcePositionLogitsProbeTests(unittest.TestCase):
         self.assertTrue(cfg.model.core_source_position_binder_state_straight_through)
         self.assertTrue(cfg.model.core_source_position_binder_source_slots_only)
         self.assertTrue(cfg.model.core_source_position_binder_raw_source_slots_enabled)
+
+    def test_missing_checkpoint_base_chain_reports_relative_base(self):
+        module = _load_module()
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            checkpoint = root / "child.pt"
+            torch.save({"base_checkpoint": "missing_base.pt"}, checkpoint)
+
+            missing = module.missing_checkpoint_base_chain(checkpoint, root=root)
+
+            self.assertEqual(missing, [str(root / "missing_base.pt")])
+
+    def test_checkpoint_base_chain_issues_reports_known_sha_mismatch(self):
+        module = _load_module()
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            relative = Path(
+                "local_eval/research_gate_runner/"
+                "primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt"
+            )
+            checkpoint = root / relative
+            checkpoint.parent.mkdir(parents=True)
+            checkpoint.write_bytes(b"wrong checkpoint bytes")
+            load_calls = []
+
+            def load_state(path):
+                load_calls.append(path)
+                return {}
+
+            issues = module.checkpoint_base_chain_issues(
+                relative,
+                root=root,
+                load_state=load_state,
+            )
+
+            self.assertEqual("sha256_mismatch", issues[0]["issue"])
+            self.assertEqual(str(checkpoint), issues[0]["path"])
+            self.assertEqual([], load_calls)
+
+    def test_checkpoint_base_chain_issues_continues_after_known_sha_match(self):
+        module = _load_module()
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            relative = Path(
+                "local_eval/research_gate_runner/"
+                "primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt"
+            )
+            checkpoint = root / relative
+            checkpoint.parent.mkdir(parents=True)
+            checkpoint.write_bytes(b"known checkpoint bytes")
+            expected = hashlib.sha256(b"known checkpoint bytes").hexdigest()
+            original = dict(module.KNOWN_CHECKPOINT_SHA256)
+            module.KNOWN_CHECKPOINT_SHA256[str(relative)] = expected
+            try:
+                issues = module.checkpoint_base_chain_issues(
+                    relative,
+                    root=root,
+                    load_state=lambda path: {"base_checkpoint": "missing_base.pt"},
+                )
+            finally:
+                module.KNOWN_CHECKPOINT_SHA256.clear()
+                module.KNOWN_CHECKPOINT_SHA256.update(original)
+
+            self.assertEqual(
+                [{"issue": "missing", "path": str(root / "missing_base.pt")}],
+                issues,
+            )
+
+    def test_run_reports_checkpoint_chain_missing_before_heavy_probe_setup(self):
+        module = _load_module()
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            checkpoint = root / "child.pt"
+            out = root / "probe_report.json"
+            torch.save({"base_checkpoint": "missing_base.pt"}, checkpoint)
+            args = module.build_arg_parser().parse_args(
+                [
+                    "--config",
+                    "config.yaml",
+                    "--checkpoint",
+                    str(checkpoint),
+                    "--cases",
+                    str(root / "cases.jsonl"),
+                    "--out",
+                    str(out),
+                ]
+            )
+
+            report = module.run(args)
+
+            self.assertEqual("checkpoint_chain_missing", report["decision"])
+            self.assertFalse(report["accepted"])
+            self.assertEqual(
+                [str(module.repo_root() / "missing_base.pt")],
+                report["missing_base_checkpoints"],
+            )
+            written = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(report["decision"], written["decision"])
 
 
 if __name__ == "__main__":

@@ -71,6 +71,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             module.VOCAB_RENDERER_OFF_MODE: [False, False, False, False],
             module.CORE_STATE_ZERO_MODE: [False, False, False, False],
             module.ANSWER_RECURRENT_OFF_MODE: [False, False, False, False],
+            module.ANSWER_NEXT_TOKEN_DECODER_OFF_MODE: [False, False, False, False],
         }
         for mode, hits in mode_hits.items():
             for index, hit in enumerate(hits):
@@ -97,6 +98,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             min_typed_value_bridge_drop=0.10,
             min_vocab_renderer_drop=0.10,
             min_answer_recurrent_drop=0.10,
+            min_answer_next_token_decoder_drop=0.10,
         )
 
         self.assertTrue(report["accepted"])
@@ -118,6 +120,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             module.VOCAB_RENDERER_OFF_MODE: [False, False, False, False],
             module.CORE_STATE_ZERO_MODE: [False, False, False, False],
             module.ANSWER_RECURRENT_OFF_MODE: [False, False, False, False],
+            module.ANSWER_NEXT_TOKEN_DECODER_OFF_MODE: [False, False, False, False],
         }
         for mode, hits in mode_hits.items():
             for index, hit in enumerate(hits):
@@ -144,6 +147,7 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
             min_typed_value_bridge_drop=0.10,
             min_vocab_renderer_drop=0.10,
             min_answer_recurrent_drop=0.10,
+            min_answer_next_token_decoder_drop=0.10,
         )
 
         self.assertFalse(report["accepted"])
@@ -276,6 +280,106 @@ class MixedNoncopyLmGateTests(unittest.TestCase):
         self.assertIn(module.VOCAB_RENDERER_OFF_MODE, module.DEFAULT_MODES)
         self.assertIn(module.CORE_STATE_ZERO_MODE, module.DEFAULT_MODES)
         self.assertIn(module.ANSWER_RECURRENT_OFF_MODE, module.DEFAULT_MODES)
+        self.assertIn(module.ANSWER_NEXT_TOKEN_DECODER_OFF_MODE, module.DEFAULT_MODES)
+
+    def test_mode_default_is_none(self):
+        module = load_module()
+
+        args = module.build_arg_parser().parse_args(
+            [
+                "--config",
+                "cfg.yaml",
+                "--checkpoint",
+                "ckpt.pt",
+                "--cases",
+                "cases.jsonl",
+                "--out-dir",
+                "out",
+            ]
+        )
+
+        self.assertIsNone(args.mode)
+
+    def test_mode_override_replaces_default_modes(self):
+        module = load_module()
+
+        args = module.build_arg_parser().parse_args(
+            [
+                "--config",
+                "cfg.yaml",
+                "--checkpoint",
+                "ckpt.pt",
+                "--cases",
+                "cases.jsonl",
+                "--out-dir",
+                "out",
+                "--mode",
+                module.FULL_MODE,
+            ]
+        )
+
+        self.assertEqual(args.mode, [module.FULL_MODE])
+
+    def test_build_report_rejects_without_next_token_decoder_drop(self):
+        module = load_module()
+        rows = []
+        mode_hits = {
+            module.DONOR_MODE: [False, False, False, False],
+            module.CORE_OFF_MODE: [False, False, False, False],
+            module.FULL_MODE: [True, True, False, False],
+            module.PRIMITIVE_OFF_MODE: [False, False, False, False],
+            module.SOURCE_SLOT_OFF_MODE: [False, False, False, False],
+            module.SOURCE_BINDER_OFF_MODE: [False, False, False, False],
+            module.BRIDGE_OFF_MODE: [False, False, False, False],
+            module.TYPED_VALUE_BRIDGE_OFF_MODE: [False, False, False, False],
+            module.VOCAB_RENDERER_OFF_MODE: [False, False, False, False],
+            module.CORE_STATE_ZERO_MODE: [False, False, False, False],
+            module.ANSWER_RECURRENT_OFF_MODE: [False, False, False, False],
+            module.ANSWER_NEXT_TOKEN_DECODER_OFF_MODE: [True, True, False, False],
+        }
+        for mode, hits in mode_hits.items():
+            for index, hit in enumerate(hits):
+                rows.append(
+                    {
+                        "id": f"{mode}-{index}",
+                        "mode": mode,
+                        "normalized_exact": hit,
+                    }
+                )
+
+        report = module.build_report(
+            rows,
+            out_dir=Path("out"),
+            commands=[],
+            exit_codes=[],
+            min_full_accuracy=0.25,
+            min_donor_margin=0.10,
+            min_core_off_margin=0.10,
+            min_primitive_drop=0.10,
+            min_source_slot_drop=0.10,
+            min_source_binder_drop=0.10,
+            min_bridge_drop=0.10,
+            min_typed_value_bridge_drop=0.10,
+            min_vocab_renderer_drop=0.10,
+            min_answer_recurrent_drop=0.10,
+            min_answer_next_token_decoder_drop=0.10,
+        )
+
+        self.assertFalse(report["accepted"])
+        self.assertIn(
+            "answer_next_token_decoder_off_drop_below_min",
+            report["reject_reasons"],
+        )
+
+    def test_default_config_uses_orthodox_core_state_only_answer_loop(self):
+        module = load_module()
+        config_text = Path(module.DEFAULT_CONFIG).read_text(encoding="utf-8")
+
+        self.assertIn("core_state_only", module.DEFAULT_CONFIG)
+        self.assertRegex(
+            config_text,
+            r"answer_state_loop_core_state_only_enabled:\s*true",
+        )
 
     def test_run_command_creates_log_parent_directories(self):
         module = load_module()

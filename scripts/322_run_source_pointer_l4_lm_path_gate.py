@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -23,6 +24,11 @@ DEFAULT_OUT_DIR = (
     "/mnt/nvme1n1p2/qtrm-runs/research_gate_runner/"
     "qtrm_l4_source_pointer_lm_path_s080"
 )
+KNOWN_CHECKPOINT_SHA256 = {
+    "local_eval/research_gate_runner/primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt": (
+        "9a9204a9b01001713772294afcf30ae5753b0e3cd3877adabb83918caf52747d"
+    ),
+}
 FULL_MODE = "qtrm_core_steps_8_no_evidence"
 DONOR_MODE = "donor_only_no_evidence"
 CORE_OFF_MODE = "qtrm_core_off_no_evidence"
@@ -80,6 +86,98 @@ def load_jsonl(path: str | Path) -> list[dict[str, Any]]:
             if line:
                 rows.append(json.loads(line))
     return rows
+
+
+def resolve_checkpoint_path(path: str | Path, *, root: Path) -> Path:
+    checkpoint = Path(path)
+    if checkpoint.is_absolute():
+        return checkpoint
+    return root / checkpoint
+
+
+def _known_checkpoint_sha256(path: Path, *, root: Path) -> str:
+    candidates = [str(path)]
+    try:
+        candidates.append(str(path.relative_to(root)))
+    except ValueError:
+        pass
+    for candidate in candidates:
+        expected = KNOWN_CHECKPOINT_SHA256.get(candidate)
+        if expected:
+            return expected
+    return ""
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def checkpoint_base_chain_issues(
+    checkpoint: str | Path,
+    *,
+    root: Path,
+    load_state=None,
+) -> list[dict[str, str]]:
+    if load_state is None:
+        import torch
+
+        def load_state(path: Path):
+            return torch.load(path, map_location="cpu", weights_only=False)
+
+    issues: list[dict[str, str]] = []
+    seen: set[str] = set()
+    current = Path(checkpoint)
+    while True:
+        resolved = resolve_checkpoint_path(current, root=root)
+        resolved_key = str(resolved)
+        if resolved_key in seen:
+            break
+        seen.add(resolved_key)
+        if not resolved.exists():
+            issues.append({"issue": "missing", "path": resolved_key})
+            break
+        expected_sha256 = _known_checkpoint_sha256(resolved, root=root)
+        if expected_sha256:
+            actual_sha256 = _sha256_file(resolved)
+            if actual_sha256 != expected_sha256:
+                issues.append(
+                    {
+                        "issue": "sha256_mismatch",
+                        "path": resolved_key,
+                        "expected_sha256": expected_sha256,
+                        "actual_sha256": actual_sha256,
+                    }
+                )
+                break
+        state = load_state(resolved)
+        base_checkpoint = ""
+        if isinstance(state, dict):
+            base_checkpoint = str(state.get("base_checkpoint") or "").strip()
+        if not base_checkpoint:
+            break
+        current = Path(base_checkpoint)
+    return issues
+
+
+def missing_checkpoint_base_chain(
+    checkpoint: str | Path,
+    *,
+    root: Path,
+    load_state=None,
+) -> list[str]:
+    return [
+        str(issue["path"])
+        for issue in checkpoint_base_chain_issues(
+            checkpoint,
+            root=root,
+            load_state=load_state,
+        )
+        if issue["issue"] == "missing"
+    ]
 
 
 def summarize_generation(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -608,6 +706,36 @@ def run_gate(args: argparse.Namespace) -> dict[str, Any]:
         )
         return report
 
+    checkpoint_chain_issues = checkpoint_base_chain_issues(args.init_checkpoint, root=root)
+    if checkpoint_chain_issues:
+        missing = [
+            issue["path"]
+            for issue in checkpoint_chain_issues
+            if issue["issue"] == "missing"
+        ]
+        decision = (
+            "checkpoint_chain_missing"
+            if missing
+            else "checkpoint_chain_sha256_mismatch"
+        )
+        report.update(
+            {
+                "decision": decision,
+                "accepted": False,
+                "missing_base_checkpoints": missing,
+                "checkpoint_chain_issues": checkpoint_chain_issues,
+                "next_action": (
+                    "restore or materialize the accepted L3 checkpoint chain "
+                    "before L4 LM path training/eval"
+                ),
+            }
+        )
+        (out_dir / "report.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        return report
+
     report["exit_codes"] = {}
     final_chunk_checkpoint: Path | None = None
     for chunk in train_plan:
@@ -938,7 +1066,13 @@ def main() -> int:
     return (
         0
         if report.get("decision")
-        not in {"train_failed", "eval_failed", "source_copy_probe_failed"}
+        not in {
+            "checkpoint_chain_missing",
+            "checkpoint_chain_sha256_mismatch",
+            "train_failed",
+            "eval_failed",
+            "source_copy_probe_failed",
+        }
         else 1
     )
 

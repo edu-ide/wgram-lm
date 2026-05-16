@@ -41,6 +41,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument(
+        "--skip-leading-whitespace-targets",
+        action="store_true",
+        help=(
+            "Probe the same stripped-answer target sequence used by "
+            "--causal-prefix-skip-leading-whitespace-targets in training."
+        ),
+    )
+    parser.add_argument(
+        "--append-eos-target",
+        action="store_true",
+        help="Append tokenizer.eos_token_id to the probed target sequence.",
+    )
+    parser.add_argument(
         "--mode",
         action="append",
         default=None,
@@ -64,13 +77,28 @@ def _gold_answer(case: dict[str, Any]) -> str:
     raise ValueError(f"case has no gold answer: {case.get('id')}")
 
 
-def _target_token_ids(tokenizer, answer: str) -> list[int]:
-    token_ids = tokenizer.encode(f" {answer}", add_special_tokens=False)
+def _target_token_ids(
+    tokenizer,
+    answer: str,
+    *,
+    skip_leading_whitespace_targets: bool = False,
+    append_eos_target: bool = False,
+) -> list[int]:
+    if bool(skip_leading_whitespace_targets):
+        token_ids = tokenizer.encode(str(answer).strip(), add_special_tokens=False)
+    else:
+        token_ids = tokenizer.encode(f" {answer}", add_special_tokens=False)
     if not token_ids:
         token_ids = tokenizer.encode(answer, add_special_tokens=False)
     if not token_ids:
         raise ValueError(f"answer has no tokens: {answer!r}")
-    return [int(token_id) for token_id in token_ids]
+    out = [int(token_id) for token_id in token_ids]
+    eos_token_id = getattr(tokenizer, "eos_token_id", None)
+    if bool(append_eos_target) and eos_token_id is not None:
+        eos_id = int(eos_token_id)
+        if eos_id >= 0 and (not out or out[-1] != eos_id):
+            out.append(eos_id)
+    return out
 
 
 def _first_content_token_index(tokens: list[str]) -> int:
@@ -149,6 +177,7 @@ def _select_position_top_tokens(
 
 def _model_disable_kwargs_from_runtime(runtime: dict[str, Any]) -> dict[str, bool]:
     return {
+        "zero_core_trajectory": bool(runtime.get("zero_core_trajectory", False)),
         "disable_core": bool(runtime.get("disable_core", False)),
         "disable_qtrm_residual": bool(runtime.get("disable_qtrm_residual", False)),
         "disable_qtrm_residual_gate": bool(
@@ -178,6 +207,12 @@ def _model_disable_kwargs_from_runtime(runtime: dict[str, Any]) -> dict[str, boo
         "disable_answer_state_loop_recurrent": bool(
             runtime.get("disable_answer_state_loop_recurrent", False)
         ),
+        "disable_typed_algorithmic_value_state_answer_bridge": bool(
+            runtime.get(
+                "disable_typed_algorithmic_value_state_answer_bridge",
+                False,
+            )
+        ),
         "disable_answer_state_loop_selective_context": bool(
             runtime.get("disable_answer_state_loop_selective_context", False)
         ),
@@ -195,6 +230,9 @@ def _model_disable_kwargs_from_runtime(runtime: dict[str, Any]) -> dict[str, boo
         ),
         "disable_answer_state_loop_next_token_decoder": bool(
             runtime.get("disable_answer_state_loop_next_token_decoder", False)
+        ),
+        "disable_answer_state_loop_free_transformer_latent": bool(
+            runtime.get("disable_answer_state_loop_free_transformer_latent", False)
         ),
         "disable_transition_state_joint_answer_bridge": bool(
             runtime.get("disable_transition_state_joint_answer_bridge", False)
@@ -288,7 +326,14 @@ def run(args: argparse.Namespace) -> list[dict[str, Any]]:
                 for case in cases:
                     prompt = str(case.get("prompt") or case.get("question") or "")
                     answer = _gold_answer(case)
-                    target_ids = _target_token_ids(tokenizer, answer)
+                    target_ids = _target_token_ids(
+                        tokenizer,
+                        answer,
+                        skip_leading_whitespace_targets=bool(
+                            args.skip_leading_whitespace_targets
+                        ),
+                        append_eos_target=bool(args.append_eos_target),
+                    )
                     prompt_inputs = raw_eval._prepare_inputs(
                         tokenizer,
                         prompt,

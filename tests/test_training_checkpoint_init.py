@@ -1,7 +1,19 @@
 import tempfile
 import unittest
+from pathlib import Path
+import importlib.util
+from types import SimpleNamespace
 
 import torch
+
+
+def _load_materialize_module():
+    path = Path("scripts/329_materialize_qtrm_checkpoint_stack.py")
+    spec = importlib.util.spec_from_file_location("materialize_qtrm_checkpoint_stack", path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 class TrainingCheckpointInitTests(unittest.TestCase):
@@ -37,6 +49,96 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("weight", missing)
         self.assertEqual(unexpected, [])
         self.assertTrue(torch.equal(model.weight, original))
+
+    def test_materialize_checkpoint_stack_flattens_trainable_delta_chain(self):
+        module = _load_materialize_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base = root / "base.pt"
+            delta = root / "delta.pt"
+            out = root / "materialized.pt"
+            base_model = torch.nn.Linear(2, 2)
+            with torch.no_grad():
+                base_model.weight.fill_(1.0)
+                base_model.bias.fill_(2.0)
+            torch.save({"model": base_model.state_dict()}, base)
+            torch.save(
+                {
+                    "model": {"weight": torch.full_like(base_model.weight, 3.0)},
+                    "base_checkpoint": str(base),
+                    "format": "qtrm_trainable_delta_v1",
+                },
+                delta,
+            )
+            model = torch.nn.Linear(2, 2)
+
+            report = module.materialize_checkpoint_stack(
+                model=model,
+                checkpoint=delta,
+                out=out,
+                map_location="cpu",
+            )
+
+            self.assertEqual([str(delta), str(base)], report["checkpoint_stack"])
+            materialized = torch.load(out, map_location="cpu", weights_only=False)
+            self.assertNotIn("base_checkpoint", materialized)
+            self.assertEqual("qtrm_self_contained_checkpoint_v1", materialized["format"])
+            self.assertTrue(
+                torch.equal(
+                    materialized["model"]["weight"],
+                    torch.full_like(base_model.weight, 3.0),
+                )
+            )
+            self.assertTrue(torch.equal(materialized["model"]["bias"], base_model.bias))
+
+    def test_checkpoint_stack_paths_rejects_missing_base(self):
+        module = _load_materialize_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            delta = root / "delta.pt"
+            torch.save({"model": {}, "base_checkpoint": str(root / "missing.pt")}, delta)
+
+            with self.assertRaises(FileNotFoundError):
+                module.checkpoint_stack_paths(delta)
+
+    def test_materialize_parser_can_enable_source_pointer_modules(self):
+        module = _load_materialize_module()
+        args = module.build_arg_parser().parse_args(
+            [
+                "--config",
+                "cfg.yaml",
+                "--checkpoint",
+                "in.pt",
+                "--out",
+                "out.pt",
+                "--token-numeric-source-slots",
+                "--token-numeric-source-slot-gate-min",
+                "1.0",
+                "--token-numeric-source-slot-predicate-feedback",
+                "--token-numeric-source-slot-predicate-gate-min",
+                "1.0",
+                "--core-source-position-binder",
+                "--core-source-position-binder-gate-min",
+                "1.0",
+                "--core-source-position-binder-state-gate-min",
+                "0.25",
+                "--core-source-position-binder-state-st",
+                "--core-source-position-binder-source-slots-only",
+                "--core-source-position-binder-raw-source-slots",
+            ]
+        )
+        cfg = SimpleNamespace(model=SimpleNamespace())
+
+        module.configure_source_pointer_model_from_args(cfg, args)
+
+        self.assertTrue(cfg.model.token_numeric_source_slot_embedding_enabled)
+        self.assertEqual(1.0, cfg.model.token_numeric_source_slot_gate_min)
+        self.assertTrue(cfg.model.token_numeric_source_slot_predicate_feedback_enabled)
+        self.assertTrue(cfg.model.core_source_position_binder_enabled)
+        self.assertEqual(0.25, cfg.model.core_source_position_binder_state_gate_min)
+        self.assertTrue(cfg.model.core_source_position_binder_state_straight_through)
+        self.assertTrue(cfg.model.core_source_position_binder_source_slots_only)
+        self.assertTrue(cfg.model.core_source_position_binder_raw_source_slots_enabled)
 
     def test_core_halt_only_policy_freezes_everything_except_halt_head(self):
         from qtrm_mm import QTRMConfig, QTRMMultimodalModel

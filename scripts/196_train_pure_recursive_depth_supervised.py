@@ -836,6 +836,113 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "apply primitive-role-value final contrast to every prefix token."
         ),
     )
+    parser.add_argument(
+        "--core-state-zero-final-contrast-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Contrast final LM-path target log-prob against the same forward pass "
+            "with the recurrent core trajectory zeroed. This directly trains the "
+            "strict core-causality gate used by the mixed non-copy runner."
+        ),
+    )
+    parser.add_argument(
+        "--core-state-zero-final-contrast-margin",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--core-state-zero-final-contrast-all-prefix-tokens",
+        action="store_true",
+        help=(
+            "When causal-prefix supervision creates one example per answer token, "
+            "apply core-state-zero final contrast to every prefix token."
+        ),
+    )
+    parser.add_argument(
+        "--answer-state-recurrent-final-contrast-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Contrast final LM-path target log-prob against the same forward pass "
+            "with answer-state recurrence disabled. This trains the answer loop "
+            "to use recurrent core-derived state rather than a static shortcut."
+        ),
+    )
+    parser.add_argument(
+        "--answer-state-recurrent-final-contrast-margin",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--answer-state-recurrent-final-contrast-all-prefix-tokens",
+        action="store_true",
+        help=(
+            "When causal-prefix supervision creates one example per answer token, "
+            "apply answer-state-recurrent final contrast to every prefix token."
+        ),
+    )
+    parser.add_argument(
+        "--answer-next-token-decoder-final-contrast-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Contrast final LM-path target log-prob against the same forward pass "
+            "with the answer-state next-token decoder disabled."
+        ),
+    )
+    parser.add_argument(
+        "--answer-next-token-decoder-final-contrast-margin",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--answer-next-token-decoder-final-contrast-all-prefix-tokens",
+        action="store_true",
+        help=(
+            "When causal-prefix supervision creates one example per answer token, "
+            "apply answer next-token decoder final contrast to every prefix token."
+        ),
+    )
+    parser.add_argument(
+        "--answer-free-transformer-latent-kl-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "KL/free-bits loss for the Free-Transformer-style posterior latent "
+            "inside the answer loop. This keeps the training-only posterior "
+            "close enough to the inference prior while still forcing the answer "
+            "path to use latent conditioning."
+        ),
+    )
+    parser.add_argument(
+        "--answer-free-transformer-latent-free-bits",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--answer-free-transformer-latent-final-contrast-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Contrast final LM-path target log-prob against the same forward pass "
+            "with Free-Transformer-style latent conditioning disabled. This makes "
+            "the latent path causally useful instead of only KL-regularized."
+        ),
+    )
+    parser.add_argument(
+        "--answer-free-transformer-latent-final-contrast-margin",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--answer-free-transformer-latent-final-contrast-all-prefix-tokens",
+        action="store_true",
+        help=(
+            "When causal-prefix supervision creates one example per answer token, "
+            "apply Free Transformer latent final contrast to every prefix token."
+        ),
+    )
     parser.add_argument("--primitive-transition-operation-ce-weight", type=float, default=0.0)
     parser.add_argument(
         "--core-transition-feedback-operation-ce-weight",
@@ -2399,12 +2506,19 @@ def answer_state_loop_future_token_targets(
     *,
     max_target_tokens: int,
     device: str,
+    skip_leading_whitespace_targets: bool = False,
+    append_eos_token_id: int | None = None,
 ):
     import torch
 
     if int(max_target_tokens) <= 0:
         raise ValueError("max_target_tokens must be positive")
-    token_ids = answer_token_ids(tokenizer, answer)[: int(max_target_tokens)]
+    token_ids = causal_prefix_answer_token_ids(
+        tokenizer,
+        answer,
+        skip_leading_whitespace_targets=bool(skip_leading_whitespace_targets),
+        append_eos_token_id=append_eos_token_id,
+    )[: int(max_target_tokens)]
     padded = [int(token_id) for token_id in token_ids]
     padded.extend([-100] * (int(max_target_tokens) - len(padded)))
     return torch.tensor([padded], dtype=torch.long, device=device)
@@ -5464,6 +5578,45 @@ def main() -> None:
             "model.core_primitive_role_value_executor_enabled=true"
         )
     if (
+        float(args.core_state_zero_final_contrast_weight) != 0.0
+        and not bool(cfg.model.core_enabled)
+    ):
+        raise ValueError(
+            "core-state-zero final contrast requires model.core_enabled=true"
+        )
+    if (
+        float(args.answer_state_recurrent_final_contrast_weight) != 0.0
+        and not bool(cfg.model.answer_state_loop_recurrent_block_enabled)
+    ):
+        raise ValueError(
+            "answer-state-recurrent final contrast requires "
+            "model.answer_state_loop_recurrent_block_enabled=true"
+        )
+    if (
+        float(args.answer_next_token_decoder_final_contrast_weight) != 0.0
+        and not bool(cfg.model.answer_state_loop_next_token_decoder_enabled)
+    ):
+        raise ValueError(
+            "answer next-token decoder final contrast requires "
+            "model.answer_state_loop_next_token_decoder_enabled=true"
+        )
+    if (
+        float(args.answer_free_transformer_latent_kl_weight) != 0.0
+        and not bool(cfg.model.answer_state_loop_free_transformer_latent_enabled)
+    ):
+        raise ValueError(
+            "answer free-transformer latent KL requires "
+            "model.answer_state_loop_free_transformer_latent_enabled=true"
+        )
+    if (
+        float(args.answer_free_transformer_latent_final_contrast_weight) != 0.0
+        and not bool(cfg.model.answer_state_loop_free_transformer_latent_enabled)
+    ):
+        raise ValueError(
+            "answer free-transformer latent final contrast requires "
+            "model.answer_state_loop_free_transformer_latent_enabled=true"
+        )
+    if (
         float(args.transition_state_ce_weight) != 0.0
         or float(args.transition_state_depth_contrast_weight) != 0.0
     ) and not bool(cfg.model.transition_state_enabled):
@@ -5988,6 +6141,14 @@ def main() -> None:
                 primitive_role_value_off_final_text_logits = None
                 primitive_role_value_off_renderer_text_logits = None
                 primitive_role_value_off_outputs = None
+                core_state_zero_final_text_logits = None
+                core_state_zero_outputs = None
+                answer_state_recurrent_off_final_text_logits = None
+                answer_state_recurrent_off_outputs = None
+                answer_next_token_decoder_off_final_text_logits = None
+                answer_next_token_decoder_off_outputs = None
+                answer_free_transformer_latent_off_final_text_logits = None
+                answer_free_transformer_latent_off_outputs = None
                 source_binder_off_renderer_text_logits = None
                 source_binder_off_outputs = None
                 dense_context_final_text_logits = None
@@ -6317,6 +6478,122 @@ def main() -> None:
                                 logit_token_indices=logit_token_indices,
                             )
                     if (
+                        _should_apply_transition_joint_answer_bridge_contrast(
+                            example_index,
+                            args.core_state_zero_final_contrast_weight,
+                            all_prefix_tokens=bool(
+                                args.core_state_zero_final_contrast_all_prefix_tokens
+                            ),
+                        )
+                    ):
+                        with torch.no_grad():
+                            core_state_zero_outputs = model(
+                                input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                token_numeric_value_ids=token_numeric_value_ids_tensor,
+                                token_numeric_source_slot_ids=token_numeric_source_slot_ids_tensor,
+                                token_numeric_source_slot_token_ids=token_numeric_source_slot_token_ids_tensor,
+                                token_numeric_source_slot_mask=token_numeric_source_slot_mask_tensor,
+                                **donor_forward_kwargs(donor_out),
+                                core_world_model_actions=core_world_model_actions,
+                                temporal_spatial_context=temporal_spatial_context,
+                                zero_core_trajectory=True,
+                                return_core_depth_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                return_core_depth_text_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                logit_token_indices=logit_token_indices,
+                            )
+                    if (
+                        _should_apply_transition_joint_answer_bridge_contrast(
+                            example_index,
+                            args.answer_state_recurrent_final_contrast_weight,
+                            all_prefix_tokens=bool(
+                                args.answer_state_recurrent_final_contrast_all_prefix_tokens
+                            ),
+                        )
+                    ):
+                        with torch.no_grad():
+                            answer_state_recurrent_off_outputs = model(
+                                input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                token_numeric_value_ids=token_numeric_value_ids_tensor,
+                                token_numeric_source_slot_ids=token_numeric_source_slot_ids_tensor,
+                                token_numeric_source_slot_token_ids=token_numeric_source_slot_token_ids_tensor,
+                                token_numeric_source_slot_mask=token_numeric_source_slot_mask_tensor,
+                                **donor_forward_kwargs(donor_out),
+                                core_world_model_actions=core_world_model_actions,
+                                temporal_spatial_context=temporal_spatial_context,
+                                disable_answer_state_loop_recurrent=True,
+                                return_core_depth_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                return_core_depth_text_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                logit_token_indices=logit_token_indices,
+                            )
+                    if (
+                        _should_apply_transition_joint_answer_bridge_contrast(
+                            example_index,
+                            args.answer_next_token_decoder_final_contrast_weight,
+                            all_prefix_tokens=bool(
+                                args.answer_next_token_decoder_final_contrast_all_prefix_tokens
+                            ),
+                        )
+                    ):
+                        with torch.no_grad():
+                            answer_next_token_decoder_off_outputs = model(
+                                input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                token_numeric_value_ids=token_numeric_value_ids_tensor,
+                                token_numeric_source_slot_ids=token_numeric_source_slot_ids_tensor,
+                                token_numeric_source_slot_token_ids=token_numeric_source_slot_token_ids_tensor,
+                                token_numeric_source_slot_mask=token_numeric_source_slot_mask_tensor,
+                                **donor_forward_kwargs(donor_out),
+                                core_world_model_actions=core_world_model_actions,
+                                temporal_spatial_context=temporal_spatial_context,
+                                disable_answer_state_loop_next_token_decoder=True,
+                                return_core_depth_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                return_core_depth_text_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                logit_token_indices=logit_token_indices,
+                            )
+                    if (
+                        _should_apply_transition_joint_answer_bridge_contrast(
+                            example_index,
+                            args.answer_free_transformer_latent_final_contrast_weight,
+                            all_prefix_tokens=bool(
+                                args.answer_free_transformer_latent_final_contrast_all_prefix_tokens
+                            ),
+                        )
+                    ):
+                        with torch.no_grad():
+                            answer_free_transformer_latent_off_outputs = model(
+                                input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                token_numeric_value_ids=token_numeric_value_ids_tensor,
+                                token_numeric_source_slot_ids=token_numeric_source_slot_ids_tensor,
+                                token_numeric_source_slot_token_ids=token_numeric_source_slot_token_ids_tensor,
+                                token_numeric_source_slot_mask=token_numeric_source_slot_mask_tensor,
+                                **donor_forward_kwargs(donor_out),
+                                core_world_model_actions=core_world_model_actions,
+                                temporal_spatial_context=temporal_spatial_context,
+                                disable_answer_state_loop_free_transformer_latent=True,
+                                return_core_depth_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                return_core_depth_text_logits=not bool(
+                                    args.final_path_only_supervision
+                                ),
+                                logit_token_indices=logit_token_indices,
+                            )
+                    if (
                         float(
                             args.core_role_value_vocab_renderer_source_binder_contrast_weight
                         )
@@ -6452,6 +6729,111 @@ def main() -> None:
                                     :,
                                 ]
                             )
+                if core_state_zero_outputs is not None:
+                    if bool(args.target_logit_positions_only):
+                        core_state_zero_final_text_logits = core_state_zero_outputs[
+                            "logits"
+                        ]
+                    else:
+                        core_state_zero_offset = (
+                            core_state_zero_outputs["logits"].shape[1]
+                            - input_ids.shape[1]
+                        )
+                        if core_state_zero_offset != offset:
+                            raise ValueError(
+                                "core-state-zero and full logit offsets must match"
+                            )
+                        core_state_zero_final_text_logits = core_state_zero_outputs[
+                            "logits"
+                        ][
+                            :,
+                            core_state_zero_offset
+                            + target_start
+                            - 1 : core_state_zero_offset
+                            + target_end
+                            - 1,
+                            :,
+                        ]
+                if answer_state_recurrent_off_outputs is not None:
+                    if bool(args.target_logit_positions_only):
+                        answer_state_recurrent_off_final_text_logits = (
+                            answer_state_recurrent_off_outputs["logits"]
+                        )
+                    else:
+                        answer_state_recurrent_offset = (
+                            answer_state_recurrent_off_outputs["logits"].shape[1]
+                            - input_ids.shape[1]
+                        )
+                        if answer_state_recurrent_offset != offset:
+                            raise ValueError(
+                                "answer-state-recurrent-off and full logit offsets "
+                                "must match"
+                            )
+                        answer_state_recurrent_off_final_text_logits = (
+                            answer_state_recurrent_off_outputs["logits"][
+                                :,
+                                answer_state_recurrent_offset
+                                + target_start
+                                - 1 : answer_state_recurrent_offset
+                                + target_end
+                                - 1,
+                                :,
+                            ]
+                        )
+                if answer_next_token_decoder_off_outputs is not None:
+                    if bool(args.target_logit_positions_only):
+                        answer_next_token_decoder_off_final_text_logits = (
+                            answer_next_token_decoder_off_outputs["logits"]
+                        )
+                    else:
+                        answer_next_token_decoder_off_offset = (
+                            answer_next_token_decoder_off_outputs["logits"].shape[1]
+                            - input_ids.shape[1]
+                        )
+                        if answer_next_token_decoder_off_offset != offset:
+                            raise ValueError(
+                                "answer-next-token-decoder-off and full logit offsets "
+                                "must match"
+                            )
+                        answer_next_token_decoder_off_final_text_logits = (
+                            answer_next_token_decoder_off_outputs["logits"][
+                                :,
+                                answer_next_token_decoder_off_offset
+                                + target_start
+                                - 1 : answer_next_token_decoder_off_offset
+                                + target_end
+                                - 1,
+                                :,
+                            ]
+                        )
+                if answer_free_transformer_latent_off_outputs is not None:
+                    if bool(args.target_logit_positions_only):
+                        answer_free_transformer_latent_off_final_text_logits = (
+                            answer_free_transformer_latent_off_outputs["logits"]
+                        )
+                    else:
+                        answer_free_transformer_latent_off_offset = (
+                            answer_free_transformer_latent_off_outputs[
+                                "logits"
+                            ].shape[1]
+                            - input_ids.shape[1]
+                        )
+                        if answer_free_transformer_latent_off_offset != offset:
+                            raise ValueError(
+                                "answer-free-transformer-latent-off and full "
+                                "logit offsets must match"
+                            )
+                        answer_free_transformer_latent_off_final_text_logits = (
+                            answer_free_transformer_latent_off_outputs["logits"][
+                                :,
+                                answer_free_transformer_latent_off_offset
+                                + target_start
+                                - 1 : answer_free_transformer_latent_off_offset
+                                + target_end
+                                - 1,
+                                :,
+                            ]
+                        )
                 if source_binder_off_outputs is not None:
                     if bool(args.target_logit_positions_only):
                         source_binder_off_renderer_text_logits = (
@@ -6933,6 +7315,10 @@ def main() -> None:
                         answer,
                         max_target_tokens=future_target_count,
                         device=device,
+                        skip_leading_whitespace_targets=bool(
+                            args.causal_prefix_skip_leading_whitespace_targets
+                        ),
+                        append_eos_token_id=causal_prefix_append_eos_token_id,
                     )
                     future_ce, future_metrics = (
                         answer_state_loop_future_token_ce_loss(
@@ -7081,6 +7467,137 @@ def main() -> None:
                         * primitive_final_contrast
                     )
                     example_metrics.update(primitive_final_metrics)
+                if core_state_zero_final_text_logits is not None and (
+                    _should_apply_transition_joint_answer_bridge_contrast(
+                        example_index,
+                        args.core_state_zero_final_contrast_weight,
+                        all_prefix_tokens=bool(
+                            args.core_state_zero_final_contrast_all_prefix_tokens
+                        ),
+                    )
+                ):
+                    core_state_zero_contrast, core_state_zero_metrics = (
+                        final_path_ablation_contrastive_loss(
+                            final_text_logits,
+                            core_state_zero_final_text_logits,
+                            target_ids,
+                            margin=args.core_state_zero_final_contrast_margin,
+                            metric_prefix="core_state_zero",
+                        )
+                    )
+                    example_loss = (
+                        example_loss
+                        + float(args.core_state_zero_final_contrast_weight)
+                        * core_state_zero_contrast
+                    )
+                    example_metrics.update(core_state_zero_metrics)
+                if answer_state_recurrent_off_final_text_logits is not None and (
+                    _should_apply_transition_joint_answer_bridge_contrast(
+                        example_index,
+                        args.answer_state_recurrent_final_contrast_weight,
+                        all_prefix_tokens=bool(
+                            args.answer_state_recurrent_final_contrast_all_prefix_tokens
+                        ),
+                    )
+                ):
+                    answer_state_recurrent_contrast, answer_state_recurrent_metrics = (
+                        final_path_ablation_contrastive_loss(
+                            final_text_logits,
+                            answer_state_recurrent_off_final_text_logits,
+                            target_ids,
+                            margin=args.answer_state_recurrent_final_contrast_margin,
+                            metric_prefix="answer_state_recurrent",
+                        )
+                    )
+                    example_loss = (
+                        example_loss
+                        + float(args.answer_state_recurrent_final_contrast_weight)
+                        * answer_state_recurrent_contrast
+                    )
+                    example_metrics.update(answer_state_recurrent_metrics)
+                if answer_next_token_decoder_off_final_text_logits is not None and (
+                    _should_apply_transition_joint_answer_bridge_contrast(
+                        example_index,
+                        args.answer_next_token_decoder_final_contrast_weight,
+                        all_prefix_tokens=bool(
+                            args.answer_next_token_decoder_final_contrast_all_prefix_tokens
+                        ),
+                    )
+                ):
+                    answer_next_token_decoder_off_contrast, answer_next_token_decoder_off_metrics = (
+                        final_path_ablation_contrastive_loss(
+                            final_text_logits,
+                            answer_next_token_decoder_off_final_text_logits,
+                            target_ids,
+                            margin=args.answer_next_token_decoder_final_contrast_margin,
+                            metric_prefix="answer_next_token_decoder",
+                        )
+                    )
+                    example_loss = (
+                        example_loss
+                        + float(args.answer_next_token_decoder_final_contrast_weight)
+                        * answer_next_token_decoder_off_contrast
+                    )
+                    example_metrics.update(answer_next_token_decoder_off_metrics)
+                if (
+                    answer_free_transformer_latent_off_final_text_logits is not None
+                    and (
+                        _should_apply_transition_joint_answer_bridge_contrast(
+                            example_index,
+                            args.answer_free_transformer_latent_final_contrast_weight,
+                            all_prefix_tokens=bool(
+                                args.answer_free_transformer_latent_final_contrast_all_prefix_tokens
+                            ),
+                        )
+                    )
+                ):
+                    free_latent_off_contrast, free_latent_off_metrics = (
+                        final_path_ablation_contrastive_loss(
+                            final_text_logits,
+                            answer_free_transformer_latent_off_final_text_logits,
+                            target_ids,
+                            margin=(
+                                args.answer_free_transformer_latent_final_contrast_margin
+                            ),
+                            metric_prefix="answer_free_transformer_latent",
+                        )
+                    )
+                    example_loss = (
+                        example_loss
+                        + float(args.answer_free_transformer_latent_final_contrast_weight)
+                        * free_latent_off_contrast
+                    )
+                    example_metrics.update(free_latent_off_metrics)
+                if float(args.answer_free_transformer_latent_kl_weight) != 0.0:
+                    free_latent_kl = outputs[
+                        "answer_state_loop_free_transformer_latent_kl"
+                    ]
+                    free_bits = max(
+                        float(args.answer_free_transformer_latent_free_bits),
+                        float(
+                            cfg.model.answer_state_loop_free_transformer_free_bits
+                        ),
+                    )
+                    free_latent_kl_loss = torch.clamp(
+                        free_latent_kl - free_bits,
+                        min=0.0,
+                    )
+                    example_loss = (
+                        example_loss
+                        + float(args.answer_free_transformer_latent_kl_weight)
+                        * free_latent_kl_loss
+                    )
+                    example_metrics[
+                        "answer_free_transformer_latent_kl"
+                    ] = free_latent_kl.detach()
+                    example_metrics[
+                        "answer_free_transformer_latent_kl_loss"
+                    ] = free_latent_kl_loss.detach()
+                    example_metrics[
+                        "answer_free_transformer_gate_mean"
+                    ] = outputs[
+                        "answer_state_loop_free_transformer_gate_mean"
+                    ].detach()
                 if dense_context_final_text_logits is not None:
                     alignment_loss, alignment_metrics = (
                         answer_selective_context_alignment_loss(
@@ -8643,6 +9160,10 @@ def main() -> None:
             bridge_off_outputs,
             role_bridge_off_outputs,
             primitive_role_value_off_outputs,
+            core_state_zero_outputs,
+            answer_state_recurrent_off_outputs,
+            answer_next_token_decoder_off_outputs,
+            answer_free_transformer_latent_off_outputs,
             source_binder_off_outputs,
             context_off_depth_text_logits,
             transition_state_off_depth_text_logits,
@@ -8651,6 +9172,10 @@ def main() -> None:
             role_bridge_off_final_text_logits,
             primitive_role_value_off_final_text_logits,
             primitive_role_value_off_renderer_text_logits,
+            core_state_zero_final_text_logits,
+            answer_state_recurrent_off_final_text_logits,
+            answer_next_token_decoder_off_final_text_logits,
+            answer_free_transformer_latent_off_final_text_logits,
             source_binder_off_renderer_text_logits,
             dense_context_final_text_logits,
         )

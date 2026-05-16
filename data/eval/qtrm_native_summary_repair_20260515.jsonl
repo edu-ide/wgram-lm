@@ -1,0 +1,15 @@
+{"text": "User: How can a summary stay faithful to the original text?\nAssistant: A faithful summary keeps the central meaning and removes details that do not change it.", "source": "summary_repair:direct"}
+{"text": "User: What makes a summary faithful?\nAssistant: A faithful summary preserves the central meaning of the original text and leaves out minor details.", "source": "summary_repair:definition"}
+{"text": "User: How should a summary treat small details?\nAssistant: A summary should remove small details when they do not change the central meaning.", "source": "summary_repair:details"}
+{"text": "User: Why should a summary keep the central meaning?\nAssistant: Keeping the central meaning helps the summary stay faithful to the original text.", "source": "summary_repair:central_meaning"}
+{"text": "User: How can a summary avoid changing the original meaning?\nAssistant: It can keep the central idea and remove only details that do not change the meaning.", "source": "summary_repair:meaning"}
+{"text": "User: What should a good summary do?\nAssistant: A good summary keeps the main idea, stays faithful to the original text, and removes minor details.", "source": "summary_repair:good_summary"}
+{"text": "User: How can a summary be short but accurate?\nAssistant: It can keep the central meaning and leave out details that are not needed for that meaning.", "source": "summary_repair:short_accurate"}
+{"text": "User: What should be removed from a summary?\nAssistant: A summary should remove repeated or minor details while keeping the central idea.", "source": "summary_repair:remove_minor"}
+{"text": "User: What should not change in a faithful summary?\nAssistant: The central meaning of the original text should not change in a faithful summary.", "source": "summary_repair:not_change"}
+{"text": "User: How should a summary handle the original text?\nAssistant: A summary should preserve the original text's central meaning and avoid adding unsupported ideas.", "source": "summary_repair:no_added_claims"}
+{"text": "User: 요약은 어떻게 원문에 충실할 수 있나요?\nAssistant: 충실한 요약은 원문의 핵심 뜻을 남기고 의미를 바꾸지 않는 세부사항만 줄인다.", "source": "summary_repair:ko_direct"}
+{"text": "User: 좋은 요약은 무엇을 보존해야 하나요?\nAssistant: 좋은 요약은 원문의 중심 의미를 보존하고 덜 중요한 세부사항을 줄여야 한다.", "source": "summary_repair:ko_preserve"}
+{"text": "User: 요약에서 세부사항은 어떻게 다뤄야 하나요?\nAssistant: 요약은 핵심 의미를 바꾸지 않는 작은 세부사항을 줄이고 중요한 내용은 남겨야 한다.", "source": "summary_repair:ko_details"}
+{"text": "User: 요약이 원문과 달라지지 않으려면?\nAssistant: 원문의 중심 생각을 유지하고 근거 없는 새 내용을 덧붙이지 않아야 한다.", "source": "summary_repair:ko_no_change"}
+{"text": "User: 짧지만 정확한 요약은 어떻게 쓰나요?\nAssistant: 중심 의미를 먼저 남기고 반복되거나 덜 중요한 부분을 빼면 짧지만 정확한 요약이 된다.", "source": "summary_repair:ko_short"}

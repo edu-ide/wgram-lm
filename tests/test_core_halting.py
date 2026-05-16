@@ -1619,6 +1619,38 @@ class CoreHaltingTests(unittest.TestCase):
             )
         )
 
+    def test_answer_state_loop_core_state_only_keeps_text_out_of_cross_values(self):
+        import torch
+        from qtrm_mm import QTRMMultimodalModel
+
+        cfg = self._cfg()
+        cfg.answer_state_loop_enabled = True
+        cfg.answer_state_loop_requires_core = True
+        cfg.answer_state_loop_core_state_only_enabled = True
+        cfg.answer_state_loop_selective_context_enabled = True
+        cfg.answer_state_loop_selective_context_top_k = 100
+        model = QTRMMultimodalModel(cfg)
+        model.eval()
+        input_ids = torch.randint(0, cfg.vocab_size, (2, 6))
+        context_lengths = []
+
+        original_forward = model.answer_state_loop_cross.forward
+
+        def capture_context_length(query, context, context_mask=None):
+            context_lengths.append(int(context.shape[1]))
+            return original_forward(query, context, context_mask)
+
+        model.answer_state_loop_cross.forward = capture_context_length
+
+        with torch.no_grad():
+            model(input_ids, enable_core_halt=False)
+
+        self.assertTrue(context_lengths)
+        self.assertTrue(
+            all(length == cfg.workspace_tokens for length in context_lengths),
+            context_lengths,
+        )
+
     def test_answer_state_loop_finality_selector_uses_transition_joint_state(self):
         import torch
         from qtrm_mm import QTRMMultimodalModel

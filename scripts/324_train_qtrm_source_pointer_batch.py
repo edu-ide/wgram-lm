@@ -12,6 +12,7 @@ import torch
 import torch.nn.functional as F
 
 from qtrm_mm.algorithmic_value_state import (
+    relative_source_slot_parity_ids,
     role_value_initial_targets_from_row,
     role_value_targets_from_row,
     token_numeric_source_slot_ids,
@@ -38,19 +39,29 @@ def source_slot_tensors_from_offsets(
     offsets: list[list[tuple[int, int]]],
     max_slots: int,
     value_vocab_size: int,
+    id_mode: str = "absolute_value",
     device: str,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     if len(rows) != len(offsets):
         raise ValueError("rows and offsets must have the same length")
-    ids_and_masks = [
-        token_numeric_source_slot_ids(
-            row,
-            offsets=list(row_offsets),
-            max_list_len=int(max_slots),
-            value_vocab_size=int(value_vocab_size),
-        )
-        for row, row_offsets in zip(rows, offsets)
-    ]
+    if str(id_mode) == "relative_parity":
+        ids_and_masks = [
+            relative_source_slot_parity_ids(
+                row,
+                max_list_len=int(max_slots),
+            )
+            for row in rows
+        ]
+    else:
+        ids_and_masks = [
+            token_numeric_source_slot_ids(
+                row,
+                offsets=list(row_offsets),
+                max_list_len=int(max_slots),
+                value_vocab_size=int(value_vocab_size),
+            )
+            for row, row_offsets in zip(rows, offsets)
+        ]
     ids = torch.tensor(
         [item[0] for item in ids_and_masks],
         dtype=torch.long,
@@ -353,6 +364,7 @@ def prompt_batch(
     source_slots: bool,
     source_slot_max_slots: int,
     source_slot_value_vocab_size: int,
+    source_slot_id_mode: str = "absolute_value",
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
     enc = tokenizer(
         [str(row["prompt"]) for row in rows],
@@ -379,6 +391,7 @@ def prompt_batch(
             ],
             max_slots=int(source_slot_max_slots),
             value_vocab_size=int(source_slot_value_vocab_size),
+            id_mode=str(source_slot_id_mode),
             device=device,
         )
     return input_ids, attention_mask, source_slot_ids, source_slot_mask
@@ -440,6 +453,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--token-numeric-source-slots", action="store_true")
     parser.add_argument("--token-numeric-source-slot-vocab-size", type=int, default=128)
     parser.add_argument("--token-numeric-source-slot-max-slots", type=int, default=5)
+    parser.add_argument(
+        "--token-numeric-source-slot-id-mode",
+        choices=["absolute_value", "relative_parity"],
+        default="absolute_value",
+    )
     parser.add_argument("--token-numeric-source-slot-gate-min", type=float, default=0.0)
     parser.add_argument("--token-numeric-source-slot-parity-ce-weight", type=float, default=0.0)
     parser.add_argument("--token-numeric-source-slot-predicate-feedback", action="store_true")
@@ -599,6 +617,7 @@ def main() -> int:
                 source_slot_value_vocab_size=int(
                     args.token_numeric_source_slot_vocab_size
                 ),
+                source_slot_id_mode=str(args.token_numeric_source_slot_id_mode),
             )
             with torch.no_grad():
                 donor_out = donor.encode_inputs(

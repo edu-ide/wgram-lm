@@ -516,26 +516,32 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
         module = _load_module()
 
         class FakeTokenizer:
+            eos_token_id = 99
+
             def encode(self, text, add_special_tokens=False):
                 self.last_encode_text = text
-                return [21, 22]
+                return [20, 21, 22] if text.startswith(" ") else [21, 22]
 
         targets = module.answer_state_loop_future_token_targets(
-            FakeTokenizer(),
+            tokenizer := FakeTokenizer(),
             "answer",
             max_target_tokens=4,
             device="cpu",
+            skip_leading_whitespace_targets=True,
+            append_eos_token_id=99,
         )
-        self.assertEqual(targets.tolist(), [[21, 22, -100, -100]])
+        self.assertEqual(tokenizer.last_encode_text, "answer")
+        self.assertEqual(targets.tolist(), [[21, 22, 99, -100]])
 
-        logits = torch.zeros(1, 4, 32)
-        logits[0, 0, 21] = 5.0
-        logits[0, 1, 22] = 5.0
+        logits = torch.zeros(1, 4, 128)
+        logits[0, 0, 21] = 8.0
+        logits[0, 1, 22] = 8.0
+        logits[0, 2, 99] = 8.0
         loss, metrics = module.answer_state_loop_future_token_ce_loss(logits, targets)
 
         self.assertLess(float(loss), 0.3)
         self.assertEqual(float(metrics["answer_state_future_token_acc"]), 1.0)
-        self.assertEqual(float(metrics["answer_state_future_token_samples"]), 2.0)
+        self.assertEqual(float(metrics["answer_state_future_token_samples"]), 3.0)
 
     def test_answer_state_loop_logit_ce_targets_loop_logits_directly(self):
         import torch
@@ -2480,6 +2486,57 @@ class PureRecursiveDepthSupervisedTrainScriptTests(unittest.TestCase):
         self.assertEqual(args.typed_value_answer_bridge_final_contrast_weight, 0.8)
         self.assertEqual(args.typed_value_answer_bridge_final_contrast_margin, 0.04)
         self.assertTrue(args.typed_value_answer_bridge_final_contrast_train_ablation)
+
+    def test_parser_accepts_core_zero_and_answer_recurrent_final_contrast(self):
+        module = _load_module()
+
+        args = module.build_arg_parser().parse_args(
+            [
+                "--config",
+                "config.yaml",
+                "--data-jsonl",
+                "rows.jsonl",
+                "--target-logit-positions-only",
+                "--final-path-only-supervision",
+                "--core-state-zero-final-contrast-weight",
+                "0.6",
+                "--core-state-zero-final-contrast-margin",
+                "0.02",
+                "--core-state-zero-final-contrast-all-prefix-tokens",
+                "--answer-state-recurrent-final-contrast-weight",
+                "0.7",
+                "--answer-state-recurrent-final-contrast-margin",
+                "0.03",
+                "--answer-state-recurrent-final-contrast-all-prefix-tokens",
+                "--answer-next-token-decoder-final-contrast-weight",
+                "0.9",
+                "--answer-next-token-decoder-final-contrast-margin",
+                "0.04",
+                "--answer-next-token-decoder-final-contrast-all-prefix-tokens",
+            ]
+        )
+
+        self.assertEqual(args.core_state_zero_final_contrast_weight, 0.6)
+        self.assertEqual(args.core_state_zero_final_contrast_margin, 0.02)
+        self.assertTrue(args.core_state_zero_final_contrast_all_prefix_tokens)
+        self.assertEqual(args.answer_state_recurrent_final_contrast_weight, 0.7)
+        self.assertEqual(args.answer_state_recurrent_final_contrast_margin, 0.03)
+        self.assertTrue(args.answer_state_recurrent_final_contrast_all_prefix_tokens)
+        self.assertEqual(args.answer_next_token_decoder_final_contrast_weight, 0.9)
+        self.assertEqual(args.answer_next_token_decoder_final_contrast_margin, 0.04)
+        self.assertTrue(args.answer_next_token_decoder_final_contrast_all_prefix_tokens)
+
+    def test_training_script_has_gate_ablation_final_contrast_for_core_zero_and_recurrent_off(self):
+        text = Path("scripts/196_train_pure_recursive_depth_supervised.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("zero_core_trajectory=True", text)
+        self.assertIn("disable_answer_state_loop_recurrent=True", text)
+        self.assertIn("disable_answer_state_loop_next_token_decoder=True", text)
+        self.assertIn('metric_prefix="core_state_zero"', text)
+        self.assertIn('metric_prefix="answer_state_recurrent"', text)
+        self.assertIn('metric_prefix="answer_next_token_decoder"', text)
 
     def test_final_path_ablation_contrast_can_train_ablation_branch(self):
         import torch

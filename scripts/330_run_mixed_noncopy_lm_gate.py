@@ -10,10 +10,14 @@ import sys
 from typing import Any, Iterable
 
 
-DEFAULT_CONFIG = "configs/qwen35_2b_4090_source_copy_pointer_renderer_scaffold.yaml"
+DEFAULT_CONFIG = (
+    "configs/"
+    "qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_"
+    "typed_value_fullpath_scalar_codec_core_state_only_s060.yaml"
+)
 DEFAULT_CHECKPOINT = (
     "/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/"
-    "qtrm_source_copy_state_ce_s040_fix/last.pt"
+    "l4_sufficient_onecase_overfit/train_eos_s020/last.pt"
 )
 DEFAULT_CASES = (
     "data/eval/"
@@ -36,6 +40,12 @@ TYPED_VALUE_BRIDGE_OFF_MODE = "qtrm_core_steps_8_typed_value_answer_bridge_off_n
 VOCAB_RENDERER_OFF_MODE = "qtrm_core_steps_8_core_role_value_vocab_renderer_off_no_evidence"
 CORE_STATE_ZERO_MODE = "qtrm_core_steps_8_core_state_zero_no_evidence"
 ANSWER_RECURRENT_OFF_MODE = "qtrm_core_steps_8_answer_state_recurrent_off_no_evidence"
+ANSWER_NEXT_TOKEN_DECODER_OFF_MODE = (
+    "qtrm_core_steps_8_answer_next_token_decoder_off_no_evidence"
+)
+ANSWER_FREE_TRANSFORMER_LATENT_OFF_MODE = (
+    "qtrm_core_steps_8_answer_free_transformer_latent_off_no_evidence"
+)
 
 ABLATION_MODES = {
     "primitive_off": PRIMITIVE_OFF_MODE,
@@ -46,6 +56,8 @@ ABLATION_MODES = {
     "vocab_renderer_off": VOCAB_RENDERER_OFF_MODE,
     "core_state_zero": CORE_STATE_ZERO_MODE,
     "answer_recurrent_off": ANSWER_RECURRENT_OFF_MODE,
+    "answer_next_token_decoder_off": ANSWER_NEXT_TOKEN_DECODER_OFF_MODE,
+    "answer_free_transformer_latent_off": ANSWER_FREE_TRANSFORMER_LATENT_OFF_MODE,
 }
 DEFAULT_MODES = [
     DONOR_MODE,
@@ -59,6 +71,8 @@ DEFAULT_MODES = [
     VOCAB_RENDERER_OFF_MODE,
     CORE_STATE_ZERO_MODE,
     ANSWER_RECURRENT_OFF_MODE,
+    ANSWER_NEXT_TOKEN_DECODER_OFF_MODE,
+    ANSWER_FREE_TRANSFORMER_LATENT_OFF_MODE,
 ]
 
 
@@ -307,6 +321,8 @@ def build_report(
     min_vocab_renderer_drop: float = 0.01,
     min_core_state_zero_drop: float = 0.01,
     min_answer_recurrent_drop: float = 0.01,
+    min_answer_next_token_decoder_drop: float = 0.01,
+    min_answer_free_transformer_latent_drop: float = 0.01,
 ) -> dict[str, Any]:
     summary = summarize_generation(rows)
     full = mode_accuracy(summary, FULL_MODE)
@@ -323,6 +339,10 @@ def build_report(
         "vocab_renderer_off": float(min_vocab_renderer_drop),
         "core_state_zero": float(min_core_state_zero_drop),
         "answer_recurrent_off": float(min_answer_recurrent_drop),
+        "answer_next_token_decoder_off": float(min_answer_next_token_decoder_drop),
+        "answer_free_transformer_latent_off": float(
+            min_answer_free_transformer_latent_drop
+        ),
     }
     ablation_accuracies = {
         name: mode_accuracy(summary, mode) for name, mode in ABLATION_MODES.items()
@@ -418,6 +438,8 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
     root = Path(__file__).resolve().parents[1]
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    run_modes = list(args.mode) if args.mode else list(DEFAULT_MODES)
+    run_modes = list(dict.fromkeys(run_modes))
 
     missing_chain = missing_checkpoint_base_chain(args.checkpoint, root=root)
     if missing_chain:
@@ -439,6 +461,12 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
             min_vocab_renderer_drop=float(args.min_vocab_renderer_drop),
             min_core_state_zero_drop=float(args.min_core_state_zero_drop),
             min_answer_recurrent_drop=float(args.min_answer_recurrent_drop),
+            min_answer_next_token_decoder_drop=float(
+                args.min_answer_next_token_decoder_drop
+            ),
+            min_answer_free_transformer_latent_drop=float(
+                args.min_answer_free_transformer_latent_drop
+            ),
         )
         report["reject_reasons"] = [
             "checkpoint_base_chain_missing",
@@ -452,7 +480,7 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
                 "cases": str(args.cases),
                 "max_cases": int(args.max_cases),
                 "chunk_size": int(args.chunk_size),
-                "modes": list(args.mode),
+                "modes": list(run_modes),
                 "expected_rows": 0,
                 "generation_jsonl": str(generation_jsonl),
             }
@@ -477,7 +505,7 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
     for chunk_index, chunk in enumerate(chunk_rows(rows, chunk_size=int(args.chunk_size))):
         chunk_cases = out_dir / "chunks" / f"cases_{chunk_index:04d}.jsonl"
         write_jsonl(chunk_cases, chunk)
-        for mode in args.mode:
+        for mode in run_modes:
             out_part = out_dir / "chunks" / f"eval_{chunk_index:04d}_{mode}.jsonl"
             expected_total += len(chunk)
             command = eval_command(
@@ -542,6 +570,12 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
         min_vocab_renderer_drop=float(args.min_vocab_renderer_drop),
         min_core_state_zero_drop=float(args.min_core_state_zero_drop),
         min_answer_recurrent_drop=float(args.min_answer_recurrent_drop),
+        min_answer_next_token_decoder_drop=float(
+            args.min_answer_next_token_decoder_drop
+        ),
+        min_answer_free_transformer_latent_drop=float(
+            args.min_answer_free_transformer_latent_drop
+        ),
     )
     report.update(
         {
@@ -550,7 +584,7 @@ def run_eval(args: argparse.Namespace) -> dict[str, Any]:
             "cases": str(args.cases),
             "max_cases": int(args.max_cases),
             "chunk_size": int(args.chunk_size),
-            "modes": list(args.mode),
+            "modes": list(run_modes),
             "expected_rows": int(expected_total),
             "generation_jsonl": str(generation_jsonl),
         }
@@ -594,6 +628,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-vocab-renderer-drop", type=float, default=0.01)
     parser.add_argument("--min-core-state-zero-drop", type=float, default=0.01)
     parser.add_argument("--min-answer-recurrent-drop", type=float, default=0.01)
+    parser.add_argument("--min-answer-next-token-decoder-drop", type=float, default=0.01)
+    parser.add_argument(
+        "--min-answer-free-transformer-latent-drop",
+        type=float,
+        default=0.01,
+    )
     parser.add_argument("--token-numeric-source-slots", action="store_true")
     parser.add_argument("--token-numeric-source-slot-vocab-size", type=int, default=128)
     parser.add_argument("--token-numeric-source-slot-max-slots", type=int, default=5)
@@ -615,7 +655,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--core-source-position-binder-state-st", action="store_true")
     parser.add_argument("--core-source-position-binder-source-slots-only", action="store_true")
     parser.add_argument("--core-source-position-binder-raw-source-slots", action="store_true")
-    parser.add_argument("--mode", action="append", default=list(DEFAULT_MODES))
+    parser.add_argument("--mode", action="append", default=None)
     parser.add_argument("--resume", action="store_true")
     return parser
 

@@ -1,0 +1,12 @@
+{"text": "User: How can a summary stay faithful to the original text?\nAssistant: A faithful summary keeps the central meaning and removes details that do not change it.", "source": "broad_family_repair:summary:en"}
+{"text": "User: What makes a summary faithful?\nAssistant: A faithful summary preserves the central meaning of the original text and leaves out minor details.", "source": "broad_family_repair:summary:en"}
+{"text": "User: How should a summary treat small details?\nAssistant: A summary should remove small details when they do not change the central meaning.", "source": "broad_family_repair:summary:en"}
+{"text": "User: How can an answer separate a claim from evidence?\nAssistant: An answer can separate a claim from evidence by stating the claim first and then listing the evidence that supports it.", "source": "broad_family_repair:claim_evidence:en"}
+{"text": "User: What is the difference between a claim and evidence?\nAssistant: A claim is what the answer says is true, while evidence is the support used to check that claim.", "source": "broad_family_repair:claim_evidence:en"}
+{"text": "User: How should evidence be used after a claim?\nAssistant: After stating a claim, an answer should list the evidence that supports or weakens it.", "source": "broad_family_repair:claim_evidence:en"}
+{"text": "User: 출처가 왜 답변의 신뢰도를 높이나요?\nAssistant: 출처는 답변이 어떤 근거에 기대는지 보여 주어 답변의 신뢰도를 높인다.", "source": "broad_family_repair:source_trust:ko"}
+{"text": "User: 답변에서 출처는 어떤 역할을 하나요?\nAssistant: 출처는 답변의 근거를 확인할 수 있게 해 주어 신뢰도를 높인다.", "source": "broad_family_repair:source_trust:ko"}
+{"text": "User: 문장을 고칠 때 무엇을 먼저 확인해야 하나요?\nAssistant: 문장을 고칠 때는 주어와 서술어가 맞는지 먼저 확인해야 한다.", "source": "broad_family_repair:writing_revision:ko"}
+{"text": "User: 문장의 주어와 서술어는 왜 확인해야 하나요?\nAssistant: 주어와 서술어가 맞아야 문장의 뜻이 분명해진다.", "source": "broad_family_repair:writing_revision:ko"}
+{"text": "User: Why should a model avoid pretending to know?\nAssistant: A model should avoid pretending to know because uncertain answers can mislead people.", "source": "broad_family_repair:uncertainty:en"}
+{"text": "User: Why is pretending to know harmful?\nAssistant: Pretending to know is harmful because it turns uncertainty into a confident but unsupported answer.", "source": "broad_family_repair:uncertainty:en"}

@@ -1,0 +1,12 @@
+{"prompt": "Why can old information become unreliable?", "expected_keyword_groups": [["old"], ["change", "changes"], ["reliable", "source", "current"]]}
+{"prompt": "How can a writer make one idea easy to follow?", "expected_keyword_groups": [["writer", "sentence", "subjects"], ["idea", "reader", "who or what"], ["clear", "understand", "follow"]]}
+{"prompt": "출처가 왜 답변의 신뢰도를 높이나요?", "expected_keyword_groups": [["출처"], ["답변"], ["신뢰", "근거"]]}
+{"prompt": "How do repeated measurements help science?", "expected_keyword_groups": [["repeated"], ["measurements", "test"], ["stable", "again"]]}
+{"prompt": "불확실한 정보에는 어떻게 답해야 하나요?", "expected_keyword_groups": [["불확실"], ["추측"], ["근거", "확인"]]}
+{"prompt": "What makes a comparison useful?", "expected_keyword_groups": [["comparison"], ["differences", "differ"], ["support", "better"]]}
+{"prompt": "Why should a model avoid pretending to know?", "expected_keyword_groups": [["avoid"], ["know", "pretending", "missing", "gap"], ["uncertain", "false confidence", "mislead", "guess", "evidence"]]}
+{"prompt": "문장을 고칠 때 무엇을 먼저 확인해야 하나요?", "expected_keyword_groups": [["문장"], ["주어"], ["서술어"]]}
+{"prompt": "How can a summary stay faithful to the original text?", "expected_keyword_groups": [["summary"], ["central"], ["details", "meaning"]]}
+{"prompt": "Why does the time of a source matter?", "expected_keyword_groups": [["time"], ["source"], ["current", "change"]]}
+{"prompt": "좋은 비교는 어떤 기준을 가져야 하나요?", "expected_keyword_groups": [["비교"], ["기준", "사실"], ["근거", "판단", "맞는지"]]}
+{"prompt": "How can an answer separate a claim from evidence?", "expected_keyword_groups": [["claim"], ["evidence"], ["separate", "listing"]]}

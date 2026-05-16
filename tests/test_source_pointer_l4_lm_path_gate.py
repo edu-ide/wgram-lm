@@ -1,5 +1,7 @@
 import importlib.util
+import hashlib
 import re
+from tempfile import TemporaryDirectory
 import unittest
 from pathlib import Path
 
@@ -276,6 +278,139 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual("chunked_process", report["training_runtime"]["mode"])
         self.assertEqual(3, len(report["commands"]["train_chunks"]))
         self.assertIsNone(report["commands"]["train"])
+
+    def test_missing_checkpoint_base_chain_reports_relative_base(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            checkpoint = root / "child.pt"
+            torch.save({"base_checkpoint": "missing_base.pt"}, checkpoint)
+
+            missing = self.runner.missing_checkpoint_base_chain(checkpoint, root=root)
+
+            self.assertEqual(missing, [str(root / "missing_base.pt")])
+
+    def test_checkpoint_base_chain_issues_reports_known_sha_mismatch(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            relative = Path(
+                "local_eval/research_gate_runner/"
+                "primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt"
+            )
+            checkpoint = root / relative
+            checkpoint.parent.mkdir(parents=True)
+            checkpoint.write_bytes(b"wrong checkpoint bytes")
+            load_calls = []
+
+            def load_state(path):
+                load_calls.append(path)
+                return {}
+
+            issues = self.runner.checkpoint_base_chain_issues(
+                relative,
+                root=root,
+                load_state=load_state,
+            )
+
+            self.assertEqual("sha256_mismatch", issues[0]["issue"])
+            self.assertEqual(str(checkpoint), issues[0]["path"])
+            self.assertEqual([], load_calls)
+
+    def test_checkpoint_base_chain_issues_continues_after_known_sha_match(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            relative = Path(
+                "local_eval/research_gate_runner/"
+                "primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt"
+            )
+            checkpoint = root / relative
+            checkpoint.parent.mkdir(parents=True)
+            checkpoint.write_bytes(b"known checkpoint bytes")
+            expected = hashlib.sha256(b"known checkpoint bytes").hexdigest()
+            original = dict(self.runner.KNOWN_CHECKPOINT_SHA256)
+            self.runner.KNOWN_CHECKPOINT_SHA256[str(relative)] = expected
+            try:
+                issues = self.runner.checkpoint_base_chain_issues(
+                    relative,
+                    root=root,
+                    load_state=lambda path: {"base_checkpoint": "missing_base.pt"},
+                )
+            finally:
+                self.runner.KNOWN_CHECKPOINT_SHA256.clear()
+                self.runner.KNOWN_CHECKPOINT_SHA256.update(original)
+
+            self.assertEqual(
+                [{"issue": "missing", "path": str(root / "missing_base.pt")}],
+                issues,
+            )
+
+    def test_run_gate_stops_before_training_when_init_chain_is_missing(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            checkpoint = root / "child.pt"
+            out_dir = root / "out"
+            torch.save({"base_checkpoint": str(root / "missing_base.pt")}, checkpoint)
+            args = self.runner.build_arg_parser().parse_args(
+                [
+                    "--init-checkpoint",
+                    str(checkpoint),
+                    "--out-dir",
+                    str(out_dir),
+                    "--steps",
+                    "1",
+                ]
+            )
+
+            report = self.runner.run_gate(args)
+
+            self.assertEqual("checkpoint_chain_missing", report["decision"])
+            self.assertFalse(report["accepted"])
+            self.assertEqual(
+                [str(root / "missing_base.pt")],
+                report["missing_base_checkpoints"],
+            )
+            self.assertEqual(
+                [{"issue": "missing", "path": str(root / "missing_base.pt")}],
+                report["checkpoint_chain_issues"],
+            )
+            self.assertTrue((out_dir / "report.json").exists())
+
+    def test_run_gate_stops_before_training_on_known_sha_mismatch(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            relative = Path(
+                "local_eval/research_gate_runner/"
+                "primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt"
+            )
+            checkpoint = root / relative
+            out_dir = root / "out"
+            checkpoint.parent.mkdir(parents=True)
+            checkpoint.write_bytes(b"wrong checkpoint bytes")
+            original_repo_root = self.runner.repo_root
+            self.runner.repo_root = lambda: root
+            try:
+                args = self.runner.build_arg_parser().parse_args(
+                    [
+                        "--init-checkpoint",
+                        str(relative),
+                        "--out-dir",
+                        str(out_dir),
+                        "--steps",
+                        "1",
+                    ]
+                )
+                report = self.runner.run_gate(args)
+            finally:
+                self.runner.repo_root = original_repo_root
+
+            self.assertEqual("checkpoint_chain_sha256_mismatch", report["decision"])
+            self.assertFalse(report["accepted"])
+            self.assertEqual([], report["missing_base_checkpoints"])
+            self.assertEqual(
+                "sha256_mismatch",
+                report["checkpoint_chain_issues"][0]["issue"],
+            )
+            self.assertEqual(str(checkpoint), report["checkpoint_chain_issues"][0]["path"])
+            self.assertTrue((out_dir / "report.json").exists())
 
     def test_eval_command_uses_source_slot_flags_and_ablation_modes(self):
         args = self.runner.build_arg_parser().parse_args([])

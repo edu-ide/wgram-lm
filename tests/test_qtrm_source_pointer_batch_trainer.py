@@ -31,6 +31,8 @@ class QTRMSourcePointerBatchTrainerTests(unittest.TestCase):
                 "--row-batch-size",
                 "16",
                 "--token-numeric-source-slots",
+                "--token-numeric-source-slot-id-mode",
+                "relative_parity",
                 "--token-numeric-source-slot-predicate-feedback",
                 "--core-source-position-binder",
                 "--core-source-position-binder-source-slots-only",
@@ -49,6 +51,7 @@ class QTRMSourcePointerBatchTrainerTests(unittest.TestCase):
 
         self.assertEqual(args.row_batch_size, 16)
         self.assertTrue(args.token_numeric_source_slots)
+        self.assertEqual(args.token_numeric_source_slot_id_mode, "relative_parity")
         self.assertTrue(args.token_numeric_source_slot_predicate_feedback)
         self.assertTrue(args.core_source_position_binder)
         self.assertTrue(args.core_source_position_binder_source_slots_only)
@@ -88,6 +91,28 @@ class QTRMSourcePointerBatchTrainerTests(unittest.TestCase):
 
         self.assertTrue(torch.equal(ids, torch.tensor([[5, 20, 0, 0], [2, 7, 0, 0]])))
         self.assertTrue(torch.equal(mask, torch.tensor([[1, 1, 0, 0], [1, 1, 0, 0]])))
+
+    def test_source_slot_tensors_can_use_relative_parity_ids(self):
+        import torch
+
+        module = load_module()
+        rows = [
+            {"input_list": [4, 19, 8]},
+            {"input_list": [1, 6, 7]},
+        ]
+        offsets = [[(0, 1)]] * 2
+
+        ids, mask = module.source_slot_tensors_from_offsets(
+            rows,
+            offsets=offsets,
+            max_slots=4,
+            value_vocab_size=64,
+            id_mode="relative_parity",
+            device="cpu",
+        )
+
+        self.assertTrue(torch.equal(ids, torch.tensor([[2, 1, 2, 0], [1, 2, 1, 0]])))
+        self.assertTrue(torch.equal(mask, torch.tensor([[1, 1, 1, 0], [1, 1, 1, 0]])))
 
     def test_role_value_targets_are_batched(self):
         import torch

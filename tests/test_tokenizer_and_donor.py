@@ -152,6 +152,76 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertEqual(kwargs["donor_logits"].shape, (1, 3, 9))
         self.assertFalse(kwargs["donor_logits"].requires_grad)
 
+    def test_prepare_donor_batch_can_keep_trainable_hidden_states(self):
+        from qtrm_mm.training.train import prepare_donor_batch
+
+        class DummyDonor:
+            def encode_inputs(
+                self,
+                input_ids,
+                attention_mask=None,
+                return_logits=False,
+                detach=True,
+                detach_logits=True,
+            ):
+                hidden = torch.ones(
+                    input_ids.shape[0],
+                    input_ids.shape[1],
+                    4,
+                    requires_grad=True,
+                )
+                logits = torch.ones(
+                    input_ids.shape[0],
+                    input_ids.shape[1],
+                    9,
+                    requires_grad=True,
+                )
+                out = {
+                    "text_states": hidden.detach() if detach else hidden,
+                    "attention_mask": attention_mask,
+                    "visual_features": None,
+                }
+                if return_logits:
+                    out["logits"] = logits.detach() if detach_logits else logits
+                return out
+
+        batch = {
+            "input_ids": torch.tensor([[1, 2, 0]]),
+            "attention_mask": torch.tensor([[1, 1, 0]]),
+        }
+
+        kwargs = prepare_donor_batch(
+            DummyDonor(),
+            batch,
+            return_logits=True,
+            detach_hidden=False,
+            detach_logits=True,
+            return_trainable_logits=True,
+        )
+
+        self.assertTrue(kwargs["text_states"].requires_grad)
+        self.assertFalse(kwargs["donor_logits"].requires_grad)
+        self.assertTrue(kwargs["donor_trainable_logits"].requires_grad)
+
+    def test_donor_config_accepts_healing_tune_fields(self):
+        from qtrm_mm.config import DonorConfig
+
+        cfg = DonorConfig(
+            model_id="Qwen/Qwen3.5-2B-Base",
+            load_in_4bit=True,
+            freeze_donor=True,
+            train_lora=True,
+            lora_rank=8,
+            lora_alpha=16,
+            lora_dropout=0.1,
+            lora_target_modules=["q_proj", "v_proj"],
+            gradient_checkpointing=True,
+        )
+
+        self.assertTrue(cfg.train_lora)
+        self.assertEqual(cfg.lora_rank, 8)
+        self.assertEqual(cfg.lora_target_modules, ["q_proj", "v_proj"])
+
 
 if __name__ == "__main__":
     unittest.main()
