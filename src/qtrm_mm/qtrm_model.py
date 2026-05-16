@@ -383,6 +383,47 @@ class QTRMMultimodalModel(nn.Module):
             if hidden_bridge_enabled
             else None
         )
+        free_transformer_latent_enabled = (
+            cfg.answer_state_loop_enabled
+            and bool(cfg.answer_state_loop_free_transformer_latent_enabled)
+        )
+        free_transformer_latent_dim = int(
+            cfg.answer_state_loop_free_transformer_latent_dim or cfg.d_model
+        )
+        self.answer_state_loop_free_transformer_prior_norm = (
+            RMSNorm(cfg.d_model) if free_transformer_latent_enabled else None
+        )
+        self.answer_state_loop_free_transformer_posterior_norm = (
+            RMSNorm(cfg.d_model) if free_transformer_latent_enabled else None
+        )
+        self.answer_state_loop_free_transformer_prior_mu = (
+            nn.Linear(cfg.d_model, free_transformer_latent_dim)
+            if free_transformer_latent_enabled
+            else None
+        )
+        self.answer_state_loop_free_transformer_prior_logvar = (
+            nn.Linear(cfg.d_model, free_transformer_latent_dim)
+            if free_transformer_latent_enabled
+            else None
+        )
+        self.answer_state_loop_free_transformer_posterior_mu = (
+            nn.Linear(cfg.d_model, free_transformer_latent_dim)
+            if free_transformer_latent_enabled
+            else None
+        )
+        self.answer_state_loop_free_transformer_posterior_logvar = (
+            nn.Linear(cfg.d_model, free_transformer_latent_dim)
+            if free_transformer_latent_enabled
+            else None
+        )
+        self.answer_state_loop_free_transformer_latent_up = (
+            nn.Linear(free_transformer_latent_dim, cfg.d_model)
+            if free_transformer_latent_enabled
+            else None
+        )
+        self.answer_state_loop_free_transformer_gate = (
+            nn.Linear(cfg.d_model, 1) if free_transformer_latent_enabled else None
+        )
         next_token_decoder_enabled = (
             cfg.answer_state_loop_enabled
             and bool(cfg.answer_state_loop_next_token_decoder_enabled)
@@ -403,6 +444,21 @@ class QTRMMultimodalModel(nn.Module):
         )
         self.answer_state_loop_next_token_decoder_gate = (
             nn.Linear(cfg.d_model, 1) if next_token_decoder_enabled else None
+        )
+        prev_token_decoder_enabled = (
+            next_token_decoder_enabled
+            and bool(cfg.answer_state_loop_next_token_decoder_prev_token_enabled)
+        )
+        self.answer_state_loop_next_token_decoder_prev_token_norm = (
+            RMSNorm(cfg.d_model) if prev_token_decoder_enabled else None
+        )
+        self.answer_state_loop_next_token_decoder_prev_token_fuse = (
+            nn.Linear(cfg.d_model * 2, cfg.d_model)
+            if prev_token_decoder_enabled
+            else None
+        )
+        self.answer_state_loop_next_token_decoder_prev_token_gate = (
+            nn.Linear(cfg.d_model, 1) if prev_token_decoder_enabled else None
         )
         future_token_decoder_enabled = (
             cfg.answer_state_loop_enabled
@@ -499,6 +555,38 @@ class QTRMMultimodalModel(nn.Module):
             nn.init.constant_(
                 self.answer_state_loop_next_token_decoder_gate.bias,
                 float(cfg.answer_state_loop_next_token_decoder_gate_init_bias),
+            )
+        if self.answer_state_loop_next_token_decoder_prev_token_fuse is not None:
+            nn.init.zeros_(
+                self.answer_state_loop_next_token_decoder_prev_token_fuse.weight
+            )
+            nn.init.zeros_(
+                self.answer_state_loop_next_token_decoder_prev_token_fuse.bias
+            )
+            with torch.no_grad():
+                eye = torch.eye(
+                    cfg.d_model,
+                    device=self.answer_state_loop_next_token_decoder_prev_token_fuse.weight.device,
+                    dtype=self.answer_state_loop_next_token_decoder_prev_token_fuse.weight.dtype,
+                )
+                self.answer_state_loop_next_token_decoder_prev_token_fuse.weight[
+                    :, : cfg.d_model
+                ].copy_(eye)
+        if self.answer_state_loop_next_token_decoder_prev_token_gate is not None:
+            nn.init.zeros_(
+                self.answer_state_loop_next_token_decoder_prev_token_gate.weight
+            )
+            nn.init.constant_(
+                self.answer_state_loop_next_token_decoder_prev_token_gate.bias,
+                float(
+                    cfg.answer_state_loop_next_token_decoder_prev_token_gate_init_bias
+                ),
+            )
+        if self.answer_state_loop_free_transformer_gate is not None:
+            nn.init.zeros_(self.answer_state_loop_free_transformer_gate.weight)
+            nn.init.constant_(
+                self.answer_state_loop_free_transformer_gate.bias,
+                float(cfg.answer_state_loop_free_transformer_gate_init_bias),
             )
         if self.answer_state_loop_future_token_positions is not None:
             nn.init.normal_(
@@ -2821,6 +2909,7 @@ class QTRMMultimodalModel(nn.Module):
         disable_answer_state_loop_halt_gate: bool = False,
         disable_answer_state_loop_hidden_bridge: bool = False,
         disable_answer_state_loop_next_token_decoder: bool = False,
+        disable_answer_state_loop_free_transformer_latent: bool = False,
         disable_answer_state_loop_talker: bool = False,
         disable_transition_state_joint_answer_bridge: bool = False,
         disable_transition_state_final_answer_binder: bool = False,
@@ -4409,6 +4498,7 @@ class QTRMMultimodalModel(nn.Module):
                 **ctrl,
             }
         logit_token_indices_tensor = None
+        logit_prev_token_ids = input_ids
         if logit_token_indices is not None:
             logit_token_indices_tensor = torch.as_tensor(
                 logit_token_indices,
@@ -4423,6 +4513,10 @@ class QTRMMultimodalModel(nn.Module):
             ):
                 raise ValueError("logit_token_indices must index input token positions")
             logit_seq = seq[:, -int(s) :, :].index_select(
+                1,
+                logit_token_indices_tensor,
+            )
+            logit_prev_token_ids = input_ids.index_select(
                 1,
                 logit_token_indices_tensor,
             )
@@ -4457,6 +4551,8 @@ class QTRMMultimodalModel(nn.Module):
         )
         answer_state_loop_recurrent_gate_mean = seq.new_empty((b, 0))
         answer_state_loop_halt_logits = seq.new_empty((b, 0))
+        answer_state_loop_free_transformer_latent_kl = seq.new_zeros(())
+        answer_state_loop_free_transformer_gate_mean = seq.new_zeros(())
         answer_residual_governor_logits = qtrm_logits.new_empty((b, 0))
         answer_residual_governor_gate = qtrm_logits.new_empty((b, 0))
         qtrm_residual_logits = qtrm_logits
@@ -4599,6 +4695,8 @@ class QTRMMultimodalModel(nn.Module):
                     (b, 0, logit_input_len, self.cfg.d_model)
                 )
                 answer_state_loop_halt_logits = seq.new_empty((b, 0))
+                answer_state_loop_free_transformer_latent_kl = seq.new_zeros(())
+                answer_state_loop_free_transformer_gate_mean = seq.new_zeros(())
                 qtrm_residual_logits = torch.zeros_like(qtrm_logits)
             else:
                 (
@@ -4607,6 +4705,8 @@ class QTRMMultimodalModel(nn.Module):
                     answer_state_loop_depth_hidden,
                     answer_state_loop_recurrent_gate_mean,
                     answer_state_loop_halt_logits,
+                    answer_state_loop_free_transformer_latent_kl,
+                    answer_state_loop_free_transformer_gate_mean,
                 ) = self._compute_answer_state_loop_outputs(
                     text_context_seq,
                     trajectory=trajectory,
@@ -4633,6 +4733,7 @@ class QTRMMultimodalModel(nn.Module):
                     core_role_value_final_answer_embedding=(
                         core_role_value_state_answer_final_embedding
                     ),
+                    prev_token_ids=logit_prev_token_ids,
                     query_token_indices=logit_token_indices_tensor,
                     disable_recurrent_block=bool(disable_answer_state_loop_recurrent),
                     disable_selective_context=bool(
@@ -4649,6 +4750,9 @@ class QTRMMultimodalModel(nn.Module):
                     ),
                     disable_next_token_decoder=bool(
                         disable_answer_state_loop_next_token_decoder
+                    ),
+                    disable_free_transformer_latent=bool(
+                        disable_answer_state_loop_free_transformer_latent
                     ),
                     disable_talker=bool(disable_answer_state_loop_talker),
                 )
@@ -4668,6 +4772,10 @@ class QTRMMultimodalModel(nn.Module):
                         disable_next_token_decoder=bool(
                             disable_answer_state_loop_next_token_decoder
                         ),
+                        disable_free_transformer_latent=bool(
+                            disable_answer_state_loop_free_transformer_latent
+                        ),
+                        prev_token_ids=logit_prev_token_ids,
                     )
                 answer_state_loop_future_token_logits = (
                     self._answer_state_loop_future_token_logits(
@@ -4889,6 +4997,12 @@ class QTRMMultimodalModel(nn.Module):
             "answer_state_loop_depth_hidden": answer_state_loop_depth_hidden,
             "answer_state_loop_recurrent_gate_mean": answer_state_loop_recurrent_gate_mean,
             "answer_state_loop_halt_logits": answer_state_loop_halt_logits,
+            "answer_state_loop_free_transformer_latent_kl": (
+                answer_state_loop_free_transformer_latent_kl
+            ),
+            "answer_state_loop_free_transformer_gate_mean": (
+                answer_state_loop_free_transformer_gate_mean
+            ),
             "token_numeric_source_slot_token_count": source_slot_token_count,
             "token_numeric_source_slot_parity_logits": source_slot_parity_logits,
             "token_numeric_source_slot_predicate_logits": (
@@ -5445,15 +5559,27 @@ class QTRMMultimodalModel(nn.Module):
         self,
         hidden: torch.Tensor,
         *,
+        prev_token_ids: Optional[torch.Tensor] = None,
         disable_hidden_bridge: bool = False,
         disable_next_token_decoder: bool = False,
-    ) -> torch.Tensor:
+        disable_free_transformer_latent: bool = False,
+        free_transformer_posterior_context: Optional[torch.Tensor] = None,
+        return_free_transformer_info: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        hidden, free_transformer_kl, free_transformer_gate_mean = (
+            self._answer_state_loop_free_transformer_latent_hidden(
+                hidden,
+                posterior_context=free_transformer_posterior_context,
+                disabled=bool(disable_free_transformer_latent),
+            )
+        )
         hidden = self._answer_state_loop_bridge_hidden(
             hidden,
             disabled=bool(disable_hidden_bridge),
         )
         hidden = self._answer_state_loop_next_token_decoder_hidden(
             hidden,
+            prev_token_ids=prev_token_ids,
             disabled=bool(disable_next_token_decoder),
         )
         logits = self.lm_head(hidden) * float(self.cfg.qtrm_logits_scale)
@@ -5467,12 +5593,91 @@ class QTRMMultimodalModel(nn.Module):
             logits = logits + adapter_logits * float(
                 self.cfg.answer_state_loop_lm_adapter_scale
             )
+        if return_free_transformer_info:
+            return logits, free_transformer_kl, free_transformer_gate_mean
         return logits
+
+    def _answer_state_loop_free_transformer_latent_hidden(
+        self,
+        hidden: torch.Tensor,
+        *,
+        posterior_context: Optional[torch.Tensor] = None,
+        disabled: bool = False,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        empty_scalar = hidden.new_zeros(())
+        if (
+            disabled
+            or self.answer_state_loop_free_transformer_prior_norm is None
+            or self.answer_state_loop_free_transformer_posterior_norm is None
+            or self.answer_state_loop_free_transformer_prior_mu is None
+            or self.answer_state_loop_free_transformer_prior_logvar is None
+            or self.answer_state_loop_free_transformer_posterior_mu is None
+            or self.answer_state_loop_free_transformer_posterior_logvar is None
+            or self.answer_state_loop_free_transformer_latent_up is None
+            or self.answer_state_loop_free_transformer_gate is None
+            or hidden.numel() == 0
+        ):
+            return hidden, empty_scalar, empty_scalar
+        prior_source = hidden.mean(dim=1)
+        prior_source = self.answer_state_loop_free_transformer_prior_norm(
+            prior_source
+        )
+        prior_mu = self.answer_state_loop_free_transformer_prior_mu(prior_source)
+        prior_logvar = self.answer_state_loop_free_transformer_prior_logvar(
+            prior_source
+        ).clamp(-12.0, 8.0)
+        posterior_active = (
+            self.training
+            and bool(self.cfg.answer_state_loop_free_transformer_posterior_train_enabled)
+            and posterior_context is not None
+            and posterior_context.numel() != 0
+        )
+        if posterior_active:
+            posterior_source = posterior_context.mean(dim=1)
+            posterior_source = self.answer_state_loop_free_transformer_posterior_norm(
+                posterior_source
+            )
+            posterior_mu = self.answer_state_loop_free_transformer_posterior_mu(
+                posterior_source
+            )
+            posterior_logvar = self.answer_state_loop_free_transformer_posterior_logvar(
+                posterior_source
+            ).clamp(-12.0, 8.0)
+            std = torch.exp(0.5 * posterior_logvar)
+            z = posterior_mu + torch.randn_like(std) * std
+            prior_var = torch.exp(prior_logvar)
+            posterior_var = torch.exp(posterior_logvar)
+            kl = 0.5 * (
+                prior_logvar
+                - posterior_logvar
+                + (posterior_var + (posterior_mu - prior_mu).pow(2))
+                / prior_var.clamp_min(1e-6)
+                - 1.0
+            )
+            kl = kl.mean()
+        else:
+            z = prior_mu
+            kl = empty_scalar
+        latent_delta = self.answer_state_loop_free_transformer_latent_up(z)
+        latent_delta = latent_delta.unsqueeze(1).expand_as(hidden)
+        gate = torch.sigmoid(self.answer_state_loop_free_transformer_gate(hidden))
+        gate_min = min(
+            max(float(self.cfg.answer_state_loop_free_transformer_gate_min), 0.0),
+            1.0,
+        )
+        if gate_min != 0.0:
+            gate = gate_min + (1.0 - gate_min) * gate
+        if self.answer_state_loop_output_norm is not None:
+            hidden = self.answer_state_loop_output_norm(hidden + gate * latent_delta)
+        else:
+            hidden = hidden + gate * latent_delta
+        return hidden, kl, gate.mean()
 
     def _answer_state_loop_next_token_decoder_hidden(
         self,
         hidden: torch.Tensor,
         *,
+        prev_token_ids: Optional[torch.Tensor] = None,
         disabled: bool = False,
     ) -> torch.Tensor:
         if (
@@ -5488,6 +5693,13 @@ class QTRMMultimodalModel(nn.Module):
             return hidden
         if hidden.ndim > 3:
             hidden = hidden.reshape(-1, original_shape[-2], original_shape[-1])
+            if prev_token_ids is not None:
+                prev_token_ids = prev_token_ids.reshape(-1, original_shape[-2])
+        hidden = self._answer_state_loop_next_token_decoder_prev_token_hidden(
+            hidden,
+            prev_token_ids=prev_token_ids,
+            disabled=disabled,
+        )
         proposal = self.answer_state_loop_next_token_decoder_stack(
             self.answer_state_loop_next_token_decoder_norm(hidden)
         )
@@ -5507,6 +5719,55 @@ class QTRMMultimodalModel(nn.Module):
         if len(original_shape) > 3:
             decoded = decoded.reshape(original_shape)
         return decoded
+
+    def _answer_state_loop_next_token_decoder_prev_token_hidden(
+        self,
+        hidden: torch.Tensor,
+        *,
+        prev_token_ids: Optional[torch.Tensor] = None,
+        disabled: bool = False,
+    ) -> torch.Tensor:
+        if (
+            disabled
+            or prev_token_ids is None
+            or self.answer_state_loop_next_token_decoder_prev_token_norm is None
+            or self.answer_state_loop_next_token_decoder_prev_token_fuse is None
+            or self.answer_state_loop_next_token_decoder_prev_token_gate is None
+            or hidden.numel() == 0
+        ):
+            return hidden
+        if hidden.ndim != 3 or prev_token_ids.ndim != 2:
+            return hidden
+        if tuple(prev_token_ids.shape) != tuple(hidden.shape[:2]):
+            raise ValueError(
+                "prev_token_ids must have shape [batch, seq] matching hidden"
+            )
+        prev_token_ids = prev_token_ids.to(
+            device=hidden.device,
+            dtype=torch.long,
+        ).clamp(min=0, max=int(self.text_embed.num_embeddings) - 1)
+        prev_hidden = self.text_embed(prev_token_ids).to(dtype=hidden.dtype)
+        prev_hidden = self.answer_state_loop_next_token_decoder_prev_token_norm(
+            prev_hidden
+        )
+        proposal = self.answer_state_loop_next_token_decoder_prev_token_fuse(
+            torch.cat([hidden, prev_hidden], dim=-1)
+        )
+        gate = torch.sigmoid(
+            self.answer_state_loop_next_token_decoder_prev_token_gate(hidden)
+        )
+        gate_min = min(
+            max(
+                float(
+                    self.cfg.answer_state_loop_next_token_decoder_prev_token_gate_min
+                ),
+                0.0,
+            ),
+            1.0,
+        )
+        if gate_min != 0.0:
+            gate = gate_min + (1.0 - gate_min) * gate
+        return hidden + gate * (proposal - hidden)
 
     def _answer_state_loop_talker_hidden(
         self,
@@ -5588,6 +5849,7 @@ class QTRMMultimodalModel(nn.Module):
         typed_algorithmic_answer_tokens: Optional[torch.Tensor] = None,
         core_role_value_answer_tokens: Optional[torch.Tensor] = None,
         core_role_value_final_answer_embedding: Optional[torch.Tensor] = None,
+        prev_token_ids: Optional[torch.Tensor] = None,
         query_token_indices: Optional[torch.Tensor] = None,
         disable_recurrent_block: bool = False,
         disable_selective_context: bool = False,
@@ -5596,8 +5858,17 @@ class QTRMMultimodalModel(nn.Module):
         disable_halt_gate: bool = False,
         disable_hidden_bridge: bool = False,
         disable_next_token_decoder: bool = False,
+        disable_free_transformer_latent: bool = False,
         disable_talker: bool = False,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         output_seq_len = (
             int(query_token_indices.numel())
             if query_token_indices is not None
@@ -5629,10 +5900,18 @@ class QTRMMultimodalModel(nn.Module):
                 ),
                 text_context_seq.new_empty((text_context_seq.shape[0], 0)),
                 text_context_seq.new_empty((text_context_seq.shape[0], 0)),
+                text_context_seq.new_zeros(()),
+                text_context_seq.new_zeros(()),
             )
         y = text_context_seq[:, -int(input_seq_len) :, :]
         if query_token_indices is not None:
             y = y.index_select(1, query_token_indices)
+        text_query = y
+        core_state_only = bool(
+            getattr(self.cfg, "answer_state_loop_core_state_only_enabled", False)
+        )
+        if core_state_only:
+            y = torch.zeros_like(text_query)
         answer_input = y
         states = []
         recurrent_gate_means = []
@@ -5728,6 +6007,7 @@ class QTRMMultimodalModel(nn.Module):
             1.0,
         )
         for step_index, state in enumerate(trajectory):
+            query_y = text_query if core_state_only else y
             state_for_cross = state
             state_mask = workspace_mask
             if (
@@ -5747,7 +6027,9 @@ class QTRMMultimodalModel(nn.Module):
                 transition_delta = self.transition_state_to_answer(
                     transition_state_features[:, step_index, :]
                 ).unsqueeze(1)
-                transition_gate = torch.sigmoid(self.transition_state_answer_gate(y))
+                transition_gate = torch.sigmoid(
+                    self.transition_state_answer_gate(query_y)
+                )
                 if transition_gate_min != 0.0:
                     transition_gate = (
                         transition_gate_min
@@ -5763,7 +6045,9 @@ class QTRMMultimodalModel(nn.Module):
                 joint_delta = transition_state_joint_answer_embeddings[
                     :, step_index, :
                 ].unsqueeze(1)
-                joint_gate = torch.sigmoid(self.transition_state_joint_answer_gate(y))
+                joint_gate = torch.sigmoid(
+                    self.transition_state_joint_answer_gate(query_y)
+                )
                 if transition_joint_answer_gate_min != 0.0:
                     joint_gate = (
                         transition_joint_answer_gate_min
@@ -5791,20 +6075,20 @@ class QTRMMultimodalModel(nn.Module):
                 state_for_cross = torch.cat([value_tokens, state_for_cross], dim=1)
                 state_mask = torch.cat([value_mask, state_mask], dim=1)
             state_for_cross, state_mask = self._select_answer_state_loop_context(
-                y,
+                query_y,
                 state_for_cross,
                 state_mask,
                 text_context_seq,
                 text_context_mask,
-                disabled=bool(disable_selective_context),
+                disabled=bool(disable_selective_context or core_state_only),
                 force_dense=bool(force_dense_context),
             )
             delta = self.answer_state_loop_cross(
-                self.answer_state_loop_query_norm(y),
+                self.answer_state_loop_query_norm(query_y),
                 self.answer_state_loop_state_norm(state_for_cross),
                 state_mask,
             )
-            gate = torch.sigmoid(self.answer_state_loop_gate(y))
+            gate = torch.sigmoid(self.answer_state_loop_gate(query_y))
             if gate_min != 0.0:
                 gate = gate_min + (1.0 - gate_min) * gate
             y = self.answer_state_loop_output_norm(y + gate * delta)
@@ -5977,10 +6261,18 @@ class QTRMMultimodalModel(nn.Module):
         if states:
             depth_hidden = depth_hidden.clone()
             depth_hidden[:, -1, :, :] = y
-        logits = self._answer_state_loop_lm_logits(
-            y,
-            disable_hidden_bridge=bool(disable_hidden_bridge),
-            disable_next_token_decoder=bool(disable_next_token_decoder),
+        logits, free_transformer_latent_kl, free_transformer_gate_mean = (
+            self._answer_state_loop_lm_logits(
+                y,
+                prev_token_ids=prev_token_ids,
+                disable_hidden_bridge=bool(disable_hidden_bridge),
+                disable_next_token_decoder=bool(disable_next_token_decoder),
+                disable_free_transformer_latent=bool(disable_free_transformer_latent),
+                free_transformer_posterior_context=(
+                    text_context_seq[:, -int(input_seq_len) :, :]
+                ),
+                return_free_transformer_info=True,
+            )
         )
         recurrent_gate_mean = (
             torch.stack(recurrent_gate_means, dim=1)
@@ -5992,7 +6284,15 @@ class QTRMMultimodalModel(nn.Module):
             if halt_logits_per_step
             else text_context_seq.new_empty((text_context_seq.shape[0], 0))
         )
-        return logits, y, depth_hidden, recurrent_gate_mean, halt_logits
+        return (
+            logits,
+            y,
+            depth_hidden,
+            recurrent_gate_mean,
+            halt_logits,
+            free_transformer_latent_kl,
+            free_transformer_gate_mean,
+        )
 
     def _answer_state_loop_finality_scores(
         self,
@@ -6024,6 +6324,8 @@ class QTRMMultimodalModel(nn.Module):
         disabled: bool = False,
         disable_hidden_bridge: bool = False,
         disable_next_token_decoder: bool = False,
+        disable_free_transformer_latent: bool = False,
+        prev_token_ids: Optional[torch.Tensor] = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         if (
             disabled
@@ -6072,8 +6374,10 @@ class QTRMMultimodalModel(nn.Module):
         selected_hidden = torch.einsum("bs,bstd->btd", weights, depth_hidden)
         selected_logits = self._answer_state_loop_lm_logits(
             selected_hidden,
+            prev_token_ids=prev_token_ids,
             disable_hidden_bridge=bool(disable_hidden_bridge),
             disable_next_token_decoder=bool(disable_next_token_decoder),
+            disable_free_transformer_latent=bool(disable_free_transformer_latent),
         )
         return selected_logits, selected_hidden
 
@@ -9356,7 +9660,7 @@ class QTRMMultimodalModel(nn.Module):
         if self.answer_state_loop_cross is not None:
             depth_logits = []
             for state_prefix in range(1, len(trajectory) + 1):
-                prefix_logits, _, _, _, _ = self._compute_answer_state_loop_outputs(
+                prefix_logits, *_ = self._compute_answer_state_loop_outputs(
                     text_context_seq,
                     trajectory=trajectory[:state_prefix],
                     text_context_mask=text_context_mask,
@@ -9445,7 +9749,7 @@ class QTRMMultimodalModel(nn.Module):
         if not trajectory:
             return self._empty_core_depth_text_logits(text_context_seq, input_seq_len)
         if self.answer_state_loop_cross is not None:
-            _, _, depth_hidden, _, _ = self._compute_answer_state_loop_outputs(
+            _, _, depth_hidden, *_ = self._compute_answer_state_loop_outputs(
                 text_context_seq,
                 trajectory=trajectory,
                 text_context_mask=text_context_mask,

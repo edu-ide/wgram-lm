@@ -10,7 +10,7 @@ from qtrm_mm.config import load_config
 from qtrm_mm.diagnostics import next_token_diagnostics, repetition_stats, topk_token_report
 from qtrm_mm.qtrm_model import QTRMMultimodalModel
 from qtrm_mm.qwen_donor import QwenDonorAdapter
-from qtrm_mm.losses import qtrm_smoke_loss
+from qtrm_mm.losses import next_token_lm_loss, qtrm_smoke_loss
 from qtrm_mm.training.synthetic_data import SyntheticTextVisionDataset, collate
 from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
@@ -1239,6 +1239,10 @@ def trainable_parameters(model):
     return [param for param in model.parameters() if param.requires_grad]
 
 
+def donor_has_trainable_parameters(donor) -> bool:
+    return donor is not None and any(param.requires_grad for param in donor.parameters())
+
+
 def strip_training_only_batch_keys(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     return {
         key: value
@@ -1335,38 +1339,97 @@ def prepare_donor_batch(
     batch: dict[str, torch.Tensor],
     *,
     return_logits: bool = False,
+    detach_hidden: bool = True,
+    detach_logits: bool = True,
+    return_trainable_logits: bool = False,
 ) -> dict[str, torch.Tensor]:
-    donor_out = donor.encode_inputs(
-        input_ids=batch["input_ids"],
-        attention_mask=batch.get("attention_mask"),
-        return_logits=return_logits,
+    def _encode(
+        input_ids,
+        attention_mask=None,
+        *,
+        logits: bool,
+        detach_logits_override: bool | None = None,
+    ):
+        kwargs = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "return_logits": logits,
+        }
+        try:
+            return donor.encode_inputs(
+                **kwargs,
+                detach=detach_hidden,
+                detach_logits=(
+                    detach_logits
+                    if detach_logits_override is None
+                    else bool(detach_logits_override)
+                ),
+            )
+        except TypeError as exc:
+            if "detach" not in str(exc) and "detach_logits" not in str(exc):
+                raise
+            return donor.encode_inputs(**kwargs)
+
+    def _maybe_detach(value, *, enabled: bool = True):
+        if enabled and torch.is_tensor(value):
+            return value.detach()
+        return value
+
+    donor_out = _encode(
+        batch["input_ids"],
+        batch.get("attention_mask"),
+        logits=return_logits or return_trainable_logits,
+        detach_logits_override=detach_logits if return_logits else False,
     )
-    out = {"text_states": donor_out["text_states"].detach()}
+    out = {"text_states": _maybe_detach(donor_out["text_states"], enabled=detach_hidden)}
     if donor_out.get("visual_features") is not None:
-        out["visual_features"] = donor_out["visual_features"].detach()
-    if return_logits and donor_out.get("logits") is not None:
-        out["donor_logits"] = donor_out["logits"].detach()
-    if "preference_rejected_input_ids" in batch:
-        rejected_out = donor.encode_inputs(
-            input_ids=batch["preference_rejected_input_ids"],
-            attention_mask=batch.get("preference_rejected_attention_mask"),
-            return_logits=return_logits,
+        out["visual_features"] = _maybe_detach(
+            donor_out["visual_features"],
+            enabled=detach_hidden,
         )
-        out["preference_rejected_text_states"] = rejected_out["text_states"].detach()
+    if return_logits and donor_out.get("logits") is not None:
+        out["donor_logits"] = _maybe_detach(donor_out["logits"], enabled=detach_logits)
+    if return_trainable_logits and donor_out.get("logits") is not None:
+        if return_logits and detach_logits:
+            trainable_out = _encode(
+                batch["input_ids"],
+                batch.get("attention_mask"),
+                logits=True,
+                detach_logits_override=False,
+            )
+            out["donor_trainable_logits"] = trainable_out["logits"]
+        else:
+            out["donor_trainable_logits"] = donor_out["logits"]
+    if "preference_rejected_input_ids" in batch:
+        rejected_out = _encode(
+            batch["preference_rejected_input_ids"],
+            batch.get("preference_rejected_attention_mask"),
+            logits=return_logits,
+        )
+        out["preference_rejected_text_states"] = _maybe_detach(
+            rejected_out["text_states"],
+            enabled=detach_hidden,
+        )
         if return_logits and rejected_out.get("logits") is not None:
-            out["preference_rejected_donor_logits"] = rejected_out["logits"].detach()
+            out["preference_rejected_donor_logits"] = _maybe_detach(
+                rejected_out["logits"],
+                enabled=detach_logits,
+            )
     workspace_attention_mask = batch.get("workspace_attention_mask")
     has_workspace_tokens = (
         workspace_attention_mask is None
         or bool(workspace_attention_mask.to(torch.bool).any().detach().cpu().item())
     )
     if "workspace_input_ids" in batch and has_workspace_tokens:
-        workspace_out = donor.encode_inputs(
-            input_ids=batch["workspace_input_ids"],
-            attention_mask=workspace_attention_mask,
-            return_logits=False,
+        workspace_out = _encode(
+            batch["workspace_input_ids"],
+            workspace_attention_mask,
+            logits=False,
         )
-        out["workspace_text_states"] = workspace_out["text_states"].detach()
+        out["workspace_text_states"] = _maybe_detach(
+            workspace_out["text_states"],
+            enabled=detach_hidden,
+        )
         if workspace_attention_mask is not None:
             out["workspace_attention_mask"] = workspace_attention_mask.detach()
     counterfactual_attention_mask = batch.get("workspace_counterfactual_attention_mask")
@@ -1375,12 +1438,15 @@ def prepare_donor_batch(
         and bool(counterfactual_attention_mask.to(torch.bool).any().detach().cpu().item())
     )
     if "workspace_counterfactual_input_ids" in batch and has_counterfactual_tokens:
-        counterfactual_out = donor.encode_inputs(
-            input_ids=batch["workspace_counterfactual_input_ids"],
-            attention_mask=counterfactual_attention_mask,
-            return_logits=False,
+        counterfactual_out = _encode(
+            batch["workspace_counterfactual_input_ids"],
+            counterfactual_attention_mask,
+            logits=False,
         )
-        out["workspace_counterfactual_text_states"] = counterfactual_out["text_states"].detach()
+        out["workspace_counterfactual_text_states"] = _maybe_detach(
+            counterfactual_out["text_states"],
+            enabled=detach_hidden,
+        )
         out["workspace_counterfactual_attention_mask"] = counterfactual_attention_mask.detach()
     return out
 
@@ -1530,11 +1596,16 @@ def main():
         loader = DataLoader(ds, batch_size=cfg.train.batch_size, collate_fn=collate)
 
     trainable_names = configure_trainable_parameters(model, cfg.train.trainable_param_policy)
-    trainable_params = trainable_parameters(model)
+    donor_trainable = donor_has_trainable_parameters(donor)
+    qtrm_trainable_params = trainable_parameters(model)
+    donor_trainable_params = trainable_parameters(donor) if donor_trainable else []
+    trainable_params = qtrm_trainable_params + donor_trainable_params
     if not trainable_params:
         raise ValueError("no trainable parameters selected")
     print(
         f"[trainable] policy={cfg.train.trainable_param_policy} "
+        f"qtrm_params={sum(p.numel() for p in qtrm_trainable_params):,} "
+        f"donor_params={sum(p.numel() for p in donor_trainable_params):,} "
         f"params={sum(p.numel() for p in trainable_params):,} "
         f"tensors={len(trainable_names)}"
     )
@@ -1577,8 +1648,15 @@ def main():
                         donor,
                         batch,
                         return_logits=use_donor_logits,
+                        detach_hidden=not donor_trainable,
+                        detach_logits=True,
+                        return_trainable_logits=(
+                            donor_trainable
+                            and float(cfg.train.loss_donor_lm_weight) != 0.0
+                        ),
                     )
                 )
+            donor_trainable_logits = model_batch.pop("donor_trainable_logits", None)
             if cfg.model.core_world_model_enabled or cfg.train.loss_core_world_model_weight != 0.0:
                 model_batch["core_world_model_actions"] = build_core_world_model_actions(
                     batch,
@@ -1657,9 +1735,20 @@ def main():
                 action_policy_weight=cfg.train.loss_action_policy_weight,
                 controller_signal_weight=cfg.train.loss_controller_signal_weight,
             )
+            if (
+                donor_trainable_logits is not None
+                and float(cfg.train.loss_donor_lm_weight) != 0.0
+            ):
+                donor_lm = next_token_lm_loss(
+                    donor_trainable_logits,
+                    batch["input_ids"],
+                    attention_mask=batch.get("attention_mask"),
+                )
+                loss = loss + float(cfg.train.loss_donor_lm_weight) * donor_lm
+                metrics["donor_lm"] = donor_lm.detach()
         scaler.scale(loss).backward()
         scaler.unscale_(opt)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
         scaler.step(opt)
         scaler.update()
         step_idx = step + 1
@@ -1684,8 +1773,12 @@ def main():
         if args.save_every > 0 and step_idx % args.save_every == 0:
             step_path = out_dir / f"step_{step_idx:06d}.pt"
             torch.save({"model": model.state_dict(), "config": asdict(cfg), "step": step_idx}, step_path)
+            if donor_trainable and donor is not None:
+                donor.save_trainable(out_dir / f"donor_step_{step_idx:06d}")
             print(f"saved {step_path}", flush=True)
     torch.save({"model": model.state_dict(), "config": asdict(cfg)}, out_dir / "last.pt")
+    if donor_trainable and donor is not None:
+        donor.save_trainable(out_dir / "donor_trainable")
     print(f"saved {out_dir / 'last.pt'}")
 
 

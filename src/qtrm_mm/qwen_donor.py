@@ -1,4 +1,5 @@
 from __future__ import annotations
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, Optional
 import torch
@@ -80,17 +81,141 @@ class QwenDonorAdapter(nn.Module):
             self.cfg.model_id, **kwargs
         )
 
+        self._configure_trainability()
+
+        param_count = sum(p.numel() for p in self.model.parameters())
+        trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        print(f"[donor] params: {param_count:,} total, {trainable:,} trainable")
+
+    def _configure_trainability(self) -> None:
+        if self.model is None:
+            raise RuntimeError("Donor not loaded")
+
+        if self.cfg.load_in_4bit and not self.cfg.train_lora and not self.cfg.freeze_donor:
+            raise ValueError(
+                "4bit donor training requires donor.train_lora=true. "
+                "Set load_in_4bit=false for full/partial unfreeze."
+            )
+
+        if self.cfg.train_lora:
+            self._enable_lora_training()
+            self.model.train()
+            print("[donor] LoRA trainable; base donor remains adapter-tuned")
+            return
+
         if self.cfg.freeze_donor:
             self.model.eval()
             for p in self.model.parameters():
                 p.requires_grad_(False)
             print("[donor] Frozen (all params requires_grad=False)")
-        else:
-            print("[warn] donor NOT frozen")
+            return
 
-        param_count = sum(p.numel() for p in self.model.parameters())
-        trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        print(f"[donor] params: {param_count:,} total, {trainable:,} trainable")
+        if int(self.cfg.train_last_n_layers) > 0:
+            self._enable_last_n_layers(int(self.cfg.train_last_n_layers))
+            self.model.train()
+            return
+
+        if bool(self.cfg.gradient_checkpointing) and hasattr(
+            self.model, "gradient_checkpointing_enable"
+        ):
+            self.model.gradient_checkpointing_enable()
+        self.model.train()
+        print("[warn] donor fully trainable")
+
+    def _enable_lora_training(self) -> None:
+        if self.model is None:
+            raise RuntimeError("Donor not loaded")
+        try:
+            from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+        except Exception as exc:
+            raise RuntimeError(
+                "donor.train_lora=true requires the optional 'peft' package. "
+                "Install it with `pip install peft`, or set donor.train_lora=false."
+            ) from exc
+
+        if bool(self.cfg.gradient_checkpointing) and hasattr(
+            self.model, "gradient_checkpointing_enable"
+        ):
+            self.model.gradient_checkpointing_enable()
+        if bool(self.cfg.load_in_4bit):
+            self.model = prepare_model_for_kbit_training(
+                self.model,
+                use_gradient_checkpointing=bool(self.cfg.gradient_checkpointing),
+            )
+        if hasattr(self.model, "enable_input_require_grads"):
+            self.model.enable_input_require_grads()
+
+        target_modules: str | list[str]
+        target_modules = (
+            list(self.cfg.lora_target_modules)
+            if self.cfg.lora_target_modules
+            else "all-linear"
+        )
+        lora_cfg = LoraConfig(
+            r=max(1, int(self.cfg.lora_rank)),
+            lora_alpha=max(1, int(self.cfg.lora_alpha)),
+            lora_dropout=max(0.0, float(self.cfg.lora_dropout)),
+            bias="none",
+            task_type="CAUSAL_LM",
+            target_modules=target_modules,
+        )
+        self.model = get_peft_model(self.model, lora_cfg)
+
+    def _enable_last_n_layers(self, n_layers: int) -> None:
+        if self.model is None:
+            raise RuntimeError("Donor not loaded")
+        layers = self._find_decoder_layers()
+        if not layers:
+            raise ValueError(
+                "donor.train_last_n_layers was set, but decoder layers could "
+                "not be located on this donor model."
+            )
+        for p in self.model.parameters():
+            p.requires_grad_(False)
+        for layer in layers[-n_layers:]:
+            for p in layer.parameters():
+                p.requires_grad_(True)
+        if bool(self.cfg.gradient_checkpointing) and hasattr(
+            self.model, "gradient_checkpointing_enable"
+        ):
+            self.model.gradient_checkpointing_enable()
+        print(f"[donor] Partially trainable: last {min(n_layers, len(layers))} decoder layers")
+
+    def _find_decoder_layers(self) -> list[nn.Module]:
+        if self.model is None:
+            return []
+        roots: list[Any] = [
+            self.model,
+            getattr(self.model, "model", None),
+            getattr(self.model, "language_model", None),
+            getattr(getattr(self.model, "model", None), "language_model", None),
+            getattr(getattr(self.model, "language_model", None), "model", None),
+        ]
+        for root in roots:
+            if root is None:
+                continue
+            for attr in ("layers", "h", "blocks"):
+                layers = getattr(root, attr, None)
+                if isinstance(layers, (nn.ModuleList, list, tuple)) and len(layers) > 0:
+                    return list(layers)
+        return []
+
+    def has_trainable_parameters(self) -> bool:
+        return any(p.requires_grad for p in self.parameters())
+
+    def save_trainable(self, path: str | Any) -> None:
+        if self.model is None or not self.has_trainable_parameters():
+            return
+        path = str(path)
+        if self.cfg.train_lora and hasattr(self.model, "save_pretrained"):
+            self.model.save_pretrained(path)
+            return
+        state = {
+            name: p.detach().cpu()
+            for name, p in self.model.named_parameters()
+            if p.requires_grad
+        }
+        torch.save(state, path)
 
     def _extract_visual_features(self, out) -> Optional[torch.Tensor]:
         # Qwen-specific vision internals are version dependent.
@@ -102,27 +227,37 @@ class QwenDonorAdapter(nn.Module):
                 return visual_features
         return None
 
-    @torch.no_grad()
     def encode_inputs(
         self,
         input_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         return_logits: bool = False,
+        detach: bool = True,
+        detach_logits: Optional[bool] = None,
     ) -> dict[str, torch.Tensor | None]:
         if self.model is None:
             raise RuntimeError("Donor not loaded")
+        detach_logits = detach if detach_logits is None else bool(detach_logits)
         device = next(self.model.parameters()).device
         inputs = {"input_ids": input_ids.to(device)}
         if attention_mask is not None:
             inputs["attention_mask"] = attention_mask.to(device)
-        out = self.model(**inputs, output_hidden_states=True, use_cache=False)
+        context = torch.no_grad() if detach else nullcontext()
+        with context:
+            out = self.model(**inputs, output_hidden_states=True, use_cache=False)
+        text_states = out.hidden_states[-1]
+        visual_features = self._extract_visual_features(out)
         result = {
-            "text_states": out.hidden_states[-1].detach(),
+            "text_states": text_states.detach() if detach else text_states,
             "attention_mask": inputs.get("attention_mask"),
-            "visual_features": self._extract_visual_features(out),
+            "visual_features": (
+                visual_features.detach()
+                if detach and visual_features is not None
+                else visual_features
+            ),
         }
         if return_logits:
-            result["logits"] = out.logits.detach()
+            result["logits"] = out.logits.detach() if detach_logits else out.logits
         return result
 
     @torch.no_grad()

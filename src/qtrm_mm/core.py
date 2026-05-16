@@ -33,8 +33,19 @@ class QTRMRecursiveCore(nn.Module):
     def __init__(self, cfg: QTRMConfig):
         super().__init__()
         self.cfg = cfg
-        self.fast_stack = QTRMBlockStack(cfg, cfg.n_core_layers, causal=False, attn_every=cfg.attn_every)
-        self.slow_stack = QTRMBlockStack(cfg, cfg.n_core_layers, causal=False, attn_every=cfg.attn_every)
+        core_causal = bool(getattr(cfg, "core_causal", False))
+        self.fast_stack = QTRMBlockStack(
+            cfg,
+            cfg.n_core_layers,
+            causal=core_causal,
+            attn_every=cfg.attn_every,
+        )
+        self.slow_stack = QTRMBlockStack(
+            cfg,
+            cfg.n_core_layers,
+            causal=core_causal,
+            attn_every=cfg.attn_every,
+        )
         self.inject_l = StableInject(cfg.d_model) if cfg.use_stable_inject else None
         self.inject_h = StableInject(cfg.d_model) if cfg.use_stable_inject else None
         self.step_conditioning = (

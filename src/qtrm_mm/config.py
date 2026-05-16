@@ -18,6 +18,7 @@ class QTRMConfig:
     n_core_layers: int = 2
     n_coda_layers: int = 2
     core_enabled: bool = True
+    core_causal: bool = False
     attn_every: int = 4
     coda_attn_every: Optional[int] = None
     workspace_tokens: int = 32
@@ -32,6 +33,13 @@ class QTRMConfig:
     dropout: float = 0.0
     rope_theta: float = 10000.0
     delta_backend: str = "torch_gated_delta"
+    delta_head_dim: Optional[int] = None
+    delta_num_v_heads: Optional[int] = None
+    delta_expand_v: float = 1.0
+    delta_mode: str = "chunk"
+    delta_use_short_conv: bool = True
+    delta_conv_size: int = 4
+    delta_norm_eps: float = 1e-6
     attention_backend: str = "sdpa"
     strict_backends: bool = False
     visual_dim: int = 512
@@ -89,6 +97,9 @@ class QTRMConfig:
     core_halt_freeze_halted_state_enabled: bool = False
     core_halt_exploration_prob: float = 0.0
     core_halt_exploration_min_steps: int = 2
+    core_convergence_halt_enabled: bool = False
+    core_convergence_halt_threshold: float = 1e-3
+    core_convergence_halt_min_outer: int = 1
     core_trm_no_grad_inner_cycles_enabled: bool = False
     core_depth_readout_enabled: bool = False
     jepa_encoder_layers: int = 1
@@ -125,6 +136,7 @@ class QTRMConfig:
     core_loop_readout_requires_core: bool = True
     answer_state_loop_enabled: bool = False
     answer_state_loop_requires_core: bool = True
+    answer_state_loop_core_state_only_enabled: bool = False
     answer_state_loop_gate_init_bias: float = 0.0
     answer_state_loop_gate_min: float = 0.0
     answer_state_loop_recurrent_block_enabled: bool = False
@@ -156,6 +168,15 @@ class QTRMConfig:
     answer_state_loop_next_token_decoder_layers: int = 1
     answer_state_loop_next_token_decoder_gate_init_bias: float = 0.0
     answer_state_loop_next_token_decoder_gate_min: float = 0.0
+    answer_state_loop_next_token_decoder_prev_token_enabled: bool = False
+    answer_state_loop_next_token_decoder_prev_token_gate_init_bias: float = 0.0
+    answer_state_loop_next_token_decoder_prev_token_gate_min: float = 0.0
+    answer_state_loop_free_transformer_latent_enabled: bool = False
+    answer_state_loop_free_transformer_latent_dim: Optional[int] = None
+    answer_state_loop_free_transformer_gate_init_bias: float = 0.0
+    answer_state_loop_free_transformer_gate_min: float = 1.0
+    answer_state_loop_free_transformer_posterior_train_enabled: bool = True
+    answer_state_loop_free_transformer_free_bits: float = 0.05
     answer_state_loop_future_token_decoder_enabled: bool = False
     answer_state_loop_future_token_max_tokens: int = 8
     answer_state_loop_future_token_position_scale: float = 1.0
@@ -381,6 +402,12 @@ class DonorConfig:
     load_in_4bit: bool = False
     freeze_donor: bool = True
     train_lora: bool = False
+    train_last_n_layers: int = 0
+    gradient_checkpointing: bool = False
+    lora_rank: int = 16
+    lora_alpha: int = 32
+    lora_dropout: float = 0.05
+    lora_target_modules: list[str] = field(default_factory=list)
     trust_remote_code: bool = True
 
 
@@ -415,6 +442,7 @@ class TrainConfig:
     loss_core_trajectory_shortcut_weight: float = 0.0
     loss_core_variable_trajectory_weight: float = 0.0
     loss_core_depth_text_ce_weight: float = 0.0
+    loss_donor_lm_weight: float = 0.0
     controller_signal_loss_mode: str = "bce"
     core_trajectory_shortcut_min_step: int = 1
     core_variable_trajectory_short_steps: int = 1

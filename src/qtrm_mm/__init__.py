@@ -9,6 +9,13 @@ __all__ = [
     "QTRMCoreCarry",
     "QTRMMultimodalModel",
     "JepaWorldModelHead",
+    "QwenBackboneQTRM",
+    "QwenBackboneQTRMReport",
+    "QwenLayerWrappedRecursiveCore",
+    "QwenLayerWrappedStack",
+    "OuroLayerWrappedStack",
+    "OuroWeightWrappedRecursiveCore",
+    "build_qtrm_core_config_from_qwen",
 ]
 
 
@@ -25,4 +32,32 @@ def __getattr__(name):
         from .world_model import JepaWorldModelHead
 
         return JepaWorldModelHead
+    if name in {
+        "QwenBackboneQTRM",
+        "QwenBackboneQTRMReport",
+        "QwenLayerWrappedRecursiveCore",
+        "QwenLayerWrappedStack",
+        "OuroLayerWrappedStack",
+        "OuroWeightWrappedRecursiveCore",
+        "build_qtrm_core_config_from_qwen",
+    }:
+        from .qwen_backbone_qtrm import (
+            OuroLayerWrappedStack,
+            OuroWeightWrappedRecursiveCore,
+            QwenBackboneQTRM,
+            QwenBackboneQTRMReport,
+            QwenLayerWrappedRecursiveCore,
+            QwenLayerWrappedStack,
+            build_qtrm_core_config_from_qwen,
+        )
+
+        return {
+            "QwenBackboneQTRM": QwenBackboneQTRM,
+            "QwenBackboneQTRMReport": QwenBackboneQTRMReport,
+            "QwenLayerWrappedRecursiveCore": QwenLayerWrappedRecursiveCore,
+            "QwenLayerWrappedStack": QwenLayerWrappedStack,
+            "OuroLayerWrappedStack": OuroLayerWrappedStack,
+            "OuroWeightWrappedRecursiveCore": OuroWeightWrappedRecursiveCore,
+            "build_qtrm_core_config_from_qwen": build_qtrm_core_config_from_qwen,
+        }[name]
     raise AttributeError(name)

@@ -42,6 +42,13 @@ class QTRMBlock(nn.Module):
                 backend=cfg.delta_backend,
                 strict=cfg.strict_backends,
                 dropout=cfg.dropout,
+                head_dim=cfg.delta_head_dim or (cfg.d_model // cfg.n_heads),
+                num_v_heads=cfg.delta_num_v_heads or cfg.n_heads,
+                expand_v=cfg.delta_expand_v,
+                mode=cfg.delta_mode,
+                use_short_conv=cfg.delta_use_short_conv,
+                conv_size=cfg.delta_conv_size,
+                norm_eps=cfg.delta_norm_eps,
             )
         self.ffn = SwiGLU(cfg.d_model, cfg.d_ff, dropout=cfg.dropout)
 
