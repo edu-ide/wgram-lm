@@ -1863,8 +1863,355 @@ Claim boundary:
   generalization. It is still not L4/general LM promotion because it validates
   internal role-value traces, not natural autoregressive answer generation.
 
+2026-05-14 L4 source-position logits probe preflight:
+  command:
+    scripts/328_probe_qtrm_source_position_logits.py
+  report:
+    local_eval/qtrm_l3_source_position_logits_probe_20260514/source_copy_probe.json
+  decision:
+    checkpoint_chain_missing
+  missing base checkpoint:
+    local_eval/research_gate_runner/primitive_field_heads_delta_codec_s90_lr5e4_seed11/last.pt
+
+Interpretation:
+  The accepted L3 checkpoint is a trainable-delta chain, and one older base
+  checkpoint in that chain is no longer present in the repo/local_eval tree.
+  This blocks a fair L4 source-position logits probe before model execution.
+  Treat this as experiment-operation hygiene, not architecture evidence.
+
+Operational fix:
+  The L4 LM path runner and source-position logits probe now preflight the
+  checkpoint/base_checkpoint chain and write a structured
+  `checkpoint_chain_missing` report instead of crashing with a late
+  FileNotFoundError. This is the Autoresearch-style operating rule applied to
+  this repo: fail before expensive work, preserve the decisive failure artifact,
+  and do not silently continue with a broken baseline.
+
+2026-05-14 checkpoint integrity extension:
+  The same preflight now validates known checkpoint sha256 values, not only
+  path existence. A regenerated file at the missing-base path is rejected as
+  `checkpoint_chain_sha256_mismatch` unless it matches the recorded original
+  digest. This prevents a non-equivalent recipe replay from falsely satisfying
+  the accepted L3 chain.
+
+  Verified commands:
+    .venv/bin/python -m py_compile
+      scripts/322_run_source_pointer_l4_lm_path_gate.py
+      scripts/328_probe_qtrm_source_position_logits.py
+      src/qtrm_mm/qtrm_model.py
+    .venv/bin/python -m unittest
+      tests.test_source_position_logits_probe
+      tests.test_source_pointer_l4_lm_path_gate -v
+
+  Current preflight result:
+    source-position probe:
+      checkpoint_chain_missing with checkpoint_chain_issues
+    L4 LM path runner:
+      checkpoint_chain_missing with checkpoint_chain_issues
+
+  Added materialization tool:
+    scripts/329_materialize_qtrm_checkpoint_stack.py
+
+  Use after any newly accepted L2/L3 delta checkpoint:
+    .venv/bin/python scripts/329_materialize_qtrm_checkpoint_stack.py \
+      --config <gate-config.yaml> \
+      --checkpoint <accepted-delta.pt> \
+      --out <accepted-self-contained.pt>
+
+  Rule:
+    Do not promote a new accepted checkpoint to the next level unless either
+    the exact base chain is archived by sha256 or a self-contained materialized
+    checkpoint has been written and replayed through the acceptance gate.
+
+Next action:
+  Restore the missing base checkpoint or materialize a self-contained L3
+  checkpoint before running the L4 lexicalization/source-copy probe. Do not
+  spend GPU time on L4 tuning from this chain until that preflight passes.
+
+2026-05-14 base regeneration audit:
+  expected original base sha256 from the 2026-05-09 source-pointer run:
+    9a9204a9b01001713772294afcf30ae5753b0e3cd3877adabb83918caf52747d
+
+  attempted reproduction:
+    config:
+      configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_primitive_field_heads_delta_codec_s160.yaml
+    out:
+      local_eval/research_gate_runner/primitive_field_heads_delta_codec_s90_lr5e4_seed11
+    steps:
+      90
+    lr:
+      5.0e-5
+    seed:
+      11
+    allow_random_init:
+      true
+
+  reproduced last.pt sha256:
+    b7ef8923f44ae6e4159157e16535f1011c27a67e7f4bb8bc5935a3f1a7554601
+
+  L3 full replay with reproduced base:
+    report:
+      local_eval/qtrm_l3_regenerated_base_validation_20260514/full.json
+    trace_exact_accuracy:
+      0.0
+    value_accuracy:
+      0.57958984375
+
+  expected accepted L3:
+    trace_exact_accuracy:
+      0.8203125
+    value_accuracy:
+      0.95849609375
+
+Decision:
+  Rejected. The recreated base is not bit-equivalent and does not preserve the
+  accepted L3 chain. It was moved out of the canonical missing-base path and
+  deleted after preserving this audit. Do not satisfy the checkpoint preflight
+  by recreating this file from recipe alone.
+
+Next valid recovery paths:
+  1. Find the exact original file by sha256.
+  2. Rebuild the source-pointer L2/L3 stack from a new self-contained base and
+     re-accept it under the same L3 full/source-slot/source-binder/primitive
+     ablation gates.
+  3. Materialize a self-contained checkpoint only after a replayed L3 gate
+     matches or exceeds the accepted metrics.
+
 3. Validation-gated mixed curriculum:
    mix original accepted L3 rows with paired hard negatives and keep only
    checkpoints that improve full trace exact while maintaining source-slot,
    source-binder, strict-prompt, and primitive-off drops.
+```
+
+## Autoresearch-Style Operations Applied 2026-05-14
+
+Karpathy `autoresearch` is useful here as an experiment-operations pattern, not
+as a QTRM architecture prior. The applicable rule is:
+
+```text
+fixed budget -> one changed mechanism -> one decisive metric/gate ->
+keep/discard/probe/crash ledger -> preserve accepted checkpoint chain
+```
+
+Mapping for this source-pointer bottleneck:
+
+```text
+autoresearch fixed 5-minute val_bpb
+  -> QTRM smoke/standard profiles with fixed eval cases and fixed gates
+
+autoresearch keep/discard loop
+  -> QTRM accepted/rejected gate decision plus results.tsv ledger
+
+autoresearch small editable research scope
+  -> QTRM one wrapper/recipe per gate, not ad hoc shell history
+
+autoresearch reset bad experiments
+  -> QTRM never promote rejected checkpoints or broken delta chains
+```
+
+Implemented runner:
+
+```text
+scripts/350_rebuild_source_pointer_selfcontained_stack.py
+```
+
+Purpose:
+
+```text
+self-contained base train
+-> L2 source-pointer gate
+-> materialize accepted L2
+-> L3 hard tune
+-> L3 hard audit
+-> materialize accepted L3
+-> only then allow L4 preflight
+```
+
+The runner now writes an Autoresearch-style operation ledger row to:
+
+```text
+local_eval/research_gate_runner/results.tsv
+```
+
+Smoke execution:
+
+```text
+run:
+  local_eval/source_pointer_selfcontained_rebuild_smoke_exec_20260514
+profile:
+  smoke
+decision:
+  l2_rejected
+accepted:
+  false
+```
+
+Decisive L2 smoke metrics:
+
+```json
+{
+  "full_trace_exact_accuracy": 0.0,
+  "full_value_accuracy": 0.3,
+  "value_drop": 0.3,
+  "token_numeric_value_drop": -0.10000000000000003,
+  "source_binder_value_drop": 0.09999999999999998,
+  "full_step_exact_accuracy": 0.0
+}
+```
+
+Interpretation:
+
+```text
+The self-contained rebuild pipeline is operationally valid, but the 5-step
+smoke is rejected at L2. That is expected for a wiring smoke; it proves the
+runner stops before spending L3/L4 compute on a failed prerequisite.
+```
+
+Verified:
+
+```text
+.venv/bin/python -m py_compile \
+  scripts/329_materialize_qtrm_checkpoint_stack.py \
+  scripts/350_rebuild_source_pointer_selfcontained_stack.py \
+  scripts/322_run_source_pointer_l4_lm_path_gate.py \
+  scripts/328_probe_qtrm_source_position_logits.py \
+  tests/test_source_pointer_selfcontained_rebuild_runner.py
+
+.venv/bin/python -m unittest \
+  tests.test_source_pointer_selfcontained_rebuild_runner \
+  tests.test_training_checkpoint_init \
+  tests.test_source_position_logits_probe \
+  tests.test_source_pointer_l4_lm_path_gate -v
+```
+
+Result:
+
+```text
+187 tests passed.
+```
+
+2026-05-14 accepted recipe recovery:
+
+```text
+Old self-contained rebuild runner mistake:
+  It rebuilt L2 through the single-row token_numeric_value_features path.
+
+Accepted historical L2/L3 recipe:
+  batch-integrated source-position training
+  token_numeric_source_slots
+  source-slot predicate feedback
+  source-position binder state gate
+  source-slots-only + raw-source-slots binder context
+  paired hard negative train/eval rows
+
+Operational correction:
+  scripts/350_rebuild_source_pointer_selfcontained_stack.py now uses the same
+  batch/source-slot recipe for L2 and L3 instead of the earlier single-row
+  diagnostic path.
+```
+
+Triage after the recipe correction:
+
+```text
+run:
+  local_eval/source_pointer_selfcontained_rebuild_batch_triage_retry_20260514
+decision:
+  l2_rejected
+primary failed metric:
+  full_trace_exact_accuracy = 0.0
+causal signal:
+  full_value_accuracy = 0.681640625
+  source_slot_value_drop = 0.51953125
+  source_binder_value_drop = 0.509765625
+  strict_prompt_binding_value_drop = 0.431640625
+```
+
+Interpretation:
+
+```text
+The corrected batch/source-slot path is causal again, but a short 60-step
+triage run is not enough to recover full trace exactness from a new
+self-contained base. Do not promote it. Use it as evidence that the source-slot
+recipe is the right recovery path, then run the standard profile.
+```
+
+Current standard recovery run:
+
+```text
+run:
+  local_eval/source_pointer_selfcontained_rebuild_batch_standard_20260514
+profile:
+  standard
+L2 decision:
+  accepted_l2
+L2 selected checkpoint:
+  01_l2_gate/train/step_000200.pt
+L2 full metrics:
+  trace_exact_accuracy = 1.0
+  value_accuracy = 1.0
+  step_exact_accuracy = 1.0
+L2 causal ablations:
+  primitive_off value_accuracy = 0.0
+  source_slot_off value_accuracy = 0.25
+  source_binder_off value_accuracy = 0.25
+  strict_prompt_binding_off value_accuracy = 0.25
+materialized L2:
+  02_l2_self_contained/accepted_l2_self_contained.pt
+L3 tune selected checkpoint:
+  03_l3_tune/train/step_000240.pt
+L3 audit decision:
+  accepted_l3
+L3 audit metrics:
+  trace_exact_accuracy = 0.7421875
+  value_accuracy = 0.97314453125
+  step_exact_accuracy = 0.908203125
+L3 audit causal drops:
+  primitive_value_drop = 0.97314453125
+  token_numeric_value_drop = 0.56689453125
+  source_binder_value_drop = 0.56689453125
+materialized L3:
+  05_l3_self_contained/accepted_l3_self_contained.pt
+self-contained L3 replay:
+  trace_exact_accuracy = 0.7421875
+  value_accuracy = 0.97314453125
+root decision:
+  accepted_l3_self_contained_stack
+```
+
+Interpretation:
+
+```text
+The operation loop found the real failure: the first self-contained runner used
+the wrong single-row diagnostic path. After switching to the accepted
+batch/source-slot recipe, L2 reproduced cleanly from a new self-contained base
+and preserved causal ablation drops. This validates the Autoresearch-style
+experiment operation rule for this repo: do not argue from memory or shell
+history; replay the accepted recipe, gate it, ledger it, and only then move on.
+```
+
+Operational bugs caught by this run:
+
+```text
+1. L3 audit checkpoint selection bug:
+   scripts/350_rebuild_source_pointer_selfcontained_stack.py originally built
+   the L3 audit command from l3_save_every, so standard profile audited
+   step_000120 even though L3 tune selected step_000240. Fixed: audit now uses
+   l3_steps/final selected candidate.
+
+2. Materialization config bug:
+   scripts/329_materialize_qtrm_checkpoint_stack.py originally constructed the
+   model from YAML only, so source-slot/binder modules enabled by runner flags
+   were treated as unexpected keys and silently dropped. The first materialized
+   L3 replay failed with trace_exact_accuracy = 0.0. Fixed: materialize accepts
+   the same source-slot/binder flags and the runner passes
+   --fail-on-unmatched-keys.
+```
+
+Current boundary:
+
+```text
+This is a valid self-contained L3 recovery, but it is not the historical best:
+the archived accepted L3 replay reached trace_exact_accuracy = 0.8203125,
+whereas the rebuilt self-contained L3 reaches 0.7421875. Promote it to L4
+preflight as a reproducible baseline, not as a new SOTA checkpoint.
 ```

@@ -11,6 +11,8 @@ cannot be tested, it should be treated as a hypothesis, not a result.
 | Term | Meaning in QTRM | Not the same as | Required evidence |
 | --- | --- | --- | --- |
 | Donor | A frozen source LLM that provides tokenizer behavior, hidden states, and optionally base logits. Current donor: Qwen3.5-2B. | A trainable QTRM component. | Donor-only baseline and donor+QTRM comparison. |
+| Offline teacher donor | A stronger model used only to produce training text, top-k logits, preferences, verifier hints, or initialization targets before QTRM-native training. It is not loaded by final inference. | Runtime donor, hidden sidecar, or proof that QTRM-native already has language ability. | Cached artifacts exist; final forward loads no teacher weights; native core/decoder ablations still explain any gain. |
+| QTRM-integrated donor | A donor whose LoRA adapters or selected layers are trained while QTRM recurrent state remains in the causal answer path. | QTRM-native, because pretrained donor weights still provide the language backbone. | Full > donor-only, full > core-off, `z_l`/`z_h` or core-state ablations reduce the same LM-logit metric, and donor scale can be annealed down without collapse. |
 | Donor-backed residual adapter | QTRM reads donor hidden states and adds bounded residual logits on top of donor logits. | LoRA, because QTRM does not edit donor weights. | Fluency preserved while held-out task score improves. |
 | Cognitive sidecar | The trainable QTRM path around the donor: workspace, recursive core, coda, residual head, gates, and telemetry. | A standalone language model. | Component ablations show which sidecar part caused a gain. |
 | QTRM model | Tokenizer/donor/QTRM forward path from canonical token stream to logits/answer channel. | MemoryOS retrieval, reranking, tools, or history store. | Plain-prompt donor/QTRM eval works without MemoryOS. |
@@ -24,6 +26,8 @@ cannot be tested, it should be treated as a hypothesis, not a result.
 | Coda | The post-core block stack that lets text positions attend back to latent core prefix states before LM head projection. | The donor decoder. | Core-prefix ablations affect residual logits or answer score. |
 | Donor-logit fusion | The final logit combination of donor base logits plus QTRM residual logits. | Replacing the donor. | Residual scale/gate telemetry and donor argmax-shift rate. |
 | Donor annealing | A staged reduction of donor reliance after QTRM-only logits are trained and stable. | Immediately setting donor scale to zero. | QTRM-only/student loss, repetition metrics, and held-out eval pass. |
+| Healing tune | A short alignment stage that lets changed weights recover after a merge, graft, adapter insertion, architecture fork, or domain shift. In QTRM-integrated donor runs this can update donor LoRA/partial donor layers, QTRM projections, and the recurrent core. | Proof of native intelligence by itself. | Language loss remains stable while core-off/depth ablations prove the recurrent path is not decorative. |
+| Base-model post-training / Qwopus-style healing | Continued SFT/LoRA/RL-style post-training on an existing Qwen-family backbone to repair or improve reasoning style, token efficiency, tool use, or formatting. | QTRM-native architecture transfer, because the pretrained Qwen backbone remains the runtime language model. | Compare against the base model; document data mix, response-only mask, LoRA merge/export, and non-regression metrics. |
 | Metacognitive calibration | QTRM's trainable state estimates whether to answer, search, defer, or abstain under uncertainty. | Donor confidence, threshold-only abstention, or an external verifier sidecar. | ECE/Brier/UNKNOWN/OOD/selective-accuracy gains that drop under the claimed core/memory ablation. |
 | MemoryOS retrieval | Optional external search/rerank/evidence packaging before model forward, followed by SSOT context compilation. | QTRM model architecture, neural memory inside QTRM weights, or a second model input reality. | Retrieval recall, rerank quality, token-aligned source masks, and missing-answer controls. |
 | Internalized context engineering | Moving some context selection/routing/compression from prompt assembly into trainable workspace/core memory paths. | End-to-end learned web search. | External retrieval is measured, then internal routes are ablated. |
@@ -109,6 +113,16 @@ Short form:
 ```text
 donor-backed residual cognitive adapter
 ```
+
+When donor LoRA or partial donor unfreezing is enabled, the correct label is:
+
+```text
+QTRM-integrated donor
+```
+
+This is a legitimate bridge toward QTRM-native, but not the final native claim.
+The `native` label is reserved for runs where the donor is disabled and the
+token embedding, recursive core, decoder, and LM head are all QTRM-owned.
 
 Avoid these labels for now:
 

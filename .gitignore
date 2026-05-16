@@ -12,10 +12,12 @@ venv/
 .env
 .env.*
 .cache/
+local_deps/
 wandb/
 
 # Training outputs and checkpoints
 runs/
+local_eval/
 *.pt
 *.pth
 *.ckpt

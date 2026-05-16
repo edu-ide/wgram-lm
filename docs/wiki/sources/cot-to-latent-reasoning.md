@@ -14,6 +14,7 @@ latent loops.
 | Latent thought pretraining | PonderLM-2, "Pretraining LLM with Latent Thoughts in Continuous Space" | `references/official/PonderLM-2` at `fa784be` | Trains an intermediate latent thought immediately before predicting the next token. This maps directly to QTRM's renderer bottleneck: answer-state hidden must be trained to improve LM-token prediction, not only forced-choice scoring. |
 | CoT compression | CODI, "Compressing Chain-of-Thought into Continuous Space via Self-Distillation" | `references/papers/latent_reasoning/codi_2025.emnlp-main.36.pdf`, `references/official/codi` at `2c23146` | Directly matches the QTRM training target: explicit CoT as teacher, latent state as student. |
 | Hybrid text/latent reasoning | HybridCoT | `references/papers/latent_reasoning/hybridcot_4mfGbMzTwu.pdf` | Warns against over-compressing all reasoning; critical symbols or operations may remain textual while semantic reasoning is latent. |
+| Encode-Think-Decode thinking block | Encode, Think, Decode, "Scaling test-time reasoning with recursive latent thoughts" | `references/papers/recurrent_depth/encode_think_decode_2510.07358.pdf` | Most direct `thinking block` reference for QTRM: split a transformer into encode / repeated middle reasoning block / decode, then scale test-time latent recursion without adding parameters. This argues QTRM should test a faithful recurrent block inside the causal LM path before adding external renderers. |
 | Looped latent thoughts | Reasoning with Latent Thoughts / Looped Transformers | `references/papers/recurrent_depth/reasoning_with_latent_thoughts_looped_transformers_2502.17416.pdf` | Theoretical and empirical support for looped models simulating CoT-like steps through repeated latent computation. |
 | Formal CoT/latent separation | A Formal Comparison Between Chain of Thought and Latent Thought | `references/papers/recurrent_depth/formal_comparison_cot_latent_thought_2509.25239.pdf`, `references/official/cot-vs-loop` at `783fa90` | Shows no universal dominance: latent loops favor parallelizable computation, while CoT favors stochastic approximate counting and sampling. |
 | Reliability warning | Do Latent Tokens Think? | `references/papers/latent_reasoning/do_latent_tokens_think_2512.21711.pdf` | Cautions that latent tokens may become shortcut placeholders. QTRM must prove latent contribution with ablations and adversarial/distractor evals. |
@@ -28,6 +29,7 @@ latent loops.
 - CODI: <https://aclanthology.org/2025.emnlp-main.36/>
 - CODI code: <https://github.com/zhenyi4/codi>
 - HybridCoT: <https://openreview.net/forum?id=4mfGbMzTwu>
+- Encode, Think, Decode: <https://arxiv.org/abs/2510.07358>
 - Reasoning with Latent Thoughts: <https://arxiv.org/abs/2502.17416>
 - A Formal Comparison Between Chain of Thought and Latent Thought:
   <https://arxiv.org/abs/2509.25239>
@@ -52,6 +54,11 @@ latent loops.
    by task family. Latent loop gains should be expected first on
    parallelizable/DAG-like tasks, while stochastic counting/sampling may still
    require explicit token-level or sampling-oriented computation.
+7. Encode-Think-Decode is the strongest warning against overcomplicating the
+   QTRM readout path. A faithful next experiment should identify a compact
+   reasoning block, repeat it at test time, and decode through the ordinary LM
+   head. If QTRM needs a separate renderer to emit answers, the ETD prior says
+   the causal loop is probably in the wrong place.
 
 ## TRM Halting Details To Preserve
 

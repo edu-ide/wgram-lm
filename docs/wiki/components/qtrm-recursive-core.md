@@ -9,6 +9,7 @@ Reference source:
 
 - `docs/wiki/sources/tiny-recursive-models.md`
 - `docs/wiki/sources/openmythos-recurrent-depth.md`
+- `docs/wiki/decisions/orthodox-trm-general-llm-direction.md`
 
 Status:
 
@@ -84,5 +85,7 @@ Gate before long training:
   reasoning: accepted mixed-depth ACT gates.
 - Keep answer-side recurrence and Mythos-style loops as readout/stability
   probes unless they pass core-off, loop-off, depth, and generation gates.
+- Require `core_state_zero` or equivalent trajectory corruption to reduce the
+  claimed gain before calling a result core-causal.
 - Add recurrent-depth diagnostics before using longer training to interpret
   repeated-token collapse.

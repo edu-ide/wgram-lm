@@ -2,6 +2,10 @@
 
 Status: canonical architecture principle, 2026-05-05.
 
+Related decision:
+
+- [Orthodox TRM General-LLM Direction](../decisions/orthodox-trm-general-llm-direction.md)
+
 ## One-Sentence Rule
 
 ```text
@@ -146,3 +150,8 @@ The target is not a fixed calculator attached to a language model. The target
 is a general LLM whose latent core can learn state updates, memory use,
 uncertainty, and verification while keeping one causal token-to-logit answer
 path.
+
+For the current QTRM branch, the orthodox interpretation is stricter: the
+TRM/QTRM recursive latent core is the primary reasoning core, and answer-state
+loops or typed modules are not promoted unless destructive ablations prove that
+they depend on the core trajectory and improve the same LM-generation metric.

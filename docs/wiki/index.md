@@ -6,6 +6,7 @@
 - [Karpathy Cognitive Core And Data Quality](sources/karpathy-cognitive-core.md): corrected source notes for cognitive core, data quality, and the 1B-vs-1.8T overclaim.
 - [Qwen3.5 2B Configs](sources/qwen35-2b-configs.md): donor model card and nested HF config reference.
 - [Qwen3.5 Official Repo](sources/qwen35-official-repo.md): release notes, usage, serving, and training guidance.
+- [Qwen3.6-27B Benchmark Targets](sources/qwen36-27b-benchmarks.md): official target scores and comparison discipline for the QTRM-Native-2B/3B milestone gate.
 - [Qwen-Scope](sources/qwen-scope.md): official Qwen SAE interpretability modules and QTRM donor-feature logging plan.
 - [Qwen3-VL](sources/qwen3-vl.md): prior vision-language architecture report.
 - [Qwen3-Omni](sources/qwen3-omni.md): prior omni-modal architecture report.
@@ -33,6 +34,8 @@
 - [Ouro / Looped Language Models](sources/ouro-looplm.md): 2025 LoopLM reference for pre-trained recurrent decoder-only LLMs, entropy-regularized depth allocation, and QTRM causal-path mapping.
 - [SubQ / Subquadratic Sparse Attention](sources/subq-ssa.md): model-announcement level source for content-dependent sparse long-context routing and QTRM selective-context-router implications.
 - [Latent Lookahead Renderer](sources/latent-lookahead-renderer.md): PonderLM-2, Latent Lookahead, latent-token multi-token prediction, EBM sequence scoring, and generation-verification sources for QTRM renderer repair.
+- [Diffusion, Token Superposition, And Fast-Slow LLMs 2026](sources/diffusion-fast-slow-llm-2026.md): Mercury diffusion LLMs, Token Superposition Training, and Fast-Slow Training mapped to QTRM-native priorities.
+- [Token Superposition Training](sources/token-superposition-training.md): 2026 TST paper mapped as a QTRM-native language-pretraining efficiency objective with local MCE/bag-loss primitives.
 - [Gated DeltaNet](sources/gated-deltanet.md): official gated delta rule mixer reference.
 - [LeWorldModel](sources/leworldmodel.md): newest end-to-end JEPA world-model reference.
 - [Tiny Recursive Models](sources/tiny-recursive-models.md): TRM recursive z_H/z_L and ACT reference.
@@ -88,6 +91,8 @@
 - [Universal LLM Causal Path Contract](architecture/universal-llm-causal-path-contract.md): principle that QTRM must remain a general prompt-token-to-logits LLM while using structured modules only as learned, ablatable internal bottlenecks.
 - [QTRM Model vs Runtime Boundary](architecture/model-vs-runtime-boundary.md): canonical split between the QTRM model and optional MemoryOS/runtime context system.
 - [QTRM Forward Pass](architecture/qtrm-forward-pass.md): Mermaid diagrams and tensor-shape ledger for the current donor-backed residual forward path.
+- [QTRM-Native First Roadmap](architecture/qtrm-native-first-roadmap.md): canonical pivot to a TRM-paper-condition QTRM-native loop reasoning model with destructive core-depth/state ablations.
+- [QTRM-Native Experiment Ledger](architecture/qtrm-native-experiment-ledger.tsv): TSV ledger for autoresearch-style keep/discard/probe experiment operations.
 - [Canonical Architecture Matrix](architecture/canonical-architecture-matrix.md): active, forward-only, probe-only, runtime, and scaffold status for implemented QTRM components.
 - [Paper Diagram Prompts](architecture/paper-diagram-prompts.md): prompt bank for paper-style architecture and ablation figures.
 
@@ -101,6 +106,8 @@
 
 ## Decisions
 
+- [QTRM-Native Hard Lock](decisions/qtrm-native-hard-lock.md): locks canonical progress to QTRM-native loop reasoning that satisfies TRM-style causal conditions; donor/residual/MemoryOS/Qwen-sidecar work is diagnostic only.
+- [QTRM-Native 2B/3B vs Qwen3.6-27B Milestones](decisions/qtrm-native-27b-benchmark-milestones.md): target contract, milestone ladder, and executable status gate for beating Qwen3.6-27B with a smaller native model.
 - [Reference Architecture Axes](decisions/reference-architecture-axes.md): separates generator, mixer, recursion, world model, and wiki sources.
 - [QTRM Goal And Scope](decisions/qtrm-goal-and-scope.md): defines QTRM as a Qwen-backed cognitive/memory adapter and sets the next priority order.
 - [QTRM Limitations And Mitigation Roadmap](decisions/limitations-mitigation-roadmap.md): maps current architecture limits to prior research, telemetry, ablations, and gated residual next steps.
@@ -111,6 +118,7 @@
 - [Expanded Workspace/Core Ablation](decisions/expanded-workspace-core-ablation.md): expanded 72-case causality ablation covering workspace/core, coda, residual-head, donor-hidden, and workspace-only paths.
 - [Root Architecture Causality Gate](decisions/root-architecture-causality-gate.md): automated accept/reject gate for whether workspace/core/evidence paths are causally necessary on ablation evals.
 - [Raw Intelligence Gates](decisions/raw-intelligence-gates.md): first-priority ASI gates for no-retrieval recursive-depth reasoning, trainable memory on/off, and reasoning-memory composition.
+- [QTRM-Native Dual-Path Reverse Active Architecture](decisions/qtrm-native-dual-path-reverse-active-architecture.md): freezes `dual_path_reverse` as the active native core hypothesis and defines the length/depth promotion gate.
 - [Qwen Donor Risk And Metacognition Boundary](decisions/qwen-donor-risk-and-metacognition.md): clarifies when Qwen donor use is valid scaffold versus a crutch hiding QTRM raw-intelligence or calibration failures.
 - [Noise Warmup Metacognitive Calibration Smoke S001](decisions/noise-warmup-metacognitive-calibration-smoke-s001.md): matched 1-case no-warmup versus random-noise-warmup calibration smoke using choice-score ECE/Brier.
 - [Noise Warmup Metacognitive Calibration Heldout40 S001](decisions/noise-warmup-metacognitive-calibration-heldout40-s001.md): 40-case matched metacognition gate rejecting the current 2-step random-noise warm-up because global ECE worsened.
@@ -152,6 +160,7 @@
 - [Reproducible Gate Preservation Protocol](decisions/reproducible-gate-preservation-protocol.md): makes accepted smoke gates reproducible by recording seeds, commands, config snapshots, checkpoint hashes, missing/unexpected keys, step checkpoints, best.pt, and accepted.pt.
 - [Core Layer Residual Donor Renderer Reject](decisions/core-layer-residual-donor-renderer-reject.md): rejects the true donor-layer residual hook as the next renderer path after two heldout4 layer positions fail greedy generation.
 - [General LLM Bottleneck Roadmap](decisions/general-llm-bottleneck-roadmap.md): SSoT list of the 10 major gates remaining after reverse-composition acceptance before stronger general-LLM claims.
+- [Orthodox TRM General-LLM Direction](decisions/orthodox-trm-general-llm-direction.md): canonical decision that TRM/QTRM can be a general-LLM reasoning core only through the mandatory prompt-token -> recurrent latent core -> LM-logit path with destructive causal ablations.
 - [Donorless Recurrent Depth Probe](decisions/donorless-recurrent-depth-probe.md): L1 reset scaffold that tests whether a learned recurrent latent state shows depth gain before returning to integrated donor-QTRM tuning.
 - [Ordered List State Probe](decisions/ordered-list-state-probe.md): accepted L1 scaffold showing a learned recurrent ordered-slot state can compose filter -> double under state-reset/order-shuffle ablations before QTRM LM-path integration.
 - [QTRM Absolute Ordered State Gate](decisions/qtrm-absolute-ordered-state-gate.md): rejected L2 attempts to port ordered state into QTRM absolute value classes; corrected invalid zero-threshold smoke and class-coverage split, then points next to pointer/copy state rather than flat absolute classes.
@@ -161,6 +170,7 @@
 - [Renderer Canonical LM Gate](decisions/renderer-canonical-lm-gate.md): L3-candidate gate that rejects primitive/forced-choice success unless normal autoregressive generation improves.
 - [Donor Hidden ReFT-Lite Renderer Reject](decisions/donor-hidden-reft-lite-renderer-reject.md): final-hidden ReFT-lite bridge rejected because teacher-forced gains did not become causal greedy generation gains.
 - [Core Soft-Prefix Donor Renderer Reject](decisions/core-soft-prefix-donor-renderer-reject.md): donor-internal soft-prefix path trains but still rejects because held-out greedy generation remains 0.
+- [Latent Readout Reproduction](decisions/latent-readout-reproduction.md): accepted L1 minimal reproduction showing a small recurrent latent readout can produce greedy exact digit/EOS tokens when token-aligned latent state is sufficient.
 - [Arithmetic Renderer Reset Soft-Prefix](decisions/arithmetic-renderer-reset-soft-prefix.md): first L1 renderer-reset scaffold and first heldout18 L2-local strict answer-only arithmetic renderer result where QTRM core-conditioned donor soft-prefix with EOS target reaches 10/18 exact, but heldout128/interleaved gates reject L3 range-general promotion.
 - [State-Conditioned Soft-Prefix Reject](decisions/state-conditioned-soft-prefix-reject.md): rejects adding explicit `core_role_value_state_logits` to the soft-prefix renderer because state-off matches or beats full and generation remains 0 on arithmetic/mixed held-out answers.
 - [Small General Reasoning Gate](decisions/small-general-reasoning-gate.md): mixed arithmetic/list reasoning gate for `recursive core + state codec + final answer path`; rejects because full beats donor-only but ties core-off/state-off and has zero mixed-list hits.
@@ -241,7 +251,7 @@
 - [Ouro LM-Head-Only Decoder Alignment](decisions/ouro-lm-head-only-decoder-alignment.md): rejects final LM-head-only tuning because generation remains 0/8 and forced-choice full regresses to 0/8.
 - [Ouro Hidden Bridge S080 Reject](decisions/ouro-hidden-bridge-s080-reject.md): rejects hidden-state bridge tuning because generation remains 0/4 and forced-choice full drops to 0/4 while bridge-off restores 4/4.
 - [Donor-Preserving Controller Next Method](decisions/donor-preserving-controller-next-method.md): chooses bounded QTRM donor-logit guidance as the next falsifier before residual-stream donor hooks.
-- [QTRM Renderer Root Redesign: Latent Lookahead](decisions/qtrm-renderer-root-redesign-latent-lookahead.md): moves the renderer bottleneck away from LM-head patches to a same-prefix future-token auxiliary; adds tie-aware gold-token rank probing and an auxiliary-only future-token decoder scaffold.
+- [QTRM Renderer Root Redesign: Latent Lookahead](decisions/qtrm-renderer-root-redesign-latent-lookahead.md): moves the renderer bottleneck away from LM-head patches to a same-prefix future-token auxiliary; records the 2026-05-12 QTRM port rejection and promotes previous-token-conditioned latent readout as the next orthodox candidate.
 - [Ouro Causal Talker S040 Reject](decisions/ouro-causal-talker-s040-reject.md): adds a canonical-path causal Talker over answer-state hidden + latent trajectory, but rejects the S040 checkpoint because generation and causal forced-choice both stay 0 on smoke gates.
 - [Ouro Causal Talker-Only S080 Reject](decisions/ouro-causal-talker-only-s080-reject.md): freezes the accepted halt-head checkpoint and trains only the Talker; rejects promotion because generation stays 0/8 and the forced-choice gain is caused by the answer halt gate, not the Talker.
 - [Ouro Donor-Guided Adapter S060 Reject](decisions/ouro-donor-guided-adapter-s060-reject.md): fixes donor-logit training plumbing and tests a Qwen-renderer low-rank answer adapter, but rejects because generation stays 0/8 and forced-choice collapses to 0/4.
@@ -287,3 +297,4 @@
 - [Pure Recursive Multi-Token Depth S080 Gate 16](decisions/pure-recursive-answer-state-loop-multitoken-depth-s080-depth-gate-16.md): multi-token causal-prefix training creates a small depth ladder but still rejects because core8 loses to donor-only and list-transform stays at 0/4.
 - [Explicit Transition-State Core Next](decisions/explicit-transition-state-core-next.md): promotes the next raw-intelligence candidate to an in-model recurrent state variable that must be supervised and ablated through the answer path.
 - [Fixed Operation To General Recursive Core Roadmap](decisions/fixed-operation-to-general-recursive-core-roadmap.md): stages the fixed-operation primitive probe into learned latent operations, records OOD paraphrase recovery from 191/256 to 252/256 raw and 256/256 state-constrained, marks full list-family holdout as a fixed-label reject gate, adds a feasible latent-action codebook split, and rejects S120 codebook training because held-out trace exact remains 0/64.
+- [Free Transformer Latent For QTRM](decisions/free-transformer-latent-for-qtrm.md): adds a training posterior / inference prior latent conditioning path inside the QTRM answer loop to attack the teacher-forced-to-greedy collapse without leaving canonical LM logits.

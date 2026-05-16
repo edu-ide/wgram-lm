@@ -24,6 +24,32 @@ accepted: 2 narrow milestones / 10 broad bottlenecks
 active: bottleneck 4 -> non-copy latent-state-to-text synthesis
 ```
 
+2026-05-11 orthodox status:
+
+```text
+roadmap target:
+  L4/general-LM promotion
+
+active gate:
+  L2/L3 prerequisite repair for non-copy latent-state-to-autoregressive text
+  synthesis.
+
+why this is not L4 yet:
+  strict generation still rejects on the mixed non-copy scalar target even
+  after core-state-only answer-loop constraints, ablation-contrast loss,
+  greedy-margin training, self-rollout loss, and beam search diagnostics.
+
+current blocker:
+  the recurrent core can perturb the output surface, but the LM path still
+  collapses to repeated/partial digits and does not reliably emit the final
+  scalar tail plus EOS.
+
+orthodox next condition:
+  full generation must beat donor-only/core-off/core-state-zero/path-off on the
+  same held-out runner. Teacher-forced CE or forced-choice movement is useful
+  evidence, but not promotion.
+```
+
 The accepted milestones are deliberately narrow:
 
 - source-position recurrent state reached strict L3 on hard list-transform
@@ -594,6 +620,69 @@ next hypothesis:
   surface-continuation regression, then expand beyond 8 cases.
 ```
 
+Core-state-only strict retry, 2026-05-11:
+
+```text
+implementation:
+  add answer_state_loop_core_state_only_enabled
+  add final LM-path contrast against:
+    zero_core_trajectory=True
+    disable_answer_state_loop_recurrent=True
+
+principle:
+  visible prompt/donor states may query core trajectory state, but the answer
+  residual/value side must not append raw text context when making a
+  core-causality claim. The same destructive ablations used by the gate can now
+  be trained directly on target log-prob.
+
+20-step CE recovery from:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  l4_sufficient_onecase_overfit/train_eos_s020/last.pt
+
+out:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  core_state_only_causal_prefix_s020_from_eos
+
+observed training:
+  final_path_ce: 6.9826 -> 4.8107 in the logged window
+  final_path_acc: 0.1429
+
+strict 1-case gate:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  mixed_noncopy_core_state_only_s020_gate_1case
+
+decision:
+  rejected_noncopy_lm_gate
+  target=600054, full=00000000, donor=10000, core_off=!!!!!!!!,
+  core_state_zero=55555555
+
+gate-contrast smoke:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  smoke_core_state_only_gate_contrast_s001
+  final_path_ce=2.8354, final_path_acc=0.4286
+  core_state_zero_final_target_logp_delta=9.2229
+  answer_state_recurrent_final_target_logp_delta=1.9025
+
+greedy-margin retry:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  core_state_only_gate_contrast_greedy_s010
+  final_path_acc remained 0.4286
+
+strict 1-case gate after greedy-margin:
+  rejected_noncopy_lm_gate
+  full=00000000
+  typed_value_answer_bridge_off=60060060
+  core_state_zero=Vega5555555
+
+decision:
+  rejected as L4 capability. The strict core-state-only path is wired,
+  trainable, and surface-sensitive to core_state_zero, but it still cannot
+  synthesize the final scalar answer through greedy LM generation. The typed
+  bridge remains diagnostic because disabling it produced a closer, still
+  incorrect output in the latest gate. The active blocker remains bottleneck 4:
+  latent-state-to-autoregressive text synthesis.
+```
+
 ## Dual-Process Ordering
 
 QTRM may eventually become a dual-process architecture:
@@ -996,3 +1085,168 @@ Latest source-binding / L4 audit:
 - Conclusion: the direct sufficient-condition path is now available, but the
   architecture still lacks a reliable scalar/list accumulator-to-LM-logits
   path. This remains the active bottleneck for broad L4 promotion.
+
+2026-05-11 orthodox core-state-only update:
+
+- Implemented `answer_state_loop_core_state_only_enabled`.
+- In this mode, visible text/donor states may query the core trajectory, but
+  raw text states are not appended as answer-loop cross-attention values.
+- Added a unit test that catches the old shortcut: the answer loop previously
+  cross-attended over workspace/core state plus text state (`10` tokens in the
+  smoke unit); the strict mode keeps the value/context side to core/workspace
+  only (`4` tokens in the smoke unit).
+- Added strict candidate configs:
+  `qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_typed_value_fullpath_scalar_codec_core_state_only_s060.yaml`
+  and
+  `qwen35_2b_4090_source_copy_pointer_renderer_core_state_only_scaffold.yaml`.
+- Updated `scripts/330_run_mixed_noncopy_lm_gate.py` default config/checkpoint
+  to use a self-contained typed-value core-state-only candidate instead of the
+  previous source-copy delta checkpoint with a missing base chain.
+- Ran a 1-case smoke:
+  `/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/mixed_noncopy_typed_core_state_only_smoke_1case/report.json`.
+- Result: rejected. Full, donor-only, core-off, core-state-zero, and
+  answer-recurrent-off all scored `0/1`.
+- Surface outputs changed under destructive ablations (`full=66666666`,
+  `core_state_zero=55555555`, `answer_recurrent_off=00000000`), so the strict
+  path is executable and perturbable, but it still does not synthesize the
+  correct non-copy scalar answer `600054`.
+- A 1-step causal-prefix training smoke on the same strict config completed and
+  saved
+  `/mnt/nvme0n1p2/qtrm-runs/research_gate_runner/smoke_core_state_only_causal_prefix_s1/last.pt`.
+  It produced `final_path_ce=6.9826`, `answer_state_loop_logit_ce=6.9826`,
+  `final_path_acc=0.1429`, and `causal_prefix_examples=7`. This proves the
+  strict path is trainable, not that it has recovered the answer.
+- Next blocker remains scalar/list accumulator state to LM-logit synthesis,
+  now under the stricter core-state-only answer-loop path.
+
+2026-05-11 tail-weight/KISS update:
+
+```text
+tail-weight continuation:
+  train:
+    /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+    core_state_only_tail_weight_s005
+  gate:
+    /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+    mixed_noncopy_core_state_only_tail_weight_s005_gate_1case
+  result:
+    rejected_noncopy_lm_gate
+    full=40000000
+    typed_value_answer_bridge_off=44444444
+    core_state_zero=Vega  555555
+    answer_recurrent_off=00000000
+  rank:
+    target tokens 6 0 0 0 5 4 <eos>
+    full ranks    8 1 1 1 3 2 5
+
+KISS no-typed-bridge config:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_
+  core_state_only_kiss_answer_loop_s040.yaml
+
+KISS no-train gate:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  mixed_noncopy_core_state_only_kiss_no_train_gate_1case
+  rejected_noncopy_lm_gate
+  full=60060060
+  core_state_zero=!!!!!!!!
+  answer_recurrent_off=00000000
+
+KISS 5-step gate:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  mixed_noncopy_core_state_only_kiss_s005_gate_1case
+  rejected_noncopy_lm_gate
+  full=00000000
+```
+
+Roadmap decision:
+
+```text
+Do not continue local tail weighting, typed-bridge tuning, or short CE
+continuations as if they were close to L4. The closest surface is the KISS
+no-train readout, but its 5-step continuation regresses. This points to a
+root recurrent-core-to-next-token synthesis objective, not another auxiliary
+typed field or renderer.
+
+Next accepted-gate candidate should first prove a minimal recurrent decoder or
+latent-state-to-next-token readout on a small prior-backed reproduction, then
+port that mechanism into the QTRM universal LLM path with the same strict
+generation and destructive ablations.
+```
+
+L1 latent-readout reproduction, 2026-05-11:
+
+```text
+script:
+  scripts/331_train_latent_readout_reproduction.py
+
+decision doc:
+  docs/wiki/decisions/latent-readout-reproduction.md
+
+teacher-forcing-only out:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  latent_readout_repro_teacher_forcing_s200/report.json
+
+scheduled-sampling out:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  latent_readout_repro_scheduled_s200/report.json
+
+both profiles:
+  teacher_forced_token_acc=1.0
+  teacher_forced_exact=1.0
+  greedy_token_acc=1.0
+  greedy_exact=1.0
+  decision=accepted
+```
+
+Interpretation:
+
+```text
+This accepts only the minimal readout reproduction. It proves that a small
+recurrent readout can emit greedy exact digit/EOS tokens from sufficient,
+token-aligned latent states. It does not prove QTRM has those states.
+
+The next bottleneck test must port this contract into QTRM:
+  core trajectory state -> per-output-step latent readout state ->
+  recurrent next-token readout -> LM logits -> greedy text.
+
+If that still fails, the upstream core state is not aligned to the answer token
+sequence or does not contain the final scalar answer.
+```
+
+2026-05-16 Qwen-integrated native MCQ transfer update:
+
+```text
+Current bottleneck:
+  donor/base preservation is now easier than donor/base correction.
+
+Evidence:
+  cloned Qwen core layer can preserve language and tie validation MCQ, but it
+  has not produced reliable held-out base_wrong_core_correct flips.
+
+best scaffold:
+  local_eval/qwen35_integrated_language_knowledge_healing_clonecore_coreonly_basewrong_margin_preserve_valctrl_s120_20260516/report.json
+  corrected interpretation: layer23 partial-unfreeze, not true core-only
+  base 191/256, core 191/256, gain 0.0
+
+true core-only:
+  local_eval/qwen35_integrated_language_knowledge_healing_clonecore_true_coreonly_basewrong_margin_preserve_valctrl_s120_20260516/report.json
+  base 191/256, core 190/256, gain -0.00390625
+
+positive-gain attempts:
+  residual_scale 0.08:
+    rejected, best gain 0.0
+  stronger base-correct KL:
+    rejected, gain 0.0, zero harmful flips and zero corrective flips
+  base_wrong retry4:
+    rejected, gain -0.00390625, correction pressure caused preservation loss
+  dual-stream retry3:
+    rejected, gain -0.00390625, separate preservation stream still did not
+    create base_wrong_core_correct flips
+
+Decision:
+  Do not run public 1K promotion from this stage. The next LLM-transfer
+  bottleneck is a dual-stream preservation/correction objective or a stronger
+  core placement/verifier target that creates base_wrong_core_correct flips
+  without damaging base-correct rows. The first dual-stream attempt is not
+  sufficient.
+```

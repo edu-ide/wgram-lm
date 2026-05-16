@@ -15,6 +15,18 @@ Terminology:
   training. It should map to a concrete objective: continued pretraining,
   supervised fine-tuning, merge-friendly fine-tuning, or adapter-only recovery.
 
+Qwopus note, 2026-05-15:
+
+- `Jackrong/Qwopus3.5-27B-v3` is publicly described as Qwen3.5-27B fine-tuned
+  with Unsloth SFT + LoRA, not as a layer-stack frankenmerge.
+- The explicit frankenmerge/healing example found in the Qwopus family is
+  `Qwopus-GLM-18B-Merged`: two Qwen3.5-9B finetunes stacked into a 64-layer
+  ~18B model, then repaired with a 1000-step QLoRA healing tune.
+- For QTRM, this distinction matters: base-model post-training is useful as a
+  native-language bootstrap precedent; frankenmerge healing is useful only as a
+  model-surgery recovery precedent and must not be counted as evidence for
+  QTRM-native reasoning.
+
 QTRM rules:
 
 - Do not frankenmerge models with incompatible tokenizer/config/hidden layouts.

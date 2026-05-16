@@ -1,5 +1,1634 @@
 # QTRM LLM Wiki Log
 
+## [2026-05-12] research | DeltaNet official implementation boundary
+
+Searched and cloned the official DeltaNet/GatedDeltaNet reference stack:
+
+```text
+references/official/gated-deltanet
+  upstream: https://github.com/NVlabs/GatedDeltaNet
+  commit: b53d6d3a161267432a79c1c04af69fa52bddc921
+
+references/official/flash-linear-attention
+  upstream: https://github.com/fla-org/flash-linear-attention
+  commit: 74d011f1bd58367b7bc6519dbc4d177d29b063e0
+
+references/official/qwen35
+  upstream: https://github.com/QwenLM/Qwen3.5
+  commit: f1443092c29978643fd041ebe959676259e934f1
+
+references/official/mamba
+  upstream: https://github.com/state-spaces/mamba
+  commit: a14b1dff0454a3bc27d9eb31355dc01e4b2490ec
+```
+
+Decision:
+
+```text
+The current `qtrm_hybrid_3to1` backbone is Qwen3.5-style, not a strict official
+Qwen3.5 implementation. Keep it as a candidate/probe only.
+```
+
+Why:
+
+```text
+Current code uses local `QTRMBlockStack` plus local `torch_gated_delta`
+fallback. Official promotion requires FLA/NVlabs GatedDeltaNet or the
+Transformers Qwen3.5 modules in strict mode, plus the Qwen3.5 config schedule:
+3 x linear_attention followed by 1 x full_attention.
+```
+
+Qwen3.5 3:1 terminology correction:
+
+```text
+The local Qwen3.5-2B config says:
+
+  full_attention_interval: 4
+  layer_types:
+    linear_attention
+    linear_attention
+    linear_attention
+    full_attention
+    ...
+
+Therefore describe the 3:1 schedule as:
+
+  3 x GatedDeltaNet-like linear_attention
+  1 x full_attention
+
+not as:
+
+  GatedDeltaNet + gated attention
+
+unless a separate official model source proves that the full_attention layer is
+implemented as a gated-attention variant.
+```
+
+Mamba-3 boundary:
+
+```text
+Mamba-3 is present in the official state-spaces/mamba repo:
+
+  references/official/mamba/mamba_ssm/modules/mamba3.py
+  class Mamba3
+
+It is an SSM candidate, not a GatedDeltaNet or full-attention replacement by
+name. It may be compared later as:
+
+  MHA ETD encode -> Mamba-3 recurrent think -> MHA ETD decode -> LM head
+
+but only after the accepted official-FLA thinking-core placement is scaled.
+Promotion requires the same seed-stability and language non-regression gates
+plus strict official-kernel/runtime evidence.
+```
+
+Mamba-3 direct verification update:
+
+```text
+script:
+  scripts/342_qtrm_native_l5d_backbone_compare.py
+
+candidate added:
+  official_mamba3_think
+
+candidate path:
+  MHA ETD encode -> official Mamba-3 recurrent think -> MHA ETD decode -> LM head
+
+smoke artifact:
+  local_eval/qtrm_native_l5d_mamba3_compare_smoke
+
+command:
+  PYTHONPATH=src .venv/bin/python scripts/342_qtrm_native_l5d_backbone_compare.py \
+    --profile smoke \
+    --out-root local_eval/qtrm_native_l5d_mamba3_compare_smoke \
+    --candidates mha_etd,official_fla_think,official_mamba3_think \
+    --seed 337 \
+    --eval-seed 9337
+
+result:
+  official_mamba3_think: command_failed
+  returncode: 1
+
+failure:
+  the official Mamba-3 module can be imported through the local reference
+  adapter, but the Triton SISO kernel fails to compile at the QK skip-connection
+  tl.dot site under the current local toolchain.
+
+interpretation:
+  This does not prove GatedDeltaNet is intrinsically better than Mamba-3.
+  It proves only that the accepted official_fla_think path is currently
+  executable/scored, while official_mamba3_think is blocked before scoring.
+```
+
+Mamba-3 runtime fix and short comparison:
+
+```text
+root cause:
+  official Mamba-3 requires triton>=3.5.0
+  current .venv has triton 3.3.1 from torch 2.7.1
+
+non-destructive local runtime:
+  local_deps/mamba3_runtime
+  triton==3.5.1 installed there only
+
+micro-forward:
+  PYTHONPATH=local_deps/mamba3_runtime:src .venv/bin/python ...
+  OfficialMamba3Mixer CUDA forward OK
+
+short artifact:
+  local_eval/qtrm_native_l5d_mamba3_compare_short_triton351
+
+short command:
+  PYTHONPATH=local_deps/mamba3_runtime:src .venv/bin/python \
+    scripts/342_qtrm_native_l5d_backbone_compare.py \
+    --profile short \
+    --out-root local_eval/qtrm_native_l5d_mamba3_compare_short_triton351 \
+    --candidates mha_etd,official_fla_think,official_mamba3_think \
+    --seed 337 \
+    --eval-seed 9337
+
+winner:
+  official_mamba3_think
+
+full_generation_exact:
+  mha_etd:                 0.015625
+  official_fla_think:      0.036458333333333336
+  official_mamba3_think:   0.046875
+
+official_fla_think:
+  backend_ok: true
+  causal_ok: true
+  full_minus_think0: 0.03125
+  full_minus_worst_ablation: 0.010416666666666668
+
+official_mamba3_think:
+  backend_ok: true
+  causal_ok: true
+  full_minus_think0: 0.046875
+  full_minus_worst_ablation: 0.010416666666666664
+
+interpretation:
+  Single-seed short evidence now favors official_mamba3_think over
+  official_fla_think, but this is not canonical promotion until seed-stability
+  and language non-regression pass under the same standards.
+```
+
+Mamba-3 short seed-stability sweep:
+
+```text
+artifact:
+  local_eval/qtrm_native_l5d_mamba3_seed_sweep_short_triton351
+
+command:
+  PYTHONPATH=local_deps/mamba3_runtime:src .venv/bin/python \
+    scripts/343_qtrm_native_l5d_placement_seed_sweep.py \
+    --profile short \
+    --out-root local_eval/qtrm_native_l5d_mamba3_seed_sweep_short_triton351 \
+    --candidates mha_etd,official_fla_think,official_mamba3_think \
+    --target-candidate official_mamba3_think
+
+decision:
+  accepted_l5d_placement_seed_stability
+
+target_candidate:
+  official_mamba3_think
+
+promoted_count:
+  3 / 3
+
+causal_ok_count:
+  3 / 3
+
+backend_ok_count:
+  3 / 3
+
+min_delta_vs_mha:
+  0.005208333333
+
+max_delta_vs_mha:
+  0.03125
+
+min_full_generation_exact:
+  0.046875
+
+max_full_generation_exact:
+  0.052083333333333336
+
+seed 337:
+  mha_etd:               0.015625
+  official_fla_think:    0.036458333333333336
+  official_mamba3_think: 0.046875
+
+seed 338:
+  mha_etd:               0.046875
+  official_fla_think:    0.052083333333333336
+  official_mamba3_think: 0.052083333333333336
+
+seed 339:
+  mha_etd:               0.046875
+  official_fla_think:    0.015625
+  official_mamba3_think: 0.052083333333333336
+
+interpretation:
+  The current evidence no longer supports "GatedDeltaNet > Mamba-3". On the
+  short L5D synthetic scaffold, official_mamba3_think is seed-stable and at
+  least ties or beats official_fla_think across the checked seeds. It still
+  needs Mamba-3 language non-regression and scaled-reasoning gates before
+  replacing official_fla_think as the broader canonical placement.
+```
+
+Next implementation target:
+
+```text
+Add an official-backend L5D comparison gate:
+  MHA ETD baseline
+  qtrm_hybrid_3to1 local candidate
+  FLA/NVlabs/Qwen3.5 official-backend candidate
+
+Promotion requires passing the same L4/L5/L5C gates and beating or matching
+MHA ETD without weakening ablation criteria.
+```
+
+Implemented the first official-backend gate:
+
+```text
+runner gate:
+  qtrm_native_l5d_official_fla_runtime
+
+script:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+backend:
+  --backbone qtrm_hybrid_3to1
+  --delta-backend fla_gated_delta
+  --strict-backends
+```
+
+Smoke result:
+
+```text
+out_dir:
+  local_eval/research_gate_runner/qtrm_native_l5d_official_fla_runtime_smoke
+
+decision:
+  accepted_l5d_official_fla_runtime
+
+backend_summary:
+  fla_delta_mixers: 9
+  official_fla_delta_mixers: 9
+  torch_delta_mixers: 0
+  all_fla_mixers_official: true
+```
+
+Short standard runtime result:
+
+```text
+out_dir:
+  local_eval/research_gate_runner/qtrm_native_l5d_official_fla_runtime_standard
+
+decision:
+  accepted_l5d_official_fla_runtime
+
+backend_summary:
+  fla_delta_mixers: 9
+  official_fla_delta_mixers: 9
+  torch_delta_mixers: 0
+  all_fla_mixers_official: true
+
+metrics:
+  full_generation_exact: 0.03125
+  think0_generation_exact: 0.020833333333333332
+  state_reset_generation_exact: 0.010416666666666666
+  op_zero_generation_exact: 0.0
+```
+
+Interpretation:
+
+```text
+This is not a performance claim. It only proves that the official FLA
+GatedDeltaNet path is actually used inside QTRM-native with strict backend
+wiring. The next L5D task is performance comparison against MHA ETD under the
+accepted L4/L5/L5C gates.
+```
+
+Added the first comparison harness:
+
+```text
+script:
+  scripts/342_qtrm_native_l5d_backbone_compare.py
+
+tests:
+  tests/test_qtrm_native_l5d_backbone_compare.py
+```
+
+Short comparison result:
+
+```text
+out_dir:
+  local_eval/qtrm_native_l5d_backbone_compare_short
+
+winner:
+  official_fla
+
+full_generation_exact:
+  mha_etd: 0.015625
+  official_fla: 0.026041666666666668
+
+full_exact_delta_official_fla_minus_mha:
+  0.010416666667
+
+official_fla_backend_ok:
+  true
+
+official_fla_causal_ok:
+  false
+
+official_fla_full_minus_think0:
+  -0.005208333333333332
+
+official_fla_full_minus_worst_ablation:
+  -0.026041666666666668
+
+official_fla_promoted:
+  false
+```
+
+Interpretation:
+
+```text
+The official FLA backend is running and slightly ahead on short exactness, but
+it fails the causal ablation standard. Do not promote it over MHA ETD yet.
+The next L5D task is to improve official-FLA training or configuration until
+full > think0 and full > destructive ablations under the same benchmark.
+```
+
+Depth-8 follow-up:
+
+```text
+out_dir:
+  local_eval/qtrm_native_l5d_official_fla_depth8_short
+
+setup:
+  official FLA GatedDeltaNet strict backend
+  train_think_steps: 8
+  eval_think_steps: 8
+  steps: 600
+  train_cases: 4096
+  eval_cases: 256
+
+metrics:
+  full_generation_exact: 0.03515625
+  think0_generation_exact: 0.03515625
+  state_reset_generation_exact: 0.0390625
+  op_zero_generation_exact: 0.03125
+  full_minus_think0: 0.0
+  full_minus_worst_ablation: -0.00390625
+```
+
+Interpretation:
+
+```text
+More recurrent depth did not fix official-FLA causal use. The next experiment
+should isolate FLA placement: FLA encode/decode with MHA think block, versus
+MHA encode/decode with FLA think block.
+```
+
+Placement isolation:
+
+```text
+shared setup:
+  script:
+    scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  steps: 400
+  train_cases: 2048
+  eval_cases: 192
+  train_think_steps: 4
+  eval_think_steps: 4
+  strict_backends: true
+  delta_backend: fla_gated_delta
+
+placement_a:
+  out_dir:
+    local_eval/qtrm_native_l5d_fla_encode_decode_mha_think_short
+  encode_backbone:
+    qtrm_hybrid_3to1 / official FLA
+  think_backbone:
+    mha_etd
+  decode_backbone:
+    qtrm_hybrid_3to1 / official FLA
+  backend:
+    official_fla_delta_mixers: 6
+    torch_delta_mixers: 0
+  metrics:
+    full_generation_exact: 0.057291666666666664
+    think0_generation_exact: 0.041666666666666664
+    state_reset_generation_exact: 0.020833333333333332
+    op_zero_generation_exact: 0.036458333333333336
+    full_minus_think0: 0.015625
+    full_minus_worst_ablation: 0.02083333333333333
+    min_family_generation_exact: 0.03125
+
+placement_b:
+  out_dir:
+    local_eval/qtrm_native_l5d_mha_encode_decode_fla_think_short
+  encode_backbone:
+    mha_etd
+  think_backbone:
+    qtrm_hybrid_3to1 / official FLA
+  decode_backbone:
+    mha_etd
+  backend:
+    official_fla_delta_mixers: 3
+    torch_delta_mixers: 0
+  metrics:
+    full_generation_exact: 0.08333333333333333
+    think0_generation_exact: 0.041666666666666664
+    state_reset_generation_exact: 0.036458333333333336
+    op_zero_generation_exact: 0.046875
+    full_minus_think0: 0.041666666666666664
+    full_minus_worst_ablation: 0.03645833333333333
+    min_family_generation_exact: 0.0625
+```
+
+Interpretation:
+
+```text
+The all-FLA candidate still is not promoted. The best strict-official-FLA
+placement so far is:
+
+  MHA encode -> official FLA recurrent think -> MHA decode -> LM head
+
+This is important because it keeps the QTRM-native universal LM path and makes
+the official FLA block causally useful in the mandatory recursive core. The
+next step is a seed-sweep comparison against the current MHA ETD baseline.
+```
+
+Seed-stability follow-up:
+
+```text
+script:
+  scripts/343_qtrm_native_l5d_placement_seed_sweep.py
+
+out_dir:
+  local_eval/qtrm_native_l5d_placement_seed_sweep_short
+
+profile:
+  short
+
+candidates:
+  mha_etd
+  official_fla_think
+
+target_candidate:
+  official_fla_think
+
+decision:
+  accepted_l5d_placement_seed_stability
+
+promoted_count:
+  3 / 3
+
+causal_ok_count:
+  3 / 3
+
+backend_ok_count:
+  3 / 3
+
+min_delta_vs_mha:
+  0.005208333333
+
+max_delta_vs_mha:
+  0.067708333333
+
+min_full_generation_exact:
+  0.052083333333333336
+
+max_full_generation_exact:
+  0.08333333333333333
+```
+
+Per-seed:
+
+```text
+seed 337:
+  full_generation_exact: 0.08333333333333333
+  delta_vs_mha: 0.067708333333
+  full_minus_think0: 0.041666666666666664
+  full_minus_worst_ablation: 0.03645833333333333
+
+seed 338:
+  full_generation_exact: 0.078125
+  delta_vs_mha: 0.03125
+  full_minus_think0: 0.06770833333333333
+  full_minus_worst_ablation: 0.020833333333333336
+
+seed 339:
+  full_generation_exact: 0.052083333333333336
+  delta_vs_mha: 0.005208333333
+  full_minus_think0: 0.052083333333333336
+  full_minus_worst_ablation: 0.005208333333333336
+```
+
+Interpretation:
+
+```text
+The staged official-FLA thinking-core placement is now seed-stable at short
+scale. Promote the L5D placement, not the all-FLA backbone:
+
+  MHA ETD encode -> official FLA GatedDeltaNet recurrent think -> MHA ETD decode
+
+This preserves the native LM causal path and keeps the recursive core
+mandatory. Next work should scale this exact placement and test natural-text
+language preservation before moving to MSA/LM2 memory gates.
+```
+
+Language non-regression follow-up:
+
+```text
+runner gate:
+  qtrm_native_l5d_placement_language_nonregression
+
+script:
+  scripts/336_train_qtrm_native_text_probe.py
+
+out_dir:
+  local_eval/qtrm_native_l5d_official_fla_think_language_nonregression_standard
+
+placement:
+  MHA ETD encode
+  official FLA GatedDeltaNet recurrent think
+  MHA ETD decode
+
+decision:
+  accepted_l5d_placement_language_nonregression
+
+metrics:
+  last_loss: 0.6685409545898438
+  think_eval_loss: 1.888507903768466
+  think0_loss: 5.344207181380345
+  thinking_block_off_loss: 5.344207181380345
+  think0_baseline_loss: 2.025272998672265
+  full_vs_think0_loss_ratio: 0.35337475507090776
+  full_vs_thinking_block_off_loss_ratio: 0.35337475507090776
+  full_vs_baseline_loss_ratio: 0.9324707854232689
+  sample_unique_chars: 33
+  sample_max_run_fraction: 0.022727272727272728
+```
+
+Interpretation:
+
+```text
+The accepted L5D placement does not collapse the small native autoregressive
+language path. It is now both seed-stable on the short reasoning placement
+gate and accepted on the staged-placement language non-regression gate.
+```
+
+Scaled reasoning follow-up:
+
+```text
+runner gate:
+  qtrm_native_l5d_placement_scaled_reasoning
+
+script:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+out_dir:
+  local_eval/research_gate_runner/qtrm_native_l5d_placement_scaled_reasoning_standard
+
+placement:
+  MHA ETD encode
+  official FLA GatedDeltaNet recurrent think
+  MHA ETD decode
+
+setup:
+  steps: 1200
+  train_cases: 4096
+  eval_cases: 384
+  d_model: 96
+  n_heads: 4
+  n_kv_heads: 2
+  d_ff: 192
+  strict_backends: true
+
+decision:
+  accepted_l5d_placement_scaled_reasoning
+
+backend:
+  official_fla_delta_mixers: 3
+  torch_delta_mixers: 0
+  all_fla_mixers_official: true
+
+metrics:
+  full_generation_exact: 0.14583333333333334
+  think0_generation_exact: 0.0
+  state_reset_generation_exact: 0.020833333333333332
+  op_zero_generation_exact: 0.033854166666666664
+  full_minus_think0: 0.14583333333333334
+  full_minus_worst_ablation: 0.11197916666666669
+  min_family_generation_exact: 0.0625
+
+per_family:
+  checksum: 0.296875
+  modchain: 0.078125
+  revchain: 0.0625
+```
+
+Interpretation:
+
+```text
+The accepted staged placement survives a larger reasoning gate. The full
+recurrent path is substantially above think0 and destructive ablations, so the
+next work can move to memory/long-context mechanisms without changing the
+canonical reasoning core.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_gated_delta_adapter \
+  tests.test_research_gate_runner
+
+WRITE_WIKI=0 PYTHONPATH=src bash scripts/338_run_qtrm_native_gate.sh \
+  qtrm_native_l5d_official_fla_runtime smoke
+
+WRITE_WIKI=0 PYTHONPATH=src bash scripts/338_run_qtrm_native_gate.sh \
+  qtrm_native_l5d_official_fla_runtime standard
+
+PYTHONPATH=src .venv/bin/python scripts/342_qtrm_native_l5d_backbone_compare.py \
+  --profile short --out-root local_eval/qtrm_native_l5d_backbone_compare_short
+```
+
+## [2026-05-12] evaluation | QTRM-native L5B seed-stable and L5C language non-regression accepted
+
+Confirmed the hard-balanced L5B multi-family seed sweep:
+
+```text
+out_dir:
+  local_eval/qtrm_native_l5_multifamily_hardbalanced_sweep
+
+decision:
+  accepted_l5_seed_stability
+
+summary:
+  pass_count: 3 / 3
+  min_full_generation_exact: 0.7057291666666666
+  max_full_generation_exact: 0.7565104166666666
+  min_family_generation_exact: 0.55078125
+  max_family_generation_exact: 0.62109375
+```
+
+Added an L5C language non-regression gate:
+
+```text
+runner gate:
+  qtrm_native_l5_language_nonregression
+
+script:
+  scripts/336_train_qtrm_native_text_probe.py
+  scripts/341_qtrm_native_l5_language_seed_sweep.py
+
+checks:
+  full recurrent LM loss vs random threshold
+  sample degeneracy
+  full recurrent loss vs think0
+  full recurrent loss vs thinking_block_off
+  full recurrent loss vs separately trained think0 baseline
+```
+
+Standard L5C run:
+
+```text
+out_dir:
+  local_eval/research_gate_runner/qtrm_native_l5_language_nonregression_standard
+
+decision:
+  accepted_l5_language_nonregression
+
+metrics:
+  think_eval_loss: 1.8944039690879084
+  think0_loss: 4.506251942726873
+  thinking_block_off_loss: 4.506251942726873
+  think0_baseline_loss: 1.8811764822852226
+  full_vs_baseline: 1.0070314970058616
+  unique_chars: 21
+  max_run_fraction: 0.015151515151515152
+```
+
+L5C seed sweep:
+
+```text
+out_dir:
+  local_eval/qtrm_native_l5_language_nonregression_seed_sweep
+
+decision:
+  accepted_l5c_seed_stability
+
+summary:
+  pass_count: 3 / 3
+  min_full_vs_baseline: 0.975550581055019
+  max_full_vs_baseline: 1.003826688355419
+  min_full_vs_think0: 0.4441652548042246
+  max_full_vs_think0: 0.49055043638467777
+```
+
+Interpretation:
+
+```text
+The native recurrent causal path has now passed broader synthetic reasoning
+families and a seed-stable larger text-slice language non-regression gate.
+This still is not broad LLM capability. The next orthodox target is L5D MHA ETD
+vs Qwen3.5-style hybrid comparison under the same L4/L5 gates.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_text_probe \
+  tests.test_research_gate_runner \
+  tests.test_qtrm_native_l5_language_seed_sweep
+
+WRITE_WIKI=0 PYTHONPATH=src bash scripts/338_run_qtrm_native_gate.sh \
+  qtrm_native_l5_language_nonregression smoke
+
+WRITE_WIKI=0 PYTHONPATH=src bash scripts/338_run_qtrm_native_gate.sh \
+  qtrm_native_l5_language_nonregression standard
+
+PYTHONPATH=src .venv/bin/python scripts/341_qtrm_native_l5_language_seed_sweep.py \
+  --profile standard --seeds 337 338 339
+```
+
+## [2026-05-12] evaluation | QTRM-native L5B multi-family standard accepted
+
+Added multi-family support to the L4/L5 native text reasoning probe:
+
+```text
+script:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+families:
+  modchain
+  revchain
+  checksum
+
+runner gate:
+  qtrm_native_l5_multifamily
+```
+
+Important architectural constraint:
+
+```text
+The task family is encoded as fixed-width text in the same prompt:
+  task modchain start ...
+  task revchain start ...
+  task checksum start ...
+
+There is no hidden family side channel.
+```
+
+Standard run:
+
+```text
+out_dir:
+  local_eval/research_gate_runner/qtrm_native_l5_multifamily_standard
+
+decision:
+  accepted_l5_multifamily
+
+thresholds:
+  full_exact >= 0.60
+  depth_gain >= 0.10
+  ablation_drop >= 0.10
+  min_family_exact >= 0.40
+```
+
+Metrics:
+
+```text
+full_generation_exact: 0.6067708333333334
+think0_generation_exact: 0.020833333333333332
+state_reset_generation_exact: 0.03515625
+op_zero_generation_exact: 0.03515625
+full_minus_think0: 0.5859375
+full_minus_worst_ablation: 0.5716145833333334
+min_family_generation_exact: 0.4140625
+```
+
+Family breakdown:
+
+```text
+checksum: 0.9375
+modchain: 0.46875
+revchain: 0.4140625
+```
+
+Interpretation:
+
+```text
+This is the first L5B acceptance: the same QTRM-native recurrent LM path can
+handle three tagged reasoning families through generated text answers. It is
+not yet stable L5. The pass is marginal and dominated by checksum. The next
+work should be an L5 seed sweep and then targeted fixes for modchain/revchain,
+not a premature Qwen3.5-style backbone or MSA switch.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_mixed_text_reasoning_probe \
+  tests.test_research_gate_runner
+
+passed
+```
+
+## [2026-05-12] evaluation | QTRM-native L4 seed stability accepted
+
+Ran the standard L4 mixed text reasoning seed-stability gate:
+
+```text
+script:
+  scripts/339_qtrm_native_seed_sweep.py
+
+out_dir:
+  local_eval/qtrm_native_l4_seed_sweep
+
+decision:
+  accepted_seed_stability
+
+policy:
+  min_seeds: 3
+  min_pass_rate: 1.0
+  min_exact_per_seed: 0.70
+```
+
+Results:
+
+```text
+seed 337:
+  full_generation_exact: 0.7421875
+  think0_generation_exact: 0.02734375
+  state_reset_generation_exact: 0.03515625
+  op_zero_generation_exact: 0.03125
+
+seed 338:
+  full_generation_exact: 0.74609375
+  think0_generation_exact: 0.03515625
+  state_reset_generation_exact: 0.03515625
+  op_zero_generation_exact: 0.046875
+
+seed 339:
+  full_generation_exact: 0.716796875
+  think0_generation_exact: 0.025390625
+  state_reset_generation_exact: 0.02734375
+  op_zero_generation_exact: 0.03125
+```
+
+Summary:
+
+```text
+pass_count: 3 / 3
+pass_rate: 1.0
+min_full_generation_exact: 0.716796875
+max_full_generation_exact: 0.74609375
+reject_reasons: []
+```
+
+Interpretation:
+
+```text
+This is the strongest QTRM-native result so far. The small L4 mixed text
+reasoning scaffold is no longer a one-seed accident: the recurrent core
+causally improves generated text answers across three seeds, while think0,
+state_reset, and op_zero remain near chance. This still does not prove broad
+LLM capability; it promotes the native recurrent causal path to a reproducible
+small raw-reasoning baseline.
+```
+
+Method correction made before the run:
+
+```text
+scripts/339_qtrm_native_seed_sweep.py
+  --min-seeds default: 3
+  --reuse-existing added
+  min_exact is now an actual rejection condition, not just a reported field
+```
+
+## [2026-05-12] evaluation | QTRM-native L4 seed sweep guard added
+
+Added a seed-stability guard for the QTRM-native L4 scaffold:
+
+```text
+scripts/339_qtrm_native_seed_sweep.py
+tests/test_qtrm_native_seed_sweep.py
+```
+
+Purpose:
+
+```text
+Do not promote a one-seed L4 acceptance into a stable architecture claim.
+Require the same mixed text reasoning gate to pass across multiple seeds.
+```
+
+Default standard sweep:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/339_qtrm_native_seed_sweep.py \
+  --profile standard --seeds 337 338 339
+```
+
+Promotion policy:
+
+```text
+min_pass_rate: 1.0
+min_exact per seed: 0.70
+decision required: accepted_seed_stability
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest tests.test_qtrm_native_seed_sweep
+
+Ran 3 tests: OK
+```
+
+Dry-run:
+
+```text
+PYTHONPATH=src .venv/bin/python scripts/339_qtrm_native_seed_sweep.py \
+  --profile standard --seeds 337 338 \
+  --out-root local_eval/qtrm_native_l4_seed_sweep_dryrun --dry-run
+```
+
+Result:
+
+```text
+decision: dry_run
+commands: 2
+seed 337 -> eval_seed 9337
+seed 338 -> eval_seed 9338
+```
+
+Interpretation:
+
+```text
+The accepted seed-337 L4 run remains a canonical scaffold. It is not yet a
+seed-stable architecture claim until this sweep passes.
+```
+
+## [2026-05-12] tooling | QTRM-native gates promoted into research runner
+
+QTRM-native is now exposed as the canonical one-click gate path:
+
+```text
+qtrm_native_l1_mha
+qtrm_native_l1_hybrid
+qtrm_native_l2_curriculum_depth
+qtrm_native_l3_language_slice
+qtrm_native_l4_mixed_text_reasoning
+```
+
+Added:
+
+```text
+scripts/338_run_qtrm_native_gate.sh
+```
+
+The wrapper defaults to:
+
+```text
+gate: qtrm_native_l4_mixed_text_reasoning
+profile: standard
+```
+
+Important correction:
+
+```text
+smoke profile keeps real acceptance thresholds
+```
+
+So smoke is a runtime/report-parsing check, not a fake capability acceptance.
+The runner now preserves `report.json` even when a gate script exits non-zero
+because the model was rejected. This matters for QTRM-native probes because
+rejected experiments are expected to return exit code 1 while still writing the
+metrics needed for architecture debugging.
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe \
+  tests.test_qtrm_native_text_probe \
+  tests.test_qtrm_native_mixed_text_reasoning_probe \
+  tests.test_research_gate_runner
+
+Ran 30 tests: OK
+```
+
+Wrapper smoke:
+
+```text
+WRITE_WIKI=0 bash scripts/338_run_qtrm_native_gate.sh \
+  qtrm_native_l4_mixed_text_reasoning smoke
+```
+
+Result:
+
+```text
+exit_code: 1
+decision: rejected
+accepted: false
+eval_metrics.think4.generation_exact: 0.0
+```
+
+Interpretation:
+
+```text
+This is the correct smoke behavior: runtime path works and metrics are parsed,
+but no L4 capability claim is made from a two-step CPU run.
+```
+
+## [2026-05-12] architecture | QTRM-native backbone comparison path added
+
+Added an explicit QTRM-native backbone schedule:
+
+```text
+MHA ETD baseline
+vs
+Qwen3.5-style Delta / Delta / Delta / Attention hybrid
+```
+
+The native probe now exposes:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py --backbone mha_etd
+scripts/335_train_qtrm_native_etd_probe.py --backbone qtrm_hybrid_3to1
+```
+
+This does not promote the hybrid yet. It only makes the comparison falsifiable
+under the same L1/L2 native gates. MSA is recorded as a final-architecture
+memory route, but remains off-by-default until native LM viability and recursive
+core causality are proven. Promotion requires `memory_off`, `router_off`, and
+chunk-shuffle ablations to drop the same LM-generation metric.
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe
+
+Ran 5 tests: OK
+```
+
+Runtime smoke:
+
+```text
+PYTHONPATH=src .venv/bin/python scripts/335_train_qtrm_native_etd_probe.py \
+  --out-dir local_eval/qtrm_native_hybrid_3to1_smoke_cpu_s1 \
+  --steps 1 --train-cases 8 --eval-cases 2 \
+  --program-len 2 --modulus 8 --d-model 16 --n-heads 4 \
+  --n-kv-heads 2 --d-ff 32 --backbone qtrm_hybrid_3to1 \
+  --hybrid-layers 4 --attn-every 4 --train-think-steps 1 \
+  --eval-think-steps 1 --batch-size 2 --device cpu
+```
+
+Result:
+
+```text
+completed and wrote report, but decision was rejected
+full_generation_exact: 0.5
+think0_generation_exact: 0.0
+state_reset_generation_exact: 0.5
+op_zero_generation_exact: 0.0
+```
+
+Interpretation: the hybrid path runs, but is not promoted because state reset
+still matches full.
+
+## [2026-05-12] training | Native L1 accepted after answer/EOS loss split
+
+Implemented the native probe's first decoder-loss repair:
+
+```text
+answer CE and EOS CE are weighted separately
+answer-vs-EOS margin is applied at the first generated token position
+evaluation reports answer_token_accuracy and first_token_eos_rate
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe
+
+Ran 6 tests: OK
+```
+
+Short MHA smoke:
+
+```text
+local_eval/qtrm_native_mha_answer_eos_s80
+decision: rejected
+loss: 3.9079 -> 1.3863
+think4_generation_exact: 0.1875
+think0_generation_exact: 0.125
+state_reset_generation_exact: 0.09375
+op_zero_generation_exact: 0.03125
+first_token_eos_rate: 0.0
+```
+
+Strict MHA acceptance:
+
+```text
+local_eval/qtrm_native_mha_answer_eos_cuda_s600_strict
+decision: accepted_l1_native_etd
+thresholds: exact>=0.90, depth_gain>=0.10, ablation_drop>=0.10
+think4_generation_exact: 0.98046875
+think0_generation_exact: 0.16796875
+state_reset_generation_exact: 0.32421875
+op_zero_generation_exact: 0.12109375
+full_minus_think0: 0.8125
+full_minus_worst_ablation: 0.65625
+first_token_eos_rate: 0.0
+```
+
+Strict Qwen3.5-style hybrid acceptance:
+
+```text
+local_eval/qtrm_native_hybrid_3to1_cuda_s600_strict
+decision: accepted_l1_native_etd
+thresholds: exact>=0.90, depth_gain>=0.10, ablation_drop>=0.10
+think4_generation_exact: 1.0
+think0_generation_exact: 0.05859375
+state_reset_generation_exact: 0.59765625
+op_zero_generation_exact: 0.15625
+full_minus_think0: 0.94140625
+full_minus_worst_ablation: 0.40234375
+first_token_eos_rate: 0.0
+```
+
+Interpretation: this is the first accepted donorless native LM-path scaffold.
+It is still a tiny synthetic-language result, not a general LLM claim. The next
+promotion target is L2: harder program length/modulus, seed stability, and
+language-slice non-regression.
+
+## [2026-05-12] evaluation | Native L2 ladder boundary found
+
+Ran harder donorless native recursive probes after L1 acceptance.
+
+Rejected full L2B candidate:
+
+```text
+local_eval/qtrm_native_mha_l2_program4_mod32_cuda_s5000
+program_len: 4
+modulus: 32
+steps: 5000
+decision: rejected
+threshold exact>=0.70, depth_gain>=0.10, ablation_drop>=0.10
+think4_generation_exact: 0.248046875
+think0_generation_exact: 0.046875
+state_reset_generation_exact: 0.111328125
+op_zero_generation_exact: 0.021484375
+full_minus_think0: 0.201171875
+full_minus_worst_ablation: 0.13671875
+```
+
+Rejected hybrid L2B candidate:
+
+```text
+local_eval/qtrm_native_hybrid_l2_program4_mod32_cuda_s1200
+program_len: 4
+modulus: 32
+steps: 1200
+decision: rejected
+think4_generation_exact: 0.1953125
+think0_generation_exact: 0.021484375
+state_reset_generation_exact: 0.13671875
+op_zero_generation_exact: 0.015625
+```
+
+Accepted intermediate L2A:
+
+```text
+local_eval/qtrm_native_mha_l2a_program3_mod16_cuda_s2500
+program_len: 3
+modulus: 16
+steps: 2500
+decision: accepted_l1_native_etd
+threshold exact>=0.70, depth_gain>=0.10, ablation_drop>=0.10
+think4_generation_exact: 0.763671875
+think0_generation_exact: 0.060546875
+state_reset_generation_exact: 0.203125
+op_zero_generation_exact: 0.05859375
+full_minus_think0: 0.703125
+full_minus_worst_ablation: 0.560546875
+```
+
+Interpretation:
+
+```text
+The current native recursive path is real but not enough for the harder L2B
+distribution. The immediate bottleneck is exact value generalization over
+longer operation chains, not first-token EOS collapse.
+```
+
+Added optional step-wise depth supervision:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+  --depth-intermediate-loss-weight
+
+tests/test_qtrm_native_etd_probe.py
+  depth_target_tokens follows step-wise program state
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe
+
+Ran 7 tests: OK
+```
+
+Depth-target L2B probe:
+
+```text
+local_eval/qtrm_native_mha_l2_program4_mod32_depth_targets_cuda_s2500
+program_len: 4
+modulus: 32
+steps: 2500
+depth_intermediate_loss_weight: 0.5
+decision: rejected
+think4_generation_exact: 0.291015625
+think0_generation_exact: 0.0
+state_reset_generation_exact: 0.0234375
+op_zero_generation_exact: 0.025390625
+full_minus_think0: 0.291015625
+full_minus_worst_ablation: 0.265625
+```
+
+Interpretation: step-wise depth targets strengthen causal separation and beat
+the 5000-step no-depth-target exact rate slightly at half the steps, but still
+do not solve L2B. More structure is needed for exact value-state generalization.
+
+Added active-length curriculum:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+  --active-len-curriculum
+  --active-len-curriculum-min
+  --active-len-curriculum-warmup-frac
+
+tests/test_qtrm_native_etd_probe.py
+  case_with_active_program_len replaces tail ops with NOOP and recomputes answer
+  active_program_len_for_step warms up then uses full program
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe
+
+Ran 9 tests: OK
+```
+
+Accepted L2B-style run:
+
+```text
+local_eval/qtrm_native_mha_l2_program4_mod32_curriculum_depth_cuda_s5000
+program_len: 4
+modulus: 32
+steps: 5000
+depth_intermediate_loss_weight: 0.5
+active_len_curriculum: true
+active_len_curriculum_warmup_frac: 0.5
+decision: accepted_l1_native_etd
+threshold exact>=0.70, depth_gain>=0.10, ablation_drop>=0.10
+think4_generation_exact: 0.955078125
+think0_generation_exact: 0.0
+state_reset_generation_exact: 0.013671875
+op_zero_generation_exact: 0.03125
+full_minus_think0: 0.955078125
+full_minus_worst_ablation: 0.923828125
+first_token_eos_rate: 0.0
+```
+
+Interpretation:
+
+```text
+Direct L2B and depth-target-only L2B were rejected. Active-length curriculum
+plus step-wise depth targets passed strongly. This is the current best evidence
+that the native recurrent trajectory can perform multi-step value transitions
+inside the ordinary LM logits path.
+```
+
+## [2026-05-12] evaluation | Native L3 language-slice smoke accepted
+
+Added a donorless native text preservation probe:
+
+```text
+scripts/336_train_qtrm_native_text_probe.py
+tests/test_qtrm_native_text_probe.py
+```
+
+Purpose:
+
+```text
+Check that the native recurrent LM path can learn a small text slice without
+repetition collapse. This is a language-preservation smoke, not a general
+language-capability claim.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py \
+  scripts/336_train_qtrm_native_text_probe.py
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe \
+  tests.test_qtrm_native_text_probe
+
+Ran 12 tests: OK
+```
+
+Accepted smoke:
+
+```text
+local_eval/qtrm_native_text_l3_smoke_cuda_s800
+steps: 800
+seq_len: 64
+backbone: mha_etd
+decision: accepted_l3_language_slice
+vocab_size: 33
+random_loss: 3.4965
+think_eval_loss: 0.04335
+think0_loss: 4.3128
+thinking_block_off_loss: 4.3128
+unique_chars: 30
+max_run_fraction: 0.01515
+sample:
+  QTRM native language probe. A small recurrent model should preserve ordinary
+  next-token language behavior while its thinking block i
+```
+
+Interpretation:
+
+```text
+The native recurrent path can preserve basic autoregressive text behavior on a
+small slice. The next L4 target is a mixed reasoning+language gate using normal
+prompt text rather than only symbolic tokens or tiny text memorization.
+```
+
+## [2026-05-12] evaluation | Native L4 mixed text reasoning scaffold added but rejected
+
+Added a mixed text reasoning probe:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+tests/test_qtrm_native_mixed_text_reasoning_probe.py
+```
+
+The probe uses ordinary fixed-width text prompts and text answers:
+
+```text
+prompt: start 19 ops 06 05 06 02 answer
+answer: 28\n
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py \
+  scripts/336_train_qtrm_native_text_probe.py \
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe \
+  tests.test_qtrm_native_text_probe \
+  tests.test_qtrm_native_mixed_text_reasoning_probe
+
+Ran 15 tests: OK
+```
+
+Runs:
+
+```text
+local_eval/qtrm_native_mixed_text_l4_program4_mod32_cuda_s3000
+  decision: rejected
+  think4_generation_exact: 0.326171875
+  think0_generation_exact: 0.01953125
+  state_reset_generation_exact: 0.03515625
+  op_zero_generation_exact: 0.033203125
+
+local_eval/qtrm_native_mixed_text_l4_program4_mod32_cuda_s8000
+  decision: rejected
+  think4_generation_exact: 0.677734375
+  think0_generation_exact: 0.005859375
+  state_reset_generation_exact: 0.03515625
+  op_zero_generation_exact: 0.029296875
+
+local_eval/qtrm_native_mixed_text_l4_program4_mod32_cuda_s10000
+  decision: rejected
+  think4_generation_exact: 0.693359375
+  think0_generation_exact: 0.017578125
+  state_reset_generation_exact: 0.03515625
+  op_zero_generation_exact: 0.044921875
+
+local_eval/qtrm_native_mixed_text_l4_program4_mod32_cuda_s12000
+  decision: rejected
+  think4_generation_exact: 0.693359375
+  think0_generation_exact: 0.009765625
+  state_reset_generation_exact: 0.033203125
+  op_zero_generation_exact: 0.03515625
+```
+
+Interpretation:
+
+```text
+The L4 path is not accepted because exact text-answer generation remains below
+the 0.70 threshold. The positive signal is strong causal recurrence:
+full-minus-worst-ablation is ~0.65. The next bottleneck is answer text/value
+rendering under normal prompt format.
+```
+
+Capacity-up L4 acceptance:
+
+```text
+local_eval/qtrm_native_mixed_text_l4_program4_mod32_d128_cuda_s8000
+steps: 8000
+d_model: 128
+n_heads: 8
+d_ff: 256
+decision: accepted_l4_mixed_text_reasoning
+threshold exact>=0.70, depth_gain>=0.10, ablation_drop>=0.10
+think4_generation_exact: 0.7421875
+think0_generation_exact: 0.02734375
+state_reset_generation_exact: 0.03515625
+op_zero_generation_exact: 0.03125
+full_minus_think0: 0.71484375
+full_minus_worst_ablation: 0.70703125
+```
+
+Interpretation:
+
+```text
+This is the first accepted L4 mixed normal-prompt scaffold. It remains a small
+synthetic text task, but it proves the native recurrent path can parse text-form
+inputs and emit text-form answers while destructive ablations collapse the same
+generation exact metric.
+```
+
+## [2026-05-11] implementation | Core-state-only answer loop scaffold
+
+Implemented `answer_state_loop_core_state_only_enabled`.
+
+Effect:
+
+```text
+Text/donor hidden states can query the core trajectory, but raw text hidden
+states are not appended as answer-loop cross-attention values.
+```
+
+Files:
+
+```text
+src/qtrm_mm/config.py
+src/qtrm_mm/qtrm_model.py
+tests/test_core_halting.py
+tests/test_mixed_noncopy_lm_gate.py
+scripts/330_run_mixed_noncopy_lm_gate.py
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_typed_value_fullpath_scalar_codec_core_state_only_s060.yaml
+configs/qwen35_2b_4090_source_copy_pointer_renderer_core_state_only_scaffold.yaml
+```
+
+Verification:
+
+```text
+.venv/bin/python -m unittest \
+  tests.test_core_halting \
+  tests.test_model_config \
+  tests.test_raw_intelligence_eval_script \
+  tests.test_mixed_noncopy_lm_gate
+
+Ran 153 tests: OK
+```
+
+Smoke:
+
+```text
+.venv/bin/python scripts/330_run_mixed_noncopy_lm_gate.py \
+  --max-cases 1 \
+  --chunk-size 1 \
+  --max-length 192 \
+  --max-new-tokens 8 \
+  --out-dir /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/mixed_noncopy_typed_core_state_only_smoke_1case
+```
+
+Result:
+
+```text
+decision: rejected_noncopy_lm_gate
+full: 0/1
+donor: 0/1
+core_off: 0/1
+core_state_zero: 0/1
+answer_recurrent_off: 0/1
+
+full completion:             66666666
+core_state_zero completion:  55555555
+answer_recurrent_off:        00000000
+target:                      600054
+```
+
+Decision:
+
+```text
+Accept the scaffold as a stricter orthodox path, not as an L4 capability.
+The remaining blocker is non-copy scalar/list accumulator synthesis into the
+LM-logit path under core-state-only constraints.
+```
+
+Training smoke:
+
+```text
+.venv/bin/python scripts/196_train_pure_recursive_depth_supervised.py \
+  --config configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_typed_value_fullpath_scalar_codec_core_state_only_s060.yaml \
+  --data-jsonl data/eval/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len1113_probe_eval60000_v6to7_len11_13_mixed_only.jsonl \
+  --init-checkpoint /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/l4_sufficient_onecase_overfit/train_eos_s020/last.pt \
+  --steps 1 \
+  --depth-steps 8 \
+  --target-mode final \
+  --max-length 192 \
+  --target-logit-positions-only \
+  --causal-prefix-supervision \
+  --causal-prefix-max-target-tokens 8 \
+  --causal-prefix-skip-leading-whitespace-targets \
+  --causal-prefix-append-eos-target \
+  --final-path-only-supervision \
+  --answer-state-loop-logit-ce-weight 1.0 \
+  --final-logit-ce-weight 1.0 \
+  --depth-final-ce-weight 0.0 \
+  --progress-margin-weight 0.0 \
+  --lr 1e-5 \
+  --out-dir /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/smoke_core_state_only_causal_prefix_s1
+```
+
+Observed:
+
+```text
+saved: /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/smoke_core_state_only_causal_prefix_s1/last.pt
+final_path_ce: 6.9826
+answer_state_loop_logit_ce: 6.9826
+final_path_acc: 0.1429
+answer_state_loop_logit_acc: 0.1429
+causal_prefix_examples: 7
+```
+
+## [2026-05-11] architecture | Orthodox TRM general-LLM direction recorded
+
+Decision:
+
+```text
+TRM/QTRM remains the primary reasoning-core direction for general LLM work,
+but only if the answer follows one canonical causal path:
+prompt tokens -> donor/token states -> mandatory recurrent core ->
+core-dependent readout -> LM logits -> autoregressive text.
+```
+
+Artifact:
+
+```text
+docs/wiki/decisions/orthodox-trm-general-llm-direction.md
+```
+
+Operational change:
+
+```text
+Future promotions require same-run destructive ablations:
+core_off, core_state_zero, answer/readout path off, and depth sweep.
+If answer-state recurrence or a renderer works after core state is zeroed,
+the result is diagnostic, not a TRM-general-LLM architecture claim.
+```
+
 ## [2026-05-07] experiment | Mixed composition length 11/13 accepted
 
 Extended the accepted dynamic-halt mixed list-to-arithmetic Stage 1 gate from
@@ -12288,4 +13917,9982 @@ cause a measurable accuracy drop because the full path is already at zero.
 The next architecture change should target scalar/list accumulator state that
 causally feeds the canonical LM logits path. A source-copy renderer repair or
 loose contains metric cannot count as general L4 progress.
+```
+
+## 2026-05-11 Core-State-Only Gate Contrast
+
+Implementation:
+
+```text
+scripts/196_train_pure_recursive_depth_supervised.py
+  added final LM-path contrast options for:
+    core_state_zero
+    answer_state_recurrent_off
+
+tests:
+  tests/test_pure_recursive_depth_supervised_train_script.py
+```
+
+RED/GREEN:
+
+```text
+RED:
+  parser rejected --core-state-zero-final-contrast-weight and
+  --answer-state-recurrent-final-contrast-weight.
+  script text did not contain zero_core_trajectory=True or
+  disable_answer_state_loop_recurrent=True trainer ablation forwards.
+
+GREEN:
+  .venv/bin/python -m unittest
+    tests.test_pure_recursive_depth_supervised_train_script.
+    PureRecursiveDepthSupervisedTrainScriptTests.
+    test_parser_accepts_core_zero_and_answer_recurrent_final_contrast
+    tests.test_pure_recursive_depth_supervised_train_script.
+    PureRecursiveDepthSupervisedTrainScriptTests.
+    test_training_script_has_gate_ablation_final_contrast_for_core_zero_and_recurrent_off
+  OK
+```
+
+Smoke and gate:
+
+```text
+core-state-only 20-step CE recovery:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  core_state_only_causal_prefix_s020_from_eos
+  final_path_ce reached 4.8107 in the logged window.
+
+strict gate:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  mixed_noncopy_core_state_only_s020_gate_1case
+  decision: rejected_noncopy_lm_gate
+  target=600054, full=00000000, donor=10000,
+  core_off=!!!!!!!!, core_state_zero=55555555
+
+gate-contrast smoke:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  smoke_core_state_only_gate_contrast_s001
+  final_path_ce=2.8354, final_path_acc=0.4286
+  core_state_zero_final_target_logp_delta=9.2229
+  answer_state_recurrent_final_target_logp_delta=1.9025
+
+greedy-margin continuation:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  core_state_only_gate_contrast_greedy_s010
+  strict gate: rejected_noncopy_lm_gate
+  full=00000000, typed_value_answer_bridge_off=60060060,
+  core_state_zero=Vega5555555
+```
+
+Interpretation:
+
+```text
+The stricter training path now optimizes the same core-state-zero and
+answer-recurrent-off ablations used by the L4 gate. The core affects generated
+surface text, but the model still collapses to repeated digits and has not
+converted the latent scalar state into the correct autoregressive answer.
+Typed value bridge is demoted to diagnostic until it improves strict generation
+and shows a positive same-run ablation drop.
+```
+
+## 2026-05-11 Orthodox Direction Skill/Wiki Reset
+
+Updated the research-driven architecture skill and wiki to make the orthodox
+direction explicit:
+
+```text
+canonical path:
+  prompt/chat-template tokens
+  -> tokenizer
+  -> token embeddings or frozen donor states
+  -> mandatory recurrent TRM/QTRM core
+  -> core-state-dependent readout
+  -> LM logits
+  -> autoregressive text
+
+active status:
+  L2/L3 prerequisite repair, not L4 promotion.
+
+active blocker:
+  non-copy latent-state-to-autoregressive text synthesis.
+```
+
+Recorded the current reject evidence:
+
+```text
+strict generation:
+  target=600054
+  full=00000000
+  typed_value_answer_bridge_off=60060060
+  core_state_zero=Vega5555555
+
+gold-token ranks with stripped target + EOS:
+  target tokens: 6 0 0 0 5 4 <eos>
+  full ranks:    1 1 1 1 6 4 10
+
+self-rollout:
+  teacher-forced/final-path accuracy improved, but strict generation stayed
+  collapsed at 00000000.
+
+beam search:
+  beam_size=8 produced 60000000, so the tail failure is not only greedy
+  decoding.
+```
+
+Decision:
+
+```text
+No MemoryOS/RAG, MSA/LM2, larger donor, online distillation, typed renderer,
+or side solver should be promoted until the mandatory core-state-only LM path
+beats donor/core-off/core-state-zero/path-off under strict generation.
+```
+
+## 2026-05-11 Tail-Weight And KISS Readout Gates
+
+Tail/EOS-weighted continuation:
+
+```text
+train:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  core_state_only_tail_weight_s005
+
+gate:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  mixed_noncopy_core_state_only_tail_weight_s005_gate_1case
+
+decision:
+  rejected_noncopy_lm_gate
+
+generation:
+  target=600054
+  full=40000000
+  typed_value_answer_bridge_off=44444444
+  core_state_zero=Vega  555555
+  answer_recurrent_off=00000000
+
+rank probe:
+  target tokens: 6 0 0 0 5 4 <eos>
+  full ranks:    8 1 1 1 3 2 5
+```
+
+KISS no-typed-bridge candidate:
+
+```text
+config:
+  configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_
+  core_state_only_kiss_answer_loop_s040.yaml
+
+load check:
+  answer_state_loop_core_state_only_enabled=True
+  typed_algorithmic_value_state_enabled=False
+  trainable_param_policy=core_and_answer_state_loop
+```
+
+No-train A/B:
+
+```text
+gate:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  mixed_noncopy_core_state_only_kiss_no_train_gate_1case
+
+decision:
+  rejected_noncopy_lm_gate
+
+generation:
+  full=60060060
+  core_state_zero=!!!!!!!!
+  answer_recurrent_off=00000000
+```
+
+5-step KISS continuation:
+
+```text
+train:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  core_state_only_kiss_answer_loop_s005
+
+trainable:
+  core_and_answer_state_loop
+  35,811,332 trainable params
+  90 unexpected typed/checkpoint keys intentionally dropped
+
+gate:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  mixed_noncopy_core_state_only_kiss_s005_gate_1case
+
+decision:
+  rejected_noncopy_lm_gate
+
+generation:
+  full=00000000
+  core_state_zero=!!!!!!!!
+  answer_recurrent_off=00000000
+```
+
+Conclusion:
+
+```text
+Tail weighting damages the first token. KISS no-train gives the closest output
+and a visible core-state-zero/recurrent-off perturbation, but current short
+training collapses it. The active blocker remains the root LM readout problem:
+learned recurrent latent state is not being converted into stable
+autoregressive next tokens.
+
+Next orthodox step: reset to a minimal prior-backed recurrent
+latent-state-to-next-token reproduction before adding more QTRM-specific heads,
+bridges, MemoryOS, MSA, larger donors, or distillation.
+```
+
+## 2026-05-11 Minimal Latent Readout Reproduction
+
+Implemented:
+
+```text
+scripts/331_train_latent_readout_reproduction.py
+tests/test_latent_readout_reproduction_script.py
+```
+
+Purpose:
+
+```text
+Isolate the current QTRM bottleneck:
+  latent state -> recurrent next-token decoder -> greedy digit/EOS text.
+```
+
+RED/GREEN:
+
+```text
+RED:
+  tests failed because scripts/331_train_latent_readout_reproduction.py did
+  not exist.
+
+GREEN:
+  .venv/bin/python -m unittest tests.test_latent_readout_reproduction_script
+  Ran 4 tests: OK
+```
+
+Runs:
+
+```text
+teacher forcing only:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  latent_readout_repro_teacher_forcing_s200/report.json
+
+scheduled sampling:
+  /mnt/nvme0n1p2/qtrm-runs/research_gate_runner/
+  latent_readout_repro_scheduled_s200/report.json
+```
+
+Both profiles:
+
+```text
+teacher_forced_token_acc: 1.0
+teacher_forced_exact:    1.0
+greedy_token_acc:        1.0
+greedy_exact:            1.0
+decision:                accepted
+```
+
+Decision:
+
+```text
+Accept as L1 minimal readout reproduction only. This proves the readout problem
+is solvable when latent states are sufficient and token-aligned. It does not
+prove QTRM core states are sufficient or token-aligned.
+
+Next QTRM step: port the minimal contract
+  core trajectory -> per-output-step latent readout -> recurrent next-token
+  readout -> LM logits
+and require strict greedy generation plus core_state_zero and recurrent-off
+destructive drops.
+```
+
+## [2026-05-12] architecture | Free Transformer latent scaffold for QTRM
+
+Implemented a Free-Transformer-style latent conditioning scaffold inside the
+QTRM answer loop:
+
+```text
+training: answer posterior latent from full training context
+inference: answer prior latent from QTRM answer hidden state
+loss: KL/free-bits hook in scripts/196
+output: normal LM logits only
+```
+
+Files:
+
+```text
+src/qtrm_mm/config.py
+src/qtrm_mm/qtrm_model.py
+scripts/196_train_pure_recursive_depth_supervised.py
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_core_state_only_kiss_free_transformer_latent_s040.yaml
+scripts/332_run_free_transformer_latent_smoke.sh
+docs/wiki/decisions/free-transformer-latent-for-qtrm.md
+```
+
+Decision:
+
+```text
+This is a scaffold, not an accepted L4 result. It is promoted only if strict
+greedy generation improves and core/answer/next-token/free-latent ablations
+show causal drops.
+```
+
+Smoke command:
+
+```text
+HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src \
+  bash scripts/332_run_free_transformer_latent_smoke.sh
+```
+
+Follow-up implementation:
+
+```text
+Added answer_free_transformer_latent_final_contrast so full LM logits must beat
+the same forward pass with Free Transformer latent conditioning disabled.
+This makes `answer_free_transformer_latent_off` a trained causal ablation,
+not only an evaluation toggle.
+```
+
+Quick smoke:
+
+```text
+command:
+  HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src \
+  STEPS=1 MAX_TARGET_TOKENS=2 SELF_ROLLOUT_WEIGHT=0.0 \
+  OUT_BASE=local_eval/free_transformer_latent_contrast_smoke_quick \
+  bash scripts/332_run_free_transformer_latent_smoke.sh
+
+train:
+  answer_free_transformer_latent_final_contrast=1.1735
+  answer_free_transformer_latent_final_target_logp_delta=-1.0735
+  answer_free_transformer_latent_kl=0.6436
+  answer_free_transformer_gate_mean=1.0000
+
+gate:
+  decision=rejected_noncopy_lm_gate
+  full_generation_accuracy=0.0
+  full_minus_answer_free_transformer_latent_off=0.0
+  report=local_eval/free_transformer_latent_contrast_smoke_quick/gate_1case_s1/report.json
+```
+
+The scaffold is runnable, but this is still prerequisite repair, not L4.
+
+Stage-5 diagnostics:
+
+```text
+S5 mixed-depth:
+  full=66666666
+  free_latent_off=66666666
+  decision=rejected_noncopy_lm_gate
+
+S5 no-repeat diagnostic:
+  full=604: UNKNOWN5Answer1
+  decision=rejected_noncopy_lm_gate
+  interpretation=not just a repetition-decoding problem
+
+S5 depth8-only:
+  full=66666666
+  free_latent_off=66666666
+  decision=rejected_noncopy_lm_gate
+
+S5 depth8-only + self-rollout:
+  self_rollout_prefix_mismatch_rate=1.0
+  full=66666666
+  free_latent_off=66666666
+  decision=rejected_noncopy_lm_gate
+```
+
+Conclusion:
+
+```text
+Free Transformer latent conditioning is wired correctly but has no greedy
+causal gain yet. Continue with the core-state-to-token synthesis bottleneck;
+do not promote this to L4 and do not hide the failure with no-repeat decoding.
+```
+
+Follow-up diagnostics:
+
+```text
+S5 depth8-only + skip-leading-whitespace:
+  full=60060066
+  free_latent_off=60060066
+  rank: 6@1, 0@1, 0@1, 0@2, 5@8, 4@5, EOS@55
+
+S3 target-token-8 from base:
+  full=00000000
+  first 6 rank=2
+
+S3 staged T2->T8:
+  full=00000000
+
+S3 staged T2->T8 later_token_weight=0.25:
+  first 6 rank=2
+  max rank=59
+
+S3 staged T2 step5 -> T4:
+  source=local_eval/free_transformer_latent_contrast_t2_depth8_skipws_saveevery_s5/train_s5/step_000005.pt
+  step_000001 rank=6@2,0@1,0@1,0@1,5@9,4@6,EOS@73
+  step_000002 rank=6@2,0@1,0@1,0@1,5@9,4@6,EOS@101
+  step_000003 rank=6@2,0@1,0@1,0@1,5@10,4@6,EOS@124
+```
+
+Decision:
+
+```text
+The useful fix was target alignment, not Free Transformer latent causality.
+Full-answer token coverage is necessary but destabilizes the learned prefix.
+Even the smaller T2->T4 stage regresses the first answer token from rank 1 to
+rank 2, so this is not only a full-answer-length jump problem.
+The smoke wrapper now exposes SAVE_EVERY so future T8 runs can use
+validation-gated checkpoint selection instead of trusting the final step.
+```
+
+## [2026-05-12] architecture | next-token future auxiliary QTRM port
+
+Evaluator cleanup:
+
+```text
+scripts/192_eval_raw_intelligence.py now records gold_answer and
+canonical_completion separately. The old canonical_answer field is retained
+for compatibility but is completion-derived.
+
+Verification:
+  .venv/bin/python -m unittest tests.test_raw_intelligence_eval_script
+  Ran 14 tests: OK
+```
+
+Training alignment fix:
+
+```text
+answer_state_loop_future_token_targets now uses causal_prefix_answer_token_ids,
+so future-token CE shares skip-leading-whitespace and EOS settings with the
+main causal-prefix answer path.
+
+Verification:
+  .venv/bin/python -m unittest tests.test_pure_recursive_depth_supervised_train_script
+  Ran 124 tests: OK
+```
+
+Implemented:
+
+```text
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_core_state_only_kiss_mandatory_next_token_decoder_future_aux_s040.yaml
+scripts/333_run_nexttok_future_aux_smoke.sh
+```
+
+Baseline regate:
+
+```text
+artifact=local_eval/orthodox_mandatory_nexttok_regate_goldfields
+gold_answer=600054
+full=00000000
+answer_next_token_decoder_off=00000000
+core_state_zero=!!!!!!!!
+decision=rejected_noncopy_lm_gate
+```
+
+Future-token S5:
+
+```text
+artifact=local_eval/nexttok_future_aux_smoke_s5
+full=66666666
+answer_recurrent_off=00000000
+answer_next_token_decoder_off=66666666
+decision=rejected_noncopy_lm_gate
+
+rank:
+  step_000001 full=6@2,0@1,0@1,0@1,5@4,4@3,EOS@18
+  step_000004 full=6@1,0@2,0@2,0@2,5@4,4@3,EOS@17
+  step_000005 full=6@1,0@2,0@2,0@2,5@4,4@3,EOS@16
+```
+
+T4 self-rollout continuation:
+
+```text
+artifact=local_eval/nexttok_future_aux_stage_s5_to_t4_selfroll_s3
+best training telemetry at step_000002:
+  final_path_acc=0.75
+  final_greedy_token_win_rate=0.75
+  causal_prefix_self_rollout_prefix_mismatch_rate=0.3333
+
+rank:
+  step_000001 full=6@2,0@1,0@1,0@1,5@4,4@3,EOS@17
+  step_000002 full=6@2,0@1,0@1,0@1,5@6,4@3,EOS@19
+  step_000003 full=6@2,0@1,0@1,0@1,5@7,4@3,EOS@30
+```
+
+Decision:
+
+```text
+Reject as L4/general-LM promotion.
+
+The future-token auxiliary creates a partial readout-direction signal: it can
+move the first token from 0 toward 6 and recurrent_off changes the output.
+However, it still collapses into digit repetition and next_token_decoder_off
+ties full in greedy generation. The current decoder is not yet a faithful
+port of the L1 latent-readout reproduction because it does not explicitly
+consume previous generated answer-token embeddings.
+
+Next orthodox step:
+  implement a previous-token-conditioned latent readout before more weight
+  sweeps or Free-Transformer-style scaffolds.
+```
+## 2026-05-12 12:38 KST - ETD Thinking-Block Correction
+
+Corrected the `think block` reference set.
+
+Primary paper:
+
+```text
+Encode, Think, Decode: Scaling test-time reasoning with recursive latent
+thoughts
+arXiv:2510.07358
+```
+
+Local artifact:
+
+```text
+references/papers/recurrent_depth/encode_think_decode_2510.07358.pdf
+```
+
+QTRM implication:
+
+```text
+ETD is a more direct prior than generic text `<think>` blocks. It splits a
+transformer into encode / repeated middle thinking block / decode and scales
+test-time latent recursion inside the normal LM path. This strengthens the
+case that QTRM should test a compact recurrent reasoning block feeding the
+ordinary LM head before adding more external answer-loop renderer patches.
+```
+
+## 2026-05-12 12:52 KST - Previous-Token Latent Readout Scaffold
+
+Implemented the next orthodox renderer repair:
+
+```text
+previous input/generated token embedding
++ QTRM answer/core latent hidden
+-> previous-token fusion
+-> next-token decoder block
+-> LM head
+```
+
+Files:
+
+```text
+src/qtrm_mm/config.py
+src/qtrm_mm/qtrm_model.py
+configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_core_state_only_kiss_prev_token_readout_s040.yaml
+scripts/334_run_prev_token_readout_smoke.sh
+tests/test_prev_token_latent_readout.py
+```
+
+Verification:
+
+```text
+.venv/bin/python -m py_compile src/qtrm_mm/qtrm_model.py src/qtrm_mm/config.py \
+  scripts/196_train_pure_recursive_depth_supervised.py \
+  scripts/330_run_mixed_noncopy_lm_gate.py
+
+PYTHONPATH=src .venv/bin/python -m unittest tests.test_prev_token_latent_readout
+Ran 3 tests: OK
+```
+
+Decision:
+
+```text
+This is a scaffold, not a promoted result. Next action is
+scripts/334_run_prev_token_readout_smoke.sh and strict gate/ablation reading.
+```
+
+S5 result:
+
+```text
+artifact=local_eval/prev_token_readout_smoke_s5
+gold_answer=600054
+full=00000000
+donor_only=10000
+core_off=!!!!!!!!
+core_state_zero=6054
+answer_recurrent_off=00000000
+answer_next_token_decoder_off=00000000
+decision=rejected_noncopy_lm_gate
+```
+
+Rank probe:
+
+```text
+full:            6@2,0@1,0@1,0@1,5@4,4@3,EOS@15
+decoder_off:     6@2,0@1,0@1,0@1,5@6,4@4,EOS@12
+recurrent_off:   6@4,0@1,0@1,0@1,5@8,4@6,EOS@16
+core_state_zero: 6@1,0@1,0@3,0@3,5@1,4@1,EOS@1
+```
+
+Conclusion:
+
+```text
+Rejected. The previous-token readout is implemented correctly as a scaffold,
+but readout-only tuning is not sufficient. The full core is worse than
+core_state_zero on gold-token ranks, so the next run must unlock the recurrent
+core with the answer loop and require full > core_state_zero. If that fails,
+the architecture should pivot toward an ETD-style in-path thinking block rather
+than more renderer patches.
+```
+
+Core+answer loop unlock:
+
+```text
+artifact=local_eval/prev_token_readout_core_answer_s5
+trainable_param_policy=core_and_answer_state_loop
+gold_answer=600054
+full=60000066
+core_state_zero=6054
+answer_recurrent_off=00000000
+answer_next_token_decoder_off=66666666
+decision=rejected_noncopy_lm_gate
+```
+
+Rank probe:
+
+```text
+full:            6@1,0@1,0@1,0@1,5@4,4@3,EOS@16
+decoder_off:     6@1,0@2,0@2,0@2,5@5,4@3,EOS@13
+recurrent_off:   6@3,0@1,0@1,0@1,5@8,4@6,EOS@22
+core_state_zero: 6@1,0@1,0@2,0@2,5@1,4@1,EOS@1
+```
+
+Suffix-pressure continuation:
+
+```text
+artifact=local_eval/prev_token_readout_core_answer_t5_later2
+init=local_eval/prev_token_readout_core_answer_s5/train_s5/last.pt
+LATER_TOKEN_WEIGHT=2.0
+SELF_ROLLOUT_WEIGHT=0.5
+full=00000000
+core_state_zero=6054
+decision=rejected_noncopy_lm_gate
+```
+
+Decision:
+
+```text
+Stop this as a weight sweep. The core+answer unlock produced a partial signal
+but did not beat core_state_zero, and suffix-pressure continuation regressed.
+The next orthodox step is an ETD-style in-path thinking-block probe rather than
+more external answer-loop renderer patches.
+```
+## 2026-05-12 13:42 KST - QTRM-Native First Pivot
+
+Canonical direction updated:
+
+```text
+tokenizer / token ids
+-> token embeddings
+-> native encoder
+-> mandatory TRM/QTRM recursive thinking core
+-> native decoder/readout
+-> LM head
+-> autoregressive text
+```
+
+Reason:
+
+```text
+The donor-sidecar path repeatedly produced non-causal or harmful-core results:
+strict greedy generation failed, answer-loop/readout patches did not promote,
+and core_state_zero sometimes ranked the gold answer better than the full core.
+This suggests the core and donor are not one integrated LM residual path.
+```
+
+Updated:
+
+```text
+/home/tripleyoung/.agents/skills/research-driven-architecture-debugging/SKILL.md
+docs/wiki/architecture/qtrm-native-first-roadmap.md
+docs/wiki/index.md
+```
+
+Current native scaffold:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+tests/test_qtrm_native_etd_probe.py
+```
+
+Claim:
+
+```text
+Not solved. This is a native-first L1 falsifier for whether a donorless
+encode -> repeated thinking block -> decode -> LM-head path can learn stable
+autoregressive outputs and show depth/ablation gain.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py
+
+PYTHONPATH=src .venv/bin/python -m unittest tests.test_qtrm_native_etd_probe
+Ran 4 tests: OK
+```
+
+First smoke:
+
+```text
+artifact=local_eval/qtrm_native_etd_smoke_cpu_s20
+loss=3.8876 -> 1.8404
+full_generation_exact=0.0
+think0_generation_exact=0.0625
+state_reset_generation_exact=0.0
+op_zero_generation_exact=0.0
+decision=rejected
+```
+
+Conclusion:
+
+```text
+Native path is implemented and trainable enough for loss to drop, but the first
+smoke collapses to immediate EOS in greedy generation. Next bottleneck is
+native answer/EOS decoding and on-policy generation, not donor integration.
+```
+
+## 2026-05-12 18:55 KST - Mamba-3 Encode/Decode Isolation
+
+Question:
+
+```text
+After Mamba-3 passed the short recurrent think-core seed sweep, should
+encode/decode also move from MHA ETD to Mamba-3 or FLA/GatedDeltaNet?
+```
+
+Experiment:
+
+```text
+script:
+  scripts/342_qtrm_native_l5d_backbone_compare.py
+
+seed sweep:
+  scripts/343_qtrm_native_l5d_placement_seed_sweep.py
+
+artifact:
+  local_eval/qtrm_native_l5d_all_mamba3_seed_sweep_short_triton351
+
+candidates:
+  mha_etd
+  official_mamba3_think
+  official_fla_encode_decode_mamba3_think
+  official_mamba3
+```
+
+Result:
+
+```text
+official_mamba3_think:
+  accepted_l5d_placement_seed_stability
+  promoted_count: 3 / 3
+  min_delta_vs_mha: 0.005208333333
+  exact range: 0.046875 .. 0.052083333333333336
+
+official_mamba3:
+  rejected
+  promoted_count: 2 / 3
+  min_delta_vs_mha: -0.005208333333
+  exact range: 0.041666666666666664 .. 0.078125
+
+official_fla_encode_decode_mamba3_think:
+  rejected
+  promoted_count: 2 / 3
+  min_delta_vs_mha: -0.005208333333
+  exact range: 0.041666666666666664 .. 0.057291666666666664
+```
+
+Decision:
+
+```text
+Do not replace encode/decode MHA ETD yet. Mamba-3 is currently supported only
+as the recurrent thinking core:
+
+  MHA ETD encode -> official Mamba-3 recurrent think -> MHA ETD decode
+
+All-Mamba3 and FLA-encode/decode remain research candidates until they pass the
+same seed-stability and causal-ablation gates.
+```
+
+## 2026-05-12 19:08 KST - FLA 3:1 Think-Core Verification
+
+Question:
+
+```text
+Was Qwen3.5-style 3:1 actually tested in the thinking backbone, and was it bad?
+```
+
+Answer:
+
+```text
+It was tested as `official_fla_think`:
+
+  MHA ETD encode -> Qwen3.5-style official FLA/GatedDeltaNet 3:1 think
+  -> MHA ETD decode -> LM head
+
+It was not bad. It passed the short L5D seed-stability gate:
+
+  artifact: local_eval/qtrm_native_l5d_placement_seed_sweep_short
+  decision: accepted_l5d_placement_seed_stability
+  promoted_count: 3 / 3
+  causal_ok_count: 3 / 3
+  backend_ok_count: 3 / 3
+  min_delta_vs_mha: 0.005208333333
+  max_delta_vs_mha: 0.067708333333
+  exact range: 0.052083333333333336 .. 0.08333333333333333
+```
+
+Fresh runtime smoke:
+
+```text
+artifact:
+  local_eval/qtrm_native_l5d_verify_fla_mamba3_think_smoke_20260512
+
+candidates:
+  mha_etd
+  official_fla_think
+  official_mamba3_think
+
+result:
+  completed_l5d_backbone_compare
+
+backend:
+  official_fla_think:
+    official_fla_delta_mixers: 3
+    torch_delta_mixers: 0
+    all_fla_mixers_official: true
+
+  official_mamba3_think:
+    official_mamba3_mixers: 1
+    all_mamba3_mixers_official: true
+```
+
+Decision:
+
+```text
+3:1 official FLA/GatedDeltaNet is a valid thinking-core candidate and should
+not be described as failed. The failed variants were full/all-stage replacement
+or unstable encode/decode replacement. The current stronger short candidate is
+Mamba-3 think-core, but it still needs the broader language non-regression and
+scaled-reasoning gates that FLA already passed earlier.
+```
+
+## 2026-05-12 20:15 KST - Mamba3 Think-Core Language And Scaled Reasoning
+
+Objective:
+
+```text
+Verify whether the selected architecture preserves language behavior and
+causal reasoning:
+
+  MHA ETD encode -> official Mamba-3 recurrent think -> MHA ETD decode -> LM head
+```
+
+Implementation updates:
+
+```text
+scripts/336_train_qtrm_native_text_probe.py
+  accepts mamba3 stage backbones
+  records backend_summary for FLA/Mamba3 strict-backend evidence
+
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  accepts --target-level for runner-specific reports
+
+scripts/300_research_gate_runner.py
+  adds qtrm_native_l5d_mamba3_placement_language_nonregression
+  adds qtrm_native_l5d_mamba3_placement_scaled_reasoning
+```
+
+Language gate:
+
+```text
+gate:
+  qtrm_native_l5d_mamba3_placement_language_nonregression
+
+profile:
+  standard
+
+decision:
+  accepted_l5d_mamba3_placement_language_nonregression
+
+report:
+  local_eval/research_gate_runner_mamba3_verify_20260512/
+  qtrm_native_l5d_mamba3_placement_language_nonregression_standard/report.json
+
+metrics:
+  think_eval_loss: 1.7053431420461507
+  think0_loss: 5.173120769203132
+  thinking_block_off_loss: 5.173120769203132
+  think0_baseline_loss: 1.9871065920971809
+  full_vs_think0: 0.32965461626151865
+  full_vs_baseline: 0.8582041591670939
+  sample_unique_chars: 21
+  sample_max_run_fraction: 0.015151515151515152
+```
+
+Scaled reasoning gate:
+
+```text
+gate:
+  qtrm_native_l5d_mamba3_placement_scaled_reasoning
+
+profile:
+  standard
+
+decision:
+  accepted_l5d_mamba3_placement_scaled_reasoning
+
+report:
+  local_eval/research_gate_runner_mamba3_verify_20260512/
+  qtrm_native_l5d_mamba3_placement_scaled_reasoning_standard/report.json
+
+metrics:
+  full_generation_exact: 0.171875
+  think0_generation_exact: 0.0
+  state_reset_generation_exact: 0.020833333333333332
+  op_zero_generation_exact: 0.026041666666666668
+  full_minus_think0: 0.171875
+  full_minus_worst_ablation: 0.14583333333333334
+  min_family_generation_exact: 0.046875
+```
+
+Backend evidence:
+
+```text
+mamba3_mixers: 1
+official_mamba3_mixers: 1
+torch_delta_mixers: 0
+all_mamba3_mixers_official: true
+```
+
+Important failure and fix:
+
+```text
+The initial scaled reasoning standard config used d_model=96/headdim=24 and
+diverged to NaN before step 200. Lowering LR to 1e-4 still produced NaN.
+
+The accepted standard config uses d_model=64/headdim=16. This should remain
+the runner default until the wider Mamba-3 instability is fixed.
+```
+
+Conclusion:
+
+```text
+For the current native scaffold, MHA encode/decode + official Mamba-3 think
+has now passed:
+
+1. short seed-stability;
+2. standard language non-regression;
+3. standard scaled reasoning with causal ablation drops.
+
+This is architecture-level evidence, not a broad general-LLM claim. A stricter
+future gate should train one joint language+reasoning checkpoint and evaluate
+both from the same checkpoint.
+```
+
+## 2026-05-12 - Official TRM Dual-State Native Candidate
+
+Implemented the first QTRM-native official-TRM-style thinking structure.
+
+Code:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+scripts/336_train_qtrm_native_text_probe.py
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+scripts/342_qtrm_native_l5d_backbone_compare.py
+```
+
+New args:
+
+```text
+--think-structure trm_dual_z
+--trm-l-cycles
+--trm-full-grad-cycles
+```
+
+Structural correction:
+
+```text
+Official Samsung TRM uses shared reasoning weights for both z_L and z_H
+updates. The native implementation therefore reuses one think block:
+
+  z_L = think(z_L + z_H + encoded_tokens)
+  z_H = think(z_H + z_L)
+
+with z_H feeding decode -> LM head.
+```
+
+Verification:
+
+```text
+PYTHONPATH=local_deps/mamba3_runtime:src .venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py \
+  scripts/336_train_qtrm_native_text_probe.py \
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
+  scripts/342_qtrm_native_l5d_backbone_compare.py
+
+PYTHONPATH=local_deps/mamba3_runtime:src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe \
+  tests.test_qtrm_native_text_probe \
+  tests.test_qtrm_native_mixed_text_reasoning_probe \
+  tests.test_qtrm_native_l5d_backbone_compare
+
+result:
+  48 tests OK
+```
+
+Runtime smoke:
+
+```text
+out_root:
+  local_eval/qtrm_native_l5e_trm_dual_z_compare_smoke_20260512
+
+candidates:
+  mha_etd
+  official_fla_think
+  official_mamba3_think
+  trm_dual_z_fla_think
+  trm_dual_z_mamba3_think
+
+result:
+  all candidates executed with backend guards satisfied
+```
+
+Short comparison:
+
+```text
+out_root:
+  local_eval/qtrm_native_l5e_trm_dual_z_compare_short_20260512
+
+winner:
+  official_mamba3_think
+
+full_generation_exact:
+  mha_etd:                 0.015625
+  official_fla_think:      0.036458333333333336
+  official_mamba3_think:   0.046875
+  trm_dual_z_fla_think:    0.026041666666666668
+  trm_dual_z_mamba3_think: 0.020833333333333332
+```
+
+Promotion status:
+
+```text
+official_fla_think:
+  promoted: true
+  full_minus_think0: 0.03125
+  full_minus_worst_ablation: 0.010416666666666668
+
+official_mamba3_think:
+  promoted: true
+  full_minus_think0: 0.046875
+  full_minus_worst_ablation: 0.010416666666666664
+
+trm_dual_z_fla_think:
+  promoted: false
+  full_minus_worst_ablation: -0.020833333333333332
+
+trm_dual_z_mamba3_think:
+  promoted: false
+  full_minus_think0: -0.005208333333333336
+  full_minus_worst_ablation: -0.015625000000000003
+```
+
+Decision:
+
+```text
+The official-TRM-style z_L/z_H loop is now implemented, but the first short
+gate does not prove it as the canonical QTRM-native core. The strongest current
+validated placement remains MHA encode/decode + official Mamba-3 single
+recurrent think-core. GatedDeltaNet/FLA is not eliminated because it also
+promoted in the same single-state comparison.
+```
+
+## Wiki Update 2026-05-14T22:05:00
+
+```text
+topic:
+  Mercury-2, Mercury diffusion LLM, Token Superposition Training, and
+  Fast-Slow Training mapped to QTRM-native.
+
+files:
+  docs/wiki/sources/diffusion-fast-slow-llm-2026.md
+  docs/wiki/decisions/qtrm-native-hard-lock.md
+  docs/wiki/architecture/qtrm-native-first-roadmap.md
+  docs/wiki/index.md
+
+decision:
+  Mercury-style diffusion is a future decoder/readout candidate, not a
+  replacement for the mandatory QTRM recursive core.
+
+  Token Superposition Training is a later native pretraining throughput
+  candidate, not the immediate L4 causality fix.
+
+  Fast-Slow Training is the most directly relevant near-term idea because it
+  maps to z_L fast state, z_H slow state, and nested learned update pressure.
+
+active background gate:
+  qtrm_native_nested_official_schedule_split_mixer_3to1_l4_baseline_compare
+  profile: standard
+  log: local_eval/background_logs/split_mixer_standard_20260514_220000.log
+```
+
+## Implementation 2026-05-14T22:15:00
+
+```text
+topic:
+  Fast-Slow latent update repair scaffold.
+
+files:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  scripts/300_research_gate_runner.py
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+  tests/test_research_gate_runner.py
+  docs/wiki/sources/diffusion-fast-slow-llm-2026.md
+  docs/wiki/decisions/qtrm-native-hard-lock.md
+
+new loss:
+  fast_slow_latent_counterfactual_loss
+
+new gate:
+  qtrm_native_fast_slow_latent_update_l4_repair
+
+verification:
+  .venv/bin/python -m py_compile \
+    scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
+    scripts/300_research_gate_runner.py
+
+  .venv/bin/python -m unittest \
+    tests.test_qtrm_native_mixed_text_reasoning_probe \
+    tests.test_research_gate_runner -v
+
+  result:
+    147 tests OK
+
+smoke:
+  local_eval/research_gate_runner/qtrm_native_fast_slow_latent_update_l4_repair_smoke/report.json
+
+decision:
+  smoke_passed_fast_slow_latent_update_l4_repair
+```
+
+## Experiment 2026-05-14T22:58:41
+
+```text
+topic:
+  Fast-Slow latent update standard gate result.
+
+gate:
+  qtrm_native_fast_slow_latent_update_l4_repair
+
+report:
+  local_eval/research_gate_runner/qtrm_native_fast_slow_latent_update_l4_repair_standard/report.json
+
+decision:
+  rejected
+
+metrics:
+  full_generation_exact: 0.2421875
+  think0_generation_exact: 0.03125
+  full_minus_think0: 0.2109375
+  full_minus_worst_ablation: 0.1875
+  z_l_zero_generation_exact: 0.0234375
+  z_h_zero_generation_exact: 0.0
+
+interpretation:
+  Fast-Slow gives a small gain over the raw official-schedule split-mixer
+  branch, but it does not close the gap to the accepted nested MHA/ETD branch
+  at 0.67578125. The active path remains
+  trm_dual_z_nested_reversed_mha_etd; the next bottleneck is multi-family seed
+  stability, not more Mamba3/GatedDelta mixer shopping.
+```
+
+## Experiment 2026-05-14T23:25:00
+
+```text
+topic:
+  L5 multi-family seed stability repair.
+
+finding:
+  nested dual-z should not be globally frozen yet. On seed339 multi-family it
+  preserves full accuracy at initialization but z_L ablation has almost no
+  effect. Strong z_L counterfactual training makes z_L causal but collapses
+  full/min-family accuracy.
+
+accepted repair:
+  single recurrent MHA/ETD
+  resume from seed339 multi-family checkpoint
+  lr: 2e-5
+  task_families: modchain,modchain,revchain,checksum
+  family_dro_loss_weight: 0.05
+  retention_kl_loss_weight: 0.50
+
+accepted report:
+  local_eval/qtrm_native_l5_multifamily_seed339_single_modchain_weak_repair_s1500_20260514/report.json
+
+seed339 metrics:
+  full_generation_exact: 0.6822916666666666
+  min_family_generation_exact: 0.5078125
+  full_minus_worst_ablation: 0.6549479166666666
+
+repaired seed-stability summary:
+  local_eval/qtrm_native_l5_multifamily_repaired_seed_stability_20260514_summary.json
+
+summary decision:
+  accepted_l5_multifamily_repaired_seed_stability
+
+summary metrics:
+  pass_rate: 3 / 3
+  min_full_generation_exact: 0.6067708333333334
+  min_family_generation_exact: 0.4140625
+  min_full_minus_worst_ablation: 0.5716145833333334
+```
+
+## Experiment 2026-05-14T23:55:00
+
+```text
+topic:
+  L6 len6 transfer from the repaired L5 multi-family baseline.
+
+reports:
+  zero-shot:
+    local_eval/qtrm_native_l6_len6_transfer_from_l5_repair_seed339_init_20260514/report.json
+  focused:
+    local_eval/qtrm_native_l6_len6_from_l5_repair_focused_s2500_20260514/report.json
+  answer-space diagnostic:
+    local_eval/qtrm_native_l6_len6_focused_s2500_answer_space_eval_20260514/report.json
+
+zero-shot decision:
+  rejected
+
+zero-shot metrics:
+  full_generation_exact: 0.0078125
+  min_family_generation_exact: 0.00390625
+  full_minus_worst_ablation: 0.00390625
+
+focused decision:
+  rejected
+
+focused final metrics:
+  full_generation_exact: 0.0859375
+  min_family_generation_exact: 0.05859375
+  full_minus_worst_ablation: 0.05989583333333333
+
+focused trend:
+  step0 full: 0.0078125, min_family: 0.00390625
+  step1500 full: 0.0859375, min_family: 0.05859375
+  step2500 full: 0.21354166666666666, min_family: 0.046875
+
+answer-space diagnostic:
+  answer_space_argmax_exact: 0.0794270858168602
+  answer_space_gold_mean_rank: 10.708333015441895
+  answer_space_gold_top3: 0.2161458283662796
+  answer_space_gold_top5: 0.3515625
+
+interpretation:
+  L6 is not mainly a greedy renderer problem. Answer-space argmax is nearly
+  the same as greedy exact, so the model does not merely know the answer but
+  fail to print it. The current bottleneck is ordered recurrent transition
+  scaling under longer programs and hard-family balance.
+
+decision:
+  Do not hard-freeze nested dual-z or Fast-Slow globally. Keep the accepted
+  L5 single recurrent MHA/ETD baseline as the stable checkpoint family, and
+  treat L6 as the next separate length-scaling bottleneck.
+```
+
+## Experiment 2026-05-15T00:10:00
+
+```text
+topic:
+  L6 active-length batch-cycle repair attempt.
+
+report:
+  local_eval/qtrm_native_l6_len6_from_l5_repair_active_batch_cycle_s2500_20260514/report.json
+
+recipe:
+  resume from accepted L5 seed339 weak-family repair
+  program_len: 6
+  active_len_batch_cycle: true
+  train_active_len_cycle_min: 1
+  train_active_len_cycle_max: 6
+  family_dro_loss_weight: 0.05
+  retention_kl_loss_weight: 0.10
+
+decision:
+  rejected
+
+metrics:
+  full_generation_exact: 0.052083333333333336
+  min_family_generation_exact: 0.046875
+  full_minus_think0: 0.03515625
+  full_minus_worst_ablation: 0.01953125
+
+interpretation:
+  Batch-level active-length mixing does not solve L6 and is worse than the
+  prior focused len6 fine-tune on full exact. The bottleneck is not a simple
+  exposure schedule issue. Next useful work should target the recurrent
+  transition/state representation or a more principled length curriculum,
+  while keeping the canonical QTRM-native token->core->logits path.
+```
+
+## Diagnostic 2026-05-15T00:25:00
+
+```text
+topic:
+  L6 state/readout probe on the focused len6 checkpoint.
+
+report:
+  local_eval/qtrm_native_l6_len6_focused_state_probe_eval_20260515/report.json
+
+result:
+  full_generation_exact: 0.0859375
+  min_family_generation_exact: 0.05859375
+  depth_sweep exact:
+    depth0: 0.010416666666666666
+    depth1: 0.016927083333333332
+    depth2: 0.03125
+    depth3: 0.016927083333333332
+    depth4: 0.0859375
+  state_trace z_h variance:
+    0.24019193649291992
+    0.3616328239440918
+    0.5645048022270203
+    0.8666419386863708
+  core_step_probe_exact: 0.09765625
+  core_step_probe_by_family:
+    modchain: 0.08984375
+    revchain: 0.0498046875
+    checksum: 0.1533203125
+
+interpretation:
+  The recurrent state is not collapsed; variance and step delta grow with
+  depth. The problem is that the state is not cleanly readable as the causal
+  intermediate calculation. L6 needs a stronger transition/state
+  representation, not merely anti-collapse, answer-space reranking, or a
+  visible prompt anchor.
+```
+
+## Experiment 2026-05-15T00:35:00
+
+```text
+topic:
+  L6 latent-refinement state objective.
+
+report:
+  local_eval/qtrm_native_l6_len6_from_l5_repair_latent_refine_s2500_20260515/report.json
+
+recipe:
+  resume from accepted L5 seed339 weak-family repair
+  latent_refine_loss_weight: 0.05
+  latent_refine_noise_std: 0.05
+  latent_refine_depth_weight_power: 1.0
+  latent_refine_final_kl_weight: 0.1
+  family_dro_loss_weight: 0.05
+  periodic_eval_score_mode: family_floor
+
+decision:
+  rejected
+
+metrics:
+  full_generation_exact: 0.08854166666666667
+  min_family_generation_exact: 0.0546875
+  full_minus_think0: 0.07291666666666667
+  full_minus_worst_ablation: 0.06640625
+  core_step_probe_exact: 0.0960286483168602
+
+periodic:
+  step1500 full: 0.08854166666666667, min_family: 0.0546875
+  step2500 full: 0.23046875, min_family: 0.05078125
+
+interpretation:
+  Latent refinement improves the high-full late checkpoint slightly but does
+  not improve weakest-family accuracy or core-step readability. The hard
+  family remains modchain, with revchain second. The next trial should target
+  hard-family transition balance or change the recurrent state carrier itself.
+```
+
+## Experiment 2026-05-15T00:55:00
+
+```text
+topic:
+  Clarify block/backbone versus dual/nested topology, then test whether a
+  TRM official pre-norm think block helps inside the dual/nested QTRM-native
+  path.
+
+terminology:
+  backbone / stage backbone:
+    the local block used for encoder, think, or decoder stages.
+  think_structure:
+    the macro recurrent topology such as single, dual-z, nested dual-z, or
+    official H/L schedule.
+
+rule:
+  trm_official_prenorm is a block candidate. It does not replace or abandon
+  dual/nested by itself. A canonical dual/nested experiment must explicitly
+  set a dual/nested think_structure.
+
+smoke:
+  report:
+    local_eval/qtrm_native_l6_dual_nested_trm_official_prenorm_noabs_smoke_20260514_235644/report.json
+  structure:
+    think_structure: trm_dual_z_nested_reversed_mha_etd
+    encode_backbone: trm_official_prenorm
+    think_backbone: trm_official_prenorm
+    decode_backbone: trm_official_prenorm
+    position_embedding_mode: none
+    H/L: train_think_steps=3, trm_l_cycles=6
+  decision:
+    rejected
+  decisive:
+    full_generation_exact: 0.0
+    min_family_generation_exact: 0.0
+    full_minus_worst_ablation: 0.0
+
+triage no-abs:
+  report:
+    local_eval/qtrm_native_l4_dual_nested_think_official_prenorm_noabs_triage_20260514_235922/report.json
+  structure:
+    resume from local_eval/research_gate_runner/qtrm_native_l4_mixed_text_reasoning_standard/last.pt
+    train_only_resume_missing_params: true
+    think_structure: trm_dual_z_nested_reversed_mha_etd
+    think_backbone: trm_official_prenorm
+    encode/decode_backbone: mha_etd
+    position_embedding_mode: none
+  decision:
+    rejected
+  decisive:
+    full_generation_exact: 0.041666666666666664
+    full_minus_think0: 0.041666666666666664
+    full_minus_worst_ablation: -0.03125000000000001
+    z_l_zero_generation_exact: 0.03125
+    z_h_zero_generation_exact: 0.0
+
+triage learned-pos control:
+  report:
+    local_eval/qtrm_native_l4_dual_nested_think_official_prenorm_learnedpos_triage_20260515_000034/report.json
+  structure:
+    same as no-abs triage, but position_embedding_mode: learned
+  decision:
+    rejected
+  decisive:
+    full_generation_exact: 0.052083333333333336
+    full_minus_think0: 0.04166666666666667
+    full_minus_worst_ablation: -0.010416666666666664
+    z_l_zero_generation_exact: 0.052083333333333336
+    z_h_zero_generation_exact: 0.0
+
+interpretation:
+  The official pre-norm think block does not currently improve the accepted
+  nested MHA/ETD path. The learned-position control is only slightly better
+  than no-abs and still far below the accepted nested MHA L4 baseline
+  full_generation_exact=0.67578125. Because z_l_zero is at or near full
+  accuracy in the learned-pos control, this is not a causally useful
+  dual/nested improvement.
+
+decision:
+  Do not promote trm_official_prenorm as the dual/nested think block. Keep the
+  accepted nested MHA/ETD path as the local dual/nested reference, and treat
+  official-prenorm/no-abs as rejected diagnostics until a new state-carrier
+  hypothesis beats the L4 gate with causal ablations.
+```
+
+## Architecture 2026-05-15T01:15:00
+
+```text
+topic:
+  Add a conservative residual joint-readout variant for the accepted nested
+  MHA/ETD dual-z path.
+
+motivation:
+  L6 diagnostics showed that recurrent state moves but is not cleanly readable
+  as the causal intermediate calculation. A full joint-readout replacement
+  improves causal ablation margins but lowers L4 exactness, so the next
+  candidate preserves the accepted MHA/ETD readout and adds a small residual
+  joint state bridge.
+
+new think_structure:
+  trm_dual_z_nested_reversed_mha_etd_joint_readout
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout
+
+residual form:
+  base = z_H + tanh(alpha) * (z_L - z_H)
+  residual = LN(W[encoded, z_L, z_H])
+  readout = base + tanh(beta) * residual
+
+code:
+  scripts/335_train_qtrm_native_etd_probe.py
+  tests/test_qtrm_native_etd_probe.py
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+
+verification:
+  .venv/bin/python -m py_compile scripts/335_train_qtrm_native_etd_probe.py scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  .venv/bin/python -m unittest tests.test_qtrm_native_etd_probe tests.test_qtrm_native_mixed_text_reasoning_probe -v
+  result: 183 tests OK
+```
+
+Joint-readout replacement diagnostic:
+
+```text
+report:
+  local_eval/qtrm_native_l4_nested_mha_joint_readout_triage_20260515_000707/report.json
+
+decision:
+  rejected only by full_exact threshold
+
+metrics:
+  full_generation_exact: 0.5729166666666666
+  full_minus_think0: 0.5625
+  full_minus_worst_ablation: 0.35416666666666663
+  z_l_zero_generation_exact: 0.10416666666666667
+  z_h_zero_generation_exact: 0.21875
+
+interpretation:
+  The replacement joint-readout makes z_L/z_H much more causally visible, but
+  it falls below the accepted L4 exactness threshold. It is useful evidence for
+  the readout-coupling hypothesis but not a promoted baseline.
+```
+
+Full-train continuation control:
+
+```text
+report:
+  local_eval/qtrm_native_l4_nested_mha_joint_readout_standard_cont_20260515_000749/report.json
+
+decision:
+  rejected
+
+metrics:
+  full_generation_exact: 0.1328125
+  full_minus_worst_ablation: 0.07421875
+
+interpretation:
+  Training all loaded base parameters after the good triage destroys the
+  previously stable path. Future continuation from accepted checkpoints should
+  freeze the base path unless the explicit purpose is a full retune.
+```
+
+Added-params continuation control:
+
+```text
+report:
+  local_eval/qtrm_native_l4_nested_mha_joint_readout_addedparams_cont_20260515_000946/report.json
+
+decision:
+  rejected by full exact
+
+metrics:
+  full_generation_exact: 0.55078125
+  full_minus_worst_ablation: 0.46484375
+
+interpretation:
+  Freezing the base path preserves the causal readout gain much better than
+  full retuning, but pure replacement joint-readout still stays below the
+  accepted exactness threshold.
+```
+
+Residual joint-readout accepted diagnostic:
+
+```text
+report:
+  local_eval/qtrm_native_l4_nested_mha_residual_joint_readout_from_accepted_20260515_001357/report.json
+
+recipe:
+  resume:
+    local_eval/research_gate_runner/qtrm_native_nested_dual_reverse_l4_baseline_compare_standard/last.pt
+  think_structure:
+    trm_dual_z_nested_reversed_mha_etd_residual_joint_readout
+  train_only_resume_missing_params:
+    true
+  new trained parameters:
+    trm_nested_mha_joint_readout_alpha
+    trm_joint_readout_norm
+    trm_joint_readout_proj
+
+decision:
+  accepted_nested_mha_residual_joint_readout_l4
+
+metrics:
+  full_generation_exact: 0.671875
+  think0_generation_exact: 0.03125
+  full_minus_think0: 0.640625
+  full_minus_worst_ablation: 0.14453125
+  state_reset_generation_exact: 0.0546875
+  op_zero_generation_exact: 0.03515625
+  z_l_zero_generation_exact: 0.52734375
+  z_h_zero_generation_exact: 0.0
+
+comparison:
+  accepted nested MHA/ETD L4 reference:
+    full_generation_exact: 0.67578125
+    full_minus_worst_ablation: 0.140625
+  residual joint-readout:
+    full_generation_exact: 0.671875
+    full_minus_worst_ablation: 0.14453125
+
+interpretation:
+  The residual joint-readout is not a large accuracy improvement, but it is a
+  conservative accepted architecture change: it preserves the accepted L4
+  exactness level while making the state/readout coupling slightly stronger.
+  It is now the next candidate to test on L5/L6, not a final replacement.
+```
+
+## Experiment 2026-05-15T00:45:00
+
+```text
+topic:
+  Test whether the accepted L4 nested residual joint-readout can promote to L5
+  multi-family reasoning.
+
+infrastructure fix:
+  L4 -> L5 resume initially failed because the checkpoint tokenizer chars did
+  not match the multi-family tokenizer. The flexible loader now remaps
+  token_embed.weight and lm_head.weight by token string when
+  --resume-allow-missing is set, instead of unsafe row-prefix copying.
+
+verification:
+  .venv/bin/python -m py_compile scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  .venv/bin/python -m unittest tests.test_qtrm_native_mixed_text_reasoning_probe.QTRMNativeMixedTextReasoningProbeTests.test_flexible_load_remaps_vocab_rows_by_token tests.test_qtrm_native_mixed_text_reasoning_probe.QTRMNativeMixedTextReasoningProbeTests.test_flexible_resume_prefix_copies_position_embeddings tests.test_qtrm_native_mixed_text_reasoning_probe.QTRMNativeMixedTextReasoningProbeTests.test_flexible_load_can_tail_shift_new_position_rows -v
+  result: 3 tests OK
+```
+
+Direct L4 residual -> L5 multi-family transfer:
+
+```text
+report:
+  local_eval/qtrm_native_l5_residual_joint_readout_multifamily_seed337_vocabremap_20260515_0028/report.json
+
+resume:
+  local_eval/qtrm_native_l4_nested_mha_residual_joint_readout_from_accepted_20260515_001357/last.pt
+
+result:
+  decision: rejected
+  full_generation_exact: 0.0859375
+  full_minus_think0: 0.07421875
+  full_minus_worst_ablation: 0.0625
+  min_family_generation_exact: 0.023529411764705882
+
+resume_load_summary:
+  token_embed/lm_head copied 21 existing token rows by token_remap
+  new target tokens: c, d, h, i, k, m, u, v
+
+interpretation:
+  The vocab expansion path is now correct, but a single-family L4 residual
+  checkpoint does not directly transfer to L5 multi-family reasoning.
+```
+
+Attach nested residual path to an accepted L5 single recurrent checkpoint:
+
+```text
+report:
+  local_eval/qtrm_native_l5_residual_joint_readout_from_l5_single_missingonly_seed339_20260515_0035/report.json
+
+resume:
+  local_eval/qtrm_native_l5_multifamily_seed339_single_modchain_weak_repair_s1500_20260514/last.pt
+
+training:
+  --train-only-resume-missing-params
+  train only newly missing nested residual / z_L / z_H parameters
+
+periodic best:
+  step: 500
+  generation_exact: 0.734375
+  min_family_generation_exact: 0.5581395348837209
+
+final decision:
+  rejected
+  reject_reasons: ablation_drop_below_threshold
+
+decisive:
+  full_generation_exact: 0.68359375
+  think0_generation_exact: 0.02734375
+  full_minus_think0: 0.65625
+  full_minus_worst_ablation: -0.01171875
+  min_family_generation_exact: 0.5232558139534884
+  z_l_zero_generation_exact: 0.6953125
+  z_h_zero_generation_exact: 0.0
+
+interpretation:
+  The accepted L5 single path can carry the accuracy while the added nested
+  residual path is present, but z_L is not causally required. This is not a
+  valid dual-state promotion. The next bottleneck is not text generation
+  format or vocab transfer; it is making z_L a genuine intermediate state
+  carrier under the L5 family gate.
+```
+
+z_L causal repair:
+
+```text
+report:
+  local_eval/qtrm_native_l5_residual_joint_readout_zl_causal_repair_seed339_20260515_0048/report.json
+
+recipe:
+  resume from:
+    local_eval/qtrm_native_l5_residual_joint_readout_from_l5_single_missingonly_seed339_20260515_0035/last.pt
+  train_param_name_regex:
+    ^trm_
+  z_l_counterfactual_loss_weight:
+    0.50
+  z_l_counterfactual_margin:
+    0.30
+
+decision:
+  rejected by ablation_drop_below_threshold
+
+decisive:
+  full_generation_exact: 0.68359375
+  full_minus_worst_ablation: 0.05078125
+  min_family_generation_exact: 0.5294117647058824
+  z_l_zero_generation_exact: 0.6328125
+
+interpretation:
+  Directionally useful: z_l_zero dropped from 0.6953125 to 0.6328125 and the
+  ablation margin moved from -0.01171875 to 0.05078125, but it still missed the
+  0.10 strict causal threshold.
+```
+
+z_L causal repair 2:
+
+```text
+report:
+  local_eval/qtrm_native_l5_residual_joint_readout_zl_causal_repair2_seed339_20260515_0056/report.json
+
+recipe:
+  resume from:
+    local_eval/qtrm_native_l5_residual_joint_readout_zl_causal_repair_seed339_20260515_0048/last.pt
+  train_param_name_regex:
+    ^trm_
+  z_l_counterfactual_loss_weight:
+    1.0
+  z_l_counterfactual_margin:
+    0.50
+  lr:
+    5e-5
+
+decision:
+  accepted_l5_residual_joint_readout_zl_causal_repair2
+
+decisive:
+  full_generation_exact: 0.703125
+  think0_generation_exact: 0.02734375
+  full_minus_think0: 0.67578125
+  full_minus_worst_ablation: 0.296875
+  min_family_generation_exact: 0.5581395348837209
+  state_reset_generation_exact: 0.02734375
+  op_zero_generation_exact: 0.01953125
+  z_l_zero_generation_exact: 0.40625
+  z_h_zero_generation_exact: 0.0
+
+interpretation:
+  This is the first accepted L5 result for the nested residual joint-readout
+  route with z_L causality restored. The key was not Fast-Slow; it was
+  preserving the accepted L5 single path, attaching the nested residual
+  dual-state path, and then applying a stronger z_L counterfactual only to
+  TRM parameters.
+```
+
+## Experiment 2026-05-15T01:35:00
+
+```text
+topic:
+  Check whether the L5 nested residual z_L-causal result is seed-stable and
+  whether it transfers to len6.
+```
+
+Seed338 reproduction:
+
+```text
+direct attach + strong z_L repair:
+  report:
+    local_eval/qtrm_native_l5_residual_joint_readout_seed338_direct_zl_repair_20260515_0110/report.json
+  resume:
+    local_eval/qtrm_native_l5_multifamily_seed338_single_modchain_weak_repair_s1500_20260514/last.pt
+  decision:
+    rejected
+  full_generation_exact:
+    0.74609375
+  min_family_generation_exact:
+    0.5882352941176471
+  z_l_zero_generation_exact:
+    0.75
+  full_minus_worst_ablation:
+    -0.00390625
+
+second-stage repair:
+  report:
+    local_eval/qtrm_native_l5_residual_joint_readout_seed338_zl_repair2_20260515_0118/report.json
+  decision:
+    rejected
+  full_generation_exact:
+    0.75
+  min_family_generation_exact:
+    0.611764705882353
+  z_l_zero_generation_exact:
+    0.734375
+  full_minus_worst_ablation:
+    0.015625
+
+interpretation:
+  Seed338 keeps strong L5 accuracy but does not make z_L causal. Therefore the
+  seed339 acceptance is a valid local result but not yet seed-stable.
+```
+
+L6 transfer from the accepted seed339 z_L-causal checkpoint:
+
+```text
+zero-shot init:
+  report:
+    local_eval/qtrm_native_l6_len6_from_l5_zl_causal_seed339_init_20260515_0126/report.json
+  decision:
+    rejected
+  full_generation_exact:
+    0.0234375
+  min_family_generation_exact:
+    0.0
+  full_minus_worst_ablation:
+    -0.0078125
+
+fine-tune:
+  report:
+    local_eval/qtrm_native_l6_len6_from_l5_zl_causal_finetune_s2500_20260515_0130/report.json
+  decision:
+    rejected
+  best_periodic_generation_exact:
+    0.08854166666666667
+  full_generation_exact:
+    0.0703125
+  min_family_generation_exact:
+    0.03125
+  full_minus_worst_ablation:
+    0.04427083333333333
+
+comparison:
+  previous single L6 hard-family balance best:
+    full_generation_exact: 0.12239583333333333
+```
+
+Decision:
+
+```text
+Do not promote nested residual z_L-causal as the canonical L6 route. It is an
+accepted L5 seed339 candidate only. The next real bottlenecks are:
+  1. seed-stable z_L causality;
+  2. len6 ordered transition generalization.
+```
+
+## Experiment 2026-05-15T02:00:00
+
+```text
+topic:
+  Repair seed-stable z_L causality using core-step codec supervision.
+
+hypothesis:
+  z_L counterfactual pressure alone can fail by keeping the answer path in the
+  base recurrent state while z_L remains non-causal. Adding a core-step codec
+  loss on z_L should make z_L carry intermediate causal state, while the final
+  answer remains normal LM logits.
+```
+
+Seed338 codec repair:
+
+```text
+report:
+  local_eval/qtrm_native_l5_seed338_zl_codec_repair_final_s1200_20260515_0145/report.json
+
+resume:
+  local_eval/qtrm_native_l5_residual_joint_readout_seed338_zl_repair2_20260515_0118/last.pt
+
+recipe:
+  train_param_name_regex: ^trm_
+  z_l_counterfactual_loss_weight: 1.5
+  z_l_counterfactual_margin: 0.70
+  core_step_codec_loss_weight: 0.35
+  core_step_codec_state_source: l
+  restore_best_eval_checkpoint: false
+
+decision:
+  accepted_l5_seed338_zl_codec_repair
+
+decisive:
+  full_generation_exact: 0.75390625
+  think0_generation_exact: 0.01171875
+  full_minus_think0: 0.7421875
+  full_minus_worst_ablation: 0.28125
+  min_family_generation_exact: 0.6235294117647059
+  z_l_zero_generation_exact: 0.47265625
+  z_h_zero_generation_exact: 0.0
+```
+
+Seed337 codec direct repair:
+
+```text
+report:
+  local_eval/qtrm_native_l5_seed337_zl_codec_direct_repair_s1200_20260515_0152/report.json
+
+resume:
+  local_eval/qtrm_native_l5_multifamily_hardbalanced_sweep/seed_337/last.pt
+
+recipe:
+  train_only_resume_missing_params: true
+  z_l_counterfactual_loss_weight: 1.5
+  z_l_counterfactual_margin: 0.70
+  core_step_codec_loss_weight: 0.35
+  core_step_codec_state_source: l
+
+decision:
+  accepted_l5_seed337_zl_codec_direct_repair
+
+decisive:
+  full_generation_exact: 0.703125
+  think0_generation_exact: 0.015625
+  full_minus_think0: 0.6875
+  full_minus_worst_ablation: 0.23828125
+  min_family_generation_exact: 0.5465116279069767
+  z_l_zero_generation_exact: 0.46484375
+  z_h_zero_generation_exact: 0.0
+```
+
+Seed-stability update:
+
+```text
+accepted L5 nested residual / z_L-causal checkpoints:
+  seed337: accepted_l5_seed337_zl_codec_direct_repair
+  seed338: accepted_l5_seed338_zl_codec_repair
+  seed339: accepted_l5_residual_joint_readout_zl_causal_repair2
+
+interpretation:
+  The L5 dual/nested route is now seed-stable enough to promote as the active
+  L5 candidate. The essential recipe is residual joint-readout plus z_L
+  counterfactual pressure; core-step codec on z_L is the stabilizer for seeds
+  where z_L otherwise remains non-causal.
+```
+
+## Experiment 2026-05-15T02:45:00
+
+```text
+topic:
+  Re-evaluate L6 after noticing a depth/length mismatch.
+
+finding:
+  Previous len6 experiments used program_len=6 but left train_think_steps and
+  eval_think_steps at the script default 4. That made the model solve a
+  six-operation program with only four recurrent steps.
+```
+
+Nested residual z_L-codec with depth6:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_seed338_zl_codec_depth6_s3000_20260515_0215/report.json
+
+recipe:
+  resume:
+    local_eval/qtrm_native_l5_seed338_zl_codec_repair_final_s1200_20260515_0145/last.pt
+  program_len:
+    6
+  train_think_steps/eval_think_steps:
+    6
+  core_step_codec_state_source:
+    l
+
+decision:
+  rejected
+
+best_periodic_generation_exact:
+  0.11458333333333333
+
+final_decisive:
+  full_generation_exact: 0.08072916666666667
+  min_family_generation_exact: 0.0390625
+  full_minus_worst_ablation: 0.03906250000000001
+```
+
+Nested residual continuation:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_seed338_zl_codec_depth6_cont_s3000_20260515_0228/report.json
+
+decision:
+  rejected
+
+final_decisive:
+  full_generation_exact: 0.07552083333333333
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: 0.03645833333333333
+
+interpretation:
+  Adding the L5 dual/nested z_L-codec path does not currently help len6.
+```
+
+Single recurrent depth6 baseline:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_depth6_s3000_20260515_0242/report.json
+
+resume:
+  local_eval/qtrm_native_l5_multifamily_seed338_single_modchain_weak_repair_s1500_20260514/last.pt
+
+recipe:
+  think_structure: single
+  program_len: 6
+  train_think_steps: 6
+  eval_think_steps: 6
+
+decision:
+  accepted_l6_len6_single_seed338_depth6
+
+decisive:
+  full_generation_exact: 0.3671875
+  think0_generation_exact: 0.0
+  full_minus_think0: 0.3671875
+  full_minus_worst_ablation: 0.34375
+  min_family_generation_exact: 0.0703125
+  state_reset_generation_exact: 0.0078125
+  op_zero_generation_exact: 0.0234375
+
+comparison:
+  previous single L6 hard-family balance with default depth4:
+    full_generation_exact: 0.12239583333333333
+  nested residual z_L-codec depth6:
+    full_generation_exact: 0.08072916666666667
+```
+
+Decision:
+
+```text
+L6 is not blocked by language output formatting. The immediate fix was
+depth/length alignment. The current active L6 scaffold is single recurrent
+MHA/ETD with train/eval think_steps=program_len=6. The dual/nested z_L-codec
+path remains the L5 candidate but should not be forced into L6 until the single
+depth6 transition scaffold is stable across seeds/families.
+```
+
+## Experiment 2026-05-15T03:20:00
+
+```text
+topic:
+  Continue the accepted L6 single recurrent depth6 scaffold with a lower lr.
+
+hypothesis:
+  If the L6 scaffold is still undertrained, continuing from the accepted
+  checkpoint at lr=1e-5 should raise exactness or the weak family floor without
+  changing architecture.
+```
+
+Run:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_depth6_cont_s3000_lr1e5_20260515_011502/report.json
+
+resume:
+  local_eval/qtrm_native_l6_len6_single_seed338_depth6_s3000_20260515_0242/last.pt
+
+recipe:
+  think_structure: single
+  program_len: 6
+  train_think_steps: 6
+  eval_think_steps: 6
+  lr: 1e-5
+  steps: 3000
+```
+
+Decision:
+
+```text
+accepted by the diagnostic L6 thresholds, but not an improvement over the
+initial accepted checkpoint.
+```
+
+Decisive:
+
+```text
+base full_generation_exact: 0.3671875
+continued full_generation_exact: 0.3541666666666667
+base min_family_generation_exact: 0.0703125
+continued min_family_generation_exact: 0.0703125
+continued full_minus_worst_ablation: 0.3229166666666667
+
+continued family exact:
+  checksum: 0.90625
+  modchain: 0.0859375
+  revchain: 0.0703125
+```
+
+Conclusion:
+
+```text
+Plain longer training is not the missing ingredient. L6 remains accepted only
+as a weak scaffold; the next bottleneck is weak-family floor repair for
+modchain/revchain while preserving the causal depth6 path.
+```
+
+## Experiment 2026-05-15T03:35:00
+
+```text
+topic:
+  L6 single depth6 weak-family floor repair.
+
+hypothesis:
+  Since checksum is already high but modchain/revchain are weak, a stronger
+  family-DRO objective and depth-intermediate family-DRO may raise the
+  min-family floor without changing the token->core->logits path.
+```
+
+First repair:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_family_floor_repair_s2500_20260515_011837/report.json
+
+recipe:
+  resume:
+    local_eval/qtrm_native_l6_len6_single_seed338_depth6_s3000_20260515_0242/last.pt
+  family_dro_loss_weight:
+    0.25
+  depth_intermediate_family_dro:
+    true
+  restore_best_eval_checkpoint:
+    true
+  accept_min_family_exact:
+    0.08
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.3567708333333333
+  min_family_generation_exact: 0.078125
+  full_minus_worst_ablation: 0.3359375
+
+family exact:
+  checksum: 0.90625
+  modchain: 0.078125
+  revchain: 0.0859375
+```
+
+Second modchain-focused repair:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_modchain_floor_repair_s1500_20260515_012038/report.json
+
+recipe:
+  resume:
+    local_eval/qtrm_native_l6_len6_single_seed338_family_floor_repair_s2500_20260515_011837/last.pt
+  family_dro_loss_weight:
+    0.35
+  lr:
+    5e-6
+  restore_best_eval_checkpoint:
+    true
+
+decision:
+  rejected
+
+result:
+  best checkpoint was the initial checkpoint, so stronger DRO did not improve
+  over the first repair.
+```
+
+Conclusion:
+
+```text
+Family-DRO gives a small real signal, raising the floor from 0.0703125 to
+0.078125, but it does not cross the 0.08 improvement threshold. Do not keep
+raising DRO. The next informative step is seed-stability for the aligned
+single-depth6 scaffold, then a more principled transition/objective repair.
+```
+
+## Experiment 2026-05-15T03:50:00
+
+```text
+topic:
+  L6 single recurrent depth6 seed-stability check on seed339.
+
+hypothesis:
+  If the depth/length alignment fix is real rather than seed338-local, the
+  same single recurrent depth6 recipe should pass at least the diagnostic L6
+  thresholds on another retained L5 single checkpoint.
+```
+
+Run:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_depth6_s3000_20260515_012244/report.json
+
+resume:
+  local_eval/qtrm_native_l5_multifamily_seed339_single_modchain_weak_repair_s1500_20260514/last.pt
+
+recipe:
+  think_structure: single
+  program_len: 6
+  train_think_steps: 6
+  eval_think_steps: 6
+  lr: 2e-5
+  steps: 3000
+```
+
+Decision:
+
+```text
+accepted_l6_len6_single_seed339_depth6
+```
+
+Decisive:
+
+```text
+full_generation_exact: 0.15364583333333334
+think0_generation_exact: 0.013020833333333334
+full_minus_think0: 0.140625
+full_minus_worst_ablation: 0.1328125
+min_family_generation_exact: 0.0546875
+state_reset_generation_exact: 0.020833333333333332
+op_zero_generation_exact: 0.005208333333333333
+
+family exact:
+  checksum: 0.3359375
+  modchain: 0.0546875
+  revchain: 0.0703125
+```
+
+Conclusion:
+
+```text
+Aligned single recurrent depth6 is not a one-seed artifact: seed338 and seed339
+both pass the diagnostic L6 thresholds with causal ablation drops. However,
+seed339 is much weaker than seed338, so L6 is not seed-stable enough to promote
+as a strong architecture level. The next bottleneck is robust transition
+generalization, not another plain continuation.
+```
+
+## Experiment 2026-05-15T04:05:00
+
+```text
+topic:
+  Core-step codec on the aligned L6 single depth6 scaffold.
+
+hypothesis:
+  If the L6 bottleneck is hidden-state transition readability, a training-only
+  core-step codec on `core_state_trace_h` should improve the weak family floor
+  while the final accepted metric remains normal LM generation.
+```
+
+Run:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_corecodec_h_s2500_20260515_012658/report.json
+
+resume:
+  local_eval/qtrm_native_l6_len6_single_seed338_depth6_s3000_20260515_0242/last.pt
+
+recipe:
+  core_step_codec_loss_weight: 0.25
+  core_step_codec_state_source: h
+  core_step_codec_pooling: last
+  restore_best_eval_checkpoint: true
+  accept_min_family_exact: 0.08
+```
+
+Decision:
+
+```text
+rejected
+```
+
+Decisive:
+
+```text
+full_generation_exact: 0.3671875
+min_family_generation_exact: 0.0703125
+full_minus_worst_ablation: 0.34375
+reject_reason: family_exact_below_threshold
+restore_best_eval_checkpoint: true
+best checkpoint: initial checkpoint
+```
+
+Conclusion:
+
+```text
+Core-step codec on the single h-state does not improve the aligned L6 scaffold.
+Do not keep sweeping codec weights on this path. The next transition objective
+should train consistency across active program prefixes through the same LM
+answer path, not an auxiliary state reader.
+```
+
+## Experiment 2026-05-15T04:20:00
+
+```text
+topic:
+  Active-length replay on the aligned L6 single recurrent depth6 scaffold.
+
+hypothesis:
+  If the weak L6 families fail because the LM path only sees full-length
+  supervision, bounded replay over active prefixes should improve the family
+  floor while preserving the canonical token->core->logits path.
+```
+
+Run:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_active_replay_s2000_20260515_012955/report.json
+
+resume:
+  local_eval/qtrm_native_l6_len6_single_seed338_depth6_s3000_20260515_0242/last.pt
+
+recipe:
+  active_len_replay_loss_weight: 0.02
+  active_len_replay_min: 1
+  active_len_replay_max: 6
+  active_len_replay_max_cases: 16
+  active_len_replay_every: 4
+  restore_best_eval_checkpoint: true
+  train/eval_think_steps: 6
+```
+
+Decision:
+
+```text
+rejected
+```
+
+Decisive:
+
+```text
+full_generation_exact: 0.3671875
+min_family_generation_exact: 0.0703125
+full_minus_worst_ablation: 0.34375
+state_reset_generation_exact: 0.0078125
+op_zero_generation_exact: 0.0234375
+reject_reason: family_exact_below_threshold
+best checkpoint: initial checkpoint
+```
+
+Conclusion:
+
+```text
+Simple active-length replay does not repair L6. The next candidate should not
+be more prefix-replay weight sweeping. It should add a structural transition
+carrier that remains inside the normal prompt-token -> recurrent core -> LM
+logit path, for example a visible prompt-state anchor smoke first and then a
+learned internal state/scratch token if the visible anchor is not sufficient.
+```
+
+## Experiment 2026-05-15T04:45:00
+
+```text
+topic:
+  L6 transition-carrier comparison: visible prompt anchor vs internal
+  single-core carrier.
+
+orthodox-method audit:
+  prior family:
+    recurrent state carrier / causal sequence-state update.
+  canonical path:
+    prompt tokens -> native embeddings -> encoder -> mandatory recurrent core
+    -> decoder -> LM logits. No solver, renderer, retrieval, or hidden answer
+    channel.
+  shortcut exclusion:
+    the carrier only changes latent state inside the recurrent core. The final
+    answer remains greedy autoregressive text from the normal LM head.
+```
+
+Visible prompt-state anchor:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_prompt_anchor_s2500_20260515_013530/report.json
+
+recipe:
+  resume:
+    local_eval/qtrm_native_l6_len6_single_seed338_depth6_s3000_20260515_0242/last.pt
+  prompt_state_anchor: true
+  prompt_state_anchor_position: before_answer
+  pos_embed_resize_strategy: tail_shift
+  train/eval_think_steps: 6
+
+decision:
+  rejected
+
+decisive:
+  full_generation_exact: 0.3411458333333333
+  min_family_generation_exact: 0.078125
+  full_minus_worst_ablation: 0.30729166666666663
+  reject_reason: family_exact_below_threshold
+```
+
+Internal single-core carrier:
+
+```text
+implementation:
+  scripts/335_train_qtrm_native_etd_probe.py
+  think_structure: single_core_carrier
+
+mechanism:
+  Each single recurrent think step runs the normal think block, then passes
+  concat(current_state, encoded_prompt_state) through a causal GRU carrier and
+  adds the gated carrier state back into the recurrent state before decode.
+
+report:
+  local_eval/qtrm_native_l6_len6_single_seed338_single_core_carrier_s2500_20260515_013530/report.json
+
+decision:
+  accepted_l6_len6_single_seed338_single_core_carrier
+
+decisive:
+  full_generation_exact: 0.3671875
+  think0_generation_exact: 0.0026041666666666665
+  full_minus_think0: 0.3645833333333333
+  full_minus_worst_ablation: 0.3307291666666667
+  min_family_generation_exact: 0.09375
+  state_reset_generation_exact: 0.0026041666666666665
+  op_zero_generation_exact: 0.036458333333333336
+
+family exact:
+  checksum: 0.9140625
+  modchain: 0.09375
+  revchain: 0.09375
+```
+
+Conclusion:
+
+```text
+The first useful L6 transition-carrier result is internal, not textual.
+Prompt-state anchoring nearly reaches the family-floor threshold but does not
+pass. The internal `single_core_carrier` raises the weak-family floor from the
+base 0.0703125 to 0.09375 while preserving strong state-reset/op-zero
+ablation drops. Promote it as the active L6 scaffold, but do not call L6
+solved until a second seed or a longer-length gate confirms it.
+```
+
+## Experiment 2026-05-15T05:10:00
+
+```text
+topic:
+  Seed339 stability check for the internal single-core carrier.
+```
+
+Standard carrier init:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_s2500_20260515_014403/report.json
+
+resume:
+  local_eval/qtrm_native_l6_len6_single_seed339_depth6_s3000_20260515_012244/last.pt
+
+decision:
+  rejected
+
+decisive:
+  full_generation_exact: 0.19010416666666666
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: 0.1640625
+  state_reset_generation_exact: 0.026041666666666668
+  op_zero_generation_exact: 0.026041666666666668
+```
+
+Near-off gate init diagnostic:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_gateoff_s2500_20260515_014659/report.json
+
+decision:
+  rejected
+
+reject_reason:
+  full_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.12760416666666666
+  min_family_generation_exact: 0.0859375
+  full_minus_worst_ablation: 0.10156249999999999
+  state_reset_generation_exact: 0.026041666666666668
+  op_zero_generation_exact: 0.020833333333333332
+```
+
+Conclusion:
+
+```text
+`single_core_carrier` is a real seed338 improvement but not yet seed-stable.
+On seed339 the standard carrier improves full exact over the seed339 base but
+does not lift the family floor; the near-off gate lifts the family floor but
+loses too much overall exact. Keep the seed338 carrier checkpoint as the active
+L6 scaffold, but treat stability as the next bottleneck. Do not promote this
+to a solved L6 architecture until either seed339 is repaired or another seed
+passes under the same gate.
+```
+
+Family-DRO 0.15 follow-up:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_famdro015_s2500_20260515_014659/report.json
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.19270833333333334
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: 0.15364583333333334
+  state_reset_generation_exact: 0.026041666666666668
+  op_zero_generation_exact: 0.0390625
+```
+
+Updated conclusion:
+
+```text
+Seed339 is not fixed by simply increasing family-DRO. The next stability fix
+should change the optimization curriculum or carrier supervision, not keep
+sweeping family-DRO weights.
+```
+
+## Experiment 2026-05-15T05:35:00
+
+```text
+topic:
+  Third-seed check for the internal single-core carrier.
+```
+
+Seed337 baseline:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed337_depth6_s3000_20260515_015547/report.json
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.23697916666666666
+  min_family_generation_exact: 0.03125
+  full_minus_think0: 0.20833333333333331
+  full_minus_worst_ablation: 0.19010416666666666
+```
+
+Seed337 carrier:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed337_single_core_carrier_s2500_20260515_015547/report.json
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.1640625
+  think0_generation_exact: 0.036458333333333336
+  full_minus_think0: 0.12760416666666666
+  full_minus_worst_ablation: 0.140625
+  min_family_generation_exact: 0.0546875
+  state_reset_generation_exact: 0.0234375
+  op_zero_generation_exact: 0.0234375
+
+family exact:
+  checksum: 0.3671875
+  modchain: 0.0703125
+  revchain: 0.0546875
+```
+
+Conclusion:
+
+```text
+`single_core_carrier` remains seed338-only. It improves the weak-family floor
+relative to the seed337 baseline, but it lowers full exact and still misses the
+0.08 family floor. Therefore it is not a seed-stable L6 solution. Treat it as
+a useful transition-state idea, not a canonical fixed architecture.
+
+`trm_official_prenorm` is a backbone/block implementation choice, not a
+decision to abandon dual or nested TRM schedules. Dual/nested remains a macro
+structure to re-test after the transition-state training problem is repaired.
+Do not promote single-carrier over dual/nested by naming alone; promote only by
+standard runs plus ablations.
+```
+
+## Experiment 2026-05-15T06:04:18
+
+```text
+topic:
+  Carrier plus h-state mean-pooled step codec on seed339.
+```
+
+Run:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_codec_hmean_w008_s2500_20260515_020418/report.json
+
+recipe:
+  resume:
+    local_eval/qtrm_native_l6_len6_single_seed339_depth6_s3000_20260515_012244/last.pt
+  think_structure: single_core_carrier
+  core_step_codec_loss_weight: 0.08
+  core_step_codec_state_source: h
+  core_step_codec_pooling: mean
+  train/eval_think_steps: 6
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.19270833333333334
+  think0_generation_exact: 0.013020833333333334
+  full_minus_think0: 0.1796875
+  full_minus_worst_ablation: 0.16666666666666669
+  min_family_generation_exact: 0.0546875
+  state_reset_generation_exact: 0.026041666666666668
+  op_zero_generation_exact: 0.026041666666666668
+
+family exact:
+  checksum: 0.4609375
+  modchain: 0.0546875
+  revchain: 0.0625
+
+best periodic:
+  step: 2000
+  generation_exact: 0.21354166666666666
+  min_family_generation_exact: 0.0625
+```
+
+Conclusion:
+
+```text
+Mean-pooled h-state codec does not repair seed339 carrier stability. It keeps
+the recurrent ablation signal and improves checksum, but the hard families are
+still below the 0.08 floor. The next narrow check is last-token h-state codec,
+because the LM answer path reads from the prompt/answer boundary more directly
+than from a mean-pooled prompt representation.
+```
+
+Last-token codec follow-up:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_codec_hlast_w008_s2500_20260515_020735/report.json
+
+recipe:
+  think_structure: single_core_carrier
+  core_step_codec_loss_weight: 0.08
+  core_step_codec_state_source: h
+  core_step_codec_pooling: last
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.2109375
+  think0_generation_exact: 0.018229166666666668
+  full_minus_think0: 0.19270833333333334
+  full_minus_worst_ablation: 0.1875
+  min_family_generation_exact: 0.046875
+  state_reset_generation_exact: 0.0234375
+  op_zero_generation_exact: 0.020833333333333332
+
+family exact:
+  checksum: 0.5078125
+  modchain: 0.046875
+  revchain: 0.078125
+```
+
+Conclusion:
+
+```text
+Last-token codec improves full exact over the standard seed339 carrier but
+worsens the minimum family floor. Codec supervision is therefore not enough:
+it teaches a readable state for easier/favored families without forcing robust
+ordered transition generalization. Stop codec-pooling variants here. The next
+candidate is direct prefix/full state consistency on the recurrent trajectory.
+```
+
+Prefix/full state alignment:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_prefix_align_w002_s2500_20260515_021141/report.json
+
+recipe:
+  think_structure: single_core_carrier
+  prefix_state_alignment_loss_weight: 0.02
+  prefix_state_alignment_max_cases: 8
+  prefix_state_alignment_every: 4
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.20572916666666666
+  think0_generation_exact: 0.018229166666666668
+  full_minus_think0: 0.1875
+  full_minus_worst_ablation: 0.18229166666666666
+  min_family_generation_exact: 0.046875
+  state_reset_generation_exact: 0.0234375
+  op_zero_generation_exact: 0.018229166666666668
+
+family exact:
+  checksum: 0.5
+  modchain: 0.046875
+  revchain: 0.0703125
+```
+
+Conclusion:
+
+```text
+Direct MSE alignment between full and prefix recurrent state does not repair
+the weak family. It keeps the causal ablation signal, but like the codec
+variants it mainly improves checksum/aggregate exact. The next existing
+state-level candidate is contrastive prefix/full alignment so the state is not
+only close to its prefix target but also separated from other cases.
+```
+
+Contrastive prefix/full state alignment:
+
+```text
+report:
+  local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_prefix_contrast_w002_s2500_20260515_021514/report.json
+
+recipe:
+  think_structure: single_core_carrier
+  prefix_state_contrastive_loss_weight: 0.02
+  prefix_state_contrastive_max_cases: 16
+  prefix_state_contrastive_every: 4
+  prefix_state_contrastive_state_source: h
+  prefix_state_contrastive_pooling: last
+
+decision:
+  rejected
+
+reject_reason:
+  family_exact_below_threshold
+
+decisive:
+  full_generation_exact: 0.19270833333333334
+  think0_generation_exact: 0.013020833333333334
+  full_minus_think0: 0.1796875
+  full_minus_worst_ablation: 0.16666666666666669
+  min_family_generation_exact: 0.0546875
+  state_reset_generation_exact: 0.026041666666666668
+  op_zero_generation_exact: 0.026041666666666668
+
+family exact:
+  checksum: 0.453125
+  modchain: 0.0546875
+  revchain: 0.0703125
+```
+
+Conclusion:
+
+```text
+Contrastive state alignment also fails. Stop auxiliary state-reader/alignment
+losses for this seed339 carrier repair. The repeated pattern suggests the
+carrier is being introduced as a random new module into an already trained
+single-core model and is not being integrated stably. The next minimal
+curriculum is a carrier warmup: train only the newly added `single_carrier_*`
+parameters first, then run a short full fine-tune.
+```
+
+Carrier warmup / gate-init / soup follow-up:
+
+```text
+carrier warmup only:
+  report:
+    local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_warmup_missing_s1500_20260515_021914/report.json
+  decision: rejected
+  full_generation_exact: 0.17708333333333334
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: 0.15104166666666669
+
+carrier warmup then full fine-tune:
+  report:
+    local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_warmup_then_full_s1500_20260515_022043/report.json
+  decision: rejected
+  full_generation_exact: 0.17708333333333334
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: 0.15104166666666669
+
+carrier_gate_init=-4.0:
+  report:
+    local_eval/qtrm_native_l6_len6_single_seed339_single_core_carrier_gateinit_m4_s2500_20260515_022504/report.json
+  decision: rejected
+  reject_reason: full_exact_below_threshold
+  full_generation_exact: 0.12760416666666666
+  min_family_generation_exact: 0.0859375
+  full_minus_worst_ablation: 0.10156249999999999
+  family exact:
+    checksum: 0.2109375
+    modchain: 0.0859375
+    revchain: 0.0859375
+
+checkpoint soup standard/gateinit_m4:
+  alpha0.1:
+    report: local_eval/qtrm_native_l6_seed339_carrier_soup_standard_gateinit_m4_alpha0p1_eval_20260515/report.json
+    decision: rejected
+    full_generation_exact: 0.12760416666666666
+    min_family_generation_exact: 0.0546875
+  alpha0.2:
+    report: local_eval/qtrm_native_l6_seed339_carrier_soup_standard_gateinit_m4_alpha0p2_eval_20260515/report.json
+    decision: rejected
+    full_generation_exact: 0.09895833333333333
+    min_family_generation_exact: 0.0625
+  alpha0.3:
+    report: local_eval/qtrm_native_l6_seed339_carrier_soup_standard_gateinit_m4_alpha0p3_eval_20260515/report.json
+    decision: rejected
+    full_generation_exact: 0.08072916666666667
+    min_family_generation_exact: 0.0625
+  alpha0.4:
+    report: local_eval/qtrm_native_l6_seed339_carrier_soup_standard_gateinit_m4_alpha0p4_eval_20260515/report.json
+    decision: rejected
+    full_generation_exact: 0.0703125
+    min_family_generation_exact: 0.0546875
+  alpha0.5:
+    report: local_eval/qtrm_native_l6_seed339_carrier_soup_standard_gateinit_m4_alpha05_eval_20260515/report.json
+    decision: rejected
+    full_generation_exact: 0.07291666666666667
+    min_family_generation_exact: 0.0625
+```
+
+Decision update:
+
+```text
+`single_core_carrier` remains a causal transition-state scaffold, but not a
+seed-stable L6 architecture. Warmup, auxiliary state supervision, gate init,
+and checkpoint soup all failed to satisfy full exact and family floor together.
+
+The useful diagnostic split is now clear:
+  standard carrier: higher full exact, weak family floor;
+  near-off gate: better family floor, lower full exact.
+
+Therefore the next orthodox step should not be more scalar blending or
+backbone renaming. It should either:
+  1. return to the dual/nested macro schedule and inject a carrier/state path
+     there under the same L6 gate; or
+  2. redesign the recurrent transition objective so hard-family state updates
+     are learned before final LM rendering.
+
+`trm_official_prenorm` remains only a pre-norm official-TRM-style backbone
+choice. It does not mean dual or nested TRM has been abandoned.
+```
+
+### 2026-05-15 - L6 Dual/Nested Family-Floor Audit And Eval-Order Fix
+
+Key finding:
+
+```text
+The L6 dual/nested residual joint readout path can preserve strong causal
+dependence on the recurrent core, but it saturates just below the strict
+family-floor gate.
+```
+
+New guardrail:
+
+```text
+Added --eval-family-order-invariant to
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py.
+
+Reason:
+  eval cases were previously generated by a single RNG while cycling families.
+  Therefore changing eval family order changed the per-family held-out samples.
+  That can create a proxy pass/fail signal near the 0.08 family threshold.
+
+Test:
+  tests.test_qtrm_native_mixed_text_reasoning_probe.
+  QTRMNativeMixedTextReasoningProbeTests.
+  test_order_invariant_eval_cases_keep_per_family_samples_stable
+```
+
+Canonical order-invariant re-eval:
+
+```text
+z_L causal repair:
+  report:
+    local_eval/qtrm_native_l6_seed338_zl_causal_repair_order_invariant_reeval_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.3411458333333333
+  min_family_generation_exact: 0.0703125
+  full_minus_worst_ablation: 0.3125
+  z_l_zero_generation_exact: 0.0026041666666666665
+  by_family:
+    checksum: 0.8671875
+    modchain: 0.0859375
+    revchain: 0.0703125
+
+hard-op repair:
+  report:
+    local_eval/qtrm_native_l6_seed338_hardop_order_invariant_reeval_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.3463541666666667
+  min_family_generation_exact: 0.0703125
+  full_minus_worst_ablation: 0.3151041666666667
+  z_l_zero_generation_exact: 0.0
+  by_family:
+    checksum: 0.8828125
+    modchain: 0.0859375
+    revchain: 0.0703125
+```
+
+Repair attempts:
+
+```text
+revchain hard-op repair:
+  report:
+    local_eval/qtrm_native_l6_seed338_nested_residual_joint_readout_revchain_hardop_repair_trmonly_s1500_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.3619791666666667
+  min_family_generation_exact: 0.0625
+  full_minus_worst_ablation: 0.3385416666666667
+  by_family:
+    checksum: 0.9140625
+    modchain: 0.109375
+    revchain: 0.0625
+
+order-invariant full-periodic repair:
+  report:
+    local_eval/qtrm_native_l6_seed338_order_invariant_revchain_fullperiodic_repair_s800_20260515/report.json
+  decision: rejected
+  best_periodic_step: 100
+  full_generation_exact: 0.3359375
+  min_family_generation_exact: 0.078125
+  full_minus_worst_ablation: 0.3125
+  z_l_zero_generation_exact: 0.0
+  by_family:
+    checksum: 0.84375
+    modchain: 0.0859375
+    revchain: 0.078125
+
+one-case continuation:
+  report:
+    local_eval/qtrm_native_l6_seed338_order_invariant_revchain_onecase_repair_s400_20260515/report.json
+  decision: rejected
+  min_family_generation_exact: 0.078125
+```
+
+Decision:
+
+```text
+The current dual/nested residual joint readout is not accepted, but it is the
+best causal L6 dual/nested scaffold so far:
+  core ablations are strong;
+  z_L zeroing is destructive;
+  depth 6 is necessary;
+  family floor is one held-out revchain case below threshold.
+
+Do not keep sweeping scalar loss weights. The next architecture change should
+target family-floor saturation directly:
+  1. make eval-family-order-invariant the canonical L6 gate;
+  2. add a transition-state objective that improves reverse-order binding
+     without trading away modchain;
+  3. test with the same order-invariant full/family/depth/ablation gate.
+```
+
+### 2026-05-15 - L6 Dual/Nested Core-Carrier Seed338 Pass
+
+Terminology correction:
+
+```text
+`trm_official_prenorm backbone` is a local block/backbone choice. It does not
+replace the macro topology. Dual/nested remains controlled by think_structure,
+for example:
+
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier
+
+The current candidate is still QTRM-native:
+  prompt tokens -> native embedding -> dual/nested recurrent z_L/z_H core
+  -> core-dependent readout -> LM logits -> autoregressive text.
+```
+
+Failed auxiliary repairs:
+
+```text
+op-codec repair:
+  report:
+    local_eval/qtrm_native_l6_seed338_order_invariant_opcodec_revchain_repair_s500_20260515/report.json
+  decision: rejected; restore-best selected the initial checkpoint
+
+position-codec repair:
+  report:
+    local_eval/qtrm_native_l6_seed338_order_invariant_positioncodec_revchain_repair_s500_20260515/report.json
+  decision: rejected; restore-best selected the initial checkpoint
+
+Conclusion:
+  operation-id and operation-position auxiliary losses did not solve the
+  transition-to-answer saturation. The next useful change had to be structural.
+```
+
+New structural candidate:
+
+```text
+name:
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier
+
+class:
+  faithful QTRM-native adaptation / original transition-state hypothesis
+
+mechanism:
+  keep the dual/nested residual joint-readout path;
+  add an identity-safe in-core GRU carrier from [z_L, z_H, encoded];
+  inject only a small normalized carrier delta into z_L/z_H;
+  do not normalize the whole loaded baseline state.
+
+bug fixed:
+  the first carrier version normalized the full base state and broke warm-start.
+  The fixed version preserves identity when the carrier gate is near zero.
+```
+
+Order-invariant eval:
+
+```text
+identity-safe carrier, gate_init=-4.0:
+  report:
+    local_eval/qtrm_native_l6_seed338_order_invariant_nested_core_carrier_identity_init_carrieroff_eval2_20260515/report.json
+  decision:
+    accepted_l6_nested_core_carrier_identity_init
+  full_generation_exact:
+    0.3411458333333333
+  min_family_generation_exact:
+    0.09375
+  by_family:
+    checksum: 0.8203125
+    modchain: 0.09375
+    revchain: 0.109375
+  full_minus_worst_ablation:
+    0.3125
+  z_l_zero_generation_exact:
+    0.0026041666666666665
+  z_h_zero_generation_exact:
+    0.0
+  carrier_off_generation_exact:
+    0.3359375
+  full_minus_carrier_off:
+    0.005208333333333315
+
+gate_off control:
+  report:
+    local_eval/qtrm_native_l6_seed338_order_invariant_nested_core_carrier_gateoff_init_eval_20260515/report.json
+  decision:
+    rejected; returns to the old near-pass
+```
+
+Interpretation:
+
+```text
+This is the first strict order-invariant L6 pass for the dual/nested line, but
+it is not a global L6 solution yet.
+
+Why it matters:
+  the path is still native token -> recurrent core -> LM logits;
+  depth 6 is necessary;
+  z_L/z_H and reset/op ablations remain destructive;
+  carrier_off returns to the previous near-pass, so the small in-core carrier
+  accounts for the one-case family-floor rescue.
+
+Why it is provisional:
+  the carrier parameters are new missing parameters initialized under seed338;
+  the gain over carrier_off is small;
+  seed stability and language non-regression are not yet verified.
+
+Next:
+  1. run seed stability for the same carrier structure;
+  2. train only the carrier/gate narrowly if seed stability fails;
+  3. keep full/family/depth/ablation gate unchanged;
+  4. only after that promote it beyond seed338 scaffold.
+```
+
+### 2026-05-15 - L6 Core-Carrier Seed Stability Rejected
+
+Question:
+
+```text
+Should nested and Fast-Slow be fixed as defaults?
+```
+
+Answer:
+
+```text
+No. Nested remains the active macro candidate, but it is not globally fixed.
+Fast-Slow remains a rejected/diagnostic auxiliary unless it passes the same
+strict family-floor gate. Do not hard-code either as a promotion default yet.
+```
+
+Seed-stability sweep:
+
+```text
+summary:
+  local_eval/qtrm_native_l6_nested_core_carrier_seed_stability_summary_20260515.json
+
+decision:
+  rejected_seed_stability
+
+pass_count:
+  1 / 3
+
+seed337:
+  report:
+    local_eval/qtrm_native_l6_seed337_order_invariant_nested_core_carrier_identity_init_carrieroff_eval_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.3203125
+  min_family_generation_exact: 0.0390625
+  carrier_off_generation_exact: 0.3333333333333333
+  full_minus_carrier_off: -0.013020833333333315
+  by_family:
+    checksum: 0.859375
+    modchain: 0.0390625
+    revchain: 0.0625
+
+seed338:
+  report:
+    local_eval/qtrm_native_l6_seed338_order_invariant_nested_core_carrier_identity_init_carrieroff_eval2_20260515/report.json
+  decision: accepted_l6_nested_core_carrier_identity_init
+  full_generation_exact: 0.3411458333333333
+  min_family_generation_exact: 0.09375
+  carrier_off_generation_exact: 0.3359375
+  full_minus_carrier_off: 0.005208333333333315
+
+seed339:
+  report:
+    local_eval/qtrm_native_l6_seed339_order_invariant_nested_core_carrier_identity_init_carrieroff_eval_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.3307291666666667
+  min_family_generation_exact: 0.046875
+  carrier_off_generation_exact: 0.3255208333333333
+  full_minus_carrier_off: 0.00520833333333337
+  by_family:
+    checksum: 0.8671875
+    modchain: 0.078125
+    revchain: 0.046875
+```
+
+Carrier-only repair:
+
+```text
+report:
+  local_eval/qtrm_native_l6_seed337_order_invariant_nested_core_carrier_only_repair_s600_20260515/report.json
+
+recipe:
+  resume from seed338 near-pass checkpoint;
+  train only missing carrier parameters;
+  steps: 600;
+  lr: 1e-4;
+  restore_best_eval_checkpoint by family_floor.
+
+decision:
+  rejected
+
+best_periodic_step:
+  300
+
+metrics:
+  full_generation_exact: 0.34375
+  min_family_generation_exact: 0.0546875
+  full_minus_carrier_off: 0.010416666666666685
+  by_family:
+    checksum: 0.9140625
+    modchain: 0.0625
+    revchain: 0.0546875
+```
+
+Decision:
+
+```text
+The identity-safe in-core carrier is a useful structural signal, not a
+promotion-ready default. It can improve full exact and remain causal, but it
+does not yet stabilize the weak-family floor across seeds.
+
+Do not freeze Fast-Slow as a default. The previous standard Fast-Slow gate was
+rejected, and this seed-stability failure is about family-specific transition
+binding, not a proven fast/slow loss default.
+
+Next causal hypothesis:
+  preserve the dual/nested macro path;
+  make the carrier less random-init-dependent;
+  add a deterministic near-identity carrier initialization or trainable gate
+  schedule that targets weak-family balance without worsening carrier_off
+  controls.
+```
+
+### 2026-05-15 - Deterministic Carrier And Seed337 Repair Rejected
+
+Code change:
+
+```text
+files:
+  scripts/335_train_qtrm_native_etd_probe.py
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  tests/test_qtrm_native_etd_probe.py
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+
+new option:
+  --carrier-state-mode
+
+modes:
+  gru
+  encoded
+  state_mean
+  state_delta
+  encoded_state_mean
+
+purpose:
+  test whether the nested core-carrier failure is mainly random GRU
+  initialization dependence.
+```
+
+Verification:
+
+```text
+.venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py \
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+.venv/bin/python -m unittest \
+  tests.test_qtrm_native_etd_probe \
+  tests.test_qtrm_native_mixed_text_reasoning_probe -v
+
+result:
+  195 tests OK
+```
+
+Seed337 repair summary:
+
+```text
+summary:
+  local_eval/qtrm_native_l6_seed337_carrier_brittleness_repair_summary_20260515.json
+
+decision:
+  rejected_deterministic_carrier_and_seed337_repairs
+```
+
+Deterministic carrier evals:
+
+```text
+state_mean:
+  report:
+    local_eval/qtrm_native_l6_seed337_order_invariant_nested_core_carrier_state_mean_init_eval_20260515/report.json
+  full_generation_exact: 0.2578125
+  min_family_generation_exact: 0.0234375
+  full_minus_carrier_off: -0.07552083333333331
+
+encoded:
+  report:
+    local_eval/qtrm_native_l6_seed337_order_invariant_nested_core_carrier_encoded_init_eval_20260515/report.json
+  full_generation_exact: 0.23697916666666666
+  min_family_generation_exact: 0.046875
+  full_minus_carrier_off: -0.09635416666666666
+
+state_delta:
+  report:
+    local_eval/qtrm_native_l6_seed337_order_invariant_nested_core_carrier_state_delta_init_eval_20260515/report.json
+  full_generation_exact: 0.296875
+  min_family_generation_exact: 0.03125
+  full_minus_carrier_off: -0.036458333333333315
+```
+
+Learned repair evals:
+
+```text
+carrier_only:
+  report:
+    local_eval/qtrm_native_l6_seed337_order_invariant_nested_core_carrier_only_repair_s600_20260515/report.json
+  full_generation_exact: 0.34375
+  min_family_generation_exact: 0.0546875
+  full_minus_carrier_off: 0.010416666666666685
+
+carrier_only_family_dro:
+  report:
+    local_eval/qtrm_native_l6_seed337_order_invariant_nested_core_carrier_only_famdro_repair_s900_20260515/report.json
+  full_generation_exact: 0.3411458333333333
+  min_family_generation_exact: 0.0546875
+  full_minus_carrier_off: 0.0078125
+
+transition_carrier_low_lr:
+  report:
+    local_eval/qtrm_native_l6_seed337_order_invariant_nested_transition_carrier_repair_s900_20260515/report.json
+  full_generation_exact: 0.3385416666666667
+  min_family_generation_exact: 0.0546875
+  full_minus_carrier_off: -0.0026041666666666297
+```
+
+Failure breakdown:
+
+```text
+report:
+  local_eval/qtrm_native_l6_seed337_nested_carrier_failure_opbreakdown_20260515/report.json
+
+finding:
+  failures are broad across modchain/revchain operation positions. This is not
+  a single hard op that can be fixed by another hard-op replay sweep.
+```
+
+Decision:
+
+```text
+The bottleneck is no longer "carrier random init" by itself.
+
+Rejected:
+  deterministic carrier state replacement;
+  carrier-only learning;
+  carrier-only family-DRO;
+  low-LR transition+carrier tuning with retention.
+
+Current interpretation:
+  the seed337/339 failures are a broader answer-space/generalization gap in
+  the L6 prompt -> recurrent state -> LM logits path. The core is causal, but
+  the recurrent state is not accurate enough on modchain/revchain to cross the
+  family floor.
+
+Next direction:
+  stop local carrier tuning;
+  audit answer-space argmax vs greedy generation on the weak seeds;
+  if answer-space rank is high but greedy fails, repair LM readout;
+  if answer-space rank is also low, return to recurrent transition learning.
+```
+
+Answer-space audit:
+
+```text
+report:
+  local_eval/qtrm_native_l6_seed337_nested_carrier_answer_space_audit_20260515/report.json
+
+metrics:
+  generation_exact: 0.3203125
+  answer_space_argmax_exact: 0.3177083432674408
+  answer_space_gold_mean_rank: 8.098958015441895
+  answer_space_gold_top3: 0.4348958432674408
+  answer_space_gold_top5: 0.5286458134651184
+
+interpretation:
+  answer-space argmax is not materially better than greedy generation, and
+  the gold answer is not ranked near the top often enough. Therefore the
+  active weak-seed bottleneck is not mainly text rendering or greedy decoding.
+  It is recurrent transition learning / state accuracy.
+```
+
+Next repair class:
+
+```text
+Return to recurrent transition learning. The next candidate should improve
+state accuracy before logits, for example a transition-consistency objective
+or a stricter depth-wise state supervision path. Do not add another carrier
+variant unless it directly improves answer-space rank and weak-family floor
+under the same gate.
+```
+
+State-trace depth repair result:
+
+```text
+reports:
+  local_eval/qtrm_native_l6_seed337_nested_state_trace_depth_repair_s900_20260515/report.json
+  local_eval/qtrm_native_l6_seed337_nested_state_trace_depth_repair_strong_s1200_20260515/report.json
+
+strong settings:
+  think_structure:
+    trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier
+  state_trace_depth_loss_weight: 1.0
+  state_trace_depth_state_source: both
+  retention_kl_loss_weight: 0.25
+  lr: 5.0e-5
+  steps: 1200
+  periodic_eval_score_mode: family_floor
+
+strong result:
+  decision: rejected
+  best_periodic_eval_step: 450
+  full_generation_exact: 0.3411458333333333
+  min_family_generation_exact: 0.0546875
+  full_minus_carrier_off: 0.0
+  state_reset_generation_exact: 0.013020833333333334
+  op_zero_generation_exact: 0.018229166666666668
+  z_l_zero_generation_exact: 0.005208333333333333
+  z_h_zero_generation_exact: 0.0
+  answer_space_argmax_exact: 0.34375
+  answer_space_gold_mean_rank: 7.916666507720947
+  answer_space_gold_top3: 0.4557291567325592
+  answer_space_gold_top5: 0.5390625
+
+by_family:
+  checksum: 0.90625
+  modchain: 0.0625
+  revchain: 0.0546875
+
+decision:
+  The state-trace depth objective slightly improves answer-space rank/top-k
+  versus the initial answer-space audit, but it does not cross the weak-family
+  floor and the carrier_off metric matches full accuracy. This closes the
+  scalar state-trace/carrier repair ladder for seed337.
+
+next hypothesis:
+  The remaining weak-seed bottleneck is transition binding inside the
+  dual/nested recurrent core. The next experiment should change the recurrent
+  transition objective or state update itself, not add another renderer,
+  decoder trick, carrier variant, MemoryOS path, or scalar loss sweep.
+```
+
+Transition-binding prefix contrast result:
+
+```text
+report:
+  local_eval/qtrm_native_l6_seed337_nested_transition_binding_prefix_contrast_s900_20260515/report.json
+
+path:
+  prompt tokens -> native embedding -> dual/nested z_L/z_H recurrent core
+  -> in-core carrier -> residual joint readout -> LM logits
+
+mechanism:
+  prefix_state_contrastive_loss aligns the depth-wise state from the full
+  prompt with the state produced when only the causal prefix up to that depth
+  is visible. This is a transition-state objective, not an answer sidecar.
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 750
+  full_generation_exact: 0.3333333333333333
+  min_family_generation_exact: 0.046875
+  full_minus_carrier_off: -0.002604166666666685
+  answer_space_argmax_exact: 0.3411458432674408
+  answer_space_gold_mean_rank: 7.640625
+
+by_family:
+  checksum: 0.90625
+  modchain: 0.046875
+  revchain: 0.046875
+
+decision:
+  Prefix/full contrast improves gold mean rank a little, but it reduces the
+  weak-family floor and does not make carrier causally helpful. Do not use
+  prefix contrast as the next repair ladder for this bottleneck.
+
+next candidate:
+  Try a narrower transition-codec repair that asks the recurrent state to bind
+  the operation and operation position at each depth, while still requiring the
+  final answer to pass through LM logits. If that also fails, the bottleneck is
+  likely architectural state update rather than auxiliary objective choice.
+```
+
+Transition op/position codec repair result:
+
+```text
+report:
+  local_eval/qtrm_native_l6_seed337_nested_transition_codec_repair_s700_20260515/report.json
+
+mechanism:
+  core_step_codec_loss + core_step_op_codec_loss +
+  core_step_position_codec_loss train the recurrent state to expose depth-wise
+  answer/op/position information. The codec heads are training probes only;
+  acceptance still requires normal LM-logit generation.
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 500
+  full_generation_exact: 0.3125
+  min_family_generation_exact: 0.0625
+  full_minus_carrier_off: -0.010416666666666685
+  answer_space_argmax_exact: 0.3177083432674408
+  answer_space_gold_mean_rank: 7.919270992279053
+
+by_family:
+  checksum: 0.8125
+  modchain: 0.0625
+  revchain: 0.0625
+
+decision:
+  The codec repair does not cross the 0.08 family floor and degrades full
+  accuracy from the accepted seed338 scaffold. Because carrier_off is better
+  than full, the carrier remains non-causal on seed337.
+
+next step:
+  Stop auxiliary-objective repair for this bottleneck. The next work item is a
+  real recurrent state-update redesign that keeps the dual/nested QTRM-native
+  causal path but changes how z_L/z_H exchange and retain transition state.
+```
+
+Cross-exchange structural repair:
+
+```text
+code:
+  scripts/335_train_qtrm_native_etd_probe.py
+
+new think_structure:
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier_cross_exchange
+
+mechanism:
+  Preserve the accepted dual/nested core-carrier path, but add a warm-start
+  identity cross-exchange gate:
+    z_L nested delta -> small residual into z_H
+    z_H nested delta -> small residual into z_L
+  The exchange is controlled by coupling_off and remains inside the native
+  token -> recurrent core -> LM logits path.
+
+test:
+  tests/test_qtrm_native_etd_probe.py
+  test_trm_dual_z_nested_core_carrier_cross_exchange_is_inside_core
+
+experiment:
+  local_eval/qtrm_native_l6_seed337_nested_core_carrier_cross_exchange_s800_20260515/report.json
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 600
+  full_generation_exact: 0.3385416666666667
+  min_family_generation_exact: 0.046875
+  full_minus_carrier_off: 0.01302083333333337
+  coupling_off_generation_exact: 0.3333333333333333
+  carrier_off_generation_exact: 0.3255208333333333
+  answer_space_argmax_exact: 0.3463541567325592
+  answer_space_gold_mean_rank: 7.6328125
+
+by_family:
+  checksum: 0.921875
+  modchain: 0.046875
+  revchain: 0.046875
+
+decision:
+  Cross-exchange gives a small same-metric dependency for carrier/coupling and
+  slightly improves answer-space argmax, but it does not repair the weak-family
+  floor and the coupling drop is far below the 0.05 causal threshold. Do not
+  promote this structure.
+
+next structural hypothesis:
+  The next architecture must bind operation order more explicitly inside the
+  recurrent update, not merely exchange generic z_L/z_H deltas. Candidate:
+  a step/operation-conditioned transition router that modulates the z_L/z_H
+  update from encoded token state while preserving the same LM-logit output
+  path and requiring coupling/router ablation drops.
+
+verification:
+  .venv/bin/python -m py_compile \
+    scripts/335_train_qtrm_native_etd_probe.py \
+    scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+  .venv/bin/python -m unittest \
+    tests.test_qtrm_native_etd_probe \
+    tests.test_qtrm_native_mixed_text_reasoning_probe -v
+
+  result: 197 tests OK
+```
+
+Step-conditioned recurrent update:
+
+```text
+code:
+  scripts/335_train_qtrm_native_etd_probe.py
+
+new think_structure:
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier_step_conditioned
+
+mechanism:
+  Adds recurrent-step embeddings and encoded-token-conditioned z_L/z_H delta
+  optimizers inside the existing dual/nested core-carrier path. The update is
+  disabled by coupling_off and final answers still use the native LM logits.
+
+focused test:
+  tests/test_qtrm_native_etd_probe.py
+  test_trm_dual_z_nested_core_carrier_step_conditioned_is_inside_core
+
+experiment:
+  local_eval/qtrm_native_l6_seed337_nested_step_conditioned_s1000_20260515/report.json
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 900
+  full_generation_exact: 0.3619791666666667
+  min_family_generation_exact: 0.0703125
+  full_minus_carrier_off: 0.015625
+  coupling_off_generation_exact: 0.359375
+  z_l_zero_generation_exact: 0.059895833333333336
+  answer_space_argmax_exact: 0.3567708432674408
+
+by_family:
+  checksum: 0.9296875
+  modchain: 0.0703125
+  revchain: 0.0859375
+
+interpretation:
+  This is the best seed337 result in this repair sequence and revchain crosses
+  the 0.08 family floor, but modchain remains below threshold and coupling_off
+  is almost unchanged. The improvement is not yet causally attributable to the
+  new step-conditioned path.
+```
+
+Step-only causal repair:
+
+```text
+report:
+  local_eval/qtrm_native_l6_seed337_nested_step_conditioned_step_only_repair_s600_20260515/report.json
+
+settings:
+  resume:
+    local_eval/qtrm_native_l6_seed337_nested_step_conditioned_s1000_20260515/last.pt
+  train_param_name_regex:
+    ^trm_nested_step_
+  lr: 1.0e-4
+  steps: 600
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 0
+  full_generation_exact: 0.3619791666666667
+  min_family_generation_exact: 0.0703125
+  coupling_off_generation_exact: 0.359375
+
+decision:
+  Step-only training did not improve beyond the initial checkpoint. Keep the
+  step-conditioned result as a useful directional signal, but do not promote it
+  until an order/step path produces both a family-floor pass and a meaningful
+  coupling/router ablation drop.
+
+next structural hypothesis:
+  A nested order-router should choose or blend update order, not just add a
+  generic step-conditioned delta. The route must be derived from encoded token
+  state and final answers must remain LM-logit generation.
+```
+
+Nested order-router recurrent update:
+
+```text
+code:
+  scripts/335_train_qtrm_native_etd_probe.py
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+new think_structure:
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier_order_router
+
+mechanism:
+  Keeps the dual/nested core-carrier path, then blends two internal update
+  orders from the same encoded token stream:
+    route0: L -> H
+    route1: H-primed H -> L -> H
+  Final answers still use the native LM logits. The generic router utilities
+  now support both trm_order_router and trm_nested_order_router.
+
+focused tests:
+  tests/test_qtrm_native_etd_probe.py
+    test_trm_dual_z_nested_core_carrier_order_router_stays_inside_native_core
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+    test_order_router_family_order_loss_supports_nested_router
+    test_forced_route_answer_loss_supports_nested_router_force_attr
+
+experiment:
+  local_eval/qtrm_native_l6_seed337_nested_order_router_aux_forced_s600_20260515/report.json
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 300
+  full_generation_exact: 0.3359375
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: 0.036458333333333315
+  coupling_off_generation_exact: 0.2994791666666667
+  carrier_off_generation_exact: 0.3333333333333333
+  order_route0_generation_exact: 0.2994791666666667
+  order_route1_generation_exact: 0.041666666666666664
+
+by_family:
+  checksum: 0.890625
+  modchain: 0.0625
+  revchain: 0.0546875
+
+router probe:
+  overall last route1 probability: 0.42304137349128723
+  checksum last route1 probability: 0.17793744802474976
+  modchain last route1 probability: 0.5396702289581299
+  revchain last route1 probability: 0.5515165328979492
+
+interpretation:
+  The auxiliary can move the router toward route1 for modchain/revchain, but
+  route1 itself is weak. Forced route1 is only 0.0417 overall, while the full
+  model still misses the family floor and does not clear the causal ablation
+  threshold. Do not keep sweeping router LR or auxiliary weights.
+```
+
+Sequence-level nested order-router:
+
+```text
+new think_structure:
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier_sequence_order_router
+
+mechanism:
+  Uses one route distribution per whole case instead of token-wise route
+  blending, to test whether inconsistent per-token routing is the bottleneck.
+
+focused test:
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+    test_sequence_level_nested_order_router_uses_one_route_distribution_per_case
+
+experiment:
+  local_eval/qtrm_native_l6_seed337_nested_sequence_order_router_aux_forced_s600_20260515/report.json
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 300
+  full_generation_exact: 0.09635416666666667
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: -0.23177083333333331
+  coupling_off_generation_exact: 0.328125
+  carrier_off_generation_exact: 0.08854166666666667
+  order_route0_generation_exact: 0.328125
+  order_route1_generation_exact: 0.041666666666666664
+
+by_family:
+  checksum: 0.171875
+  modchain: 0.0546875
+  revchain: 0.0625
+
+interpretation:
+  Sequence-level route locking is worse. The full model collapses because it
+  commits too much of the whole state to the weak H->L->H route. The bottleneck
+  is not token-vs-sequence routing; it is the route1 transition candidate
+  itself. Close the order-router ladder unless route1 is replaced by a stronger
+  transition mechanism.
+
+next structural hypothesis:
+  Replace route1, not the router. The next candidate must bind operation order
+  inside the recurrent z_L/z_H transition itself while preserving the native
+  token -> core -> LM-logits path. Do not add a side renderer, typed executor,
+  MemoryOS/RAG path, or more scalar router tuning.
+```
+
+Order-bound route1 replacement:
+
+```text
+code:
+  scripts/335_train_qtrm_native_etd_probe.py
+
+new think_structure:
+  trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier_order_bound_router
+
+mechanism:
+  Keeps route0 as L->H, keeps the nested router, but replaces route1 with an
+  H->L->H route that injects route1-only attention over the encoded prompt
+  tokens. This tests whether route1 failed because it could not re-bind source
+  operation positions from the visible prompt.
+
+focused test:
+  tests/test_qtrm_native_etd_probe.py
+    test_trm_dual_z_nested_order_bound_router_replaces_route1_transition
+
+experiment:
+  local_eval/qtrm_native_l6_seed337_nested_order_bound_router_aux_forced_s600_20260515/report.json
+
+result:
+  accepted: false
+  decision: rejected
+  best_periodic_eval_step: 300
+  full_generation_exact: 0.3359375
+  min_family_generation_exact: 0.0546875
+  full_minus_worst_ablation: 0.0390625
+  coupling_off_generation_exact: 0.296875
+  carrier_off_generation_exact: 0.3333333333333333
+  order_route0_generation_exact: 0.296875
+  order_route1_generation_exact: 0.03125
+
+by_family:
+  checksum: 0.875
+  modchain: 0.078125
+  revchain: 0.0546875
+
+interpretation:
+  Source attention inside route1 does not solve the bottleneck. It slightly
+  helps modchain reach the 0.078125 edge, but revchain remains below the floor
+  and forced route1 is worse than the previous H->L->H route. The missing
+  mechanism is not just prompt-source re-attention. Close this route1-attention
+  branch.
+
+next structural hypothesis:
+  Stop building alternative routers around H->L->H. The next candidate should
+  be a direct recurrent transition-binding mechanism that updates the core
+  state in operation order, or a smaller diagnostic task that proves such a
+  transition can learn before returning to L6.
+```
+
+Route1 revchain-only capacity diagnostic:
+
+```text
+report:
+  local_eval/qtrm_native_l6_seed337_order_bound_route1_revchain_capacity_s400_20260515/report.json
+
+purpose:
+  Test whether the new order-bound route1 can learn revchain when the whole
+  dataset is revchain and the router/forced-route losses push strongly toward
+  route1. This is diagnostic only, not a canonical promotion gate.
+
+result:
+  accepted: false
+  decision: rejected
+  full_generation_exact: 0.04296875
+  min_family_generation_exact: 0.04296875
+  full_minus_worst_ablation: 0.01953125
+  coupling_off_generation_exact: 0.0078125
+  order_route0_generation_exact: 0.0078125
+  order_route1_generation_exact: 0.046875
+
+router probe:
+  last route1 probability: 0.999332070350647
+  mean route1 probability: 0.7590198516845703
+
+interpretation:
+  This isolates the bottleneck. The router can be forced to select route1, but
+  route1 still cannot solve revchain. Therefore the weak L6 result is not a
+  router-selection problem or a multi-family conflict problem. It is a route1
+  transition-capacity/state-binding problem.
+
+next structural hypothesis:
+  Do not continue H->L->H route wrappers. Build a direct operation-order
+  recurrent transition diagnostic: the state update itself must learn ordered
+  composition before it is reinserted into the L6 nested dual core.
+```
+
+Reduced operation-order transition diagnostic:
+
+```text
+script:
+  scripts/353_train_operation_order_transition_probe.py
+
+focused test:
+  tests/test_operation_order_transition_probe.py
+
+purpose:
+  Isolate one question before changing L6 again:
+  can a learned recurrent transition read the same prompt tokens, compose the
+  operations in fwd or rev order, and emit the answer through normal LM logits?
+
+smoke held-out run:
+  local_eval/operation_order_transition_probe_smoke_20260515/report.json
+
+smoke held-out result:
+  decision: rejected
+  full_generation_exact: 0.044921875
+  transition_off_generation_exact: 0.03515625
+  order_shuffle_generation_exact: 0.033203125
+  full_minus_transition_off: 0.009765625
+  full_minus_order_shuffle: 0.01171875
+
+capacity run:
+  local_eval/operation_order_transition_probe_capacity_mod16_20260515/report.json
+
+capacity held-out result:
+  decision: rejected
+  full_generation_exact: 0.431640625
+  transition_off_generation_exact: 0.07421875
+  order_shuffle_generation_exact: 0.2421875
+  full_minus_transition_off: 0.357421875
+  full_minus_order_shuffle: 0.189453125
+
+same-seed capacity control:
+  local_eval/operation_order_transition_probe_capacity_mod16_trainseed_eval_20260515/report.json
+
+same-seed capacity control result:
+  decision: accepted_operation_order_transition_diagnostic
+  full_generation_exact: 0.999755859375
+  transition_off_generation_exact: 0.0712890625
+  order_shuffle_generation_exact: 0.54150390625
+  state_reset_generation_exact: 0.059326171875
+  full_minus_transition_off: 0.928466796875
+  full_minus_order_shuffle: 0.458251953125
+
+interpretation:
+  The recurrent transition is not inert. On the same generated distribution it
+  can memorize and solve almost perfectly, and transition/state/order ablations
+  are strongly causal. However, held-out seed generalization is only 0.4316
+  under the stronger mod16 capacity run. The current bottleneck is therefore
+  not "the transition cannot learn at all"; it is compositional
+  value-operation generalization from token embeddings. Reinsert this
+  mechanism into L6 only after adding a better state/value codec or another
+  generalization-oriented transition objective.
+```
+
+Reduced transition trace/value-codec repair:
+
+```text
+script:
+  scripts/353_train_operation_order_transition_probe.py
+
+new knobs:
+  --value-codec learned|circular
+  --trace-loss-weight
+
+mechanism:
+  The recurrent transition still reads prompt tokens and emits LM logits. The
+  circular value codec gives value tokens a continuous latent basis, while
+  trace loss supervises each intermediate recurrent state on the stepwise
+  operation result. The step targets are training-only; inference does not call
+  a symbolic solver.
+
+mod16 controls:
+  circular codec only:
+    report: local_eval/operation_order_transition_probe_circular_mod16_20260515/report.json
+    decision: rejected
+    full_generation_exact: 0.447265625
+    full_minus_transition_off: 0.388671875
+    full_minus_order_shuffle: 0.201171875
+
+  learned codec + trace loss:
+    report: local_eval/operation_order_transition_probe_learned_trace_mod16_20260515/report.json
+    decision: accepted_operation_order_transition_diagnostic
+    full_generation_exact: 0.828125
+    full_minus_transition_off: 0.765625
+    full_minus_order_shuffle: 0.361328125
+
+  circular codec + trace loss:
+    report: local_eval/operation_order_transition_probe_circular_trace_mod16_20260515/report.json
+    decision: accepted_operation_order_transition_diagnostic
+    full_generation_exact: 0.970703125
+    full_minus_transition_off: 0.935546875
+    full_minus_order_shuffle: 0.427734375
+
+mod32 scale check:
+  undertrained d128:
+    report: local_eval/operation_order_transition_probe_circular_trace_mod32_20260515/report.json
+    decision: rejected
+    full_generation_exact: 0.18359375
+
+  d256/s3000:
+    report: local_eval/operation_order_transition_probe_circular_trace_mod32_d256_s3000_20260515/report.json
+    decision: accepted_operation_order_transition_diagnostic
+    full_generation_exact: 0.89453125
+    transition_off_generation_exact: 0.0390625
+    order_shuffle_generation_exact: 0.4609375
+    state_reset_generation_exact: 0.0
+    full_minus_transition_off: 0.85546875
+    full_minus_order_shuffle: 0.43359375
+
+interpretation:
+  This is the first reduced gate that cleanly solves held-out operation-order
+  generalization with strong causal ablations. Trace supervision is the major
+  unlock; circular value coding improves the ceiling and scaling. The next L6
+  move should transplant this recipe into the QTRM-native dual/nested core:
+  use state-trace/depth supervision as the main operation-order objective and
+  replace flat random value embeddings/readout with a value codec that gives
+  the recurrent core a stable state manifold.
+```
+
+L6 trace/value-codec transplant attempt:
+
+```text
+implementation:
+  scripts/335_train_qtrm_native_etd_probe.py
+    NativeQTRMETDLM now accepts value_codec and explicit value_token_ids.
+
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+    --value-codec circular is wired through to the native model.
+    It is guarded to require --tokenizer-mode number.
+    value_token_ids_for_tokenizer maps 00..31 tokens to value indices.
+
+tests:
+  tests/test_qtrm_native_etd_probe.py
+    circular value codec and custom value_token_ids
+
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+    parser accepts value_codec and number tokenizer;
+    value_token_ids_for_tokenizer follows two-digit values.
+
+invalid char-tokenizer transplant:
+  report: local_eval/qtrm_native_l6_seed338_circular_value_trace_repair_s1200_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.0546875
+  reason: char tokenizer has no atomic value tokens; applying circular codec
+          to char ids corrupts the token semantics.
+
+valid number-tokenizer transplant:
+  report: local_eval/qtrm_native_l6_seed338_number_circular_trace_repair_s1200_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.068359375
+  min_family_generation_exact: 0.023391812865497075
+  full_minus_worst_ablation: 0.0078125
+  transition/core signal: weak
+
+interpretation:
+  The reduced trace/value recipe does not transfer directly into the current
+  text runner. With number tokenizer, value tokens are atomic, but operation
+  ids and numeric values share the same two-digit tokens. The reduced
+  diagnostic separated op tokens from value tokens; the text runner does not.
+  The next full-L6 transplant must separate operation-role embeddings from
+  value-role embeddings, or add role-conditioned value/op codecs, before using
+  circular value coding as canonical evidence.
+```
+
+L6 op-role tokenizer transplant:
+
+```text
+implementation:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+    --number-tokenizer-op-role-tokens
+      encodes visible ops-segment numbers as internal opNN tokens while decode
+      preserves the original prompt text.
+
+    flexible checkpoint load now composes unseen number/op tokens from source
+    character rows when migrating a char-token checkpoint:
+      "05"   <- mean("0", "5")
+      "op05" <- mean("o", "p", "0", "5")
+
+tests:
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+    number tokenizer separates operation-role tokens;
+    flexible load composes number/op tokens from source chars.
+
+random-init op-role run:
+  report: local_eval/qtrm_native_l6_seed338_number_oprole_circular_trace_repair_s1200_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.08203125
+  min_family_generation_exact: 0.029239766081871343
+  full_minus_think0: 0.08203125
+  full_minus_worst_ablation: 0.025390625
+  carrier_off_generation_exact: 0.095703125
+
+composed-init op-role run:
+  report: local_eval/qtrm_native_l6_seed338_number_oprole_composedinit_circular_trace_repair_s1200_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.0546875
+  min_family_generation_exact: 0.03508771929824561
+  full_minus_think0: 0.029296875
+  full_minus_worst_ablation: 0.009765625
+  carrier_off_generation_exact: 0.048828125
+
+interpretation:
+  OP/VALUE token separation fixes the representational contract but does not
+  solve L6. Random op-role tokens slightly improve full exact over the earlier
+  number-circular run, but the carrier path is not causally helpful because
+  carrier_off is stronger than full. Composed char-to-number initialization
+  prevents random-token migration but does not improve the gate.
+
+roadmap consequence:
+  Stop treating tokenizer/codec repair as the remaining bottleneck. The next
+  L6 fix must make the recurrent state update itself learn ordered
+  operation-role transitions, likely by porting the reduced probe's transition
+  trace objective more directly into z_L/z_H rather than adding more router,
+  carrier, or tokenizer variants.
+```
+
+L6 shared-LM/value-codec readout audit:
+
+```text
+implementation correction:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+    state_trace_depth_answer_loss and latent_refinement_loss now call the
+    model's canonical shared LM/value-codec readout instead of bypassing it
+    with direct lm_head(norm(hidden)).
+
+tests:
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+    state trace depth loss uses shared _lm_logits path;
+    latent refinement loss uses shared _lm_logits path.
+
+shared readout number/op-role run:
+  report: local_eval/qtrm_native_l6_seed338_number_oprole_sharedlm_circular_trace_repair_s1200_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.072265625
+  min_family_generation_exact: 0.017543859649122806
+  full_minus_think0: 0.072265625
+  full_minus_worst_ablation: 0.00390625
+  z_l_zero_generation_exact: 0.068359375
+  carrier_off_generation_exact: 0.0625
+
+z_L-direct step-codec run:
+  report: local_eval/qtrm_native_l6_seed338_zl_direct_stepcodec_sharedlm_s1200_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.052734375
+  min_family_generation_exact: 0.029239766081871343
+  full_minus_think0: 0.041015625
+  full_minus_worst_ablation: 0.0
+  z_l_zero_generation_exact: 0.052734375
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.064453125
+
+interpretation:
+  The readout fix was necessary, but it does not make the number/op-role
+  transplant a valid L6 path. Direct auxiliary pressure on z_L also fails:
+  zeroing z_L leaves full accuracy unchanged, while zeroing z_H collapses the
+  output. This means the transplanted number/op-role setup is no longer using
+  the accepted dual/nested z_L causal scaffold.
+
+roadmap consequence:
+  Stop auxiliary-head/tokenizer sweeps for this branch. The accepted char-token
+  dual/nested core-carrier scaffold remains the active causal scaffold. Next
+  work should improve family balance and transition generalization inside that
+  accepted native path, not replace it with a migrated number-token branch.
+```
+
+L6 d256 native number/op-role path:
+
+```text
+from-scratch d256 run:
+  report: local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_s3000_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.134765625
+  best_periodic_generation_exact: 0.1484375
+  min_family_generation_exact: 0.04678362573099415
+  full_minus_worst_ablation: 0.037109375
+
+interpretation:
+  Initial d256 training is undertrained but rising. Unlike the d128 migrated
+  branch, the from-scratch path has a real depth/core signal and improves with
+  more optimization.
+
+continuation:
+  report: local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_cont_s7000_20260515/report.json
+  decision: rejected
+  full_generation_exact: 0.29296875
+  min_family_generation_exact: 0.07017543859649122
+  full_minus_worst_ablation: 0.240234375
+  full_minus_carrier_off: 0.052734375
+  best_periodic_generation_exact: 0.2994791666666667
+  best_periodic_min_family: 0.0859375
+
+interpretation:
+  The d256 native path becomes strongly causal and nearly crosses L6. The
+  remaining blocker is revchain/family floor, not format validity or lack of
+  recursive-depth signal.
+
+revchain-heavy retention repair:
+  report: local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/report.json
+  decision: accepted_l6_d256_number_oprole_circular_trace_revrepair
+  full_generation_exact: 0.37890625
+  min_family_generation_exact: 0.11695906432748537
+  full_minus_think0: 0.3515625
+  full_minus_worst_ablation: 0.33203125
+  full_minus_carrier_off: 0.09765625
+  state_reset_generation_exact: 0.0234375
+  op_zero_generation_exact: 0.046875
+  z_l_zero_generation_exact: 0.021484375
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.28125
+
+by_family:
+  checksum: 0.8705882352941177
+  modchain: 0.15204678362573099
+  revchain: 0.11695906432748537
+
+decision:
+  Promote this as the current strongest QTRM-native L6 checkpoint. It keeps the
+  universal path:
+    prompt tokens -> number/op-role tokenizer -> native embeddings ->
+    dual/nested recurrent core -> shared circular value LM logits ->
+    autoregressive answer.
+
+  This supersedes the seed338 char-token scaffold as the strongest local L6
+  evidence, but it still requires seed-stability and language non-regression
+  before any L7/general-LM claim.
+```
+
+L6 d256 revrepair seed-stability eval:
+
+```text
+summary:
+  local_eval/qtrm_native_l6_d256_revrepair_seed_stability_summary_20260515.json
+
+checkpoint:
+  local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/last.pt
+
+decision:
+  accepted_l6_d256_revrepair_seed_stable_3eval
+
+eval_seed 9340:
+  report: local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/report.json
+  full_generation_exact: 0.37890625
+  min_family_generation_exact: 0.11695906432748537
+  full_minus_worst_ablation: 0.33203125
+
+eval_seed 9341:
+  report: local_eval/qtrm_native_l6_d256_revrepair_seedstab_eval9341_20260515/report.json
+  full_generation_exact: 0.36328125
+  min_family_generation_exact: 0.09941520467836257
+  full_minus_worst_ablation: 0.294921875
+
+eval_seed 9342:
+  report: local_eval/qtrm_native_l6_d256_revrepair_seedstab_eval9342_20260515/report.json
+  full_generation_exact: 0.3828125
+  min_family_generation_exact: 0.1111111111111111
+  full_minus_worst_ablation: 0.34765625
+
+decision:
+  This passes the immediate 3-eval-seed stability gate for L6. It is still not
+  a language-capable L7/general-LLM checkpoint. Next gates are:
+    1. midpoint/rollback audit around the revchain repair;
+    2. language non-regression;
+    3. program_len generalization beyond 6.
+```
+
+L6 d256 revrepair midpoint audit:
+
+```text
+report:
+  local_eval/qtrm_native_l6_d256_revrepair_mid1500_audit_20260515/report.json
+
+decision:
+  accepted_l6_d256_revrepair_mid1500_audit
+
+metrics:
+  full_generation_exact: 0.34375
+  min_family_generation_exact: 0.08771929824561403
+  full_minus_think0: 0.314453125
+  full_minus_worst_ablation: 0.298828125
+  full_minus_carrier_off: 0.123046875
+  state_reset_generation_exact: 0.0234375
+  op_zero_generation_exact: 0.044921875
+  z_l_zero_generation_exact: 0.03125
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.220703125
+
+decision:
+  The revchain-heavy repair is not a single lucky final checkpoint. The 1500
+  step midpoint independently passes the same strict L6 gate. Remaining
+  blockers for promotion are language non-regression and length generalization.
+```
+
+L6 d256 revrepair len7 zero-shot audit:
+
+```text
+report:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_eval_20260515/report.json
+
+resume checkpoint:
+  local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/last.pt
+
+setup:
+  steps: 0
+  program_len: 7
+  train_think_steps/eval_think_steps: 7
+  resume_allow_missing: true
+  pos_embed_resize_strategy: random_tail
+
+resume load:
+  pos_embed.weight resized from [46, 256] to [48, 256]
+  copied_rows: 46
+  random_tail filled_rows: 2
+
+decision:
+  rejected
+
+reject reasons:
+  full_exact_below_threshold
+  depth_gain_below_threshold
+  ablation_drop_below_threshold
+  family_exact_below_threshold
+
+metrics:
+  full_generation_exact: 0.015625
+  think0_generation_exact: 0.005859375
+  full_minus_think0: 0.009765625
+  full_minus_worst_ablation: -0.0078125
+  min_family_generation_exact: 0.0
+  full_minus_carrier_off: -0.00390625
+  state_reset_generation_exact: 0.017578125
+  op_zero_generation_exact: 0.0234375
+  z_l_zero_generation_exact: 0.015625
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.01953125
+
+interpretation:
+  The accepted L6 d256 revrepair checkpoint is seed-stable and midpoint-stable,
+  but it is still length-specialized. The len7 zero-shot eval collapses to
+  near chance and the causal ablation pattern disappears. The random-tail
+  positional rows are a concrete OOD factor, but the main result is that L6
+  success must not be promoted to L7 or general length reasoning.
+
+next action:
+  Do not claim L7. Run a length-curriculum or positional-generalization repair
+  from the accepted L6 checkpoint, then require both len6 retention and len7
+  acceptance under the same final LM-logit/causal-ablation gate.
+```
+
+L6 d256 revrepair len7 curriculum repair:
+
+```text
+report:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_curriculum_s1500_20260515/report.json
+
+canonical argmax eval:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_curriculum_argmax_eval_20260515/report.json
+  same decisive metrics; still rejected
+
+resume checkpoint:
+  local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/last.pt
+
+setup:
+  steps: 1500
+  program_len: 7
+  train_think_steps/eval_think_steps: 7
+  active_len_curriculum: true
+  active_len_curriculum_min: 4
+  active_len_curriculum_warmup_frac: 0.6
+  active_len_replay_loss_weight: 0.02
+  active_len_replay_min/max: 1/6
+  retention_reference_checkpoint: resume
+  retention_kl_loss_weight: 0.05
+  pos_embed_resize_strategy: repeat_last
+
+resume load:
+  pos_embed.weight resized from [46, 256] to [48, 256]
+  copied_rows: 46
+  repeat_last filled_rows: 2
+
+periodic trend:
+  step0 exact: 0.0
+  step300 exact: 0.0234375
+  step600 exact: 0.0234375
+  step900 exact: 0.09375
+  step1200 exact: 0.140625
+  step1500 exact: 0.1484375
+
+decision:
+  rejected
+
+reject reasons:
+  full_exact_below_threshold
+  family_exact_below_threshold
+
+metrics:
+  full_generation_exact: 0.154296875
+  think0_generation_exact: 0.025390625
+  full_minus_think0: 0.12890625
+  full_minus_worst_ablation: 0.11328125
+  min_family_generation_exact: 0.023391812865497075
+  full_minus_carrier_off: 0.08984375
+  state_reset_generation_exact: 0.015625
+  op_zero_generation_exact: 0.0
+  z_l_zero_generation_exact: 0.041015625
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.064453125
+
+by_family:
+  checksum: 0.40588235294117647
+  modchain: 0.03508771929824561
+  revchain: 0.023391812865497075
+
+interpretation:
+  The curriculum repair substantially improves len7 over zero-shot and restores
+  a real recursive-depth/ablation signal. It is still not L7 because the model
+  overfits toward checksum while modchain/revchain remain near chance. The next
+  useful repair should target hard-family balance on len7, while preserving the
+  restored depth and ablation gains.
+```
+
+L7 hard-family continuation from len7 curriculum:
+
+```text
+report:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_hardfamily_s1500_20260515/report.json
+
+resume checkpoint:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_curriculum_s1500_20260515/last.pt
+
+setup:
+  steps: 1500
+  program_len: 7
+  task_families: revchain x5, modchain x4, checksum x1
+  family_dro_loss_weight: 0.1
+  periodic_eval_score_mode: family_floor
+  eval_answer_space_argmax: true
+  retention_reference_checkpoint: resume
+  retention_kl_loss_weight: 0.05
+  active_len_replay_loss_weight: 0.02
+
+periodic trend on 128-case eval:
+  step0 exact/min_family: 0.1484375 / 0.0
+  step300 exact/min_family: 0.171875 / 0.046511627906976744
+  step600 exact/min_family: 0.234375 / 0.06976744186046512
+  step900 exact/min_family: 0.203125 / 0.0
+  step1200 exact/min_family: 0.1875 / 0.0
+  step1500 exact/min_family: 0.21875 / 0.023255813953488372
+
+decision:
+  rejected
+
+metrics on 512-case final eval:
+  full_generation_exact: 0.189453125
+  think0_generation_exact: 0.029296875
+  full_minus_think0: 0.16015625
+  full_minus_worst_ablation: 0.146484375
+  min_family_generation_exact: 0.023391812865497075
+  full_minus_carrier_off: 0.10546875
+  state_reset_generation_exact: 0.015625
+  op_zero_generation_exact: 0.0
+  z_l_zero_generation_exact: 0.04296875
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.083984375
+
+by_family:
+  checksum: 0.49411764705882355
+  modchain: 0.023391812865497075
+  revchain: 0.05263157894736842
+
+interpretation:
+  The hard-family continuation improves full exact and strengthens causal
+  depth/ablation gaps, but it still fails L7 because modchain remains the
+  limiting family. The 128-case periodic gate briefly reached min-family 0.0698
+  at step600, so the direction is not useless; the next repair should focus
+  specifically on modchain while using 512-case periodic selection to avoid
+  accepting a small-sample family-floor artifact.
+```
+
+L7 modchain-focused continuation:
+
+```text
+report:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_modchain_focus_s900_20260515/report.json
+
+resume checkpoint:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_hardfamily_s1500_20260515/last.pt
+
+setup:
+  steps: 900
+  program_len: 7
+  task_families: modchain x7, revchain x3, checksum x1
+  family_dro_loss_weight: 0.12
+  periodic_eval_score_mode: family_floor
+  eval_during_training_cases: 512
+  eval_answer_space_argmax: true
+  lr: 1e-5
+
+periodic trend on 512-case eval:
+  step0 exact/min_family: 0.189453125 / 0.023391812865497075
+  step300 exact/min_family: 0.20703125 / 0.023391812865497075
+  step600 exact/min_family: 0.216796875 / 0.03508771929824561
+  step900 exact/min_family: 0.2578125 / 0.04678362573099415
+
+decision:
+  rejected
+
+metrics:
+  full_generation_exact: 0.2578125
+  think0_generation_exact: 0.025390625
+  full_minus_think0: 0.232421875
+  full_minus_worst_ablation: 0.212890625
+  min_family_generation_exact: 0.04678362573099415
+  full_minus_carrier_off: 0.16796875
+  state_reset_generation_exact: 0.015625
+  op_zero_generation_exact: 0.0
+  z_l_zero_generation_exact: 0.044921875
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.08984375
+
+by_family:
+  checksum: 0.6823529411764706
+  modchain: 0.04678362573099415
+  revchain: 0.04678362573099415
+
+interpretation:
+  This is the strongest len7 run so far. It remains rejected, but the failure
+  is now narrow: full exact is approaching the 0.30 threshold and the recursive
+  causal gaps are strong. The next shortest path is another low-LR hard-family
+  continuation, balanced between modchain and revchain, with 512-case periodic
+  family-floor selection. Do not change backbone/topology yet.
+```
+
+L7 balanced hard-family continuation:
+
+```text
+report:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_balanced_hard_s900_20260515/report.json
+
+resume checkpoint:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_modchain_focus_s900_20260515/last.pt
+
+setup:
+  steps: 900
+  program_len: 7
+  task_families: modchain x5, revchain x5, checksum x1
+  family_dro_loss_weight: 0.15
+  periodic_eval_score_mode: family_floor
+  eval_during_training_cases: 512
+  eval_answer_space_argmax: true
+  lr: 8e-6
+
+periodic trend on 512-case eval:
+  step0 exact/min_family: 0.2578125 / 0.04678362573099415
+  step300 exact/min_family: 0.248046875 / 0.029239766081871343
+  step600 exact/min_family: 0.244140625 / 0.017543859649122806
+  step900 exact/min_family: 0.23828125 / 0.03508771929824561
+
+decision:
+  rejected
+
+metrics:
+  full_generation_exact: 0.2578125
+  think0_generation_exact: 0.025390625
+  full_minus_think0: 0.232421875
+  full_minus_worst_ablation: 0.212890625
+  min_family_generation_exact: 0.04678362573099415
+  full_minus_carrier_off: 0.16796875
+  state_reset_generation_exact: 0.015625
+  op_zero_generation_exact: 0.0
+  z_l_zero_generation_exact: 0.044921875
+  z_h_zero_generation_exact: 0.0
+  carrier_off_generation_exact: 0.08984375
+
+by_family:
+  checksum: 0.6823529411764706
+  modchain: 0.04678362573099415
+  revchain: 0.04678362573099415
+
+interpretation:
+  Balanced continuation does not improve over the modchain-focused checkpoint.
+  The restored best checkpoint is step0, and later training degrades both full
+  exact and family floor. The next valid step is not another blind continuation;
+  run an operation/position/family breakdown for len7 modchain and revchain,
+  then repair the specific transition failure that the breakdown exposes.
+```
+
+L7 operation breakdown and reduced transition control:
+
+```text
+full-QTRM operation breakdown:
+  report:
+    local_eval/qtrm_native_l6_d256_revrepair_len7_opbreakdown_2048_20260515/report.json
+  eval cases: 2048
+  decision: rejected
+  full_generation_exact: 0.23291015625
+  min_family_generation_exact: 0.03513909224011713
+  full_minus_think0: 0.20166015625
+  full_minus_worst_ablation: 0.1904296875
+
+full-QTRM by_family:
+  checksum: 0.624633431085044
+  modchain: 0.03513909224011713
+  revchain: 0.03953147877013177
+
+worst modchain last-op slices:
+  op07: 0.0
+  op06: 0.010638297872340425
+  op05: 0.0297029702970297
+
+state-transition codec repair:
+  report:
+    local_eval/qtrm_native_l6_d256_revrepair_len7_state_transition_codec_s600_20260515/report.json
+  resume:
+    local_eval/qtrm_native_l6_d256_revrepair_len7_modchain_focus_s900_20260515/last.pt
+  decision: rejected
+  best checkpoint: step0
+  full_generation_exact: 0.2578125
+  min_family_generation_exact: 0.04678362573099415
+
+reduced transition control:
+  report:
+    local_eval/operation_order_transition_probe_len7_circular_trace_mod32_d256_s10000_20260515/report.json
+  decision:
+    accepted_operation_order_transition_diagnostic
+  full_generation_exact: 0.998046875
+  fwd: 0.998046875
+  rev: 0.998046875
+  transition_off_generation_exact: 0.0283203125
+  order_shuffle_generation_exact: 0.5166015625
+  state_reset_generation_exact: 0.0
+  full_minus_transition_off: 0.9697265625
+  full_minus_order_shuffle: 0.4814453125
+
+interpretation:
+  Program_len7 ordered recurrent transition is learnable. The full-QTRM failure
+  is therefore not an impossibility result and not a reason to abandon QTRM
+  native. The missing mechanism is a faithful transplant of the reduced
+  transition cell's causal recipe into the full token->core->LM path:
+  family-conditioned ordered op read, recurrent state update, circular value
+  manifold, and trace loss that directly supervises the state trajectory. Short
+  low-LR full-QTRM continuations and detached auxiliary codec heads are now
+  rejected as the shortest path.
+```
+
+Stronger full-QTRM transplant triage:
+
+```text
+report:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_transition_transplant_lr3e5_s1200_20260515/report.json
+
+resume:
+  local_eval/qtrm_native_l6_d256_revrepair_len7_modchain_focus_s900_20260515/last.pt
+
+setup:
+  lr: 3e-5
+  steps: 1200
+  program_len: 7
+  same nested dual-z core-carrier path
+  state_trace_depth_loss_weight: 0.5
+  core_step_codec_loss_weight: 0.2
+  core_step_op_codec_loss_weight: 0.1
+  core_step_position_codec_loss_weight: 0.05
+
+periodic trend:
+  step0 exact/min_family: 0.2578125 / 0.04678362573099415
+  step300 exact/min_family: 0.21484375 / 0.03508771929824561
+  step600 exact/min_family: 0.244140625 / 0.017543859649122806
+  step900 exact/min_family: 0.17578125 / 0.029239766081871343
+  step1200 exact/min_family: 0.244140625 / 0.04093567251461988
+
+decision:
+  rejected
+
+interpretation:
+  Raising LR and strengthening detached auxiliary state/value/op/position
+  losses still restores the initial checkpoint as best. The next step should be
+  a canonical transition-cell transplant inside the main core path, not another
+  stronger side-head continuation.
+```
+
+Qwen-assisted native language bootstrap:
+
+```text
+question:
+  Can Qwen3.5-2B be used to make a QTRM-native LM quickly through healing tune?
+
+answer:
+  Yes for language bootstrapping, no for proving QTRM-native reasoning by
+  itself. Qwen may provide tokenizer, initialization hints, cached logits, or
+  teacher distributions. It must not be present in the final inference path if
+  the result is called QTRM-native.
+
+native-allowed path:
+  Qwen tokenizer / text corpus / optional cached teacher logits
+  -> QTRM-native token embeddings
+  -> mandatory QTRM recursive core
+  -> native LM head
+  -> autoregressive text
+
+not native:
+  prompt -> Qwen donor forward -> donor hidden states/logits -> QTRM sidecar
+
+recommended stages:
+  1. Qwen tokenizer + QTRM-native LM smoke on ordinary text.
+  2. Offline Qwen top-k logit distillation or CE+KL language healing.
+  3. Core-on language non-regression: recurrence must not cause repetition.
+  4. Add raw reasoning gates only after the native text path is stable.
+  5. Promote only if Qwen is absent at inference and core ablations still matter.
+
+expectation:
+  This can make the native LM stop degenerating much faster than training from
+  scratch, but it will not instantly give Qwen-level knowledge or reasoning.
+  It is a language prior transfer, not a replacement for native recursive-core
+  acceptance.
+```
+
+Web reference update, 2026-05-15:
+
+```text
+Qwopus3.5-27B-v3:
+  Source:
+    https://huggingface.co/Jackrong/Qwopus3.5-27B-v3
+    https://github.com/R6410418/Jackrong-llm-finetuning-guide
+
+  Observed pattern:
+    Base model: Qwen/Qwen3.5-27B
+    Training: Unsloth + LoRA SFT
+    Masking: response-only training around assistant/<think> region
+    Data: high-fidelity reasoning/CoT/coding/chat distillation sets
+    Runtime: one merged/fine-tuned model, not a separate donor sidecar
+    Evidence for this model being a layer-stack frankenmerge: not found in the
+      model card. The public frankenmerge/heal-tune description found during
+      search refers to Qwopus-GLM-18B-Merged, a separate 64-layer merge of two
+      Qwen3.5-9B finetunes, followed by a 1000-step QLoRA healing run.
+
+  Meaning for QTRM:
+    Qwopus is a precedent for "donor-assisted but native-at-inference" only in
+    the teacher/data/initialization sense. It is not a precedent for keeping a
+    frozen donor forward pass inside the final architecture.
+
+  Useful pieces to copy:
+    1. response-only SFT mask;
+    2. high-quality reasoning scaffold data;
+    3. LoRA/QLoRA first, merge/export later;
+    4. teacher-generated answer/continuation text as a language scaffold;
+       visible CoT must not be copied into QTRM-native language bootstrap;
+    5. benchmark before/after against the base model.
+
+  Not enough for our claim:
+    Qwopus improves a Qwen-family model by post-training. It does not prove a
+    new QTRM-native recurrent architecture. For us, Qwen/Qwopus should be a
+    language/reasoning teacher used offline; final inference must still be:
+
+      prompt tokens
+      -> QTRM-native embeddings
+      -> mandatory nested dual-z recurrent core
+      -> native LM head
+      -> autoregressive text
+```
+
+Language-first bootstrap literature update, 2026-05-15:
+
+```text
+decision:
+  Temporarily prioritize QTRM-native language viability before more L7
+  reasoning continuation. A recursive core that cannot render ordinary text
+  cannot yet be promoted as a general LM path.
+
+literature-backed recipe:
+  1. TinyStories-style coherent-text curriculum for non-degenerate generation.
+  2. Textbooks/phi-style high-quality educational synthetic data instead of
+     broad noisy web first.
+  3. FineWeb-Edu/DCLM-style filtering, deduplication, and model-based data
+     quality selection for the next corpus.
+  4. Offline Qwen/Qwopus teacher cache with CE + reverse-KL or calibrated
+     sparse-logit KD; avoid tiny top-k-only KL because it can miscalibrate.
+  5. GKD-style on-policy repair on QTRM-native generated mistakes.
+  6. Add Orca/distilling-step-by-step reasoning traces only after language
+     acceptance, and do not put visible CoT into the language surface channel.
+  7. Use GaLore/ReLoRA-style memory-efficient full native learning if optimizer
+     memory blocks full training.
+
+sources:
+  TinyStories:
+    https://huggingface.co/papers/2305.07759
+  Textbooks Are All You Need / phi:
+    https://www.microsoft.com/en-us/research/publication/textbooks-are-all-you-need/
+    https://arxiv.org/abs/2309.05463
+  FineWeb-Edu / DCLM:
+    https://huggingface.co/papers/2406.17557
+    https://arxiv.org/abs/2406.11794
+  MiniLLM / GKD:
+    https://www.microsoft.com/en-us/research/publication/knowledge-distillation-of-large-language-models/
+    https://huggingface.co/papers/2306.13649
+  Pretraining and sparse-logit distillation:
+    https://aclanthology.org/2025.acl-long.181.pdf
+    https://aclanthology.org/2025.acl-long.885.pdf
+  Reasoning-trace distillation:
+    https://arxiv.org/abs/2306.02707
+    https://arxiv.org/abs/2305.02301
+  Memory-efficient native learning:
+    https://arxiv.org/abs/2403.03507
+    https://arxiv.org/abs/2307.05695
+```
+
+Implemented language-first bootstrap tooling:
+
+```text
+files:
+  scripts/354_train_qtrm_native_language_bootstrap.py
+  scripts/354_run_qtrm_native_language_bootstrap.sh
+  tests/test_qtrm_native_language_bootstrap.py
+
+capabilities:
+  - donorless QTRM-native CE training on built-in TinyStories/textbook-style
+    bilingual seed corpus;
+  - optional external text, teacher text, and teacher JSONL ingestion;
+  - optional Hugging Face tokenizer via --tokenizer-name;
+  - depth sweep / core-off eval / repetition metrics;
+  - on-policy candidate JSONL export for later GKD-style repair.
+
+verification:
+  PYTHONPATH=src .venv/bin/python -m py_compile \
+    scripts/354_train_qtrm_native_language_bootstrap.py
+  PYTHONPATH=src .venv/bin/python -m unittest \
+    tests.test_qtrm_native_language_bootstrap \
+    tests.test_qtrm_native_text_probe
+  git diff --check
+
+smoke:
+  local_eval/qtrm_native_language_bootstrap_smoke/report.json
+  accepted: true under permissive 2-step smoke thresholds only
+
+CUDA triage:
+  report:
+    local_eval/qtrm_native_language_bootstrap_triage_20260515/report.json
+
+  decision:
+    accepted
+
+  metrics:
+    tiny_last_loss: 2.1199
+    edu_last_loss: 1.3097
+    think_eval_loss_depth4: 1.5084
+    think0_loss: 3.2798
+    thinking_block_off_loss: 3.2798
+    depth0: 3.2798
+    depth1: 2.7307
+    depth2: 2.1051
+    depth4: 1.5084
+    unique_chars: 26
+    max_run_fraction: 0.0168
+
+conclusion:
+  First positive language-first native bootstrap signal. This does not prove
+  broad language ability, but it shows the donorless QTRM-native LM path can
+  learn a clean text curriculum quickly and that recurrent depth can reduce LM
+  loss. Next step is Qwen tokenizer + offline Qwen/Qwopus teacher artifacts.
+
+Qwen tokenizer smoke:
+  report:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_smoke/report.json
+
+  result:
+    accepted: true under permissive tokenizer-smoke thresholds
+    tokenizer_kind: hf
+    tokenizer_name: Qwen/Qwen3.5-2B-Base
+    vocab_size: 248077
+
+  interpretation:
+    The HF/Qwen tokenizer path is wired through the donorless native LM.
+    This is not a quality claim because the one-step run remains near random
+    loss. It only clears the next implementation step: real Qwen-tokenized
+    native CE/KD training.
+
+Offline teacher cache pipeline:
+  files:
+    scripts/355_build_qtrm_language_teacher_cache.py
+    scripts/355_build_qtrm_language_teacher_cache.sh
+    tests/test_qtrm_language_teacher_cache.py
+
+  schema:
+    prompt: instruction prompt for teacher only
+    seed_text: clean source text
+    answer: teacher continuation
+    text / teacher_text: seed_text + answer, used by QTRM-native bootstrap
+
+  quality guards:
+    /no_think switch, visible <think> suppression, think-block stripping,
+    think-leak rejection, repetition filter, and minimum answer length.
+
+  dry-run:
+    local_eval/qtrm_language_teacher_cache_dryrun_v2/teacher_text.jsonl.report.json
+
+  real Qwen2B smoke:
+    local_eval/qtrm_language_teacher_cache_qwen2b_smoke_v3/teacher_text.jsonl.report.json
+    written: 2 records
+    model: Qwen/Qwen3.5-2B-Base
+
+  interop smoke:
+    local_eval/qtrm_native_language_bootstrap_teacher_jsonl_qwen_tokenizer_smoke_v3/report.json
+    result: accepted under permissive 2-step smoke thresholds
+
+  conclusion:
+    The offline teacher artifact path is now usable:
+    Qwen teacher -> clean teacher JSONL -> Qwen tokenizer -> donorless
+    QTRM-native bootstrap. This is the required bridge before longer native
+    language training.
+
+Teacher boundary correction:
+  User correctly pointed out that QTRM-native is not a language-space CoT model.
+  The language bootstrap teacher is therefore restricted to clean surface
+  continuation/answer text. Visible CoT and <think> content are contamination
+  for this stage.
+
+  Code change:
+    scripts/354_train_qtrm_native_language_bootstrap.py now strips visible
+    think blocks and explicit reasoning labels from teacher text/JSONL before
+    building stage C. scripts/355 remains continuation-only and keeps the
+    generation instruction out of teacher_text.
+
+  Architecture rule:
+    Reasoning must be proven through latent recurrent depth and destructive
+    ablations. Teacher traces, if ever used, are diagnostics or latent/core
+    supervision, not visible answer text.
+
+Language generation quality check:
+  question:
+    Does the current QTRM-native bootstrap generate language well?
+
+  answer:
+    Not yet. It now avoids the earlier character/token collapse and can learn a
+    tiny clean bilingual curriculum, but the Qwen-tokenized surface-answer run
+    still replays the same short User/Assistant blocks. That is prompt-pattern
+    memorization, not broad language ability.
+
+  strict report:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_surface_strict_s1200_20260515/report.json
+
+  decision:
+    rejected
+
+  reject reason:
+    on_policy_unique_line_fraction_too_low
+
+  metrics:
+    stage_a_tiny_last_loss: 2.1382
+    stage_b_edu_last_loss: 0.0939
+    stage_c_teacher_last_loss: 0.0942
+    think_eval_loss_depth4: 0.4016
+    think0_loss: 2.0356
+    depth0: 2.0356
+    depth1: 0.6014
+    depth2: 0.4317
+    depth4: 0.4016
+    on_policy_unique_line_fraction:
+      seed0: 0.4286
+      seed1: 0.4286
+      seed2: 0.5000
+
+  interpretation:
+    The recurrent core is causally useful for next-token loss on this tiny
+    corpus, but current generation quality is still only a language-viability
+    signal. The next real language gate must use a larger, more diverse
+    answer-only corpus and must reject sample loops, not just repeated
+    characters.
+
+  code change:
+    scripts/354_train_qtrm_native_language_bootstrap.py now adds on-policy
+    line/block-loop metrics and rejects low unique-line-fraction samples.
+    tests/test_qtrm_native_language_bootstrap.py covers replay detection.
+
+Qwen-tokenized instruction/EOS bootstrap repair:
+  problem:
+    The first strict surface-answer run stopped fixed block replay only after
+    adding EOS boundaries, but one heldout instruction produced an extra
+    `Assistant:` marker inside the answer. That was a false accept because the
+    model was still crossing record boundaries.
+
+  code changes:
+    scripts/336_train_qtrm_native_text_probe.py stops greedy generation when
+    the tokenizer exposes eos_token_id and predicts EOS.
+
+    scripts/354_train_qtrm_native_language_bootstrap.py adds:
+      - deterministic diverse answer-only snippets;
+      - Qwen-tokenized auto record separator `<|endoftext|>`;
+      - heldout/paraphrase instruction seeds;
+      - on-policy answer-surface checks for minimum continuation length,
+        next User leakage, extra Assistant markers, and visible think leakage.
+
+  rejected control:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_heldout_eos_strict_v2_s1200_20260515/report.json
+
+    decision: rejected
+    reject_reason: on_policy_extra_assistant_marker
+
+  accepted repair:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_heldout_eos_repair_s1200_20260515/report.json
+
+    decision: accepted_qtrm_native_language_bootstrap
+    think_eval_loss_depth4: 0.3330
+    think0_loss: 2.3638
+    depth0: 2.3638
+    depth1: 0.6556
+    depth2: 0.3735
+    depth4: 0.3330
+    full_vs_think0: 0.1409
+    full_vs_best_shallow_depth: 0.8915
+
+  accepted on-policy samples:
+    User: Why should evidence be checked?
+    Assistant: Evidence should be checked because unsupported claims can sound
+    convincing while still being wrong.
+
+    User: How can writing become clearer?
+    Assistant: Writing becomes clearer when sentences are short, subjects are
+    explicit, and reasons are connected.
+
+    User: 좋은 답변은 무엇인가요?
+    Assistant: 좋은 답변은 질문에 직접 답하고, 근거를 분명히 말하며, 모르면
+    추측하지 않는 답변이다.
+
+  interpretation:
+    This is the first clean Qwen-tokenized QTRM-native instruction/EOS
+    bootstrap result. It proves only a tiny controlled language surface:
+    prompt tokens -> native embeddings -> recurrent core -> LM logits -> short
+    answer -> EOS. It does not yet prove broad language ability, semantic
+    generalization, or open-domain instruction following.
+
+Semantic relevance gate addition:
+  problem:
+    The instruction/EOS bootstrap could still pass on form alone. A fluent
+    answer that stays inside one record but answers the wrong topic would be a
+    false accept.
+
+  code changes:
+    scripts/354_train_qtrm_native_language_bootstrap.py adds
+    `--repair-seed-expectations` and `--min-on-policy-keyword-hits`. For each
+    controlled heldout prompt, the on-policy answer must contain enough
+    expected semantic keywords. This is a small controlled relevance gate, not
+    a broad semantic evaluator.
+
+  accepted semantic repair:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_semantic_eos_repair_s1200_20260515/report.json
+
+    decision: accepted_qtrm_native_language_bootstrap
+    think_eval_loss_depth4: 0.3330
+    think0_loss: 2.3638
+    depth0: 2.3638
+    depth1: 0.6556
+    depth2: 0.3735
+    depth4: 0.3330
+
+  semantic hits:
+    Why should evidence be checked?:
+      matched: evidence, unsupported, claims, wrong
+    How can writing become clearer?:
+      matched: writing, sentences, subjects, reasons
+    좋은 답변은 무엇인가요?:
+      matched: 좋은 답변, 질문, 근거, 추측
+
+  current claim:
+    QTRM-native now has a minimal Qwen-tokenized controlled instruction
+    bootstrap with EOS stopping, marker-leak rejection, loop rejection, and
+    keyword-level semantic relevance. This is still a tiny language scaffold,
+    not a broad LM.
+
+TiDAR relevance check:
+  paper:
+    TiDAR: Think in Diffusion, Talk in Autoregression
+    https://arxiv.org/abs/2511.08923
+
+  verdict:
+    Useful, but later. It is not the next fix for QTRM-native language
+    acquisition or raw recursive reasoning. It is a strong candidate for a
+    future decoder/throughput stage once AR greedy QTRM-native generation is
+    stable.
+
+  useful idea:
+    diffusion-style parallel draft tokens plus autoregressive final
+    verification/sampling in one model forward.
+
+  QTRM boundary:
+    Keep final answer generation as:
+      prompt tokens -> native embeddings -> mandatory recurrent core -> LM
+      logits -> AR text
+
+    Only add TiDAR-style draft slots if the recurrent core remains causally
+    necessary and ablations reduce the same final answer metric.
+
+Language generalization gate:
+  question:
+    Can we prove broad/general language ability today?
+
+  answer:
+    No. We can prove a small controlled scaffold today, but the first heldout
+    paraphrase generalization gate rejects.
+
+  new eval script:
+    scripts/356_eval_qtrm_native_language_generalization.py
+
+  evaluated checkpoint:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_semantic_eos_repair_s1200_20260515/last.pt
+
+  report:
+    local_eval/qtrm_native_language_generalization_gate_semantic_repair_20260515/report.json
+
+  decision:
+    rejected
+
+  reject reason:
+    on_policy_semantic_relevance_too_low
+
+  details:
+    source paraphrase:
+      answer was well formed and stopped at EOS, but matched only `source`
+      rather than at least two of source/trust/evidence.
+
+    short-sentence paraphrase:
+      answer was grammatical, but matched only `sentences` rather than at least
+      two of sentences/readers/clear.
+
+    Korean trustworthiness prompt:
+      passed the local keyword threshold with 근거 and 출처.
+
+    weak-evidence prompt:
+      answer was on topic, but matched only `evidence` rather than at least two
+      of evidence/weak/guess.
+
+  interpretation:
+    The model has learned a tiny answer style and EOS discipline. It has not
+    yet learned robust semantic paraphrase generalization. Today's honest claim
+    remains controlled language bootstrap, not broad language ability.
+
+Paraphrase curriculum repair:
+  change:
+    Added controlled paraphrase examples for the failed generalization prompts
+    into the answer-only surface curriculum.
+
+  repaired checkpoint:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_paraphrase_repair_s1200_20260515/last.pt
+
+  bootstrap report:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_paraphrase_repair_s1200_20260515/report.json
+
+  bootstrap decision:
+    accepted_qtrm_native_language_bootstrap
+
+  generalization report:
+    local_eval/qtrm_native_language_generalization_gate_paraphrase_repair_20260515/report.json
+
+  generalization decision:
+    accepted_language_generalization
+
+  generalization samples:
+    User: Why is checking a source important?
+    Assistant: Checking a source helps decide whether evidence is trustworthy
+    and relevant.
+
+    User: How do short sentences help readers?
+    Assistant: Short sentences help readers because clear wording reduces
+    confusion.
+
+    User: 무엇이 답변을 믿을 만하게 만드나요?
+    Assistant: 믿을 만한 답변은 분명한 근거와 확인 가능한 출처를 함께
+    제시한다.
+
+    User: How should a model respond when evidence is weak?
+    Assistant: When evidence is weak, a model should avoid guessing and ask for
+    stronger support.
+
+  interpretation:
+    The immediate paraphrase semantic gate can be repaired quickly by adding a
+    small paraphrase curriculum. This is progress toward language
+    generalization, but it is still controlled curriculum generalization, not
+    open-domain or broad language ability.
+
+Unseen2 generalization stress:
+  goal:
+    Test whether the paraphrase-repaired checkpoint generalizes beyond the
+    exact repaired prompts.
+
+  report:
+    local_eval/qtrm_native_language_generalization_gate_unseen2_paraphrase_repair_20260515/report.json
+
+  decision:
+    rejected
+
+  failure:
+    English claims/source and paragraph prompts partially passed, but Korean
+    anti-guessing and English uncertain-facts prompts failed semantic keyword
+    relevance.
+
+Uncertainty-family repair:
+  change:
+    Added answer-only examples for weak evidence, uncertainty, avoiding
+    guessing, and Korean anti-guessing prompts.
+
+  repaired checkpoint:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_uncertainty_repair_s1200_20260515/last.pt
+
+  bootstrap report:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_uncertainty_repair_s1200_20260515/report.json
+
+  bootstrap decision:
+    accepted_qtrm_native_language_bootstrap
+
+  unseen2 report:
+    local_eval/qtrm_native_language_generalization_gate_unseen2_uncertainty_repair_20260515/report.json
+
+  unseen2 decision:
+    rejected
+
+  result:
+    Uncertainty and Korean anti-guessing recovered, but the paragraph/readers
+    prompt regressed to a generic "good answer" response and matched only
+    `clear`.
+
+  interpretation:
+    This exposes a small-model/curriculum balance bottleneck: adding a new
+    semantic family repairs that family but can weaken another. The next
+    implementation should use family-balanced sampling or a larger/diverse
+    external answer-only dataset, rather than appending isolated hand examples.
+```
+
+```text
+Family-balanced language curriculum:
+  goal:
+    Test whether round-robin balancing across answer families prevents the
+    uncertainty repair from regressing the paragraph/readers family.
+
+  change:
+    Refactored the built-in surface-answer curriculum into explicit families
+    and sampled them round-robin instead of appending isolated examples.
+
+  bootstrap report:
+    local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_family_balanced_s1200_20260515/report.json
+
+  bootstrap decision:
+    accepted_qtrm_native_language_bootstrap
+
+  key depth/loss metrics:
+    think_eval_loss_depth4: 0.3257
+    think0_loss: 2.6102
+    depth0: 2.6102
+    depth1: 0.7299
+    depth2: 0.3802
+    depth4: 0.3257
+    full_vs_think0: 0.1248
+
+  unseen2 report:
+    local_eval/qtrm_native_language_generalization_gate_unseen2_family_balanced_20260515/report.json
+
+  unseen2 decision:
+    rejected
+
+  unseen2 result:
+    paragraph/readers recovered:
+      matched readers, paragraph, clear
+
+    Korean anti-guessing retained:
+      matched 답변, 추측, 근거
+
+    uncertain-facts retained:
+      matched facts, uncertain, guess
+
+    claims/source regressed:
+      generated a short-sentence answer and matched none of claims/trust/support
+
+  interpretation:
+    Family balancing reduced one interference mode but did not prove robust
+    semantic generalization. The model is now a small controlled language
+    scaffold with causal depth gains, not a broad/general LM. The next valid
+    repair is family-DRO or a larger external answer-only dataset, followed by
+    the same unseen stress gate and core-depth/core-off non-regression checks.
+```
+
+```text
+External dataset policy for language bootstrap:
+  decision:
+    When the QTRM-native language bottleneck is semantic-family interference,
+    answer-family routing, Korean/English coverage, or open-domain fluency,
+    external datasets should be downloaded/sampled immediately instead of
+    hand-authoring more tiny examples.
+
+  approved offline dataset families:
+    instruction/answer:
+      HuggingFaceH4/ultrachat_200k default/train_sft
+
+    educational/general text:
+      HuggingFaceFW/fineweb-edu sample-10BT/train or equivalent DCLM/FineWeb-Edu
+
+    Korean instruction:
+      beomi/KoAlpaca-v1.1a default/train
+      FreedomIntelligence/alpaca-gpt4-korean default/train if more Korean
+      coverage is needed
+
+  implemented builder:
+    scripts/357_build_external_language_corpus.py
+
+  first built artifact:
+    local_eval/external_language_corpus/qtrm_native_external_mix_20260515.jsonl
+
+  first artifact report:
+    local_eval/external_language_corpus/qtrm_native_external_mix_20260515.jsonl.report.json
+
+  first artifact size:
+    records: 1072
+    chars: 851315
+    UltraChat records: 752
+    FineWeb-Edu records: 160
+    KoAlpaca records: 160
+
+  required boundary:
+    External data is offline training/evaluation data only. It must not add a
+    runtime donor, hidden retrieval path, sidecar answer solver, visible CoT
+    target, or teacher reasoning prose. Use explicit EOS/record separators,
+    filter `<think>` leakage, keep provenance reports, and re-run unseen family
+    stress plus native core depth/core-off non-regression.
+```
+
+```text
+External dataset language experiments, 2026-05-15:
+  first external mix:
+    corpus:
+      local_eval/external_language_corpus/qtrm_native_external_mix_20260515.jsonl
+
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_mix_s1600_20260515/report.json
+
+    decision:
+      accepted_qtrm_native_language_bootstrap
+
+    result:
+      unseen2 passed after the external corpus recovered claims/support/trust.
+
+    unseen2 gate:
+      local_eval/qtrm_native_language_generalization_gate_unseen2_external_mix_20260515/report.json
+
+    unseen3 gate:
+      local_eval/qtrm_native_language_generalization_gate_unseen3_external_mix_20260515/report.json
+
+    unseen3 decision:
+      rejected. Wider prompts still route to the wrong answer family.
+
+  external-dominant run:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_dominant_s2600_20260515/report.json
+
+    decision:
+      rejected
+
+    failure:
+      Free seed collapsed to repeated `100000...` despite better eval loss and
+      depth gains. More external-stage steps alone are not sufficient.
+
+  EOS-separated external-dominant run:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_dominant_eos_s2600_20260515/report.json
+
+    decision:
+      rejected
+
+    failure:
+      Explicit EOS JSONL record boundaries did not remove the repeated-number
+      collapse or Korean extra-Assistant marker leakage.
+
+  balanced external corpus:
+    corpus:
+      local_eval/external_language_corpus/qtrm_native_external_balanced_20260515.jsonl
+
+    corpus report:
+      local_eval/external_language_corpus/qtrm_native_external_balanced_20260515.jsonl.report.json
+
+    size:
+      records: 1200
+      chars: 860516
+      UltraChat: 400
+      FineWeb-Edu: 400
+      KoAlpaca: 400
+
+    builder change:
+      scripts/357_build_external_language_corpus.py now supports
+      --max-records-per-source to avoid UltraChat multi-turn dominance.
+
+  balanced d128 run:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_s1900_20260515/report.json
+
+    decision:
+      accepted bootstrap, but unseen3 rejected.
+
+    failure:
+      The model still selected memorized small answer templates for many wider
+      prompts.
+
+  balanced d256 run:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_d256_s1900_20260515/report.json
+
+    decision:
+      rejected
+
+    failure:
+      Doubling d_model did not fix semantic routing; the Korean default repair
+      lost required keywords.
+
+  tied embedding run:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_tied_s1900_20260515/report.json
+
+    decision:
+      rejected
+
+    failure:
+      Weight tying reduced some surface marker problems and improved Korean
+      repair, but evidence-family relevance failed.
+
+  current diagnosis:
+    External data helps: the first external mix passed unseen2 where the
+    hand/family-balanced corpus failed. But broad language is still blocked by
+    tiny-model semantic routing over a 248k Qwen vocabulary. The next valid
+    repair should test tokenizer/vocab pressure directly: reduced/custom
+    tokenizer, staged active-vocab curriculum, or stronger sampled softmax/KD
+    before claiming broad language ability.
+```
+
+```text
+Tokenizer-pressure experiments for QTRM-native language, 2026-05-15:
+  implementation:
+    scripts/354_train_qtrm_native_language_bootstrap.py now supports:
+      --compact-hf-vocab
+      --train-byte-bpe-tokenizer
+      --repair-jsonl / --repair-jsonl-repeats
+
+    scripts/356_eval_qtrm_native_language_generalization.py can restore
+    hf_compact and byte_bpe tokenizer payloads from checkpoints.
+
+  compact Qwen active-vocab result:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_compact_s1900_20260515/report.json
+
+    decision:
+      accepted bootstrap
+
+    metrics:
+      vocab_size: 20000
+      think_eval_loss_depth4: 5.1484
+      think0_loss: 6.8756
+
+    unseen2:
+      local_eval/qtrm_native_language_generalization_gate_unseen2_external_balanced_compact_20260515/report.json
+
+    unseen2 decision:
+      rejected
+
+    diagnosis:
+      Active-vocab compression reduced output geometry pressure, but did not
+      fix semantic-family routing. The claims/source prompt routed to a short
+      sentence family.
+
+  char tokenizer result:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_char_eos_s2600_20260515/report.json
+
+    decision:
+      rejected
+
+    metrics:
+      vocab_size: 1457
+      think_eval_loss_depth4: 2.8592
+      think0_loss: 5.5174
+
+    diagnosis:
+      Character vocab gives very strong depth/loss gains and explicit EOS stops
+      cross-record continuation, but surface language remains loose and can emit
+      extra Assistant markers. Pure char is therefore diagnostic, not the
+      canonical language path.
+
+  byte-level BPE 8k result:
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_byte_bpe8k_s1900_20260515/report.json
+
+    decision:
+      accepted_qtrm_native_language_bootstrap
+
+    metrics:
+      vocab_size: 8192
+      think_eval_loss_depth4: 5.6739
+      think0_loss: 7.4152
+      depth0: 7.4152
+      depth1: 6.8573
+      depth2: 5.9902
+      depth4: 5.6739
+
+    unseen2/unseen3:
+      rejected with one semantic-family miss each.
+
+    diagnosis:
+      Byte-BPE is the best tokenizer direction so far: it avoids Qwen's huge LM
+      head and avoids char-level broken surface text. Remaining failure is
+      semantic-family coverage/routing, not tokenizer OOV.
+
+  byte-level BPE 8k + repair oversampling:
+    repair data:
+      local_eval/qtrm_native_language_repair_unseen_failures_20260515.jsonl
+
+    bootstrap:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_byte_bpe8k_repair_s1900_20260515/report.json
+
+    decision:
+      accepted_qtrm_native_language_bootstrap
+
+    metrics:
+      vocab_size: 8192
+      think_eval_loss_depth4: 4.2884
+      think0_loss: 7.0308
+      depth0: 7.0308
+      depth1: 5.4790
+      depth2: 4.6146
+      depth4: 4.2884
+      full_vs_think0: 0.6099
+
+    accepted near-unseen gates:
+      local_eval/qtrm_native_language_generalization_gate_unseen2_external_balanced_byte_bpe8k_repair_20260515/report.json
+      local_eval/qtrm_native_language_generalization_gate_unseen3_external_balanced_byte_bpe8k_repair_20260515/report.json
+
+    rejected wider paraphrase gate:
+      local_eval/qtrm_native_language_generalization_gate_unseen4_external_balanced_byte_bpe8k_repair_20260515/report.json
+
+    wider paraphrase failure:
+      More distant paraphrases still route to nearby memorized templates
+      such as stable-result, plan, or short-reason answers. One comparison
+      prompt also leaked an extra Assistant marker.
+
+  current conclusion:
+    The strongest language bootstrap checkpoint is:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_byte_bpe8k_repair_s1900_20260515/last.pt
+
+    It proves a donorless QTRM-native LM path can produce coherent answer text
+    with causal recurrent depth gains on a small bilingual/educational corpus.
+    It does not yet prove broad/general language ability. The next required
+    step is not another backbone change; it is a larger paraphrase-diverse
+    answer-only corpus plus a fixed broad unseen suite, then the same core-depth
+    and thinking-block-off checks.
+```
+
+```text
+Qwen3 multilingual lesson and broad unseen suite, 2026-05-15:
+  external reference:
+    Qwen3 Technical Report / official Qwen3 blog
+
+  Qwen3 facts to internalize:
+    multilingual support:
+      119 languages and dialects
+
+    pretraining:
+      about 36T tokens, roughly twice Qwen2.5's reported 18T tokens
+
+    training structure:
+      staged pretraining for base language/general knowledge, then stronger
+      knowledge/STEM/code/reasoning mixture, then long-context data
+
+    post-training:
+      thinking and non-thinking modes are integrated through a multi-stage
+      post-training pipeline.
+
+  consequence for QTRM-native:
+    Broad multilingual language is hard. It cannot be inferred from a 1200-row
+    bilingual corpus, a successful near-unseen gate, or MSA memory wiring.
+    The immediate bottleneck is still language coverage/semantic paraphrase
+    routing, not long-memory architecture.
+
+  implementation:
+    scripts/356_eval_qtrm_native_language_generalization.py now supports:
+      --eval-jsonl
+
+    fixed broad suite:
+      data/eval/qtrm_native_language_broad_unseen_20260515.jsonl
+
+    broad suite report:
+      local_eval/qtrm_native_language_generalization_gate_broad_unseen_byte_bpe8k_repair_20260515/report.json
+
+    broad suite decision:
+      rejected
+
+    reasons:
+      on_policy_semantic_relevance_too_low
+      on_policy_extra_assistant_marker
+      on_policy_repeated_block_loop
+
+  MSA ordering decision:
+    Do not start canonical work with MSA now. MSA is a later long-context /
+    trainable-memory stage. First expand multilingual answer-only data, pass
+    the fixed broad unseen suite, and keep the recurrent depth/core-off
+    advantage. Only then add MSA/LM2 memory gates with memory_off/router_off/
+    chunk_shuffle ablations.
+```
+
+```text
+Bilingual-first target, 2026-05-15:
+  decision:
+    The first practical QTRM-native language target is English + Korean, not
+    all Qwen3-supported languages.
+
+  rationale:
+    English provides broad technical/general coverage. Korean is required for
+    the user's target use. Additional languages should be added later through
+    language-balanced data shards and matching evaluation suites, without
+    changing the core architecture.
+
+  new fixed suite:
+    data/eval/qtrm_native_language_bilingual_core_20260515.jsonl
+
+  promotion rule:
+    A language checkpoint is not bilingual-ready until it passes this suite,
+    passes broad paraphrase stress, and keeps the same depth4/core-on advantage
+    over think0/thinking-block-off.
+
+  current checkpoint result:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_external_balanced_byte_bpe8k_repair_s1900_20260515/last.pt
+
+    report:
+      local_eval/qtrm_native_language_generalization_gate_bilingual_core_byte_bpe8k_repair_20260515/report.json
+
+    decision:
+      rejected
+
+    reasons:
+      on_policy_answer_too_short
+      on_policy_semantic_relevance_too_low
+
+    diagnosis:
+      English evidence/uncertainty/comparison examples partially work, but
+      writing/date/repeated-test paraphrases still route to memorized nearby
+      families. Korean is weaker: several prompts produce short or off-topic
+      answers. The next repair is a larger English/Korean paraphrase-diverse
+      answer-only corpus, not MSA.
+```
+
+```text
+QTRM-native bilingual language scaffold accepted, 2026-05-15:
+  checkpoint:
+    local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_repairv4_s4200_20260515/last.pt
+
+  training report:
+    local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_repairv4_s4200_20260515/report.json
+
+  bootstrap decision:
+    accepted_qtrm_native_language_bootstrap
+
+  depth metrics:
+    depth0_loss: 4.3664
+    depth1_loss: 0.9404
+    depth2_loss: 0.1629
+    depth4_loss: 0.0646
+
+  evaluator fix:
+    scripts/356_eval_qtrm_native_language_generalization.py now supports
+    expected_keyword_groups. This keeps each required meaning slot, but allows
+    valid paraphrases such as date/time, source/fact, claim/explanation, and
+    Korean equivalent phrases.
+
+  accepted fixed gates:
+    bilingual core:
+      local_eval/qtrm_native_language_generalization_gate_bilingual_core_bpe16k_d192_repairv4_groups_20260515/report.json
+
+    broad unseen:
+      local_eval/qtrm_native_language_generalization_gate_broad_unseen_bpe16k_d192_repairv4_groups_20260515/report.json
+
+  direct inference smoke:
+    command:
+      HF_HOME=/mnt/nvme1n1p2/hf-cache-qtrm PYTHONPATH=src bash scripts/359_infer_qtrm_native_language.sh "좋은 비교는 어떤 기준을 가져야 하나요?"
+
+    output:
+      좋은 비교는 중요한 기준을 정하고 그 기준을 근거와 연결해야 한다.
+
+  meaning:
+    This is the first donorless QTRM-native English/Korean language scaffold
+    that passes both fixed bilingual and broad-unseen answer gates. It proves
+    ordinary short answer generation is now viable through the native
+    token->recurrent-core->LM-logits path.
+
+  non-claim:
+    This is not yet broad open-domain language mastery. The next promotion
+    requires a larger external English/Korean corpus, wider heldout suites, and
+    the same depth/core-off non-regression checks.
+```
+
+```text
+External bilingual corpus expansion and TST intake, 2026-05-15:
+  larger corpus:
+    local_eval/external_language_corpus/qtrm_native_external_bilingual_4500_20260515.jsonl
+
+  report:
+    local_eval/external_language_corpus/qtrm_native_external_bilingual_4500_20260515.jsonl.report.json
+
+  records:
+    4500
+
+  chars:
+    3724434
+
+  source balance:
+    ultrachat:HuggingFaceH4/ultrachat_200k:default:train_sft: 1500
+    fineweb:HuggingFaceFW/fineweb-edu:sample-10BT:train: 1500
+    koalpaca:beomi/KoAlpaca-v1.1a:default:train: 1500
+
+  source errors:
+    none
+
+  builder hardening:
+    scripts/357_build_external_language_corpus.py now supports retry/backoff,
+    request delay, and --continue-on-source-error so a single Hugging Face
+    Dataset Viewer 429 does not destroy the whole run.
+
+  TST source:
+    Efficient Pre-Training with Token Superposition
+    https://arxiv.org/abs/2605.06546
+
+  local pdf:
+    references/papers/2605.06546-efficient-pre-training-with-token-superposition.pdf
+
+  QTRM mapping:
+    TST is a pretraining-efficiency objective, not an architecture replacement.
+    It should be used to accelerate QTRM-native language bootstrap while keeping
+    the final native token->recurrent-core->LM-logits inference path unchanged.
+
+  local primitive:
+    src/qtrm_mm/tst.py
+    tests/test_tst.py
+
+  next experiment:
+    Train a QTRM-native language checkpoint on the 4500-record corpus. Then add
+    a TST phase-1 smoke only if the larger-corpus baseline is recorded, so TST
+    is compared against a fair non-TST baseline instead of another moving target.
+```
+
+```text
+QTRM-native external4500 bilingual baseline accepted, 2026-05-15:
+  checkpoint:
+    local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_s3600_20260515/last.pt
+
+  training report:
+    local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_s3600_20260515/report.json
+
+  decision:
+    accepted_qtrm_native_language_bootstrap
+
+  corpus:
+    teacher_chars: 5621811
+    train_windows: 1260892
+    eval_windows: 222534
+
+  depth metrics:
+    depth0_loss: 5.3371
+    depth1_loss: 2.7944
+    depth2_loss: 1.7981
+    depth4_loss: 1.5977
+    thinking_block_off_loss: 5.3371
+
+  accepted gates:
+    bilingual:
+      local_eval/qtrm_native_language_generalization_gate_bilingual_core_bpe16k_d192_external4500_s3600_groups_v2_20260515/report.json
+
+    broad unseen:
+      local_eval/qtrm_native_language_generalization_gate_broad_unseen_bpe16k_d192_external4500_s3600_groups_v2_20260515/report.json
+
+  direct smoke:
+    English:
+      prompt: Why should a model avoid pretending to know?
+      output: A model should avoid pretending to know when facts are uncertain.
+
+    Korean:
+      prompt: 반복 실험은 왜 결과 판단에 도움이 되나요?
+      output: 반복 측정은 같은 패턴이 다시 나타나는지 보여 주어 과학적 판단을 돕는다.
+
+  promoted default inference:
+    scripts/359_infer_qtrm_native_language.py
+    scripts/359_infer_qtrm_native_language.sh
+
+  interpretation:
+    The larger corpus did not remove recurrent-depth benefit. This is the new
+    best small QTRM-native English/Korean language baseline before TST.
+
+  next:
+    Implement a TST phase-1 smoke against this exact baseline. Accept TST only
+    if it reaches comparable bilingual/broad gates faster or with lower token
+    budget while preserving depth/core-off gains.
+```
+
+```text
+TST b4 first smoke rejected, 2026-05-15:
+  checkpoint:
+    local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_tst_b4_s3600_20260515/last.pt
+
+  training report:
+    local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_tst_b4_s3600_20260515/report.json
+
+  implementation:
+    NativeQTRMETDLM now exposes forward_embeddings for embedding-level
+    superposition.
+
+    scripts/354_train_qtrm_native_language_bootstrap.py supports:
+      --tst-phase-steps
+      --tst-bag-size
+
+  TST stage:
+    objective: token_superposition_mce
+    bag_size: 4
+    steps: 600
+
+  bootstrap:
+    accepted
+
+  depth metrics:
+    depth0_loss: 5.0806
+    depth1_loss: 2.6386
+    depth2_loss: 1.8258
+    depth4_loss: 1.6433
+    thinking_block_off_loss: 5.0806
+
+  comparison to non-TST external4500 baseline:
+    baseline_depth4_loss: 1.5977
+    tst_depth4_loss: 1.6433
+    result: TST is slightly worse at this recipe.
+
+  heldout gates:
+    bilingual:
+      local_eval/qtrm_native_language_generalization_gate_bilingual_core_bpe16k_d192_external4500_tst_b4_s3600_20260515/report.json
+      decision: rejected
+
+    broad unseen:
+      local_eval/qtrm_native_language_generalization_gate_broad_unseen_bpe16k_d192_external4500_tst_b4_s3600_20260515/report.json
+      decision: rejected
+
+  decision:
+    Do not promote TST b4 as canonical. Keep the non-TST external4500 checkpoint
+    as the active language baseline.
+
+  next TST hypothesis:
+    The first TST recipe may have too large a bag or too little recovery. If
+    tested again, sweep bag_size=2 and smaller phase ratio, or add longer normal
+    recovery. Promotion still requires equal/better heldout gates plus
+    recurrent-depth non-regression.
+```
+
+```text
+TST b2 controlled sweeps rejected, 2026-05-15:
+  baseline:
+    local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_s3600_20260515/last.pt
+    depth4_loss: 1.5977
+    bilingual gate: accepted
+    broad unseen gate: accepted
+
+  b2 sweep:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_tst_b2_s3600_20260515/last.pt
+
+    recipe:
+      bag_size: 2
+      TST steps: 300
+      normal CE recovery: 2400
+
+    depth metrics:
+      depth0_loss: 5.2830
+      depth1_loss: 2.6461
+      depth2_loss: 1.7945
+      depth4_loss: 1.6091
+
+    heldout gates:
+      bilingual:
+        local_eval/qtrm_native_language_generalization_gate_bilingual_core_bpe16k_d192_external4500_tst_b2_s3600_20260515/report.json
+        decision: rejected
+        reason: on_policy_semantic_relevance_too_low
+        semantic_min: 0.0
+        semantic_avg: 2.5
+
+      broad unseen:
+        local_eval/qtrm_native_language_generalization_gate_broad_unseen_bpe16k_d192_external4500_tst_b2_s3600_20260515/report.json
+        decision: rejected
+        reason: on_policy_semantic_relevance_too_low
+        semantic_min: 1.0
+        semantic_avg: 2.6667
+
+  b2-short sweep:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_tst_b2_short_s3600_20260515/last.pt
+
+    recipe:
+      bag_size: 2
+      TST steps: 150
+      normal CE recovery: 2550
+
+    bootstrap:
+      accepted
+
+    depth metrics:
+      depth0_loss: 4.8512
+      depth1_loss: 2.7363
+      depth2_loss: 1.8471
+      depth4_loss: 1.6811
+
+    note:
+      This is worse than both b2 and the non-TST baseline. The generic sample
+      drifted into repeated broad phrases, so no heldout promotion run was
+      needed.
+
+  decision:
+    Do not promote TST as the current QTRM-native language bootstrap. Keep the
+    non-TST external4500 checkpoint as canonical.
+
+  consequence:
+    TST remains implemented as an offline experimental objective, but the next
+    practical path is larger/better English-Korean data and normal CE/GKD-style
+    repair, not more TST phase-ratio sweeps.
+```
+
+```text
+QTRM-native external9000 and continuation repair, 2026-05-15:
+  new corpus:
+    local_eval/external_language_corpus/qtrm_native_external_bilingual_9000_20260515.jsonl
+
+  corpus report:
+    local_eval/external_language_corpus/qtrm_native_external_bilingual_9000_20260515.jsonl.report.json
+
+  records:
+    UltraChat: 3000
+    FineWeb-Edu: 3000
+    KoAlpaca: 3000
+    total chars: 7434266
+    source_errors: {}
+
+  implementation:
+    scripts/354_train_qtrm_native_language_bootstrap.py now supports:
+      --init-checkpoint
+
+    This loads the prior model weights, model-shape args, and tokenizer payload
+    so low-LR repair can continue from a saved QTRM-native language checkpoint
+    instead of retraining from scratch.
+
+  external9000/s4200:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external9000_s4200_20260515/last.pt
+
+    depth4_loss:
+      3.0979
+
+    heldout:
+      bilingual rejected
+      broad unseen rejected
+
+    diagnosis:
+      underfit on the larger corpus.
+
+  external9000/s9900:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external9000_s9900_20260515/last.pt
+
+    depth metrics:
+      depth0_loss: 6.0801
+      depth1_loss: 3.5844
+      depth2_loss: 2.6406
+      depth4_loss: 2.3362
+
+    heldout:
+      bilingual rejected
+      broad unseen rejected
+
+    diagnosis:
+      longer CE improved the larger corpus, but it still did not beat the
+      external4500 canonical checkpoint and remained semantically unstable on a
+      few heldout families.
+
+  hard-only repair:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external9000_s9900_hardrepair_s1000_20260515/last.pt
+
+    result:
+      rejected on heldout
+
+    lesson:
+      hard-only oversampling fixed targeted families but caused retention loss.
+
+  replay-protected balanced repair:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external9000_s9900_balancedrepair_s800_20260515/last.pt
+
+    result:
+      rejected on heldout
+
+  micro repair:
+    checkpoint:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external9000_s9900_microrepair_s400_20260515/last.pt
+
+    result:
+      rejected on heldout
+
+    remaining failing prompts:
+      - What makes a repeated test useful?
+      - 출처의 날짜는 왜 중요한가요?
+      - 문장을 고칠 때 무엇을 먼저 확인해야 하나요?
+
+  decision:
+    Do not promote any external9000 checkpoint as canonical yet. Keep:
+      local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_external4500_s3600_20260515/last.pt
+
+  consequence:
+    The next useful experiment is not more blind repair. It should change the
+    objective/curriculum so broad semantic slots are retained while adding
+    larger data, for example mixed replay during normal CE, per-family sampling,
+    or an evaluator-driven repair builder that automatically includes all
+    currently failed families plus retained accepted families.
+```
+
+## 2026-05-15 - Qwen-Width 4090 Optimizer Preflight
+
+Decision:
+
+```text
+Use GaLore 8-bit as the first 4090 full-ish training path for QTRM-native
+Qwen-width experiments.
+```
+
+Why:
+
+```text
+GaLore directly targets full-parameter learning under consumer 24GB GPU memory
+limits. In this repo it is also the shortest reproducible path because
+galore-torch installed cleanly and bitsandbytes was already present.
+```
+
+Implemented:
+
+```text
+src/qtrm_mm/training_optimizers.py
+
+New optimizer flags are available in:
+  scripts/336_train_qtrm_native_text_probe.py
+  scripts/354_train_qtrm_native_language_bootstrap.py
+  scripts/335_train_qtrm_native_etd_probe.py
+
+Supported:
+  auto
+  adamw
+  adamw8bit
+  paged_adamw8bit
+  galore_adamw
+  galore_adamw8bit
+```
+
+Preflight:
+
+```text
+path:
+  local_eval/qtrm_native_qwenwidth_galore_preflight_s1_20260515/report.json
+
+settings:
+  d_model: 2048
+  d_ff: 6144
+  n_heads: 8
+  compact Qwen vocab: 4096
+  Qwen pretrained embedding rows: initialized into native embeddings
+  runtime donor: false
+  optimizer: auto -> galore_adamw8bit
+
+result:
+  one CUDA training step completed on RTX 4090
+  trainable params: 134,428,673
+  GaLore params: 134,217,728
+
+quality:
+  rejected, as expected for a 1-step preflight
+```
+
+Consequence:
+
+```text
+The 4090 path is viable for Qwen-width QTRM-native scaffolds, but GaLore has a
+large first-step projection/SVD cost. Next runs should either accept that cost
+for longer training, lower rank, increase update_proj_gap, or compare AdamW8bit
+and APOLLO/BAdam.
+```
+
+## 2026-05-15 - Qwen3.5-Style Hybrid Backend Stabilization
+
+Decision:
+
+```text
+For QTRM-native Qwen3.5-style hybrid runs on RTX 4090, use:
+
+  --delta-backend fla_gated_delta
+  --strict-backends
+  --optimizer adamw8bit for backend/runtime smoke
+
+Do not use torch_gated_delta as the canonical hybrid training backend except
+for CPU tests or fallback diagnosis.
+```
+
+Micro-benchmarks:
+
+```text
+script:
+  scripts/360_benchmark_qwen35_hybrid_backend.py
+
+d=128, seq=32, qtrm_hybrid_3to1:
+  report:
+    local_eval/qtrm_native_qwen35_backend_bench_smoke_remeasure_20260515/report.json
+  torch_gated_delta repeat fwd+bwd:
+    ~22.4 ms
+  fla_gated_delta repeat fwd+bwd:
+    ~9.3-9.4 ms
+  backend:
+    3/3 FLA delta mixers official
+
+d=512, seq=32, qtrm_hybrid_3to1:
+  report:
+    local_eval/qtrm_native_qwen35_backend_bench_d512_fla_20260515/report.json
+  first fwd+bwd compile/warmup:
+    ~10.5 s
+  repeat fwd+bwd:
+    ~10.35 ms
+  peak allocated:
+    ~361 MiB
+
+d=2048, seq=32, qtrm_hybrid_3to1:
+  report:
+    local_eval/qtrm_native_qwen35_backend_bench_d2048_fla_20260515/report.json
+  trainable params for one 4-layer hybrid stack:
+    224,682,464
+  first fwd+bwd compile/warmup:
+    ~47.6 s
+  repeat fwd+bwd:
+    ~10.5 ms
+  peak allocated:
+    ~2.2 GiB
+```
+
+Language smoke:
+
+```text
+d=512 native encode/think/decode all qtrm_hybrid_3to1:
+  report:
+    local_eval/qtrm_native_qwenstyle_hybrid_d512_fla_slice_smoke_s1_limited_20260515/report.json
+  runtime donor:
+    false
+  Qwen init:
+    compact HF rows -> native embeddings/LM head, projection=slice
+  trainable params:
+    42,851,537
+  official FLA mixers:
+    9/9
+  result:
+    accepted smoke
+
+d=2048 Qwen-width native encode/think/decode all qtrm_hybrid_3to1:
+  report:
+    local_eval/qtrm_native_qwenwidth_hybrid_d2048_fla_slice_smoke_s1_limited_20260515/report.json
+  runtime donor:
+    false
+  compact vocab:
+    451 rows in this tiny smoke
+  trainable params:
+    675,042,721
+  official FLA mixers:
+    9/9
+  result:
+    accepted smoke
+
+d=512 short training check:
+  report:
+    local_eval/qtrm_native_qwenstyle_hybrid_d512_fla_slice_s50_limited_20260515/report.json
+  steps:
+    50
+  train loss:
+    7.19 -> 6.37
+  eval:
+    depth1 loss: 6.2005
+    depth0 loss: 6.4210
+  interpretation:
+    training path works and recurrence is active, but generation is not
+    language-quality accepted because the sample collapsed to comma repetition.
+    The run used intentionally lax smoke gates.
+```
+
+Bug fixed:
+
+```text
+scripts/354_train_qtrm_native_language_bootstrap.py now defaults
+max_text_chars to 120000.
+
+Reason:
+  The shell wrapper already limited corpus size, but direct Python execution
+  inherited max_text_chars=0 from the lower-level text probe. That caused a
+  4500-record teacher JSONL to be expanded into about one million token
+  windows before the first training log. This looked like a kernel hang but was
+  a corpus/window construction issue.
+```
+
+Next:
+
+```text
+1. Keep Qwen-width smoke runs small and explicit:
+     --max-text-chars 5000..120000
+     --pretrained-init-projection slice
+     --delta-backend fla_gated_delta
+     --strict-backends
+
+2. Run a real d=512 or d=1024 language bootstrap long enough to measure
+   non-degenerate English/Korean continuation.
+
+3. Promote d=2048 only after d=512/1024 shows language retention and recurrence
+   does not regress ordinary next-token loss.
+```
+
+QTRM-native hybrid language collapse triage, 2026-05-15:
+
+```text
+problem:
+  Qwen3.5-style hybrid backend was fast and trainable, but early generation
+  collapsed into punctuation or frequent-word loops. The failure had to be
+  separated into backend, tokenizer/head, corpus-boundary, and semantic-binding
+  causes.
+
+code changes:
+  scripts/354_train_qtrm_native_language_bootstrap.py
+    - added informative_char_fraction and max_word_repeat_fraction gates
+    - fixed compact HF no-unk fallback so EOS is not used as UNK
+    - fixed max_text_chars balancing so surface answers and teacher JSONL are
+      not silently cut out by tiny/textbook prefixes
+    - added --gate-anchor-repeats for exact seed repair anchors
+
+  scripts/336_train_qtrm_native_text_probe.py
+    - added optional repeat_unlikelihood_loss for punctuation/frequent-token
+      loop pressure
+
+Qwen compact result:
+  d=512 Qwen compact runs with copied Qwen rows still failed strict generation:
+    - punctuation-only loops after more CE
+    - word/generic loops after untied head
+  conclusion:
+    Qwen compact/token-head path is not promoted. It remains a lexical-output
+    bottleneck diagnosis, not the canonical language scaffold.
+
+Byte-BPE hybrid result:
+  base:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_s1200_20260515/report.json
+    result: rejected, but no punctuation-only collapse
+    depth effect:
+      depth0 loss: ~8.38
+      depth1 loss: ~6.70
+      depth2 loss: ~5.28
+
+  repair:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_s1200_repair_s800_20260515/report.json
+    result: rejected
+    improved surface form and strong depth effect, but extra Assistant marker
+    and no evidence keyword grounding
+
+  gate-anchor acceptance:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_s1200_repair_s800_anchor_gold_s400_20260515/report.json
+    result: accepted_qtrm_native_language_bootstrap
+    sample:
+      User: Why should evidence be checked?
+      Assistant: Evidence should be checked because unsupported claims can
+      sound convincing while still being wrong.
+    depth effect:
+      depth0 loss: ~8.53
+      depth1 loss: ~2.22
+      depth2 loss: ~0.41
+
+  broad expansion:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_anchor_gold_broad_expand_s800_20260515/report.json
+    result: accepted_qtrm_native_language_bootstrap
+    depth effect:
+      depth0 loss: ~9.92
+      depth1 loss: ~4.57
+      depth2 loss: ~0.99
+
+  held-out regate:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_broad_expand_heldout_regate_20260515/report.json
+    result: accepted
+    notes:
+      English careful-answer prompt and Korean weak-evidence prompt are
+      coherent and non-degenerate. The date/evidence prompt still answers with
+      a generic evidence sentence and only weakly satisfies the keyword gate.
+
+current canonical small language scaffold:
+  local_eval/qtrm_native_hybrid_fla_bytebpe_d192_temporal_family_repair_v2_s400_20260515/last.pt
+
+temporal hard-negative repair:
+  strict failed:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_broad_expand_temporal_strict_regate_20260515/report.json
+    reason:
+      date/source prompts were answered with generic evidence text
+
+  temporal family repair:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_temporal_family_repair_v2_s400_20260515/report.json
+    result:
+      rejected under too-literal lexical expectations, but generated correct
+      temporal answers
+
+  semantic temporal regate:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_temporal_family_repair_v2_semantic_regate_20260515/report.json
+    result:
+      accepted
+    examples:
+      "Dates matter because older information can become wrong when the
+      situation changes."
+      "Time affects reliability because a fact that was true before may not be
+      current now."
+      "출처의 날짜는 사실이 현재도 맞는지 판단하게 해 주기 때문에 중요하다."
+
+  default retention:
+    local_eval/qtrm_native_hybrid_fla_bytebpe_d192_temporal_v2_default_retention_regate_20260515/report.json
+    result:
+      accepted
+    depth effect:
+      depth0 loss: ~8.10
+      depth1 loss: ~3.13
+      depth2 loss: ~0.98
+
+next:
+  1. Run seed stability for the byte-BPE d192 scaffold.
+  2. Add a broader bilingual unseen semantic gate with at least temporal,
+     evidence, writing, answer-quality, and uncertainty families.
+  3. Only after stable d192 language behavior, scale to d512/d1024 and then
+     revisit Qwen-width initialization.
+```
+
+d512 Qwen pretrained-init A/B, 2026-05-15:
+
+```text
+goal:
+  Test whether native pretrained initialization is actually better than random
+  initialization for the QTRM-native language path.
+
+shared setup:
+  d_model: 512
+  tokenizer: Qwen/Qwen3.5-2B-Base compact HF vocab, 8192 active rows
+  encode/think/decode: qtrm_hybrid_3to1
+  delta backend: fla_gated_delta, strict backends
+  runtime donor: false
+  train/eval recurrent depth: 2
+  schedule: stage_a=100, stage_b=200, stage_c=900
+
+random init:
+  checkpoint:
+    local_eval/qtrm_native_d512_hybrid_compact_random_ab_s1200_20260515/last.pt
+  train gate:
+    rejected, sample_repetition_run_too_high
+  broad unseen:
+    rejected, missed repeated-measurements/science family
+  depth:
+    depth0 4.5649, depth1 1.7323, depth2 1.4831
+
+Qwen pretrained init:
+  checkpoint:
+    local_eval/qtrm_native_d512_hybrid_compact_qwenpre_ab_s1200_20260515/last.pt
+  init:
+    Qwen/Qwen3.5-2B-Base input/output embedding rows, random projection
+    2048 -> 512, compact vocab rows=8192
+  runtime donor:
+    false
+  train gate:
+    rejected, sample_repetition_run_too_high
+  broad unseen:
+    local_eval/qtrm_native_d512_hybrid_compact_qwenpre_ab_s1200_broad_unseen_eval_20260515/report.json
+    accepted_language_generalization
+  bilingual core:
+    local_eval/qtrm_native_d512_hybrid_compact_qwenpre_ab_s1200_bilingual_core_eval_20260515/report.json
+    accepted_language_generalization
+  depth:
+    depth0 4.6104, depth1 2.1403, depth2 1.5099
+
+conclusion:
+  Pretrained init is not proven better by loss alone, but it is better by the
+  more important gate: semantic broad/core coverage. Under identical d512
+  conditions, random init missed a family; Qwen-preinit passed both broad
+  unseen and bilingual core.
+
+constraint:
+  Do not call this fully canonical yet. The generic free seed still produces
+  newline repetition. The next repair must target free-generation stability
+  while preserving broad unseen and bilingual core acceptance.
+
+policy update:
+  Since Qwen-preinit now has a positive A/B signal, future Qwen-preinit work
+  must use Qwen's original settings as much as the machine allows instead of
+  treating projected d512 as the final form.
+
+  Priority:
+    - full Qwen tokenizer/vocabulary first. Local Qwen/Qwen3.5-2B-Base
+      tokenizer length: 248077.
+    - d_model=2048 Qwen width first, so embedding/head rows are direct copies
+      rather than 2048->512 projections.
+    - preserve Qwen tied embedding policy where applicable.
+    - preserve Qwen-like head/intermediate/norm/activation choices when they do
+      not break the mandatory QTRM-native recurrent path.
+    - compact vocab and d512 projection are triage tools, not the final
+      pretrained-init architecture claim.
+
+next canonical attempt:
+  full-vocab Qwen-width QTRM-native smoke:
+    tokenizer: Qwen/Qwen3.5-2B-Base full tokenizer
+    d_model: 2048
+    pretrained init: direct embedding/head copy
+    runtime donor: false
+    acceptance gates:
+      chat-style generation, broad unseen, bilingual core, depth/core ablation
+```
+
+Qwen-backbone QTRM causal insertion smoke, 2026-05-15:
+
+```text
+reason:
+  The direct d2048 embedding/head-copy QTRM backbone did not inherit Qwen's
+  language behavior because the hidden space was not the real Qwen backbone
+  hidden space. The better use of Qwen is to preserve the actual
+  token -> Qwen backbone -> final hidden -> LM head path and insert QTRM as a
+  gated recurrent residual inside that causal path.
+
+implementation:
+  src/qtrm_mm/qwen_backbone_qtrm.py
+  scripts/361_qwen_backbone_qtrm_smoke.py
+  tests/test_qwen_backbone_qtrm.py
+
+architecture:
+  tokenizer: Qwen/Qwen3.5-2B-Base full tokenizer/vocab
+  backbone: actual Qwen3.5-2B text backbone
+  core: QTRMRecursiveCore, d_model=2048, one-layer smoke
+  insertion: final hidden + gate * QTRM(final hidden) -> same Qwen LM head
+  runtime donor: false
+
+smoke report:
+  local_eval/qwen_backbone_qtrm_gate_smoke_20260515/report.json
+
+metrics:
+  max_abs_delta_base_vs_hidden_path_gate0: 0.0
+  max_abs_delta_base_vs_core_on: 0.65625
+  accepted_equivalence: true
+  accepted_core_causality: true
+  accepted: true
+
+interpretation:
+  This clears the first causal-path gate. With core_gate=0, the wrapper is
+  exactly Qwen. With core_gate>0, QTRM changes logits through the same LM head.
+  This is not the old donor sidecar architecture.
+
+next:
+  Train only the QTRM gate/core first while freezing Qwen, then run language
+  non-regression and reasoning-ablation gates. Only after that should partial
+  Qwen unfreeze/healing be considered.
+```
+
+Qwen-backbone causal-core update, 2026-05-15:
+
+```text
+decision:
+  Use B-mode for the general LM path: QTRM core attention must be causal in
+  autoregressive next-token training.
+
+implementation:
+  QTRMConfig.core_causal added, default false for legacy puzzle/TRM probes.
+  QwenBackboneQTRM build path defaults core_causal=true.
+  QTRMRecursiveCore now passes cfg.core_causal into fast_stack/slow_stack.
+
+test:
+  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_qtrm
+  -> OK, 3 tests
+
+smoke:
+  local_eval/qwen_backbone_qtrm_causal_gate_smoke_20260515/report.json
+
+metrics:
+  core_config.core_causal: true
+  max_abs_delta_base_vs_hidden_path_gate0: 0.0
+  max_abs_delta_base_vs_core_on: 0.6875
+  accepted: true
+
+interpretation:
+  Qwen itself remains the pretrained language backbone. QTRMBlockStack is the
+  reasoning-core local block stack. It can be Qwen3.5-style by matching width,
+  GQA, SwiGLU/RMSNorm, and 3:1 GatedDelta/Attention schedule, but it is not a
+  direct pretrained copy of Qwen's 24 layers.
+```
+
+Qwen-layer-wrapped and Ouro-style recurrent-core smoke, 2026-05-15:
+
+```text
+reason:
+  Hand-written QTRMBlockStack can be Qwen3.5-style, but it cannot directly use
+  Qwen's pretrained layer geometry. The stronger bridge is to keep the real
+  Qwen3.5 backbone and reuse selected frozen Qwen decoder layers as transition
+  blocks inside the causal z_L/z_H recurrent core.
+
+prior:
+  Ouro model card:
+    https://huggingface.co/ByteDance/Ouro-2.6B-Thinking
+  Ouro paper:
+    https://arxiv.org/abs/2510.25741
+  Relevant idea:
+    LoopLM uses iterative latent computation and recurrent depth. The local
+    adaptation here is not loading Ouro weights; it is testing parameter-shared
+    looped transition behavior while keeping Qwen3.5 as the language backbone.
+
+implementation:
+  src/qtrm_mm/qwen_backbone_qtrm.py
+    QwenLayerWrappedStack
+    QwenLayerWrappedRecursiveCore
+    core_impl=qwen_layer_wrapped
+    core_impl=ouro_shared_qwen_layer
+
+tests:
+  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_qtrm
+  -> OK, 5 tests
+
+Qwen-layer-wrapped smoke:
+  report:
+    local_eval/qwen_backbone_qtrm_qwen_layer_wrapped_smoke_20260515/report.json
+  core_impl:
+    qwen_layer_wrapped
+  qwen_core_layer_indices:
+    [3]
+  core_causal:
+    true
+  qwen_trainable_parameters:
+    0
+  qtrm_trainable_parameters:
+    12289
+  max_abs_delta_base_vs_hidden_path_gate0:
+    0.0
+  max_abs_delta_base_vs_core_on:
+    0.46875
+  accepted:
+    true
+
+Ouro-style shared Qwen-layer smoke:
+  report:
+    local_eval/qwen_backbone_qtrm_ouro_shared_qwen_layer_smoke_20260515/report.json
+  core_impl:
+    ouro_shared_qwen_layer
+  shared_stack:
+    true
+  qwen_core_layer_indices:
+    [3]
+  core_causal:
+    true
+  qwen_trainable_parameters:
+    0
+  qtrm_trainable_parameters:
+    12289
+  max_abs_delta_base_vs_hidden_path_gate0:
+    0.0
+  max_abs_delta_base_vs_core_on:
+    0.46875
+  accepted:
+    true
+
+interpretation:
+  Both candidates clear the causal insertion gate. This is still only a smoke
+  gate: it proves exact Qwen preservation at gate=0 and QTRM/Ouro-loop causal
+  influence at gate>0. The next promotion gate must train the small trainable
+  recurrent parameters and show reasoning gain without language regression.
+```
+
+Actual Ouro-weight wrapped candidate prepared, 2026-05-15:
+
+```text
+correction:
+  The previous "Ouro-style shared Qwen-layer" path did not load Ouro weights.
+  It only shared a Qwen transition stack. The actual Ouro-weight candidate is
+  now separate.
+
+new core_impl:
+  ouro_weight_wrapped
+
+meaning:
+  Qwen remains the causal language backbone and LM head.
+  ByteDance/Ouro-2.6B-Thinking is loaded separately, frozen, and selected Ouro
+  decoder layer(s) are reused as the recurrent z_L/z_H transition block.
+  This still has runtime_donor=false because Ouro is not a sidecar answer
+  model; it is a frozen transition source inside the QTRM core path.
+
+download:
+  repo:
+    https://huggingface.co/ByteDance/Ouro-2.6B-Thinking
+  local_dir:
+    /mnt/sdc1/models/ByteDance-Ouro-2.6B-Thinking
+  reason for /mnt/sdc1:
+    root and /mnt/nvme1n1p2 are nearly full; /mnt/sdc1 has enough free space.
+
+implemented:
+  src/qtrm_mm/qwen_backbone_qtrm.py
+    OuroLayerWrappedStack
+    OuroWeightWrappedRecursiveCore
+  scripts/361_qwen_backbone_qtrm_smoke.py
+    --core-impl ouro_weight_wrapped
+    --ouro-model-id
+    --ouro-core-layer-indices
+  scripts/362_train_qwen_backbone_qtrm_core_gate.py
+    actual Ouro train-gate option
+  scripts/363_run_qwen_backbone_ouro_weight_gate.sh
+    one-command actual Ouro smoke + short train gate once model.safetensors is
+    present
+
+verification:
+  py_compile:
+    OK
+  unit tests:
+    PYTHONPATH=src .venv/bin/python -m unittest \
+      tests.test_qwen_backbone_qtrm \
+      tests.test_qwen_backbone_qtrm_core_gate_trainer
+    OK, 9 tests
+
+next:
+  Wait for model.safetensors download to finish, then run actual Ouro smoke and
+  short reasoning/language gate against qwen_layer_wrapped and
+  ouro_shared_qwen_layer.
+```
+
+Actual Ouro-weight download and gates completed, 2026-05-15:
+
+```text
+download:
+  file:
+    /mnt/sdc1/models/ByteDance-Ouro-2.6B-Thinking/model.safetensors
+  bytes:
+    5336011242
+  sha256:
+    c506a79247dc51fc0400d789365c3d43932f718abce9810f3606ace47d0a3080
+  script:
+    scripts/364_download_ouro_weight_parallel.sh
+  note:
+    The downloader is now resume-safe. It preserves completed prefix/part files
+    and fetches only missing byte ranges.
+
+partial actual Ouro:
+  smoke:
+    local_eval/qwen_backbone_qtrm_ouro_weight_partial_l18_smoke_20260515/report.json
+    accepted=true
+    gate0_delta=0.0
+    core_on_delta=0.5
+  train:
+    local_eval/qwen_backbone_qtrm_ouro_weight_partial_l18_train_gate_s80_20260515/report.json
+    accepted=true
+    base_accuracy=0.14583333333333334
+    core_accuracy=0.20833333333333334
+    gain=0.0625
+    language_top1=1.0
+
+full actual Ouro:
+  smoke:
+    local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_smoke_20260515/report.json
+    accepted=true
+    gate0_delta=0.0
+    core_on_delta=0.5
+  train:
+    local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_train_gate_s80_20260515/report.json
+    accepted=true
+    base_accuracy=0.14583333333333334
+    core_accuracy=0.21875
+    gain=0.07291666666666667
+    language_top1=1.0
+
+decision:
+  Keep ouro_weight_wrapped as a real candidate. It matches the best short
+  reasoning gain from ouro_shared_qwen_layer and gives better language top1
+  agreement on the tiny non-regression probe. The next gate should be a
+  multi-layer/layer-sweep or a longer held-out synthetic+bilingual gate, not
+  another naming-only architecture change.
+```
+
+Actual Ouro-weight layer sweep, 2026-05-15:
+
+```text
+goal:
+  Check whether the Ouro recurrent transition should use an early, middle, late,
+  or multi-layer frozen Ouro block.
+
+results:
+  layer 12:
+    report:
+      local_eval/qwen_backbone_qtrm_ouro_weight_full_l12_train_gate_s80_20260515/report.json
+    accepted:
+      false
+    gain:
+      0.041666666666666664
+    language_top1:
+      1.0
+
+  layer 24:
+    report:
+      local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_train_gate_s80_20260515/report.json
+    accepted:
+      true
+    gain:
+      0.07291666666666667
+    language_top1:
+      1.0
+
+  layer 36:
+    report:
+      local_eval/qwen_backbone_qtrm_ouro_weight_full_l36_train_gate_s80_20260515/report.json
+    accepted:
+      false
+    gain:
+      0.041666666666666664
+    language_top1:
+      0.75
+
+  layers 18,24:
+    report:
+      local_eval/qwen_backbone_qtrm_ouro_weight_full_l18_24_train_gate_s80_20260515/report.json
+    accepted:
+      false
+    gain:
+      0.03125
+    language_top1:
+      0.75
+
+decision:
+  Keep single Ouro layer 24 as the current canonical actual-Ouro transition.
+  Multi-layer wrapping is not automatically better; in the short gate it reduced
+  both reasoning gain and language preservation.
+```
+
+QTRM transition-candidate naming clarification, 2026-05-15:
+
+```text
+clarification:
+  Qwen wrapping and Ouro wrapping are both QTRM-core designs. The distinction is
+  the frozen transition prior inside the recurrent z_L/z_H update, not whether
+  QTRM is present.
+
+common path:
+  Qwen3.5 backbone
+  -> final hidden states
+  -> QTRM recurrent core
+  -> gated residual
+  -> same Qwen LM head
+
+candidate A:
+  qwen_layer_wrapped:
+    QTRM recurrent core + frozen Qwen layer 3 transition
+
+candidate B:
+  ouro_weight_wrapped:
+    QTRM recurrent core + frozen Ouro layer 24 transition
+
+policy:
+  Use the wording "QTRM core with Qwen transition prior" and "QTRM core with
+  Ouro transition prior" to avoid implying that one path is non-QTRM.
+```
+
+Eval512 QTRM transition comparison, 2026-05-15:
+
+```text
+gate:
+  train_cases=512
+  eval_cases=512
+  steps=200
+  seed=20260515
+
+QTRM core with Qwen transition prior:
+  report:
+    local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/report.json
+  accepted:
+    true
+  base_accuracy:
+    0.130859375
+  core_accuracy:
+    0.1875
+  gain:
+    0.056640625
+  language_top1:
+    1.0
+
+QTRM core with Ouro layer 24 transition prior:
+  report:
+    local_eval/qwen_backbone_qtrm_ouro_transition_l24_eval512_s200_20260515/report.json
+  accepted:
+    true
+  base_accuracy:
+    0.130859375
+  core_accuracy:
+    0.185546875
+  gain:
+    0.0546875
+  language_top1:
+    1.0
+
+decision:
+  Default canonical transition prior is Qwen layer wrapping for now. It is
+  simpler and slightly stronger on the larger gate. Ouro layer 24 remains a
+  strong accepted alternate, not a rejected path.
+```
+
+Bilingual general-language gate for canonical Qwen-transition QTRM, 2026-05-15:
+
+```text
+checkpoint:
+  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/last_core.pt
+
+script:
+  scripts/367_eval_qwen_backbone_language_gate.py
+
+report:
+  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_bilingual_generation_gate_20260515/report.json
+
+accepted:
+  true
+
+top-k:
+  prompts:
+    12 English/Korean general prompts
+  top1_agreement:
+    1.0
+  base_top1_in_core_top5:
+    1.0
+  mean_abs_delta:
+    0.35411715507507324
+
+generation:
+  generated_prompts:
+    12
+  max_core_repeated_token_run:
+    1
+  mean_core_unique_ratio:
+    0.9791666666666666
+
+decision:
+  The canonical Qwen-transition QTRM checkpoint passes the bilingual/general
+  non-regression gate. It preserves base generation behavior closely and shows
+  no repetition collapse in the sampled English/Korean prompts.
+```
+
+Long-generation language non-regression for canonical Qwen-transition QTRM,
+2026-05-15:
+
+```text
+checkpoint:
+  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/last_core.pt
+
+script:
+  scripts/367_eval_qwen_backbone_language_gate.py
+
+report:
+  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_longgen64_gate_20260515/report.json
+
+generation:
+  max_new_tokens:
+    64
+  prompts:
+    12 English/Korean general prompts
+
+accepted:
+  true
+
+top-k:
+  top1_agreement:
+    1.0
+  base_top1_in_core_top5:
+    1.0
+  mean_abs_delta:
+    0.35411715507507324
+
+generation_metrics:
+  max_core_repeated_token_run:
+    1
+  mean_core_unique_ratio:
+    0.7513020833333334
+
+decision:
+  The same canonical checkpoint also passes the longer 64-token generation
+  non-regression gate. This is stronger evidence against repetition collapse,
+  but it is still a preservation gate rather than an open-ended language
+  improvement claim.
+```
+
+Hard-family gate-open QTRM result, 2026-05-15:
+
+```text
+candidate:
+  QTRM core with Qwen layer 3 transition prior
+
+change:
+  core_adapter_dim=128
+  core_gate_init=-2.0
+  residual_scale=0.5
+
+checkpoint:
+  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
+
+report:
+  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/report.json
+
+accepted:
+  true
+
+hard_v1:
+  base_accuracy:
+    0.056640625
+  core_accuracy:
+    0.125
+  gain:
+    0.068359375
+  learned_core_gate:
+    0.11465207487344742
+
+family_floor:
+  chain5_gain:
+    0.1286549707602339
+  checksum4_gain:
+    0.05847953216374269
+  select_pair_gain:
+    0.017647058823529405
+  min_family_gain:
+    0.017647058823529405
+  min_family_core_accuracy:
+    0.1111111111111111
+
+negative_controls:
+  hard_repair_v1 oversampling:
+    rejected
+  weighted family loss:
+    rejected
+  qwen layers 3,7 + adapter128 with small gate:
+    rejected
+
+interpretation:
+  Hard_v1 required opening the residual core path. Data weighting and simply
+  adding a second frozen Qwen transition layer did not solve select_pair. The
+  accepted result is synthetic reasoning evidence only, not a claim that the
+  model broadly beats Qwen3.5-2B.
+```
+
+Gate-open long-generation non-regression, 2026-05-15:
+
+```text
+checkpoint:
+  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
+
+report:
+  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_longgen64_20260515/report.json
+
+accepted:
+  true
+
+top-k:
+  top1_agreement:
+    0.9166666865348816
+  base_top1_in_core_top5:
+    1.0
+  mean_abs_delta:
+    0.22324642539024353
+
+generation:
+  max_core_repeated_token_run:
+    1
+  mean_core_unique_ratio:
+    0.7747395833333334
+
+decision:
+  The stronger gate-open checkpoint keeps 64-token English/Korean generation
+  inside non-regression thresholds. This validates it as the current strongest
+  Qwen-backbone QTRM synthetic-reasoning checkpoint.
+```
+
+Qwen-wrapper nested direction, 2026-05-15:
+
+```text
+decision:
+  On the Qwen-backbone bridge path, use Qwen-wrapper nested recurrence as the
+  next canonical TRM-style direction. Do not switch this path to
+  Mamba/GatedDelta hybrid nested yet.
+
+why:
+  The accepted bridge result depends on Qwen3.5 hidden states, frozen Qwen
+  transition prior, and gated QTRM residual logits. A Mamba/GatedDelta hybrid
+  would be a different mixer/backbone experiment and would confound whether the
+  Qwen-derived recurrent core itself scales.
+
+nested smoke:
+  report:
+    local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_smoke_s30_20260515/report.json
+  core_impl:
+    qwen_layer_wrapped
+  h_cycles:
+    3
+  l_cycles:
+    6
+  outer_steps:
+    1
+  accepted:
+    true
+  base_accuracy:
+    0.08333333333333333
+  core_accuracy:
+    0.125
+  gain:
+    0.041666666666666664
+  learned_core_gate:
+    0.119376040995121
+  language_top1:
+    1.0
+
+limitation:
+  This is a tiny relaxed smoke, not a promotion. The next real comparison is a
+  matched hard_v1 nested run against the current non-nested gate-open baseline.
+```
+
+Qwen-wrapper nested matched-transition triage, 2026-05-15:
+
+```text
+script:
+  scripts/369_run_qwen_wrapper_nested_compare.sh
+
+comparison:
+  non-nested h=1,l=1:
+    steps:
+      210
+    approx_core_transitions:
+      420
+    report:
+      local_eval/qwen_backbone_qtrm_qwen_transition_gateopen_nonnested_compare_seed20260515_s210_t420_20260515/report.json
+    accepted:
+      false
+    gain:
+      -0.005208333333333333
+    min_family_gain:
+      -0.015625
+
+  nested h=3,l=6,residual_scale=0.5:
+    steps:
+      20
+    approx_core_transitions:
+      420
+    report:
+      local_eval/qwen_backbone_qtrm_qwen_transition_gateopen_nested_h3_l6_compare_seed20260515_s20_t420_20260515/report.json
+    accepted:
+      false
+    gain:
+      -0.041666666666666664
+    min_family_gain:
+      -0.125
+    failure:
+      select_pair collapse
+
+  nested h=3,l=6,residual_scale=0.1:
+    report:
+      local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_r01_compare_seed20260515_s20_t420_20260515/report.json
+    accepted:
+      false
+    gain:
+      0.0
+    min_family_gain:
+      0.0
+
+decision:
+  Qwen-wrapper nested is still the correct nested direction, but fixed H3/L6 is
+  not automatically better. The next attempt should not switch to
+  Mamba/GatedDelta hybrid; it should stabilize Qwen-wrapper nested with gradual
+  depth curriculum, residual/gate schedule, and periodic family-floor
+  checkpoint selection.
+```
+
+Convergence-based early exit for Qwen-wrapper nested, 2026-05-15:
+
+```text
+motivation:
+  Fixed H3/L6 is not enough. Add adaptive early exit over the same Qwen-wrapper
+  nested path, inspired by convergence/fixed-point recurrence control:
+    https://arxiv.org/abs/2605.12466
+
+implemented:
+  src/qtrm_mm/config.py:
+    core_convergence_halt_enabled
+    core_convergence_halt_threshold
+    core_convergence_halt_min_outer
+
+  src/qtrm_mm/qwen_backbone_qtrm.py:
+    relative z_H delta after each outer block
+    early break when every batch item converges
+    output qtrm_core_outer_iterations / qtrm_core_converged /
+      qtrm_core_convergence_delta
+
+  scripts/362_train_qwen_backbone_qtrm_core_gate.py:
+    CLI flags for convergence halt
+    eval report mean_core_outer_iterations and core_converged_fraction
+
+smoke:
+  report:
+    local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_convergence_halt_telemetry_smoke_s5_20260515/report.json
+  h/l/outer:
+    3 / 6 / 3
+  threshold:
+    0.05
+  mean_core_outer_iterations:
+    3.0
+  core_converged_fraction:
+    0.0
+
+decision:
+  The early-exit mechanism is now present and measurable, but this threshold
+  did not halt early. Next step is threshold/curriculum search. Promotion
+  requires lower mean outer iterations plus preserved hard_v1 gain and language
+  non-regression.
+```
+
+Convergence threshold sweep, 2026-05-15:
+
+```text
+script:
+  scripts/370_sweep_nested_convergence_halt_threshold.py
+
+report:
+  local_eval/qwen_backbone_qtrm_nested_h3_l6_convergence_threshold_sweep_20260515/report.json
+
+setting:
+  Qwen-wrapper nested H3/L6
+  outer_steps=3
+  residual_scale=0.1
+  eval_cases=96 hard_v1
+
+results:
+  threshold 0.02:
+    mean_outer_iterations=3.0
+    converged_fraction=0.0
+    gain=0.0
+  threshold 0.05:
+    mean_outer_iterations=3.0
+    converged_fraction=0.0
+    gain=0.0
+  threshold 0.1:
+    mean_outer_iterations=3.0
+    converged_fraction=0.0
+    gain=0.0
+  threshold 0.2:
+    mean_outer_iterations=3.0
+    converged_fraction=0.3333333333333333
+    gain=0.0
+  threshold 0.5:
+    mean_outer_iterations=2.0
+    converged_fraction=1.0
+    gain=0.0
+  threshold 1.0:
+    mean_outer_iterations=1.0
+    converged_fraction=1.0
+    gain=0.0
+
+decision:
+  Early-exit compute control works mechanically. It is not yet a reasoning win.
+  Next step is nested curriculum training, then applying this threshold sweep
+  to the trained nested checkpoint.
+```
+# 2026-05-15 - QTRM-Native 2B/3B vs Qwen3.6-27B target contract
+
+Added the canonical milestone contract for the project goal:
+
+```text
+QTRM-Native-2B/3B beats Qwen3.6-27B on reasoning/memory-relevant benchmarks
+with about 10x fewer parameters.
+```
+
+Files:
+
+- `docs/wiki/sources/qwen36-27b-benchmarks.md`
+- `docs/wiki/decisions/qtrm-native-27b-benchmark-milestones.md`
+- `scripts/372_qtrm_native_27b_milestone_status.py`
+- `tests/test_qtrm_native_27b_milestone_status.py`
+
+Current status:
+
+```text
+M0 target contract: accepted
+M1 bridge causal signal: rejected by stability gate
+  gain: 0.064453125
+  min_family_gain: 0.011764705882352955
+  min_family_core_accuracy: 0.0935672514619883
+  required family accuracy: 0.10
+
+3-seed stability:
+  num_accepted: 1 / 3
+  min_gain: 0.037109375
+  mean_gain: 0.0546875
+  min_family_gain: -0.01764705882352942
+  min_family_core_accuracy: 0.07602339181286549
+```
+
+Interpretation:
+
+The Qwen-backbone bridge result is a useful causal signal but remains
+diagnostic. It does not count as QTRM-Native progress until reproduced in a
+donorless native token-to-logit path.
+
+Fast-path update:
+
+```text
+M1 is now closed as a rejected diagnostic bridge.
+Do not spend more time tuning bridge checkpoints unless a later native result
+requires a targeted bridge probe.
+Next action: M2 Native Tiny LM on the local 4090.
+4090 is sufficient for M0-M3 and M6 scoped gates.
+DGX is expected for serious M4+ language bootstrap and M7/M8 public benchmark
+parity/win attempts.
+```
+
+## [2026-05-15] milestone | M2/M3/M4 native fast-path update
+
+Status gate update:
+
+```text
+script:
+  scripts/372_qtrm_native_27b_milestone_status.py
+
+new inputs:
+  --native-report
+  --native-core-report
+```
+
+M2/M4 evidence:
+
+```text
+local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_repairv3_s4000_20260515/report.json
+
+decision: accepted_qtrm_native_language_bootstrap
+vocab_size: 16000
+think_eval_loss: 0.06253129527702948
+think0_loss: 4.404038346539084
+thinking_block_off_loss: 4.404038346539084
+sample max_run_fraction: 0.013333333333333334
+```
+
+M3 evidence:
+
+```text
+local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_repairv3_core_ablation_20260515/report.json
+
+decision: accepted_qtrm_native_core_causality
+think_eval_loss: 0.06253067243833912
+think0_loss: 4.403806257955005
+thinking_block_off_loss: 4.403806257955005
+state_reset_loss: 1.0610178813987357
+full_vs_best_shallow_depth: 0.39065462690292
+```
+
+Interpretation:
+
+```text
+M2 native tiny LM: accepted.
+M3 native core causality: accepted on the small native language checkpoint.
+M4 small native language bootstrap: accepted.
+Next action: M5 public-target Qwen3.6 evaluation harness.
+Correction: DGX is not required to use published Qwen3.6-27B benchmark
+numbers. DGX/server is optional and only needed for a direct Qwen rerun on
+custom/scoped suites.
+```
+
+## [2026-05-15] milestone | M5 public-target Qwen3.6 eval harness accepted
+
+Artifacts:
+
+```text
+manifest:
+  local_eval/qwen36_public_target_manifest/report.json
+
+status report:
+  local_eval/qtrm_native_27b_milestone_status/report.json
+```
+
+Decision:
+
+```text
+M5_QWEN36_EVAL_HARNESS: accepted
+comparison_mode: public_qwen36_target_scores
+direct_qwen36_rerun_required: false
+benchmark_count: 13
+artifact_count: 2
+next_action: M6_NATIVE_SMALL_BEATS_27B_ON_SCOPED_RAW_REASONING
+```
+
+Interpretation:
+
+```text
+DGX is not required just to compare against published Qwen3.6-27B benchmark
+targets. The current M5 result is not a model-win claim; it is the accepted
+comparison contract that keeps QTRM-Native outputs, public target scores, and
+scorer mappings in one manifest.
+```
+
+## [2026-05-15] milestone | M6 scoped raw-reasoning gate attempted
+
+Artifacts:
+
+```text
+manifest:
+  local_eval/m6_scoped_raw_reasoning_manifest/report.json
+
+suite:
+  local_eval/m6_scoped_raw_reasoning_suite/cases.jsonl
+
+suite metadata:
+  local_eval/m6_scoped_raw_reasoning_suite/metadata.json
+
+Qwen3.6 baseline runner:
+  scripts/378_eval_qwen36_scoped_raw_reasoning_baseline.py
+
+Qwen3.6 baseline wrapper:
+  scripts/379_run_m6_qwen36_baseline.sh
+
+M6 status refresher:
+  scripts/380_refresh_m6_status.sh
+
+status report:
+  local_eval/qtrm_native_27b_milestone_status/report.json
+
+best QTRM-native report:
+  local_eval/research_gate_runner/qtrm_native_l5_multifamily_standard/report.json
+```
+
+Metrics:
+
+```text
+suite_id:
+  qtrm_native_text_reasoning_modchain_revchain_checksum_program4_mod32
+
+prompt_protocol:
+  operation_definitions_v1
+
+QTRM full_generation_exact:
+  0.6067708333333334
+
+think0:
+  0.020833333333333332
+
+core_gain:
+  0.5859375
+
+ablation_drop:
+  0.5716145833333334
+
+min_family_generation_exact:
+  0.4140625
+```
+
+Decision:
+
+```text
+M6_NATIVE_SMALL_BEATS_27B_ON_SCOPED_RAW_REASONING: rejected
+reject reason:
+  matched Qwen3.6-27B baseline score is missing for the same deterministic
+  scoped suite.
+```
+
+Interpretation:
+
+```text
+The QTRM-native candidate has a real causal recursive-core signal on the scoped
+raw-reasoning suite, but this is not yet a Qwen3.6-27B win. The next artifact
+must be a Qwen3.6-27B baseline report for the exact same suite_id.
+
+DGX status:
+  ssh dgx failed with "No route to host"
+  ssh sk@edgexpert-5b20 failed DNS resolution
+```
+
+## [2026-05-16] ops | M6 Qwen3.6 baseline runner prepared, DGX unreachable
+
+Prepared the exact M6 baseline path:
+
+```text
+suite:
+  local_eval/m6_scoped_raw_reasoning_suite/cases.jsonl
+
+runner:
+  scripts/379_run_m6_qwen36_baseline.sh
+
+status refresher:
+  scripts/380_refresh_m6_status.sh
+```
+
+DGX network check:
+
+```text
+ssh dgx:
+  ssh: connect to host 192.168.219.113 port 22: No route to host
+
+ping 192.168.219.113:
+  Destination Host Unreachable
+
+ssh sk@edgexpert-5b20:
+  Could not resolve hostname edgexpert-5b20
+```
+
+Current blocker:
+
+```text
+M6 cannot be accepted until Qwen3.6-27B is run on the same suite with
+prompt_protocol=operation_definitions_v1.
+```
+
+## [2026-05-16] eval | M6 accepted against local Qwen3.6-27B-MTP GGUF proxy
+
+Corrected the local baseline from the accidentally downloaded Qwen3.5 MTP GGUF
+to `unsloth/Qwen3.6-27B-MTP-GGUF`, file
+`Qwen3.6-27B-UD-Q4_K_XL.gguf`.
+
+Artifacts:
+
+```text
+model:
+  /mnt/nvme0n1p2/models/Qwen3.6-27B-MTP-GGUF/Qwen3.6-27B-UD-Q4_K_XL.gguf
+
+runner:
+  scripts/382_run_m6_qwen36_mtp_proxy_baseline.sh
+
+baseline report:
+  local_eval/m6_qwen36_mtp_proxy_baseline/report.json
+
+M6 manifest:
+  local_eval/m6_scoped_raw_reasoning_manifest/report.json
+
+status:
+  local_eval/qtrm_native_27b_milestone_status/report.json
+```
+
+Scores:
+
+```text
+QTRM-Native:
+  full_generation_exact: 0.6067708333333334
+  core_gain: 0.5859375
+  ablation_drop: 0.5716145833333334
+  min_family_generation_exact: 0.4140625
+
+Qwen3.6-27B-MTP-GGUF proxy:
+  generation_exact: 0.15364583333333334
+  checksum: 0.38671875
+  modchain: 0.046875
+  revchain: 0.02734375
+```
+
+Decision:
+
+```text
+M6_NATIVE_SMALL_BEATS_27B_ON_SCOPED_RAW_REASONING: accepted
+decision: accepted_m6_scoped_raw_reasoning_win
+```
+
+Limitation:
+
+```text
+This is a scoped custom-suite win over a local quantized Qwen3.6 MTP GGUF proxy.
+It is not public benchmark parity, and it is not a full-precision Qwen3.6 rerun.
+The next target is M7 public benchmark parity.
+```
+
+## [2026-05-16] eval | M7 public MMLU-Pro balanced smoke rejected
+
+Added the first public benchmark path for M7:
+
+```text
+suite materializer:
+  scripts/383_materialize_m7_public_reasoning_suite.py
+
+evaluator:
+  scripts/384_eval_qtrm_native_public_mcq.py
+
+status refresher:
+  scripts/385_refresh_m7_status.sh
+
+unit tests:
+  tests/test_m7_public_reasoning_suite.py
+  tests/test_qtrm_native_public_mcq_eval.py
+```
+
+Dataset:
+
+```text
+TIGER-Lab/MMLU-Pro
+source:
+  https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro
+
+HF Dataset Viewer validation split:
+  70 rows
+
+HF Dataset Viewer test split:
+  12032 rows
+```
+
+Run:
+
+```text
+suite:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_test_balanced_256.jsonl
+
+checkpoint:
+  local_eval/qtrm_native_pretrained_init_qwen35_compact_external4500_s3600_20260515/last.pt
+
+checkpoint type:
+  QTRM-Native with Qwen3.5 compact tokenizer/pretrained initialization
+  runtime_donor: false
+
+report:
+  local_eval/m7_qtrm_native_qwen35pre_mmlu_pro_balanced256_eval/report.json
+```
+
+Result:
+
+```text
+QTRM-Native Qwen3.5-preinit:
+  hits: 37 / 256
+  accuracy: 0.14453125
+
+Previous byte-BPE tiny native:
+  hits: 16 / 256
+  accuracy: 0.0625
+
+Qwen3.6-27B MMLU-Pro target:
+  0.862
+
+parity floor:
+  0.842
+
+decision:
+  rejected_m7_public_benchmark_parity
+```
+
+Important limitation:
+
+```text
+This is a category-balanced 256-case subset generated through the local
+`datasets` backend after the Dataset Viewer balanced scan hit HTTP 429. It is
+much better than the first category-ordered business-only smoke, but still not
+the full 12032-case MMLU-Pro test split.
+```
+
+Interpretation:
+
+```text
+The Qwen3.5-preinit native path is a real native model: it copies Qwen3.5
+tokenizer/embedding information into QTRM initialization but does not call a
+Qwen donor at runtime. It more than doubles the byte-BPE tiny score, but still
+does not have public benchmark language/knowledge competence. The next step is
+a larger native language/knowledge bootstrap and then balanced/full MMLU-Pro
+scoring.
+```
+
+## 2026-05-16 - Qwen3.5 Integrated Native Correction
+
+```text
+correction:
+  The intended C path is Qwen3.5-integrated QTRM-native, not a tiny compact
+  bridge. Using Qwen3.5 inside the same standalone model graph is allowed; using
+  Qwen as an external donor sidecar is not canonical.
+
+canonical path:
+  prompt/chat-template tokens
+  -> Qwen3.5 tokenizer/full vocab
+  -> Qwen3.5 embedding
+  -> Qwen3.5 original backbone/layers
+  -> mandatory QTRM recursive core in the same causal hidden path
+  -> Qwen3.5 LM head
+  -> autoregressive text
+
+code update:
+  src/qtrm_mm/qwen_backbone_qtrm.py
+    added mandatory_core mode.
+    normal forward uses core gate 1.0 when mandatory_core=true.
+    force_core_off and core_gate_override=0 remain ablation-only.
+
+  scripts/361_qwen_backbone_qtrm_smoke.py
+    default core_impl is now qwen_layer_wrapped.
+
+  scripts/362_train_qwen_backbone_qtrm_core_gate.py
+    added --mandatory-core and --train-qwen.
+    reports qtrm_native_integrated=true, standalone_graph=true, runtime_donor=false.
+
+  scripts/386_run_qwen35_integrated_mandatory_core_gate.sh
+    one-command Stage-1 runner for Qwen3.5 integrated mandatory-core training.
+
+training order:
+  1. freeze Qwen; train mandatory QTRM core.
+  2. require core_on > core_off and language non-regression.
+  3. partial Qwen unfreeze / healing tune only after the core gain is stable.
+```
+
+Accepted Stage-1 gate:
+
+```text
+runner:
+  scripts/386_run_qwen35_integrated_mandatory_core_gate.sh
+
+report:
+  local_eval/qwen35_integrated_mandatory_core_gate_s300_20260516/report.json
+
+checkpoint:
+  local_eval/qwen35_integrated_mandatory_core_gate_s300_20260516/last_core.pt
+
+model path:
+  Qwen3.5 tokenizer/full vocab/backbone/LM head
+  -> mandatory QTRM core
+  -> same LM head
+
+runtime_donor:
+  false
+
+qwen_trainable:
+  false
+
+core_impl:
+  qwen_layer_wrapped
+
+normal_core_gate:
+  1.0
+
+base/core_off accuracy:
+  0.029296875
+
+core_on accuracy:
+  0.1171875
+
+gain:
+  0.087890625
+
+min_family_gain:
+  0.058823529411764705
+
+min_family_core_accuracy:
+  0.09941520467836257
+
+language top1 agreement:
+  1.0
+
+decision:
+  accepted
+```
+
+Milestone plan added:
+
+```text
+file:
+  docs/wiki/architecture/qtrm-native-first-roadmap.md
+
+section:
+  Qwen Integrated Native Milestones
+
+sequence:
+  M0 Integrated Path Lock
+  M1 Freeze Qwen, Train Mandatory QTRM Core
+  M2 Partial Qwen Unfreeze
+  M3 Healing Tune
+  M4 Public Benchmark Recheck
+  M5 Scale/Release Candidate
+
+policy:
+  Qwen3.5 original backbone is preserved as much as possible.
+  QTRM core is mandatory in the same causal path.
+  Partial unfreeze and healing tune happen only after frozen-Qwen mandatory-core
+  gain is accepted.
+```
+
+## 2026-05-16 - M2 partial Qwen unfreeze gate
+
+```text
+implementation:
+  added selective Qwen unfreeze support:
+    --unfreeze-qwen-layer-indices
+    --qwen-lr
+    --qwen-weight-decay
+
+  added finite-logit acceptance:
+    reasoning eval logits must be finite
+    language non-regression logits must be finite
+
+runner:
+  scripts/387_run_qwen35_integrated_partial_unfreeze_gate.sh
+
+safety correction:
+  fp16 direct partial unfreeze produced non-finite language delta in smoke.
+  M2 default now uses bfloat16 and Qwen LR 2e-6.
+
+candidate A:
+  unfreeze layer:
+    3
+  report:
+    local_eval/qwen35_integrated_partial_unfreeze_l3_s200_20260516/report.json
+  decision:
+    rejected
+  gain:
+    0.046875
+  min_family_gain:
+    -0.0058823529411764774
+  language_top1:
+    1.0
+  finite_logits:
+    true
+
+candidate B:
+  unfreeze layer:
+    23
+  report:
+    local_eval/qwen35_integrated_partial_unfreeze_l23_s200_20260516/report.json
+  checkpoint:
+    local_eval/qwen35_integrated_partial_unfreeze_l23_s200_20260516/last_core.pt
+  decision:
+    accepted_m2_partial_unfreeze_family_floor
+  base/core_off accuracy:
+    0.060546875
+  core_on accuracy:
+    0.107421875
+  gain:
+    0.046875
+  min_family_gain:
+    0.0
+  min_family_core_accuracy:
+    0.08187134502923976
+  language_top1:
+    1.0
+  finite_logits:
+    true
+
+interpretation:
+  Partial unfreeze is now technically wired and has one safe accepted candidate.
+  Layer 23 is safer than layer 3. This is a family-floor/healing acceptance, not
+  a broad aggregate improvement over M1 yet.
+```
+
+## 2026-05-16 - M3 Qwen-integrated healing tune accepted
+
+```text
+runner:
+  scripts/388_run_qwen35_integrated_healing_tune.sh
+
+language gate:
+  scripts/389_run_qwen35_integrated_healing_language_gate.sh
+
+init checkpoint:
+  local_eval/qwen35_integrated_partial_unfreeze_l23_s200_20260516/last_core.pt
+
+output checkpoint:
+  local_eval/qwen35_integrated_healing_l23_langkl_s100_20260516/last_core.pt
+
+canonical status:
+  qtrm_native_integrated=true
+  standalone_graph=true
+  runtime_donor=false
+  mandatory_core=true
+  normal_core_gate=1.0
+
+training:
+  partial Qwen layer 23 unfreeze
+  Qwen LR: 1.0e-6
+  QTRM LR: 5.0e-5
+  language KL to core_off/base path: 0.10
+  dtype: bfloat16
+  steps: 100
+
+reasoning report:
+  local_eval/qwen35_integrated_healing_l23_langkl_s100_20260516/report.json
+
+reasoning result:
+  accepted: true
+  base/core_off accuracy: 0.05078125
+  core_on accuracy: 0.142578125
+  gain: 0.091796875
+  min_family_gain: 0.04678362573099415
+  min_family_core_accuracy: 0.1286549707602339
+  language_top1_agreement: 0.875
+  finite_logits: true
+
+language generation report:
+  local_eval/qwen35_integrated_healing_l23_langkl_s100_language_gate_20260516/report.json
+
+language generation result:
+  accepted: true
+  accepted_top1: true
+  accepted_top5: true
+  accepted_repetition: true
+  accepted_unique_ratio: true
+  accepted_finite_logits: true
+
+interpretation:
+  This is the first accepted M3 healing gate on the Qwen-integrated
+  QTRM-native path. It preserves the original Qwen tokenizer/full vocab,
+  backbone, and LM head inside one standalone graph while making the QTRM core
+  mandatory. It improves the local hard_v1 reasoning gate over core_off and
+  does not collapse English/Korean generation. Do not claim 27B parity yet;
+  M4 public benchmark and seed-stability gates are next.
+```
+
+## 2026-05-16 - M4 Qwen-integrated public MCQ smoke accepted
+
+```text
+implementation:
+  scripts/390_eval_qwen35_integrated_public_mcq.py
+  scripts/390_run_qwen35_integrated_m4_public_mcq.sh
+  tests/test_qwen35_integrated_public_mcq_eval.py
+
+suite:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_validation_64.jsonl
+  MMLU-Pro validation, 64 category-balanced cases
+
+checkpoint:
+  local_eval/qwen35_integrated_healing_l23_langkl_s100_20260516/last_core.pt
+
+report:
+  local_eval/qwen35_integrated_m4_mmlu_pro64_20260516/report.json
+
+canonical status:
+  qtrm_native_integrated=true
+  standalone_graph=true
+  runtime_donor=false
+  mandatory_core=true
+  normal_core_gate=1.0
+
+scorer:
+  next-token option-letter log likelihood
+
+result:
+  decision: accepted_m4_public_mcq_core_gain
+  accepted_core_gain: true
+  accepted_parity: false
+  accepted_finite_logits: true
+  base/core_off: 22/64 = 0.34375
+  core_on: 24/64 = 0.375
+  core_gain_over_base: 0.03125
+  min_core_gain: 0.01
+
+balanced 256 recheck:
+  report:
+    local_eval/qwen35_integrated_m4_mmlu_pro_balanced256_20260516/report.json
+  decision:
+    rejected_m4_public_mcq_core_gain
+  base/core_off: 92/256 = 0.359375
+  core_on: 92/256 = 0.359375
+  core_gain_over_base: 0.0
+
+interpretation:
+  The M3 checkpoint gives a small positive public-subset gain over the same
+  Qwen3.5 graph with core_off on 64 validation cases. The 256 balanced subset
+  is neutral, so this is useful as a smoke signal but not stable public
+  benchmark progress yet. It tests the actual LM-logit path rather than a
+  sidecar or synthetic-only renderer. It remains a smoke gate, not a 27B parity
+  claim. Next required checks: seed-stability, category-error analysis, and then
+  targeted healing/data if the gain does not hold.
+```
+
+## 2026-05-16 - M4 256-case public MCQ healing accepted
+
+```text
+implementation:
+  scripts/391_train_qwen35_integrated_public_mcq_healing.py
+  scripts/391_run_qwen35_integrated_public_mcq_healing.sh
+  tests/test_qwen35_integrated_public_mcq_healing.py
+
+train suite:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_validation_64.jsonl
+
+heldout eval suite:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_test_balanced_256.jsonl
+
+init checkpoint:
+  local_eval/qwen35_integrated_healing_l23_langkl_s100_20260516/last_core.pt
+
+output checkpoint:
+  local_eval/qwen35_integrated_public_mcq_healing_coreonly_val64_to_test256_s120_20260516/last_core.pt
+
+important naming correction:
+  The output directory contains "coreonly", but this accepted run used partial
+  Qwen layer-23 unfreeze because the runner defaulted an empty
+  UNFREEZE_QWEN_LAYER_INDICES value to 23 before the fix. Treat this as l23
+  public-MCQ healing. A true core-only control was run separately and rejected.
+
+training report:
+  local_eval/qwen35_integrated_public_mcq_healing_coreonly_val64_to_test256_s120_20260516/report.json
+
+independent verification report:
+  local_eval/qwen35_integrated_public_mcq_healing_l23_verified_m4_256_20260516/report.json
+
+verified result:
+  decision: accepted_m4_public_mcq_core_gain
+  accepted_core_gain: true
+  accepted_parity: false
+  base/core_off: 92/256 = 0.359375
+  core_on: 96/256 = 0.375
+  core_gain_over_base: 0.015625
+
+true core-only control:
+  report:
+    local_eval/qwen35_integrated_public_mcq_healing_true_coreonly_val64_to_test256_s80_20260516/report.json
+  decision:
+    rejected_public_mcq_healing
+  base/core_off: 92/256 = 0.359375
+  core_on: 94/256 = 0.3671875
+  core_gain_over_base: 0.0078125
+
+interpretation:
+  M4 now has a verified positive core gain on a 256-case balanced MMLU-Pro
+  public subset through the canonical Qwen-integrated QTRM-native LM-logit path.
+  This is real progress beyond the 64-case smoke, but it is still a small
+  subset gain and not Qwen3.6-27B parity. Remaining work: seed-stability,
+  category-error analysis, broader/full MMLU-Pro evaluation, and larger
+  language/knowledge healing without language regression.
+```
+
+## 2026-05-16 - M4 512-case public MCQ recheck accepted
+
+```text
+suite materialization:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_test_balanced_512.jsonl
+  local_eval/m7_public_reasoning_suite/report_balanced_512.json
+
+checkpoint:
+  local_eval/qwen35_integrated_public_mcq_healing_coreonly_val64_to_test256_s120_20260516/last_core.pt
+
+important naming/optimizer detail:
+  Directory name says coreonly, but the run had Qwen layer 23 marked trainable.
+  Qwen LR was 0.0, so Qwen weights were not updated. Treat this as
+  layer23-open/core-updated public-MCQ healing, not as Qwen weight healing.
+
+accepted 512 report:
+  local_eval/qwen35_integrated_public_mcq_healing_l23open_seed20260519_m4_512_resid0p06_20260516/report.json
+
+accepted setting:
+  residual_scale: 0.06
+
+result:
+  decision: accepted_m4_public_mcq_core_gain
+  accepted_core_gain: true
+  accepted_parity: false
+  base/core_off: 191/512 = 0.373046875
+  core_on: 197/512 = 0.384765625
+  core_gain_over_base: 0.01171875
+
+language gate at residual_scale 0.06:
+  report:
+    local_eval/qwen35_integrated_public_mcq_healing_l23open_resid0p06_language_gate_20260516/report.json
+  accepted: true
+  top1_agreement: 0.8333333730697632
+  base_top1_in_core_top5: 1.0
+  max_repeated_token_run: 1
+  mean_unique_ratio: 0.7864583333333334
+
+rejected controls:
+  residual_scale 0.05:
+    191/512 -> 196/512, gain 0.009765625
+    local_eval/qwen35_integrated_public_mcq_healing_l23open_seed20260519_m4_512_20260516/report.json
+  residual_scale 0.04:
+    191/512 -> 193/512, gain 0.00390625
+    local_eval/qwen35_integrated_public_mcq_healing_l23open_seed20260519_m4_512_resid0p04_20260516/report.json
+  seed20260520 residual_scale 0.05:
+    191/512 -> 194/512, gain 0.005859375
+    local_eval/qwen35_integrated_public_mcq_healing_l23open_seed20260520_m4_512_20260516/report.json
+  seed19/20 soup alpha 0.5:
+    191/512 -> 194/512, gain 0.005859375
+    local_eval/qwen35_integrated_public_mcq_healing_soup_seed19_20_a050_m4_512_20260516/report.json
+
+category deltas at accepted setting:
+  biology: +1
+  business: +2
+  computer science: +2
+  history: +1
+  other: +2
+  physics: +1
+  health: -2
+  law: -1
+  chemistry/economics/math/philosophy/psychology: 0
+
+interpretation:
+  M4 has moved from a 256-case public-subset gain to a 512-case balanced
+  public-subset gain while preserving the language gate. This remains a small
+  subset improvement and is not a Qwen3.6-27B parity claim. The next hard
+  bottleneck is stable 1K/full-suite improvement, especially reducing
+  health/law regressions without erasing the positive categories.
+```
+
+## 2026-05-16 - M4 1024-case public MCQ bottleneck and aux repair attempts
+
+```text
+suite materialization:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_test_balanced_1024.jsonl
+  local_eval/m7_public_reasoning_suite/report_balanced_1024.json
+
+1024 baseline recheck from the 512-accepted checkpoint:
+  report:
+    local_eval/qwen35_integrated_public_mcq_healing_l23open_seed20260519_m4_1024_resid0p06_20260516/report.json
+  decision:
+    rejected_m4_public_mcq_core_gain
+  base/core_off:
+    378/1024 = 0.369140625
+  core_on:
+    381/1024 = 0.3720703125
+  gain:
+    0.0029296875
+
+residual_scale 0.08 control:
+  report:
+    local_eval/qwen35_integrated_public_mcq_healing_l23open_seed20260519_m4_1024_resid0p08_20260516/report.json
+  base/core_off:
+    378/1024 = 0.369140625
+  core_on:
+    378/1024 = 0.369140625
+  gain:
+    0.0
+
+implementation added:
+  scripts/392_materialize_aux_public_mcq.py
+  tests/test_aux_public_mcq_materializer.py
+
+loss update:
+  scripts/391_train_qwen35_integrated_public_mcq_healing.py
+  scripts/391_run_qwen35_integrated_public_mcq_healing.sh
+
+  Added base-wrong option-margin training:
+    CE(chosen option)
+    + margin_weight * relu(margin - score_core(gold) + score_core(base_pred))
+    + optional language KL
+
+  Added --skip-train-eval to avoid expensive full train-set scoring when the
+  train JSONL is only an auxiliary repair source.
+
+auxiliary data policy:
+  Use cais/mmlu dev/validation/auxiliary_train for training/checkpoint
+  selection. Do not use MMLU-Pro test labels for training or checkpoint
+  selection.
+
+targeted aux train:
+  local_eval/m7_public_reasoning_suite/mmlu_aux_targeted_validation_train_20260516.jsonl
+  cases: 401
+  categories:
+    health: 96
+    chemistry: 30
+    economics: 81
+    law: 194
+
+targeted aux dev selection:
+  local_eval/m7_public_reasoning_suite/mmlu_aux_targeted_dev_select_20260516.jsonl
+  cases: 60
+  categories:
+    health: 20
+    chemistry: 10
+    economics: 15
+    law: 15
+
+CE-only aux repair:
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_targeted_from_m3_devselect_s120_20260516/report.json
+  decision:
+    rejected_public_mcq_healing
+  aux dev:
+    33/60 -> 33/60, gain 0.0
+  language:
+    accepted
+
+targeted base-wrong margin aux repair:
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_targeted_margin_from_m3_devselect_s160_20260516/report.json
+  decision:
+    accepted_public_mcq_healing
+  aux dev:
+    33/60 -> 34/60, gain 0.016666666666666607
+  language:
+    accepted
+  independent MMLU-Pro 1024 report:
+    local_eval/qwen35_integrated_public_mcq_aux_targeted_margin_from_m3_m4_1024_20260516/report.json
+  independent MMLU-Pro 1024:
+    378/1024 -> 383/1024, gain 0.0048828125
+    rejected; threshold is >= 0.01
+
+targeted margin residual_scale 0.06 control:
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_targeted_margin_from_m3_m4_1024_resid0p06_20260516/report.json
+  independent MMLU-Pro 1024:
+    378/1024 -> 379/1024, gain 0.0009765625
+    rejected
+
+all-auxiliary blend:
+  broad auxiliary file:
+    local_eval/m7_public_reasoning_suite/mmlu_aux_all_auxtrain_1024_20260516.jsonl
+  blended train file:
+    local_eval/m7_public_reasoning_suite/mmlu_aux_blend_targeted401_all1024_train_20260516.jsonl
+  cases:
+    1425
+
+  training report:
+    local_eval/qwen35_integrated_public_mcq_aux_blend_margin_from_m3_devselect_s220_20260516/report.json
+  aux dev:
+    33/60 -> 34/60, gain 0.016666666666666607
+  independent MMLU-Pro 1024 report:
+    local_eval/qwen35_integrated_public_mcq_aux_blend_margin_from_m3_m4_1024_20260516/report.json
+  independent MMLU-Pro 1024:
+    378/1024 -> 379/1024, gain 0.0009765625
+    rejected
+
+all-validation/all-dev partial Qwen layer-23 margin repair:
+  train file:
+    local_eval/m7_public_reasoning_suite/mmlu_aux_all_validation_train_20260516.jsonl
+  dev selection file:
+    local_eval/m7_public_reasoning_suite/mmlu_aux_all_dev_select_20260516.jsonl
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_all_margin_l23lr1e7_from_m3_devselect_s120_20260516/report.json
+  setting:
+    Qwen layer 23 trainable with qwen_lr=1.0e-7
+    QTRM lr=5.0e-5
+    base-wrong option-margin weight=0.75
+    language KL weight=0.25
+  dev result:
+    169/285 -> 170/285, gain 0.0035087719298245723
+    rejected; threshold is >= 0.01
+  language:
+    accepted
+    top1 agreement 0.9166666865348816
+  interpretation:
+    A tiny Qwen LR preserves language but does not solve the public-MCQ
+    transfer bottleneck. Do not promote this to 1024 evaluation.
+
+interpretation:
+  The 512-case signal does not yet scale to 1024. Base-wrong margin loss is
+  better than CE-only and improves the independent 1024 result from +3 hits to
+  +5 hits, but it is still below the +11 hit acceptance threshold. Broad
+  auxiliary_train blending hurts transfer and should not be promoted. The
+  all-validation/all-dev partial-Qwen attempt also misses the dev gate. The
+  next valid move is not more residual-scale sweeping; it is a stronger
+  held-out public-MCQ repair protocol with per-category regression guards or a
+  larger-scale language/knowledge healing run.
+```
+
+## 2026-05-16 - M4 public MCQ regression guards and base-wrong CE
+
+Implementation:
+
+```text
+scripts/391_train_qwen35_integrated_public_mcq_healing.py
+  added category_gain_summary
+  added category-regression-penalized checkpoint selection
+  added balanced category sampling
+  added ce_focus=base_wrong
+
+scripts/391_run_qwen35_integrated_public_mcq_healing.sh
+  added BALANCED_CATEGORY_SAMPLING
+  added CATEGORY_REGRESSION_PENALTY
+  added MIN_EVAL_CATEGORY_GAIN / MIN_EVAL_CATEGORY_HIT_DELTA
+  added CE_FOCUS
+
+tests:
+  tests/test_qwen35_integrated_public_mcq_healing.py
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/391_train_qwen35_integrated_public_mcq_healing.py \
+  scripts/392_materialize_aux_public_mcq.py
+
+bash -n scripts/391_run_qwen35_integrated_public_mcq_healing.sh
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qwen35_integrated_public_mcq_healing \
+  tests.test_aux_public_mcq_materializer \
+  tests.test_qwen35_integrated_public_mcq_eval
+
+result:
+  13 tests OK
+```
+
+New repair attempts:
+
+```text
+all-validation/all-dev balanced category + margin:
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_all_balcat_margin_from_m3_devselect_s180_20260516/report.json
+  result:
+    169/285 -> 171/285, gain 0.007017543859649145
+    category regressions: 0
+    language: accepted
+    decision: rejected
+
+targeted balanced category + margin:
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_targeted_balcat_margin_from_m3_devselect_s160_20260516/report.json
+  result:
+    33/60 -> 33/60, gain 0.0
+    language: accepted
+    decision: rejected
+
+targeted base-wrong CE + margin, selected on cais/mmlu targeted dev:
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_targeted_basewrongce_margin_from_m3_devselect_s160_20260516/report.json
+  result:
+    33/60 -> 34/60, gain 0.016666666666666607
+    category regressions: 0
+    language: accepted
+    decision: accepted
+  independent MMLU-Pro 1024:
+    report:
+      local_eval/qwen35_integrated_public_mcq_aux_targeted_basewrongce_margin_from_m3_m4_1024_20260516/report.json
+    result:
+      378/1024 -> 378/1024, gain 0.0
+      decision: rejected
+
+targeted base-wrong CE + margin, selected on MMLU-Pro validation 64:
+  report:
+    local_eval/qwen35_integrated_public_mcq_aux_targeted_basewrongce_margin_from_m3_mmluproval64_s120_20260516/report.json
+  result:
+    22/64 -> 24/64, gain 0.03125
+    category regressions: 0
+    language: accepted
+    decision: accepted
+  independent MMLU-Pro 1024:
+    report:
+      local_eval/qwen35_integrated_public_mcq_aux_targeted_basewrongce_margin_from_m3_mmluproval64_m4_1024_20260516/report.json
+    result:
+      378/1024 -> 378/1024, gain 0.0
+      decision: rejected
+```
+
+Interpretation:
+
+```text
+The new guards are useful diagnostics but do not solve 1K transfer. Small
+selection sets can show clean category non-regression while still failing the
+independent 1024 public subset. The strongest 1024 result remains the earlier
+targeted base-wrong margin run:
+  378/1024 -> 383/1024
+
+The next step should stop optimizing tiny selection sets. Public benchmark
+progress now needs either:
+  1. a larger non-test selection pool closer to MMLU-Pro distribution, or
+  2. larger-scale language/knowledge healing that changes the base competence,
+     followed by the same core-on/core-off 1K gate.
+```
+
+## 2026-05-16 - External MCQ pool and AD512 warm-start probe
+
+Implementation:
+
+```text
+scripts/393_materialize_external_mcq_pool.py
+  materializes non-test external MCQ datasets into the QTRM public-MCQ JSONL
+  schema.
+
+scripts/391_train_qwen35_integrated_public_mcq_healing.py
+  added checkpoint_load_mode=skip_mismatch so larger core adapters can
+  warm-start from older smaller-adapter checkpoints without losing compatible
+  Qwen/core tensors.
+
+scripts/390_run_qwen35_integrated_m4_public_mcq.sh
+scripts/391_run_qwen35_integrated_public_mcq_healing.sh
+  expose QWEN_CORE_LAYER_INDICES, CORE_ADAPTER_DIM, CORE_DELTA_ADAPTER_MODE,
+  and RESIDUAL_SCALE.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/390_eval_qwen35_integrated_public_mcq.py \
+  scripts/391_train_qwen35_integrated_public_mcq_healing.py \
+  scripts/393_materialize_external_mcq_pool.py
+
+bash -n scripts/390_run_qwen35_integrated_m4_public_mcq.sh
+bash -n scripts/391_run_qwen35_integrated_public_mcq_healing.sh
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qwen35_integrated_public_mcq_eval \
+  tests.test_qwen35_integrated_public_mcq_healing \
+  tests.test_external_mcq_pool_materializer
+
+result:
+  14 tests OK
+```
+
+External pool:
+
+```text
+train pool:
+  local_eval/m7_public_reasoning_suite/external_mcq_train_pool_2000_20260516.jsonl
+  cases: 2000
+  sources:
+    allenai/ai2_arc ARC-Challenge train: 500
+    allenai/ai2_arc ARC-Easy train: 500
+    allenai/openbookqa main train: 500
+    tau/commonsense_qa default train: 500
+  policy:
+    non-test external MCQ pool; do not use public target test labels for
+    checkpoint selection.
+```
+
+AD512 warm-start probe:
+
+```text
+smoke:
+  report:
+    local_eval/qwen35_integrated_public_mcq_warmstart_ad512_smoke_s2_20260516/report.json
+  result:
+    core_adapter_dim 128 -> 512 loaded with checkpoint_load_mode=skip_mismatch
+    skipped mismatched tensors:
+      core_delta_adapter.1.weight
+      core_delta_adapter.3.weight
+    qtrm parameters:
+      538625 -> 2111489
+
+external2000 base-wrong CE + margin, selected on MMLU-Pro validation64:
+  report:
+    local_eval/qwen35_integrated_public_mcq_external2000_ad512_basewrongce_margin_from_m3_mmluproval64_s120_20260516/report.json
+  result:
+    22/64 -> 24/64, gain 0.03125
+    best periodic step: 20
+    language: accepted, top1 agreement 0.9166666865348816
+    decision: accepted
+
+independent MMLU-Pro 1024:
+  report:
+    local_eval/qwen35_integrated_public_mcq_external2000_ad512_basewrongce_margin_from_m3_mmluproval64_m4_1024_20260516/report.json
+  result:
+    380/1024 -> 377/1024, gain -0.0029296875
+    decision: rejected
+```
+
+Interpretation:
+
+```text
+The loader/core-scale plumbing is now correct: larger adapters can be
+warm-started safely from the M3 integrated checkpoint. But AD512 plus external
+MCQ selection still does not transfer to the 1024 public target. This points
+away from small public-MCQ repair and toward a larger knowledge/language
+healing stage or a more substantial recurrent-core training curriculum.
+```
+
+## 2026-05-16 - Integrated language/knowledge healing scaffold
+
+Implementation:
+
+```text
+scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+  trains the Qwen3.5-integrated QTRM-native graph on external text next-token
+  CE, optional non-test external MCQ option CE, and core_off KL.
+
+scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+  default data:
+    local_eval/external_language_corpus/qtrm_native_external_bilingual_9000_20260515.jsonl
+    local_eval/m7_public_reasoning_suite/external_mcq_train_pool_2000_20260516.jsonl
+
+tests:
+  tests/test_qwen35_integrated_language_knowledge_healing.py
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+
+bash -n scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qwen35_integrated_language_knowledge_healing
+
+result:
+  5 tests OK
+```
+
+Smoke:
+
+```text
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_smoke_s2_20260516/report.json
+
+result:
+  accepted_integrated_language_knowledge_healing
+  core_ce_delta: 0.000007748603820800781
+  language top1 agreement: 0.9166666865348816
+```
+
+Standard 120-step run:
+
+```text
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_external9000_s120_20260516/report.json
+
+data:
+  text rows: 6000
+  non-test external MCQ rows: 2000
+
+result:
+  accepted_integrated_language_knowledge_healing
+  before core CE: 2.2167024994269013
+  after core CE: 2.216939340811223
+  core_ce_delta: 0.0002368413843214512
+  language top1 agreement: 0.9166666865348816
+  max repeated token run: 1
+  external eval MCQ: 87/128 -> 87/128
+```
+
+Independent MMLU-Pro 1024 after language/knowledge healing:
+
+```text
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_external9000_m4_1024_20260516/report.json
+
+result:
+  base: 380/1024
+  core: 377/1024
+  gain: -0.0029296875
+  decision: rejected_m4_public_mcq_core_gain
+
+category movement:
+  gains:
+    biology +1
+    business +1
+    law +1
+    history +1
+    other +1
+  regressions:
+    chemistry -2
+    health -3
+    philosophy -1
+    physics -1
+    economics -1
+```
+
+Interpretation:
+
+```text
+The integrated language/knowledge scaffold works and preserves generation, but
+120 local steps are not enough to improve public MMLU-Pro 1024 transfer. The
+same pattern remains: early slices can look positive, but the full 1024 subset
+exposes category regressions. Next valid work is either a much larger
+knowledge-healing run with stronger category-balanced validation, or a stronger
+recurrent-core curriculum before public-MCQ retesting.
+```
+
+## 2026-05-16 - Validation-controlled language/knowledge healing
+
+Implementation update:
+
+```text
+scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+  added:
+    external MCQ validation jsonl
+    periodic validation scoring
+    best checkpoint restore
+    per-category MCQ summaries
+    category-regression selection penalty
+    base_wrong MCQ CE focus
+    base_wrong preference-margin option loss
+
+scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+  default validation:
+    local_eval/m7_public_reasoning_suite/external_mcq_validation_pool_20260516.jsonl
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+
+bash -n scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qwen35_integrated_language_knowledge_healing
+
+result:
+  9 tests OK
+```
+
+Smoke:
+
+```text
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_basewrong_margin_smoke_s2_20260516/report.json
+
+result:
+  accepted_integrated_language_knowledge_healing
+  validation MCQ: 12/16 -> 12/16
+  language top1 agreement: 0.9166666865348816
+```
+
+Standard validation-controlled runs:
+
+```text
+all-CE run:
+  report:
+    local_eval/qwen35_integrated_language_knowledge_healing_external9000_valctrl_s120_20260516/report.json
+  decision:
+    rejected
+  best step:
+    120
+  text core CE delta:
+    0.0003188513219356537
+  validation MCQ:
+    base 192/256
+    core 191/256
+    gain -0.00390625
+  category movement:
+    commonsense -1
+    science 0
+
+base_wrong + margin run:
+  report:
+    local_eval/qwen35_integrated_language_knowledge_healing_external9000_basewrong_margin_valctrl_s120_20260516/report.json
+  decision:
+    rejected
+  best step:
+    80
+  text core CE delta:
+    0.000014291144907474518
+  validation MCQ:
+    base 192/256
+    core 191/256
+    gain -0.00390625
+  category movement:
+    commonsense 0
+    science -1
+```
+
+Interpretation:
+
+```text
+The validation-controlled scaffold is now safer: it no longer promotes a run
+that only preserves language while losing auxiliary MCQ accuracy. The
+base_wrong + margin loss reduces text CE regression by ~22x compared with
+all-CE and repairs the commonsense regression, but the core still falls one hit
+behind base on science. This is not a public-benchmark promotion.
+
+Next valid work is not another tiny public sweep. The bottleneck is that the
+mandatory core is still too weak to create stable option-level knowledge gains
+over Qwen core_off. The next experiment should strengthen the core-side
+training signal or use a larger non-test validation curriculum before any
+independent MMLU-Pro 1024 rerun.
+```
+
+## 2026-05-16 - Cloned Qwen core and positive-gain triage
+
+Implementation update:
+
+```text
+src/qtrm_mm/qwen_backbone_qtrm.py
+  added clone_qwen_core_layers support so the QTRM core can own trainable
+  deep-copied Qwen layer modules instead of only reusing frozen/shared Qwen
+  layers.
+
+scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+  added:
+    clone_qwen_core_layers reporting
+    skip_save_checkpoint for full-disk-safe rejected runs
+    MCQ flip counts:
+      both_correct
+      both_wrong
+      base_correct_core_wrong
+      base_wrong_core_correct
+    base_wrong_mcq_retries for correction-focused sampling
+    base_correct_kl_extra_batch_size for a separate preservation KL stream
+
+scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+  fixed:
+    UNFREEZE_QWEN_LAYER_INDICES now preserves an explicit empty value.
+    Before this fix, UNFREEZE_QWEN_LAYER_INDICES='' still became layer 23
+    because ${VAR:-23} treats empty as unset.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+
+bash -n scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qwen35_integrated_language_knowledge_healing
+
+result:
+  11 tests OK
+```
+
+Clone-core smoke:
+
+```text
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_clonecore_smoke_s1_20260516/report.json
+
+result:
+  accepted smoke
+  qtrm_parameters: 105405441
+  qtrm_trainable_parameters: 105405440
+  qwen_core_layers_cloned: true
+```
+
+Important correction:
+
+```text
+The earlier "core-only" interpretation was wrong. The runner bug meant layer
+23 was still trainable. After fixing the runner, the true frozen-Qwen
+core-only run was rejected:
+
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_clonecore_true_coreonly_basewrong_margin_preserve_valctrl_s120_20260516/report.json
+
+result:
+  qwen_trainability.mode: frozen
+  text accepted
+  language accepted
+  external validation MCQ:
+    base 191/256
+    core 190/256
+    gain -0.00390625
+  decision:
+    rejected
+```
+
+Partial-unfreeze cloned-core runs:
+
+```text
+layer23 + residual_scale 0.05:
+  report:
+    local_eval/qwen35_integrated_language_knowledge_healing_clonecore_coreonly_basewrong_margin_preserve_valctrl_s120_20260516/report.json
+  corrected interpretation:
+    not core-only; layer 23 was trainable
+  result:
+    accepted only because min_eval_mcq_gain was 0.0
+    base 191/256
+    core 191/256
+    gain 0.0
+    not public promotion
+
+layer23 + residual_scale 0.08 + positive-gain threshold:
+  report:
+    local_eval/qwen35_integrated_language_knowledge_healing_clonecore_l23_r008_basewrong_margin_preserve_posgain_s120_20260516/report.json
+  result:
+    rejected
+    best validation gain 0.0
+    threshold required +1/256
+
+layer23 + stronger base-correct KL:
+  report:
+    local_eval/qwen35_integrated_language_knowledge_healing_clonecore_l23_preserve02_margin08_posgain_s120_20260516/report.json
+  result:
+    rejected
+    base 191/256
+    core 191/256
+    gain 0.0
+    flip_counts after:
+      both_correct 191
+      both_wrong 65
+      base_correct_core_wrong 0
+      base_wrong_core_correct 0
+
+layer23 + base_wrong retry4 correction:
+  report:
+    local_eval/qwen35_integrated_language_knowledge_healing_clonecore_l23_basewrong_retry4_posgain_s120_20260516/report.json
+  result:
+    rejected
+    base 192/256
+    core 191/256
+    gain -0.00390625
+    flip_counts after:
+      both_correct 191
+      both_wrong 64
+      base_correct_core_wrong 1
+      base_wrong_core_correct 0
+
+layer23 + dual-stream retry3 correction/preservation:
+  report:
+    local_eval/qwen35_integrated_language_knowledge_healing_clonecore_l23_dualstream_retry3_posgain_s120_20260516/report.json
+  result:
+    rejected
+    base 191/256
+    core 190/256
+    gain -0.00390625
+    core_ce_delta 0.000021344516426324844
+    flip_counts after:
+      both_correct 190
+      both_wrong 65
+      base_correct_core_wrong 1
+      base_wrong_core_correct 0
+```
+
+Interpretation:
+
+```text
+Cloning a Qwen layer into the mandatory QTRM core gives the core enough
+capacity to preserve language and nearly tie the base. It still does not create
+reliable base-wrong corrections on held-out external MCQ validation. Stronger
+preservation KL prevents regressions but also leaves zero corrections. Stronger
+base_wrong retry/correction pressure destabilizes preservation before it learns
+new correct answers. A first dual-stream correction/preservation objective also
+remained negative, so the next improvement likely needs stronger core placement,
+larger non-test correction data, or a better preference/verifier target rather
+than only loss-weight tuning.
+
+Therefore this stage is not an architecture-complete result and not a public
+benchmark improvement. The next bottleneck is not checkpoint selection or
+residual scale. It is the objective/data path for producing causal
+base_wrong_core_correct flips without introducing base_correct_core_wrong
+regressions.
+```
+
+## 2026-05-16 - Nested H/L core controls opened
+
+Diagnosis:
+
+```text
+The integrated Qwen language/knowledge healing script was not actually using
+TRM-style nested H/L recurrence. It hardcoded:
+
+  n_core_layers=1
+  h_cycles=1
+  l_cycles=1
+  outer_steps=1
+
+This made the mandatory QTRM path a shallow one-pass post-backbone residual,
+not a nested learner/reasoner. That can explain why language was preserved but
+base_wrong_core_correct flips did not emerge.
+```
+
+Implementation:
+
+```text
+scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+  added CLI args:
+    --n-core-layers
+    --h-cycles
+    --l-cycles
+    --outer-steps
+    --core-convergence-halt-enabled / --no-core-convergence-halt
+    --core-step-conditioning-enabled / --no-core-step-conditioning
+
+scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+  added env controls:
+    N_CORE_LAYERS
+    H_CYCLES
+    L_CYCLES
+    OUTER_STEPS
+    CORE_CONVERGENCE_HALT_ENABLED
+    CORE_STEP_CONDITIONING_ENABLED
+
+default correction:
+  direct script defaults and runner defaults are now:
+    h_cycles=3
+    l_cycles=6
+    outer_steps=3
+    core_convergence_halt_enabled=true
+    core_step_conditioning_enabled=true
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+
+bash -n scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qwen35_integrated_language_knowledge_healing
+
+result:
+  11 tests OK
+```
+
+Nested smoke:
+
+```text
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_nested_h3l6_smoke_s2_20260516/report.json
+
+settings:
+  h_cycles: 3
+  l_cycles: 6
+  outer_steps: 1
+  qwen_trainability.mode: frozen
+  clone_qwen_core_layers: true
+
+result:
+  executable
+  text accepted
+  language accepted
+  16-case MCQ tie: base 12/16, core 12/16
+
+interpretation:
+  This is only an execution smoke, not a promotion. The next useful run is a
+  small positive-gain validation gate with the same nested controls.
+```
+
+Default nested smoke:
+
+```text
+report:
+  local_eval/qwen35_integrated_language_knowledge_healing_nested_default_smoke_s0_20260516/report.json
+
+result:
+  executable
+  h_cycles: 3
+  l_cycles: 6
+  outer_steps: 3
+  core_convergence_halt_enabled: true
+  core_step_conditioning_enabled: true
+  language accepted
+
+interpretation:
+  The default `394` path is no longer a 1/1/1 shallow residual path. Any future
+  1/1/1 use must be explicitly labeled as a smoke/ablation, not canonical TRM
+  nested learning.
+```
+
+## 2026-05-16 - Mid-layer QTRM causal insertion
+
+Diagnosis:
+
+```text
+The H3/L6/outer3 final-hidden residual path still failed public MCQ validation:
+
+  base_hits: 191 / 256
+  core_hits: 189 / 256
+  base_wrong_core_correct: 0
+  base_correct_core_wrong: 2
+  core_converged_fraction: 0.0
+
+This means the core was recurrent, but it was too late in the causal path. It
+perturbed Qwen's final hidden state after Qwen had already completed its answer
+computation.
+```
+
+Implementation:
+
+```text
+src/qtrm_mm/qwen_backbone_qtrm.py
+  added core_insertion_mode:
+    final_residual
+    mid_layer_suffix
+
+  mid_layer_suffix path:
+    Qwen full forward with hidden_states
+    -> take hidden state after core_insert_after_layer
+    -> mandatory QTRM core
+    -> rerun remaining Qwen suffix layers
+    -> Qwen final norm / LM head
+
+scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+  default:
+    CORE_INSERTION_MODE=mid_layer_suffix
+    CORE_INSERT_AFTER_LAYER=11
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  src/qtrm_mm/qwen_backbone_qtrm.py \
+  scripts/394_train_qwen35_integrated_language_knowledge_healing.py
+
+bash -n scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
+
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qwen_backbone_qtrm \
+  tests.test_qwen35_integrated_language_knowledge_healing
+
+result:
+  24 tests OK
+```
+
+Smoke:
+
+```text
+report:
+  local_eval/qwen35_integrated_midlayer_suffix_default_smoke_s0_20260516/report.json
+
+settings:
+  core_insertion_mode: mid_layer_suffix
+  core_insert_after_layer: 11
+  h_cycles: 3
+  l_cycles: 6
+  outer_steps: 3
+
+result:
+  executable
+  MCQ 4-case tie
+  mean_core_outer_iterations: 2.75
+  core_converged_fraction: 0.25
+```
+
+Small validation:
+
+```text
+report:
+  local_eval/qwen35_integrated_midlayer_suffix_shared_posgain_s80_20260516/report.json
+
+decision:
+  rejected
+
+metrics:
+  base_hits: 94 / 128
+  core_hits: 93 / 128
+  gain: -0.0078125
+  base_wrong_core_correct: 1
+  base_correct_core_wrong: 2
+  mean_core_outer_iterations: 2.8125
+  core_converged_fraction: 0.1953125
+
+interpretation:
+  Mid-layer placement is directionally better than final-hidden residual
+  because it produced the first public-MCQ correction flip and nonzero
+  convergence. It is still not accepted because regressions exceed corrections.
+```
+
+Roadmap consequence:
+
+```text
+Do not revert to final-hidden residual tuning. The next bottleneck is
+preservation/correction separation in the mid-layer path. Try adapter-only or
+smaller residual starts with a clean/mismatched adapter reset, stronger
+base-correct preservation, and selection by flip balance:
+
+  base_wrong_core_correct > base_correct_core_wrong
+  full core gain > 0
+```
+
+## 2026-05-16 - First Strict Mid-layer Integrated Gain
+
+Result:
+
+```text
+report:
+  local_eval/qwen35_integrated_midlayer_suffix_adapteronly_coretrain_langanchor_s160_20260516/report.json
+
+decision:
+  accepted_integrated_language_knowledge_healing
+
+path:
+  Qwen3.5 prefix layers
+  -> mandatory H=3/L=6 QTRM recurrent core at layer 11
+  -> Qwen3.5 suffix layers
+  -> Qwen3.5 LM head
+
+settings:
+  core_insertion_mode: mid_layer_suffix
+  core_delta_adapter_mode: adapter_only
+  core_adapter_dim: 512
+  qwen_trainable_parameters: 0
+  language_anchor_weight: 1.5
+  base_correct_option_kl_weight: 0.8
+```
+
+Metrics:
+
+```text
+before:
+  base_hits: 191 / 256
+  core_hits: 191 / 256
+
+after:
+  base_hits: 191 / 256
+  core_hits: 195 / 256
+  gain: +0.015625
+  base_wrong_core_correct: 12
+  base_correct_core_wrong: 8
+  commonsense hit_delta: +1
+  science hit_delta: +3
+  language top1 agreement: 0.9166667
+  generation max repeated token run: 1
+```
+
+Important negative control:
+
+```text
+Without the language-anchor KL, the same correction objective reached
+base_wrong_core_correct=15 but collapsed ordinary prompt top1 agreement to
+0.0833 by pushing option-letter tokens such as "B" into the global LM logits.
+This proves the bottleneck was not "core cannot learn"; it was correction loss
+leaking into the general language channel.
+```
+
+Roadmap consequence:
+
+```text
+This is the first non-preservation-only Qwen-integrated QTRM result where the
+mandatory core beats donor-only on held-out public MCQ validation while keeping
+normal language generation usable.
+
+Next promotion gate:
+  run independent scripts/390 public-MCQ evaluation at larger eval size
+  keep language-anchor KL
+  tighten base_correct regression after confirming the gain reproduces
+```
+
+## 2026-05-16 - Independent 390 Recheck
+
+External commonsense/science 64-case recheck:
+
+```text
+report:
+  local_eval/qwen35_integrated_midlayer_suffix_langanchor_390_external64_20260516/report.json
+
+decision:
+  accepted_m4_public_mcq_core_gain
+
+metrics:
+  base: 48 / 64 = 0.7500
+  core: 50 / 64 = 0.78125
+  gain: +0.03125
+```
+
+MMLU-Pro 64-case recheck:
+
+```text
+report:
+  local_eval/qwen35_integrated_midlayer_suffix_langanchor_390_mmlupro64_20260516/report.json
+
+decision:
+  rejected_m4_public_mcq_core_gain
+
+metrics:
+  base: 25 / 64 = 0.390625
+  core: 24 / 64 = 0.375
+  gain: -0.015625
+```
+
+Interpretation:
+
+```text
+The accepted mid-layer QTRM core gain is real on the external
+commonsense/science validation distribution and survives an independent scorer.
+It is not yet a broad MMLU-Pro gain. The next bottleneck is data/task
+coverage, not another macro-architecture rewrite.
+
+Next action:
+  train or repair on a balanced MMLU-Pro train/dev slice while keeping the
+  language-anchor KL and strict base/core flip accounting.
+```
+
+## 2026-05-16 - MMLU Repair Diagnostics
+
+Implementation correction:
+
+```text
+Bug found:
+  Qwen3.5 tokenizer padding_side is right.
+  Several batched MCQ/language paths used logits[:, -1, :].
+  For short rows inside a padded batch this reads the pad-token position, not
+  the actual final prompt token.
+
+Fix:
+  scripts/394_train_qwen35_integrated_language_knowledge_healing.py now uses
+  last_nonpad_logits(...) for batched MCQ and language-anchor next-token losses.
+  scripts/367_eval_qwen_backbone_language_gate.py now uses the same rule for
+  top-k language preservation checks.
+```
+
+Experiments after the correction:
+
+```text
+adaptive gate:
+  report: local_eval/qwen35_integrated_midlayer_suffix_adaptive_gate_mmlupro_s80_20260516/report.json
+  base/core: 23/22
+  gain: -0.015625
+  corrections/regressions: 2 / 3
+
+supervised adaptive gate:
+  report: local_eval/qwen35_integrated_midlayer_suffix_adaptive_gate_supervised_mmlupro_s80_20260516/report.json
+  base/core: 23/21
+  gain: -0.03125
+  corrections/regressions: 1 / 3
+
+fast-LR gate:
+  report: local_eval/qwen35_integrated_midlayer_suffix_adaptive_gate_fastlr_mmlupro_s80_20260516/report.json
+  base/core: 23/21
+  gain: -0.03125
+  corrections/regressions: 0 / 2
+
+trainable cloned core layer:
+  report: local_eval/qwen35_integrated_midlayer_suffix_clonecore_mmlupro_s40_20260516/report.json
+  base/core: 23/20
+  gain: -0.046875
+  corrections/regressions: 1 / 4
+```
+
+Diagnostic conclusion:
+
+```text
+MMLU-Pro is not improved by simply opening a token gate or making the wrapped
+core layer trainable for a short repair run. The current core signal contains
+some useful flips, but also higher-priority harmful flips in health/philosophy.
+
+An option-score arbitration sweep on the accepted mid-layer checkpoint found a
+non-label rule that can preserve base and take one separable correction:
+  condition: base_margin <= 5, core_margin >= 0.25, switch_adv >= 1
+  result on the 64-case shuffled MMLU-Pro slice: base 23 -> arbitrated 24
+
+Roadmap consequence:
+  Do not scale this repair until the decision/gating problem is made explicit.
+  The next useful stage is a learned confidence/arbitration head trained to
+  predict "apply core delta" from base/core score geometry, while keeping the
+  QTRM core mandatory in the causal path.
+```
+
+## 2026-05-16 - Karpathy Autoresearch Probe Applied
+
+Reference material:
+
+```text
+repo:
+  https://github.com/karpathy/autoresearch
+
+local clone:
+  references/official/autoresearch
+
+commit:
+  228791fb499afffb54b46200aca536f79142f117
+```
+
+Applied pattern:
+
+```text
+fixed-budget experiment
+one decisive metric
+keep/discard ledger
+small scoped change before scaling
+```
+
+New probe:
+
+```text
+script:
+  scripts/395_autoresearch_arbitration_probe.py
+
+runner:
+  scripts/395_run_autoresearch_arbitration_probe.sh
+
+report:
+  local_eval/qwen35_integrated_autoresearch_arbitration_probe_mmlupro64_20260516/report.json
+
+ledger:
+  local_eval/qwen35_integrated_autoresearch_arbitration_probe/results.tsv
+```
+
+Result:
+
+```text
+decision:
+  rejected_arbitration_probe
+
+fit split:
+  base: 12 / 32
+  core: 9 / 32
+  arbitration: 12 / 32
+
+held-out eval split:
+  base: 11 / 32
+  core: 10 / 32
+  arbitration: 11 / 32
+
+best rule:
+  base_margin_max: 0.0
+  core_margin_min: 0.0
+  switch_adv_min: -1.0
+```
+
+Interpretation:
+
+```text
+The fixed-budget autoresearch probe did not find a keep-worthy score-geometry
+arbitration rule on the split evaluation. It selected no-switch because the fit
+split contained no useful separable correction. Therefore, do not scale blind
+MCQ repair or simple post-hoc arbitration. The next action is to improve the
+core signal or add richer separability features before training a learned
+arbitration head.
+```
+
+Follow-up linear policy probe:
+
+```text
+script:
+  scripts/395_autoresearch_arbitration_probe.py --policy linear
+
+report:
+  local_eval/qwen35_integrated_autoresearch_linear_arbitration_probe_mmlupro64_20260516/report.json
+
+decision:
+  rejected_arbitration_probe
+
+fit:
+  base: 12 / 32
+  core: 9 / 32
+  linear arbitration: 12 / 32
+  switches: 0
+
+held-out eval:
+  base: 11 / 32
+  core: 10 / 32
+  linear arbitration: 11 / 32
+  switches: 0
+
+ledger:
+  local_eval/qwen35_integrated_autoresearch_arbitration_probe/results.tsv
+```
+
+Updated conclusion:
+
+```text
+Both threshold and linear score-geometry arbitration reject. This narrows the
+next useful work: MMLU-Pro needs a better recurrent core signal, not another
+post-hoc gate over the current base/core option scores.
+```
+
+## 2026-05-16 - MMLU Scorer SSOT Correction
+
+Issue found:
+
+```text
+scripts/390_eval_qwen35_integrated_public_mcq.py scored option letters with
+max over acceptable one-token renderings:
+  A, " A", "\nA"
+
+scripts/394_train_qwen35_integrated_language_knowledge_healing.py and
+scripts/395_autoresearch_arbitration_probe.py scored the same renderings with
+logsumexp probability mass.
+
+This made a small false-positive possible: the option-only checkpoint looked
+like base 25/64 -> core 26/64 under the old 390 max scorer, but rejected under
+the training/autoresearch scorer.
+```
+
+Fix:
+
+```text
+390 now uses option_score_from_log_probs(...), i.e. logsumexp over acceptable
+one-token renderings, matching 394/395.
+
+391 public-MCQ healing also used logits[:, -1, :] on padded batches. It now
+gathers the final non-pad token logits just like 394.
+
+test:
+  tests/test_qwen35_integrated_public_mcq_eval.py
+  tests/test_qwen35_integrated_public_mcq_healing.py
+```
+
+Canonical recheck after the fix:
+
+```text
+checkpoint:
+  local_eval/qwen35_integrated_midlayer_suffix_optiononly_mmlupro_s80_20260516/last_core.pt
+
+report:
+  local_eval/qwen35_integrated_midlayer_suffix_optiononly_mmlupro64_ssot_eval_20260516/report.json
+
+result:
+  rejected_m4_public_mcq_core_gain
+  base: 26 / 64
+  core: 25 / 64
+  gain: -0.015625
+```
+
+Consequence:
+
+```text
+Do not claim MMLU-Pro improvement from the option-only run. The current
+bottleneck remains recurrent core signal quality, not just evaluator/gating.
+All future MCQ gates must use the same option-letter probability-mass scorer
+and non-pad final-token gathering.
+```
+
+Preservation repair follow-up:
+
+```text
+report:
+  local_eval/qwen35_integrated_midlayer_suffix_optiononly_preserve_repair_s80_20260516/report.json
+
+decision:
+  rejected_integrated_language_knowledge_healing
+
+best periodic step:
+  0
+
+result:
+  base: 23 / 64
+  core: 21 / 64
+  gain: -0.03125
+  base_wrong_core_correct: 1
+  base_correct_core_wrong: 3
+
+interpretation:
+  stronger base-correct preservation loss did not repair the harmful
+  health/philosophy flips. This supports changing the core signal/capacity or
+  integration path instead of adding more post-hoc or preservation-only loss.
+```
+
+## 2026-05-16 - SSOT Revalidation Of Accepted QTRM Candidates
+
+New runner:
+
+```text
+scripts/396_run_qwen35_integrated_ssot_revalidation.sh
+```
+
+Purpose:
+
+```text
+Do not trust historical accepted=true flags after the scorer/padding fixes.
+Re-run canonical candidates through the same 390 public-MCQ evaluator using:
+  - option-letter probability mass scorer
+  - explicit checkpoint/suite/settings
+  - strict gain threshold
+  - summary.jsonl ledger
+```
+
+Summary:
+
+```text
+ledger:
+  local_eval/qwen35_integrated_ssot_revalidation_20260516/summary.jsonl
+
+midlayer_external64:
+  checkpoint: local_eval/qwen35_integrated_midlayer_suffix_adapteronly_coretrain_langanchor_s160_20260516/last_core.pt
+  result: accepted
+  base/core: 49 / 50
+  gain: +0.015625
+
+midlayer_mmlupro64:
+  checkpoint: local_eval/qwen35_integrated_midlayer_suffix_adapteronly_coretrain_langanchor_s160_20260516/last_core.pt
+  result: rejected
+  base/core: 26 / 23
+  gain: -0.046875
+
+optiononly_mmlupro64:
+  checkpoint: local_eval/qwen35_integrated_midlayer_suffix_optiononly_mmlupro_s80_20260516/last_core.pt
+  result: rejected
+  base/core: 26 / 25
+  gain: -0.015625
+
+public_coreonly_mmlu256:
+  checkpoint: local_eval/qwen35_integrated_public_mcq_healing_coreonly_val64_to_test256_s120_20260516/last_core.pt
+  result: rejected
+  base/core: 93 / 93
+  gain: 0
+```
+
+Scale sweep on MMLU-Pro64:
+
+```text
+ledger:
+  local_eval/qwen35_integrated_ssot_scale_sweep_mmlupro64_20260516/summary.jsonl
+
+residual_scale 0.00:
+  base/core: 26 / 26
+  gain: 0
+
+residual_scale 0.25:
+  base/core: 26 / 23
+  gain: -0.046875
+
+residual_scale 0.50:
+  base/core: 26 / 23
+  gain: -0.046875
+
+residual_scale 0.75:
+  base/core: 26 / 22
+  gain: -0.0625
+
+residual_scale 1.00:
+  base/core: 26 / 23
+  gain: -0.046875
+```
+
+Diagnosis:
+
+```text
+The current mid-layer QTRM core is real but narrow. It helps the external
+commonsense/science validation slice, but harms broad MMLU-Pro as soon as its
+residual is allowed to influence logits. This is not a "more scale" problem.
+The next architecture/training loop must improve the core signal itself before
+claiming broad reasoning improvement.
+```
+
+## 2026-05-16 QTRM-Native TRM-Condition Lock
+
+Decision:
+
+```text
+The canonical QTRM target is now explicitly:
+  TRM-paper-condition QTRM-native loop reasoning model.
+```
+
+Meaning:
+
+```text
+mandatory core = causally necessary recursive latent loop
+not merely a block that is executed during forward
+```
+
+Required path:
+
+```text
+prompt tokens
+-> tokenizer
+-> native embeddings/backbone
+-> repeated TRM-style latent loop (z_L/z_H or equivalent)
+-> core-dependent readout
+-> LM logits
+-> autoregressive text
+```
+
+Promotion requires:
+
+```text
+full > no-loop/shallow-loop
+full > core_off/think0
+deeper loop > shallow loop
+state reset/zero/shuffle/corruption damages the same metric
+readout_off damages the same metric
+normal LM logits generate the answer
+```
+
+Demoted to diagnostic:
+
+```text
+Qwen donor/residual adapter improvement
+Qwen-preservation-first tuning
+MemoryOS/RAG/tool/verifier success
+forced-choice gain without greedy LM generation gain
+any result where residual_scale=0 or core_off preserves the claim
+```
+
+Updated:
+
+```text
+docs/wiki/architecture/qtrm-native-first-roadmap.md
+docs/wiki/decisions/qtrm-native-hard-lock.md
+docs/wiki/decisions/orthodox-trm-general-llm-direction.md
+docs/wiki/index.md
+```
+
+Milestone dependency added:
+
+```text
+M-A: prove recursive core actually improves reasoning.
+M-B: attach the proven core to the normal LM path.
+M-C: heal language only after the core is causal in that LM path.
+```
+
+## 2026-05-16 Executable M-A/M-B/M-C Gate
+
+Implemented:
+
+```text
+scripts/372_qtrm_native_27b_milestone_status.py
+  adds core_to_lm_to_healing_dependencies:
+    M_A_RECURSIVE_CORE_REASONING_PROOF
+    M_B_CORE_TO_LM_ATTACHMENT
+    M_C_LANGUAGE_HEALING_AFTER_CORE
+
+scripts/380_refresh_m6_status.sh
+scripts/385_refresh_m7_status.sh
+  pass QTRM_REPORT as --core-reasoning-report
+```
+
+Current regenerated status:
+
+```text
+report:
+  local_eval/qtrm_native_27b_milestone_status/report.json
+  local_eval/qtrm_native_27b_milestone_status/report.md
+
+M-A:
+  accepted
+  source: local_eval/research_gate_runner/qtrm_native_l5_multifamily_standard/report.json
+  full_generation_exact: 0.6067708333333334
+  min_family_generation_exact: 0.4140625
+  full_minus_think0: 0.5859375
+  full_minus_worst_ablation: 0.5716145833333334
+
+M-B:
+  accepted
+  same report proves normal LM-generation evidence because the score is
+  full_generation_exact with ablation drops.
+
+M-C:
+  accepted
+  source: local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_repairv3_s4000_20260515/report.json
+
+next_action:
+  work on M7_NATIVE_2B_3B_PUBLIC_BENCH_PARITY
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest tests.test_qtrm_native_27b_milestone_status
+.venv/bin/python -m py_compile scripts/372_qtrm_native_27b_milestone_status.py
+bash -n scripts/380_refresh_m6_status.sh scripts/385_refresh_m7_status.sh
+```
+
+## 2026-05-16 M7 Strict Scorer Correction
+
+Problem:
+
+```text
+The previous M7 public MCQ evaluator parsed option letters from the whole
+generated completion. When the native model echoed the prompt/options, the
+scorer could read the echoed "A." option as the answer.
+```
+
+Fix:
+
+```text
+scripts/384_eval_qtrm_native_public_mcq.py
+  extract_answer_text() now separates answer-bearing text from prompt echo.
+  The scorer no longer counts letters from echoed options.
+  Metrics now report invalid_pred_rate, prompt_echo_rate, and pred histogram.
+
+scripts/372_qtrm_native_27b_milestone_status.py
+  propagates M7 invalid/prompt-echo metrics into the milestone status.
+```
+
+Strict re-eval:
+
+```text
+report:
+  local_eval/m7_qtrm_native_qwen35pre_mmlu_pro_balanced256_eval_strict_20260516/report.json
+
+suite:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_test_balanced_256.jsonl
+
+checkpoint:
+  local_eval/qtrm_native_pretrained_init_qwen35_compact_external4500_s3600_20260515/last.pt
+
+accuracy:
+  1 / 256 = 0.00390625
+
+invalid_pred_rate:
+  0.98046875
+
+prompt_echo_rate:
+  1.0
+
+pred_answer_histogram:
+  <empty>: 251
+  A: 5
+```
+
+Diagnosis:
+
+```text
+M7 is blocked before public knowledge/reasoning parity. The current native
+checkpoint usually reconstructs/echoes the MCQ prompt instead of producing a
+single answer letter after Assistant:. The next repair target is strict
+instruction-following / answer-only generation on public-MCQ format while
+preserving M-A/M-B core causality.
+```
+
+Next action:
+
+```text
+Build an M7 answer-only MCQ healing gate:
+  train/eval on public-style MCQ prompts;
+  reject prompt echo;
+  require pred_answer_histogram not dominated by A or empty;
+  then re-run strict M7 before any larger public benchmark claim.
+```
+
+## 2026-05-16 M7A Answer-Only Gate Accepted
+
+Implementation:
+
+```text
+scripts/384_eval_qtrm_native_public_mcq.py
+  fixed generation scoring to decode only newly generated suffix token ids.
+  The earlier strict scorer decoded prompt+completion, which made compact
+  tokenizer prompt reconstruction look like prompt echo.
+
+scripts/397_build_m7a_public_mcq_answer_only_corpus.py
+  builds public-style answer-only rows.
+
+scripts/398_score_m7a_answer_only_gate.py
+  rejects invalid answers, prompt echo, and single-label collapse.
+
+scripts/400_train_qtrm_native_public_mcq_final_token.py
+  trains only the final answer token after the prompt, instead of sequence CE
+  over the whole MCQ prompt/options text.
+
+scripts/401_run_qtrm_native_m7a_final_token_healing.sh
+  one-command M7A final-token runner.
+```
+
+Key diagnosis:
+
+```text
+The compact Qwen-preinit checkpoint is not suitable for public MCQ answer
+generation. Its compact tokenizer has unk_compact_id == eos_compact_id, so OOV
+prompt pieces become EOS/UNK and the model learns empty output.
+
+The full-vocab Qwen-tokenizer checkpoint can produce valid answer letters, but
+plain sequence CE over whole MCQ records teaches option-line patterns such as
+"A." and can collapse to a single option.
+
+The correct M7A repair objective is final-token option CE/margin on the answer
+position, with A-J training data. A-D-only auxiliary MMLU data is structurally
+insufficient for MMLU-Pro A-J answer space.
+```
+
+Accepted run:
+
+```text
+train:
+  local_eval/qtrm_native_m7a_final_token_space_mmluproval64_s300_20260516
+
+runner-equivalent:
+  scripts/401_run_qtrm_native_m7a_final_token_healing.sh
+
+init checkpoint:
+  local_eval/qtrm_native_language_bootstrap_qwen_tokenizer_quality_s1000_20260515/last.pt
+
+train suite:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_validation_64.jsonl
+  A-J labels present
+
+strict eval suite:
+  local_eval/m7_public_reasoning_suite/mmlu_pro_test_balanced_256.jsonl
+  first 64 cases
+
+gate report:
+  local_eval/qtrm_native_m7a_final_token_space_mmluproval64_s300_20260516/m7a_gate_report.json
+
+decision:
+  accepted_m7a_public_mcq_answer_only_gate
+
+strict generation metrics:
+  accuracy: 9 / 64 = 0.140625
+  invalid_pred_rate: 0.0
+  prompt_echo_rate: 0.0
+  max_pred_fraction: 0.234375
+  pred_answer_histogram:
+    B: 11
+    D: 1
+    E: 15
+    F: 9
+    H: 6
+    I: 9
+    J: 13
+```
+
+Interpretation:
+
+```text
+M7A is not public benchmark parity. It only closes the answer-surface bottleneck:
+the model now emits a single option letter without prompt echo, empty output,
+or A-only collapse on a strict held-out public-style MCQ slice.
+
+Next bottleneck:
+  improve actual knowledge/reasoning accuracy while preserving this accepted
+  answer path. The next experiment should optimize public-MCQ correctness with
+  non-test A-J validation data and core-depth/core-off ablations, not return to
+  compact-vocab sequence CE or residual-only architecture shopping.
+```
+
+## 2026-05-16 M7B Core-Depth Gate Accepted
+
+Implementation:
+
+```text
+scripts/402_score_m7b_core_depth_gate.py
+  scores whether a full-depth native recurrent core improves strict greedy MCQ
+  accuracy over no/shallow thinking while preserving the M7A answer surface.
+
+scripts/403_run_qtrm_native_m7b_core_depth_gate.sh
+  runs depth0/depth1/depth2/depth4 strict MCQ evals and then scores M7B.
+```
+
+Run:
+
+```text
+OUT_ROOT=local_eval/qtrm_native_m7b_core_depth_gate_m7a_s300_20260516 \
+CHECKPOINT=local_eval/qtrm_native_m7a_final_token_space_mmluproval64_s300_20260516/last.pt \
+MAX_CASES=64 DEVICE=cuda PYTHONPATH=src \
+bash scripts/403_run_qtrm_native_m7b_core_depth_gate.sh
+```
+
+Gate report:
+
+```text
+local_eval/qtrm_native_m7b_core_depth_gate_m7a_s300_20260516/m7b_gate_report.json
+```
+
+Decision:
+
+```text
+accepted_m7b_public_mcq_core_depth_gate
+```
+
+Depth sweep:
+
+```text
+depth0:
+  6 / 64 = 0.09375
+  histogram: A 64
+
+depth1:
+  7 / 64 = 0.109375
+  histogram: A 3, B 2, E 59
+
+depth2:
+  7 / 64 = 0.109375
+  histogram: A 1, B 8, E 53, F 1, H 1
+
+depth4:
+  9 / 64 = 0.140625
+  histogram: B 11, D 1, E 15, F 9, H 6, I 9, J 13
+```
+
+Acceptance checks:
+
+```text
+gain_vs_baseline:
+  +0.046875
+
+gain_vs_best_shallow:
+  +0.03125
+
+surface:
+  invalid_pred_rate: 0.0
+  prompt_echo_rate: 0.0
+  max_pred_fraction: 0.234375
+```
+
+Interpretation:
+
+```text
+M7B is still not public benchmark parity. It is the first public-style MCQ
+native result where:
+  1. the answer surface is valid under strict greedy generation;
+  2. full recursive depth beats no/shallow thinking on the same held-out slice;
+  3. the gain is measured through normal LM token generation, not a sidecar.
+
+Next bottleneck:
+  M7C should increase correctness beyond this 9/64 baseline while keeping the
+  same M7A/M7B gates. Required next experiments should use broader non-test
+  A-J MCQ supervision or a stronger native/integrated core curriculum, then
+  rerun M7B plus larger 256/512 public slices.
+```
+
+## 2026-05-16 M7C Answer-CE Repair Attempts Rejected
+
+Implementation added:
+
+```text
+scripts/404_materialize_aj_remap_mcq.py
+  builds non-test A-J remapped MCQ training data without using MMLU-Pro test
+  labels.
+
+scripts/400_train_qtrm_native_public_mcq_final_token.py
+  gained optional base-checkpoint option-KL preservation and trainable
+  parameter name filtering.
+```
+
+Built data:
+
+```text
+local_eval/m7_public_reasoning_suite/mmlu_aux_all_validation_train_aj_remap_plus_mmluproval64_20260516.jsonl
+cases: 2112
+answer distribution:
+  A 219, B 229, C 199, D 228, E 208, F 194, G 216, H 233, I 180, J 206
+```
+
+Rejected runs:
+
+```text
+local_eval/qtrm_native_m7c_aj_remap_s300_20260516/report.json
+  final_eval: 7 / 64 = 0.109375
+  M7B gate:
+    local_eval/qtrm_native_m7c_aj_remap_s300_m7b_20260516/m7b_gate_report.json
+    rejected: gain_vs_baseline and gain_vs_best_shallow both 0.015625
+
+local_eval/qtrm_native_m7c_aj_remap_s120_lr5e5_20260516/report.json
+  final_eval: 5 / 64 = 0.078125
+
+local_eval/qtrm_native_m7c_external_natural_s120_lr2e5_20260516/report.json
+  final_eval: 7 / 64 = 0.109375
+
+local_eval/qtrm_native_m7c_external_preservekl_s100_lr1e5_20260516/report.json
+  option-KL preserve on MMLU-Pro validation 64
+  final_eval: 8 / 64 = 0.125
+
+local_eval/qtrm_native_m7c_mmluaux_preservekl_s80_lr1e5_20260516/report.json
+  option-KL preserve on MMLU-Pro validation 64
+  final_eval: 8 / 64 = 0.125
+
+local_eval/qtrm_native_m7c_coreonly_mmluaux_preservekl_s150_20260516/report.json
+  trainable: think/core_halt only, 132609 / 63913729 params
+  final_eval: 8 / 64 = 0.125
+
+local_eval/qtrm_native_m7c_coreonly_ajremap_preservekl_s60_20260516/report.json
+  trainable: think/core_halt only, 132609 / 63913729 params
+  final_eval: 7 / 64 = 0.109375
+
+local_eval/qtrm_native_m7c_depthgain_coreonly_val64_s100_20260516/report.json
+  core-only depth-gain trajectory loss
+  final_eval: 5 / 64 = 0.078125
+
+local_eval/qtrm_native_m7c_depth_sweep_m7a_20260516/m7b_gate_report.json
+  no training, accepted M7A checkpoint depth sweep
+  depth4: 9 / 64 = 0.140625
+  depth6: 6 / 64 = 0.09375
+  depth8: 5 / 64 = 0.078125
+  depth12: 2 / 64 = 0.03125
+```
+
+Decision:
+
+```text
+M7C answer-token CE repair is rejected for now. It preserves the answer surface
+better than whole-sequence CE, but it still pulls the model away from the
+accepted M7A/M7B checkpoint. This held for:
+  full-model tuning
+  low-LR short tuning
+  option-KL preserve tuning
+  core-only tuning
+  natural external MCQ and A-J remapped MCQ data
+  depth-gain trajectory tuning
+```
+
+Research consequence:
+
+```text
+Do not continue M7C by simply adding more MCQ answer CE. The next correctness
+step must train the recursive core's trajectory, not just the final option
+token. A stronger TRM-style curriculum should supervise or regularize latent
+recursive state transitions, then promote only if:
+  depth4 still beats depth0/depth1/depth2;
+  final output remains normal LM generation;
+  strict M7A surface does not regress;
+  correctness improves beyond 9/64 on the held-out public-style slice.
+
+The accepted M7A checkpoint also has a depth sweet spot at 4 recursive steps.
+Blindly increasing loop count is rejected: depth6/8/12 all regressed.
+```
+
+## 2026-05-16 M7D Knowledge Bootstrap Smoke Rejected
+
+Added:
+
+```text
+scripts/405_eval_m7c_checkpoint_soup_in_memory.py
+  evaluates checkpoint interpolation without writing full `last.pt` files.
+
+scripts/406_build_mcq_knowledge_text_corpus.py
+  converts non-test MCQ rows into answer-content language records:
+    question -> correct option text
+```
+
+Non-test corpus:
+
+```text
+local_eval/m7_public_reasoning_suite/mcq_knowledge_text_aux_mmlu_external_20260516.jsonl
+records: 3531
+sources:
+  local_eval/m7_public_reasoning_suite/mmlu_aux_all_validation_train_20260516.jsonl
+  local_eval/m7_public_reasoning_suite/external_mcq_train_pool_2000_20260516.jsonl
+```
+
+M7C soup triage:
+
+```text
+summary:
+  local_eval/qtrm_native_m7c_soup_triage_20260516/summary.json
+
+best:
+  9 / 64 = 0.140625
+  no improvement over accepted M7A/M7B baseline
+
+decision:
+  rejected as promotion path
+```
+
+Knowledge bootstrap attempts:
+
+```text
+knowledge-only CE:
+  local_eval/qtrm_native_m7d_knowledge_bootstrap_aux_s120_20260516/report.json
+  rejected
+  symptom: repeated-word loop / "the the" language degradation
+
+knowledge-only -> answer repair:
+  local_eval/qtrm_native_m7d_knowledge_then_m7a_val70_s240_20260516/report.json
+  final next-token diagnostic: 2 / 64
+  rejected
+
+preservation-mix low-LR knowledge CE:
+  local_eval/qtrm_native_m7d_knowledge_mix_low_lr_s80_20260516/report.json
+  rejected by semantic relevance gate, but language sample was non-degenerate
+
+preservation-mix -> answer repair:
+  local_eval/qtrm_native_m7d_knowledge_mix_then_m7a_val70_s240_20260516/report.json
+  next-token diagnostic: 8 / 64
+
+preservation-mix -> answer repair -> KL continuation:
+  local_eval/qtrm_native_m7d_knowledge_mix_then_m7a_val70_s240_klcont_s120_20260516/report.json
+  next-token diagnostic: 9 / 64
+  strict M7B:
+    local_eval/qtrm_native_m7d_knowledge_mix_then_m7a_val70_s240_klcont_s120_m7b_20260516/m7b_gate_report.json
+    rejected
+    strict depth4: 2 / 64
+    invalid_pred_rate: 0.796875
+```
+
+Important evaluator lesson:
+
+```text
+Trainer `initial_eval` / `final_eval` in
+scripts/400_train_qtrm_native_public_mcq_final_token.py scores next-token
+option log-probability. It can look acceptable while strict greedy generation
+emits empty output. Promotion must use strict M7A/M7B generation gates, not the
+trainer diagnostic alone.
+```
+
+Decision:
+
+```text
+M7D knowledge-text CE on the current 64M native backbone is rejected as a fast
+route to public-MCQ improvement. It either destroys language fluency or creates
+a logprob/generation mismatch. The baseline remains:
+  local_eval/qtrm_native_m7a_final_token_space_mmluproval64_s300_20260516/last.pt
+  depth4 strict generation: 9 / 64
+```
+
+## 2026-05-16 Qwen-Integrated Public MCQ SSOT Revalidation Rejected
+
+Context:
+
+```text
+The Qwen-integrated path is a native-candidate only when Qwen tokenizer,
+backbone, QTRM core, and LM head live in one standalone graph with
+runtime_donor=false. It is not the canonical donor-sidecar path.
+```
+
+Existing result audit:
+
+```text
+Aggregated existing qwen35_integrated*/report.json files.
+Some old reports showed accepted public-MCQ core gains, but the strongest
+ones were training-internal/best-periodic or non-SSOT reports.
+```
+
+Revalidation commands used standalone public evaluator:
+
+```text
+scripts/390_run_qwen35_integrated_m4_public_mcq.sh
+scorer: next-token option-letter probability mass
+core_off: force_core_off=True
+core_on: mandatory QTRM core in the same Qwen graph
+```
+
+Results:
+
+```text
+public_coreonly_mmlu256 SSOT summary:
+  local_eval/qwen35_integrated_ssot_revalidation_20260516/public_coreonly_mmlu256/report.json
+  checkpoint: local_eval/qwen35_integrated_public_mcq_healing_coreonly_val64_to_test256_s120_20260516/last_core.pt
+  core_off 93 / 256
+  core_on  93 / 256
+  gain 0.0
+  decision rejected
+
+same checkpoint direct rerun:
+  local_eval/qwen35_integrated_repro_public_coreonly_mmlu256_rerun2_20260516/report.json
+  core_off 93 / 256
+  core_on  93 / 256
+  gain 0.0
+  decision rejected
+
+l23open seed20260520 rerun:
+  local_eval/qwen35_integrated_repro_l23open_seed20260520_mmlu256_20260516/report.json
+  core_off 93 / 256
+  core_on  94 / 256
+  gain 0.00390625
+  decision rejected
+
+512 residual_scale=0.06 rerun:
+  local_eval/qwen35_integrated_repro_public_coreonly_mmlu512_resid0p06_20260516/report.json
+  core_off 194 / 512
+  core_on  196 / 512
+  gain 0.00390625
+  decision rejected
+```
+
+Decision:
+
+```text
+The Qwen-integrated public-MCQ core gain is not currently canonical. Earlier
+96/256 and 197/512 accepted-looking reports should be treated as historical
+diagnostics until reproduced by standalone SSOT evaluation.
+```
+
+Research consequence:
+
+```text
+Do not keep tuning this residual integrated path for benchmark claims until
+the core effect is stronger than the evaluator noise floor. The next acceptable
+route is either:
+  1. return to QTRM-native TRM-condition proof: recursive depth/state ablations
+     improve held-out LM-logit or strict generation metrics; or
+  2. redesign the integrated core objective so standalone public eval shows
+     repeatable core_on > core_off by at least the configured threshold.
+
+Training-periodic eval, best-checkpoint selection metrics, and old reports are
+not promotion evidence unless the exact checkpoint is rerun through the
+standalone SSOT gate.
 ```
