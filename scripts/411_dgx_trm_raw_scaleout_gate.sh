@@ -17,6 +17,10 @@ D_MODEL="${D_MODEL:-128}"
 N_HEADS="${N_HEADS:-8}"
 D_FF="${D_FF:-256}"
 LR="${LR:-3.0e-4}"
+RESUME_FROM="${RESUME_FROM:-}"
+RESUME_ALLOW_MISSING="${RESUME_ALLOW_MISSING:-1}"
+INCLUDE_FAMILY_TAG="${INCLUDE_FAMILY_TAG:-1}"
+EXTRA_ARGS="${EXTRA_ARGS:-}"
 
 usage() {
   cat <<USAGE
@@ -36,6 +40,9 @@ Key overrides:
   EVAL_CASES=${EVAL_CASES}
   BATCH_SIZE=${BATCH_SIZE}
   REMOTE_PYTHON=${REMOTE_PYTHON}
+  RESUME_FROM=${RESUME_FROM:-<empty>}
+  INCLUDE_FAMILY_TAG=${INCLUDE_FAMILY_TAG}
+  EXTRA_ARGS=${EXTRA_ARGS:-<empty>}
 USAGE
 }
 
@@ -66,16 +73,26 @@ print('torch', torch.__version__, 'cuda', torch.cuda.is_available())
 PY"
     ;;
   run)
+    extra_args=()
+    if [[ -n "${RESUME_FROM}" ]]; then
+      extra_args+=(--resume-from "'${RESUME_FROM}'")
+      if [[ "${RESUME_ALLOW_MISSING}" == "1" ]]; then
+        extra_args+=(--resume-allow-missing)
+      fi
+    fi
+    if [[ "${INCLUDE_FAMILY_TAG}" == "1" ]]; then
+      extra_args+=(--include-family-tag)
+    fi
     remote "PYTHONPATH=src '${REMOTE_PYTHON}' scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
       --out-dir 'local_eval/dgx_trm_raw_scaleout_len${PROGRAM_LEN}_${OUT_TAG}' \
       --target-level 'TRM-like raw reasoning scale-out len${PROGRAM_LEN}' \
+      ${extra_args[*]} \
       --steps '${STEPS}' \
       --train-cases '${TRAIN_CASES}' \
       --eval-cases '${EVAL_CASES}' \
       --task-families 'modchain,revchain,modchain,revchain,checksum' \
       --eval-task-families 'modchain,revchain,checksum' \
       --eval-family-order-invariant \
-      --include-family-tag \
       --program-len '${PROGRAM_LEN}' \
       --modulus 32 \
       --d-model '${D_MODEL}' \
@@ -102,7 +119,8 @@ PY"
       --accept-min-ablation-drop '${ACCEPT_MIN_ABLATION_DROP:-0.10}' \
       --accept-min-family-exact '${ACCEPT_MIN_FAMILY_EXACT:-0.15}' \
       --accepted-decision 'accepted_trm_raw_scaleout_len${PROGRAM_LEN}' \
-      --log-every '${LOG_EVERY:-200}'"
+      --log-every '${LOG_EVERY:-200}' \
+      ${EXTRA_ARGS}"
     ;;
   *)
     echo "unknown action: ${ACTION}" >&2
@@ -110,4 +128,3 @@ PY"
     exit 2
     ;;
 esac
-

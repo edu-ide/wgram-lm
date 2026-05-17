@@ -4777,6 +4777,16 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 key: value.detach().cpu().clone()
                 for key, value in model.state_dict().items()
             }
+    sample_cases = train_cases[: max(1, min(int(args.batch_size), len(train_cases)))]
+    _sample_x, _sample_y, prompt_len, answer_len = cases_to_batch(
+        sample_cases,
+        tokenizer=tokenizer,
+        device=device,
+        include_family_tag=include_family_tag,
+        state_anchor=state_anchor,
+        state_anchor_position=state_anchor_position,
+    )
+    del _sample_x, _sample_y
     last_loss = 0.0
     for step in range(1, int(args.steps) + 1):
         lr_scale = lr_scale_for_step(

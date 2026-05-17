@@ -23985,3 +23985,128 @@ M7B remains useful as a small-slice causal-depth diagnostic, but it cannot be
 promoted as a public-MCQ reasoning result. The next work item is core-depth
 scale-out repair on 256/512 public-style cases.
 ```
+
+## 2026-05-17 TRM Raw Scale-Out Transfer Accepted To Len16
+
+Public-style M7B repair stayed rejected, so the work returned to the raw
+reasoning scale-out ladder where knowledge/language confounds are removed.
+
+Accepted transfer chain:
+
+```text
+len4 accepted checkpoint:
+  local_eval/research_gate_runner/qtrm_native_l5_multifamily_standard/last.pt
+  full: 0.6067708333333334
+  full_minus_think0: 0.5859375
+  ablation_drop: 0.5716145833333334
+  min_family: 0.4140625
+
+len4 -> len8:
+  DGX local_eval/dgx_trm_raw_scaleout_len8_resume_len4_to_len8_20260517_191305/report.json
+  decision: accepted_trm_raw_scaleout_len8
+  full: 0.15104166666666666
+  full_minus_think0: 0.15104166666666666
+  ablation_drop: 0.109375
+  min_family: 0.03125
+
+len8 -> len12:
+  DGX local_eval/dgx_trm_raw_scaleout_len12_resume_len8_to_len12_20260517_191414/report.json
+  decision: accepted_trm_raw_scaleout_len12
+  full: 0.10416666666666667
+  full_minus_think0: 0.10416666666666667
+  ablation_drop: 0.06770833333333334
+  min_family: 0.015625
+
+len12 -> len16:
+  DGX local_eval/dgx_trm_raw_scaleout_len16_resume_len12_to_len16_20260517_191926/report.json
+  decision: accepted_trm_raw_scaleout_len16
+  full: 0.109375
+  full_minus_think0: 0.109375
+  ablation_drop: 0.0859375
+  min_family: 0.05813953488372093
+
+len16 standalone checkpoint rerun, 512 held-out cases:
+  DGX local_eval/dgx_trm_raw_scaleout_len16_standalone_len16_ckpt512_20260517_192654/report.json
+  decision: accepted_trm_raw_scaleout_len16
+  full: 0.09375
+  full_minus_think0: 0.09375
+  ablation_drop: 0.0703125
+  min_family: 0.05263157894736842
+```
+
+Interpretation:
+
+```text
+This is the first clean recurrent-compute scaling ladder in this repo:
+depth0 cannot solve the longer tasks, full recurrent depth solves a nonzero
+slice, and state/op ablations remove much of the gain. It is still not public
+benchmark parity or a full TRM-like breakthrough. The next bottlenecks are
+seed stability, higher family-balanced floors, and then returning to public
+MCQ/language gates.
+```
+
+Rejected family-DRO repair:
+
+```text
+DGX local_eval/dgx_trm_raw_scaleout_len16_len16_familydro_repair_20260517_193004/report.json
+decision: rejected
+full: 0.076171875
+full_minus_think0: 0.076171875
+ablation_drop: 0.05078125
+min_family: 0.023391812865497075
+reject_reasons:
+  full_exact_below_threshold
+  family_exact_below_threshold
+```
+
+Interpretation:
+
+```text
+Strong family-DRO plus retention KL over-corrected and damaged the accepted
+len16 recurrent trajectory. Continue with lower-pressure family-floor periodic
+selection rather than treating family-DRO as the canonical repair.
+```
+
+Low-pressure family-floor selection:
+
+```text
+DGX local_eval/dgx_trm_raw_scaleout_len16_len16_familyfloor_select_20260517_193542/report.json
+decision: rejected
+full: 0.09375
+full_minus_think0: 0.09375
+ablation_drop: 0.0703125
+min_family: 0.05263157894736842
+best_periodic_eval: step 0
+```
+
+This did not improve the family floor over the accepted len16 checkpoint.
+Training did briefly raise overall exact to 0.171875 at step 800, but the
+minimum family exact stayed 0.047058823529411764, so the family-balanced gate
+still rejected it.
+
+Ouro-style h-state probe:
+
+```text
+DGX local_eval/dgx_trm_raw_scaleout_len16_len16_probe_h_20260517_194508/report.json
+decision: accepted_trm_raw_scaleout_len16
+greedy full: 0.09375
+core_answer_probe_exact: 0.115234375
+
+core_step_probe_by_depth:
+  depth1: 0.048828125
+  depth8: 0.046875
+  depth10: 0.064453125
+  depth12: 0.0625
+  depth16: 0.08984375
+```
+
+Interpretation:
+
+```text
+The recurrent h-state contains answer information beyond greedy decoding, and
+the final depth16 state is more probe-readable than early depth1. This is a
+real latent-state signal, but it is not yet the clean monotonic sharpening
+reported for strong looped-LM style systems. The next objective should
+stabilize depth trajectories and family-specific transitions, not merely add
+more answer-token CE.
+```
