@@ -24595,6 +24595,8 @@ PYTHONPATH=src .venv/bin/python scripts/337_train_qtrm_native_mixed_text_reasoni
 Next DGX candidate once connectivity returns:
 
 ```text
+scripts/412_dgx_len20_prefix_anchor_gate.sh run
+
 Use the accepted len20 selection checkpoint or the seed9338 failed checkpoint,
 train only route1/router, and add:
 

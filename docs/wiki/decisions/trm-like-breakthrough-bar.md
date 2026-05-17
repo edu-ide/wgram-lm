@@ -551,6 +551,9 @@ promotion gate:
   len20 seed9338 family-floor pass
   len20 original seed retention pass
   destructive state/op/depth ablations still remove the gain
+
+runner:
+  scripts/412_dgx_len20_prefix_anchor_gate.sh
 ```
 
 Implemented repair path:
