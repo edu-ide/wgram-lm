@@ -24110,3 +24110,66 @@ reported for strong looped-LM style systems. The next objective should
 stabilize depth trajectories and family-specific transitions, not merely add
 more answer-token CE.
 ```
+
+Trajectory-stabilization trial:
+
+```text
+DGX local_eval/dgx_trm_raw_scaleout_len16_len16_trace_depth_family_20260517_194749/report.json
+decision: rejected
+full: 0.09375
+full_minus_think0: 0.09375
+ablation_drop: 0.0703125
+min_family: 0.05263157894736842
+best_periodic_eval: step 0
+
+periodic high-water marks:
+  step400 full: 0.15234375, min_family: 0.046511627906976744
+  step600 full: 0.1875, min_family: 0.03488372093023256
+```
+
+The state-trace depth loss improved overall exact during training but did not
+improve the family floor. This confirms that the accepted trajectory can be
+overfit toward easier families.
+
+Operation breakdown on accepted len16:
+
+```text
+DGX local_eval/dgx_trm_raw_scaleout_len16_len16_opbreakdown_20260517_195401/report.json
+
+family exact:
+  checksum: 0.15294117647058825
+  modchain: 0.05263157894736842
+  revchain: 0.07602339181286549
+
+modchain by last op:
+  op01 add1: 0 / 29 = 0.0
+  op04 mul2: 0 / 27 = 0.0
+  op07 affine3: 1 / 31 = 0.03225806451612903
+  op06 affine2: 5 / 19 = 0.2631578947368421
+```
+
+Late-op hard replay:
+
+```text
+DGX local_eval/dgx_trm_raw_scaleout_len16_len16_modchain_lateop_replay_20260517_195528/report.json
+decision: rejected
+full: 0.09375
+full_minus_think0: 0.09375
+ablation_drop: 0.0703125
+min_family: 0.05263157894736842
+best_periodic_eval: step 0
+
+periodic high-water marks:
+  step400 full: 0.1484375, min_family: 0.046511627906976744
+  step700 full: 0.19140625, min_family: 0.023255813953488372
+```
+
+Interpretation:
+
+```text
+Hard replay of late modchain op01/op04 raised overall exact during training but
+made family balance worse. The next architecture change should separate or
+condition transition routes by family/causal order, then force every route to
+retain a recurrent-depth gain. More global CE, family-DRO, or late-op replay is
+not enough.
+```

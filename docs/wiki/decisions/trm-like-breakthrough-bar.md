@@ -183,6 +183,28 @@ len16 h-state probe:
     depth10: 0.064453125
     depth12: 0.0625
     depth16: 0.08984375
+
+state-trace depth stabilization:
+  DGX local_eval/dgx_trm_raw_scaleout_len16_len16_trace_depth_family_20260517_194749/report.json
+  decision: rejected
+  restored best checkpoint: step 0
+  high-water full exact: 0.1875 at step600
+  step600 min family exact: 0.03488372093023256
+
+operation breakdown:
+  DGX local_eval/dgx_trm_raw_scaleout_len16_len16_opbreakdown_20260517_195401/report.json
+  modchain by last op:
+    op01 add1: 0 / 29 = 0.0
+    op04 mul2: 0 / 27 = 0.0
+    op07 affine3: 1 / 31 = 0.03225806451612903
+    op06 affine2: 5 / 19 = 0.2631578947368421
+
+late-op hard replay:
+  DGX local_eval/dgx_trm_raw_scaleout_len16_len16_modchain_lateop_replay_20260517_195528/report.json
+  decision: rejected
+  restored best checkpoint: step 0
+  high-water full exact: 0.19140625 at step700
+  step700 min family exact: 0.023255813953488372
 ```
 
 Interpretation:
@@ -205,6 +227,12 @@ the final recurrent state exposes more answer information than greedy decoding
 alone, and later depth16 state is more probe-readable than depth1. It does not
 yet show clean monotonic answer sharpening across all depths, so the next
 objective must stabilize the trajectory rather than only increasing answer CE.
+
+The follow-up stabilization and hard-replay runs showed the failure mode:
+overall accuracy can be raised during training, but the family floor drops.
+Therefore the next architectural candidate should add route-conditioned
+recurrent transitions or family/order-conditioned state updates, and acceptance
+must require each route/family to keep a causal depth gain.
 ```
 
 ## Research Direction
