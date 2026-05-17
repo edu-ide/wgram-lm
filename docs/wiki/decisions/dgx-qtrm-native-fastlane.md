@@ -149,6 +149,24 @@ failure reports, then add only one of these:
    oversample only the families where depth4 loses to depth0.
 ```
 
+The 2026-05-17 DGX triage with this repair objective still failed:
+
+```text
+depth8: 0.046875
+depth0: 0.09375
+best shallow depth1: 0.15625
+decision: rejected
+```
+
+Consequence:
+
+```text
+Do not spend a full 1200-step public-MCQ run on the same objective yet. First
+run the raw scale-out gate in scripts/411_dgx_trm_raw_scaleout_gate.sh to check
+whether the recurrent core can scale from program_len=4 to program_len=8/12 on
+knowledge-free reasoning.
+```
+
 ## Promotion Rules
 
 The fastlane is accepted only when:

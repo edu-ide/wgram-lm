@@ -76,6 +76,31 @@ TRM-like public-style breakthrough: no
 next bottleneck: M7B core-depth scale-out repair
 ```
 
+DGX depth-repair triage, 2026-05-17:
+
+```text
+report:
+  DGX local_eval/dgx_qtrm_native_m7b_depth256_triage_depthrepair_20260517_190439/m7b_gate_report.json
+
+result:
+  depth0: 0.09375
+  depth1: 0.15625
+  depth4: 0.09375
+  depth8: 0.046875
+  decision: rejected
+```
+
+Interpretation:
+
+```text
+Adding final-token mixed-depth CE, full-vs-shallow margin, and depth6->depth8
+trajectory KL did not create a TRM-like public-MCQ depth signal. MMLU-style
+MCQ is currently confounded by missing knowledge/language ability. The next
+TRM-like test should return to raw reasoning scale-out: keep the same
+modchain/revchain/checksum family but increase program_len from 4 to 8/12 and
+require recurrent depth to scale with problem length.
+```
+
 ## Research Direction
 
 Do not widen the model or add RAG before the breakthrough gate passes. The next
@@ -97,6 +122,14 @@ changes must target the recurrent trajectory itself:
 
 5. family-balanced hard negatives:
    Repair only the public-style families where depth hurts.
+```
+
+Raw scale-out runner:
+
+```bash
+bash scripts/411_dgx_trm_raw_scaleout_gate.sh plan
+PROGRAM_LEN=8 THINK_STEPS=8 bash scripts/411_dgx_trm_raw_scaleout_gate.sh run
+PROGRAM_LEN=12 THINK_STEPS=12 bash scripts/411_dgx_trm_raw_scaleout_gate.sh run
 ```
 
 Implemented repair path:
