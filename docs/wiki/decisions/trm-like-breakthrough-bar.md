@@ -527,6 +527,32 @@ Use these for long DGX runs so interruptions do not destroy all intermediate
 training state.
 ```
 
+Next candidate after data-scale rejection:
+
+```text
+mechanism:
+  forced_route_prefix_depth_anchor_loss
+
+target:
+  ordered-chain transition generalization on route1
+
+causal path:
+  causal-prefix prompt tokens
+  -> tokenizer
+  -> QTRM single_order_router with forced route1
+  -> recurrent core at matching prefix depth
+  -> normal LM logits
+
+why allowed:
+  The objective changes training pressure only. It does not add a hidden answer
+  channel, rule solver, or runtime sidecar.
+
+promotion gate:
+  len20 seed9338 family-floor pass
+  len20 original seed retention pass
+  destructive state/op/depth ablations still remove the gain
+```
+
 Implemented repair path:
 
 ```text

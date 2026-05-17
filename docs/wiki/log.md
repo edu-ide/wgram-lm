@@ -24512,3 +24512,101 @@ Long runs should now use, at minimum:
 --save-every-steps 100
 --save-best-periodic-checkpoint
 ```
+
+## 2026-05-18 - Forced Route Prefix-Anchor Objective
+
+After the seed9338 data-scale run rejected, the bottleneck was reclassified as
+ordered-chain transition generalization rather than dataset quantity. The next
+candidate is not another larger run. It adds a route-local transition objective:
+force route1 and train it on causal-prefix prompts through the normal LM logits
+path.
+
+Implementation:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+new function:
+  forced_route_prefix_depth_anchor_loss
+
+new flags:
+  --forced-route-prefix-depth-anchor-loss-weight
+  --forced-route-prefix-depth-anchor-route
+  --forced-route-prefix-depth-anchor-families
+  --forced-route-prefix-depth-anchor-max-cases
+  --forced-route-prefix-depth-anchor-every
+  --forced-route-prefix-depth-anchor-min-depth
+  --forced-route-prefix-depth-anchor-weight-power
+```
+
+Rationale:
+
+```text
+forced_route_intermediate_depth_loss:
+  full prompt stays full length, route is asked to expose intermediate answers
+  after each recurrent depth.
+
+forced_route_prefix_depth_anchor_loss:
+  prompt itself is shortened to each causal prefix, route1 is forced, and the
+  answer is still produced by LM logits. This gives route1 local transition
+  supervision before it must carry the same transition inside a full program.
+```
+
+Verification:
+
+```text
+.venv/bin/python -m py_compile scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+PYTHONPATH=src .venv/bin/python scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
+  --out-dir local_eval/forced_route_prefix_anchor_smoke \
+  --target-level forced-route-prefix-anchor-smoke \
+  --steps 1 \
+  --train-cases 8 \
+  --eval-cases 8 \
+  --task-families modchain,revchain,checksum \
+  --eval-task-families modchain,revchain,checksum \
+  --eval-family-order-invariant \
+  --include-family-tag \
+  --program-len 2 \
+  --modulus 8 \
+  --d-model 32 \
+  --n-heads 4 \
+  --d-ff 64 \
+  --batch-size 4 \
+  --lr 1e-3 \
+  --device cpu \
+  --train-think-steps 2 \
+  --eval-think-steps 2 \
+  --backbone mha_etd \
+  --think-structure single_order_router \
+  --forced-route-prefix-depth-anchor-loss-weight 0.1 \
+  --forced-route-prefix-depth-anchor-route 1 \
+  --forced-route-prefix-depth-anchor-families modchain,revchain \
+  --forced-route-prefix-depth-anchor-max-cases 4 \
+  --forced-route-prefix-depth-anchor-min-depth 1 \
+  --forced-route-prefix-depth-anchor-weight-power 1.0 \
+  --accept-min-exact 0 \
+  --accept-min-depth-gain 0 \
+  --accept-min-ablation-drop 0 \
+  --accept-min-family-exact 0 \
+  --accepted-decision forced_route_prefix_anchor_smoke
+```
+
+Next DGX candidate once connectivity returns:
+
+```text
+Use the accepted len20 selection checkpoint or the seed9338 failed checkpoint,
+train only route1/router, and add:
+
+--forced-route-prefix-depth-anchor-loss-weight 0.2
+--forced-route-prefix-depth-anchor-route 1
+--forced-route-prefix-depth-anchor-families modchain,revchain
+--forced-route-prefix-depth-anchor-max-cases 64
+--forced-route-prefix-depth-anchor-min-depth 1
+--forced-route-prefix-depth-anchor-weight-power 1.0
+--save-every-steps 100
+--save-best-periodic-checkpoint
+
+Promote only if seed9338 and the original selection seed both pass len20
+family-floor gates.
+```

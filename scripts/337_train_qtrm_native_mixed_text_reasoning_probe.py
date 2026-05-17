@@ -2984,6 +2984,88 @@ def forced_route_intermediate_depth_loss(
             delattr(model, force_attr)
 
 
+def forced_route_prefix_depth_anchor_loss(
+    model: torch.nn.Module,
+    cases: list[TextReasoningCase],
+    *,
+    tokenizer: CharTokenizer,
+    device: torch.device,
+    include_family_tag: bool,
+    route: int,
+    families: tuple[str, ...],
+    max_depth: int,
+    modulus: int,
+    min_depth: int = 1,
+    depth_weight_power: float = 0.0,
+    max_cases: int = 0,
+    state_anchor: bool = False,
+    state_anchor_position: str = "before_answer",
+) -> torch.Tensor:
+    """Train a forced route to solve causal-prefix prompts through LM logits.
+
+    This differs from forced_route_intermediate_depth_loss: the prompt itself is
+    shortened to the causal prefix, so the route learns the local transition
+    problem before being asked to carry it inside a full-length program.
+    """
+    _router, force_attr = _order_router_module_and_force_attr(model)
+    route_id = int(route)
+    if route_id not in {0, 1}:
+        raise ValueError("forced-route prefix-anchor route must be 0 or 1")
+    family_set = {str(item) for item in families}
+    selected_cases = [
+        case for case in cases if not family_set or str(case.family) in family_set
+    ]
+    if int(max_cases) > 0:
+        selected_cases = selected_cases[: int(max_cases)]
+    if not selected_cases:
+        return torch.zeros((), device=device)
+    losses: list[tuple[float, torch.Tensor]] = []
+    first_depth = max(1, int(min_depth))
+    had_route_force = hasattr(model, force_attr)
+    old_route_force = getattr(model, force_attr, None)
+    setattr(model, force_attr, route_id)
+    try:
+        for depth in range(1, max(1, int(max_depth)) + 1):
+            if depth < first_depth:
+                continue
+            prefix_cases = [
+                case_with_causal_prefix_len(
+                    case,
+                    prefix_len=int(depth),
+                    modulus=int(modulus),
+                )
+                for case in selected_cases
+            ]
+            prefix_x, prefix_y, prefix_prompt_len, prefix_answer_len = cases_to_batch(
+                prefix_cases,
+                tokenizer=tokenizer,
+                device=device,
+                include_family_tag=include_family_tag,
+                state_anchor=state_anchor,
+                state_anchor_position=state_anchor_position,
+            )
+            logits = model(prefix_x, think_steps=int(depth))
+            depth_loss = answer_text_loss(
+                logits,
+                prefix_y,
+                prompt_len=prefix_prompt_len,
+                answer_len=prefix_answer_len,
+            )
+            weight = float(depth) ** max(0.0, float(depth_weight_power))
+            losses.append((weight, depth_loss))
+    finally:
+        if had_route_force:
+            setattr(model, force_attr, old_route_force)
+        else:
+            delattr(model, force_attr)
+    if not losses:
+        return torch.zeros((), device=device)
+    total_weight = sum(weight for weight, _ in losses)
+    return torch.stack(
+        [loss * (weight / max(total_weight, 1e-12)) for weight, loss in losses]
+    ).sum()
+
+
 def core_step_codec_feature_dim(
     *,
     d_model: int,
@@ -5168,6 +5250,33 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 state_anchor_position=state_anchor_position,
             )
         if (
+            float(args.forced_route_prefix_depth_anchor_loss_weight) > 0.0
+            and (
+                int(args.forced_route_prefix_depth_anchor_every) <= 1
+                or step % int(args.forced_route_prefix_depth_anchor_every) == 0
+            )
+        ):
+            loss = loss + float(
+                args.forced_route_prefix_depth_anchor_loss_weight
+            ) * forced_route_prefix_depth_anchor_loss(
+                model,
+                batch,
+                tokenizer=tokenizer,
+                device=device,
+                include_family_tag=include_family_tag,
+                route=int(args.forced_route_prefix_depth_anchor_route),
+                families=parse_families(str(args.forced_route_prefix_depth_anchor_families)),
+                max_depth=int(args.train_think_steps),
+                modulus=int(args.modulus),
+                min_depth=int(args.forced_route_prefix_depth_anchor_min_depth),
+                depth_weight_power=float(
+                    args.forced_route_prefix_depth_anchor_weight_power
+                ),
+                max_cases=int(args.forced_route_prefix_depth_anchor_max_cases),
+                state_anchor=state_anchor,
+                state_anchor_position=state_anchor_position,
+            )
+        if (
             float(args.prefix_state_alignment_loss_weight) > 0.0
             and (
                 int(args.prefix_state_alignment_every) <= 1
@@ -6061,6 +6170,26 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--forced-route-depth-every", type=int, default=1)
     parser.add_argument("--forced-route-depth-min-depth", type=int, default=1)
     parser.add_argument("--forced-route-depth-weight-power", type=float, default=1.0)
+    parser.add_argument(
+        "--forced-route-prefix-depth-anchor-loss-weight",
+        type=float,
+        default=0.0,
+    )
+    parser.add_argument(
+        "--forced-route-prefix-depth-anchor-route",
+        type=int,
+        choices=(0, 1),
+        default=1,
+    )
+    parser.add_argument("--forced-route-prefix-depth-anchor-families", default="revchain")
+    parser.add_argument("--forced-route-prefix-depth-anchor-max-cases", type=int, default=0)
+    parser.add_argument("--forced-route-prefix-depth-anchor-every", type=int, default=1)
+    parser.add_argument("--forced-route-prefix-depth-anchor-min-depth", type=int, default=1)
+    parser.add_argument(
+        "--forced-route-prefix-depth-anchor-weight-power",
+        type=float,
+        default=1.0,
+    )
     parser.add_argument("--prefix-state-alignment-loss-weight", type=float, default=0.0)
     parser.add_argument(
         "--prefix-state-alignment-max-cases",
