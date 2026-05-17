@@ -107,6 +107,7 @@
 ## Decisions
 
 - [QTRM-Native Hard Lock](decisions/qtrm-native-hard-lock.md): locks canonical progress to QTRM-native loop reasoning that satisfies TRM-style causal conditions; donor/residual/MemoryOS/Qwen-sidecar work is diagnostic only.
+- [DGX QTRM-Native Fastlane](decisions/dgx-qtrm-native-fastlane.md): fastest credible DGX path for QTRM-native core-depth scale-out repair.
 - [QTRM-Native 2B/3B vs Qwen3.6-27B Milestones](decisions/qtrm-native-27b-benchmark-milestones.md): target contract, milestone ladder, and executable status gate for beating Qwen3.6-27B with a smaller native model.
 - [Reference Architecture Axes](decisions/reference-architecture-axes.md): separates generator, mixer, recursion, world model, and wiki sources.
 - [QTRM Goal And Scope](decisions/qtrm-goal-and-scope.md): defines QTRM as a Qwen-backed cognitive/memory adapter and sets the next priority order.
