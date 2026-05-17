@@ -107,6 +107,7 @@ bash scripts/408_dgx_qtrm_native_fastlane.sh status
 bash scripts/408_dgx_qtrm_native_fastlane.sh sync
 bash scripts/408_dgx_qtrm_native_fastlane.sh m7-final-token-repair
 bash scripts/408_dgx_qtrm_native_fastlane.sh m7-depth-256
+bash scripts/410_run_trm_breakthrough_gate.sh
 ```
 
 The first serious pass should use:
@@ -155,4 +156,10 @@ The fastlane is accepted only when:
 ```
 
 Anything weaker is diagnostic, not a model-performance claim.
+
+The hard final promotion gate is documented separately:
+
+```text
+docs/wiki/decisions/trm-like-breakthrough-bar.md
+```
 
