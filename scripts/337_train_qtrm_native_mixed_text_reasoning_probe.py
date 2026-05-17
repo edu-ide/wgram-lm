@@ -4361,6 +4361,67 @@ def build_periodic_eval_record(
     return record
 
 
+def cpu_model_state_dict(model: torch.nn.Module) -> dict[str, torch.Tensor]:
+    return {
+        key: value.detach().cpu().clone()
+        for key, value in model.state_dict().items()
+    }
+
+
+def write_checkpoint_atomic(payload: dict[str, object], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, tmp_path)
+    tmp_path.replace(path)
+
+
+def save_training_checkpoint(
+    *,
+    out_dir: Path,
+    filename: str,
+    model: torch.nn.Module,
+    args: argparse.Namespace,
+    tokenizer: CharTokenizer,
+    step: int,
+    last_loss: float,
+    last_lr: float,
+    periodic_eval_records: list[dict[str, object]],
+    best_eval_record: dict[str, object] | None,
+    model_state: dict[str, torch.Tensor] | None = None,
+    update_latest: bool = True,
+) -> None:
+    if not str(out_dir):
+        return
+    payload = {
+        "model_state": model_state if model_state is not None else cpu_model_state_dict(model),
+        "args": vars(args),
+        "chars": tokenizer.chars,
+        "checkpoint_step": int(step),
+        "last_loss": float(last_loss),
+        "last_lr": float(last_lr),
+        "periodic_eval": periodic_eval_records,
+        "best_periodic_eval": best_eval_record,
+    }
+    write_checkpoint_atomic(payload, out_dir / filename)
+    if bool(update_latest):
+        write_checkpoint_atomic(payload, out_dir / "latest.pt")
+        (out_dir / "latest_progress.json").write_text(
+            json.dumps(
+                {
+                    "checkpoint": filename,
+                    "step": int(step),
+                    "last_loss": float(last_loss),
+                    "last_lr": float(last_lr),
+                    "best_periodic_eval": best_eval_record,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+
 def make_decision(metrics: dict[str, object], args: argparse.Namespace) -> dict[str, object]:
     full = metrics[f"think{args.eval_think_steps}"]
     think0 = metrics["think0"]
@@ -4770,6 +4831,7 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
     periodic_eval_records: list[dict[str, object]] = []
     best_eval_state: dict[str, torch.Tensor] | None = None
     best_eval_record: dict[str, object] | None = None
+    checkpoint_out_dir = Path(args.out_dir)
     periodic_eval_cases = (
         eval_cases
         if int(args.eval_during_training_cases) <= 0
@@ -4788,10 +4850,22 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         print(json.dumps({"periodic_eval": record}, ensure_ascii=False))
         best_eval_record = record
         if bool(args.restore_best_eval_checkpoint):
-            best_eval_state = {
-                key: value.detach().cpu().clone()
-                for key, value in model.state_dict().items()
-            }
+            best_eval_state = cpu_model_state_dict(model)
+            if bool(args.save_best_periodic_checkpoint):
+                save_training_checkpoint(
+                    out_dir=checkpoint_out_dir,
+                    filename="best_periodic.pt",
+                    model=model,
+                    args=args,
+                    tokenizer=tokenizer,
+                    step=0,
+                    last_loss=0.0,
+                    last_lr=last_lr,
+                    periodic_eval_records=periodic_eval_records,
+                    best_eval_record=best_eval_record,
+                    model_state=best_eval_state,
+                    update_latest=False,
+                )
     sample_cases = train_cases[: max(1, min(int(args.batch_size), len(train_cases)))]
     _sample_x, _sample_y, prompt_len, answer_len = cases_to_batch(
         sample_cases,
@@ -5452,10 +5526,37 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
             ) > periodic_eval_score(best_eval_record, mode=score_mode):
                 best_eval_record = record
                 if bool(args.restore_best_eval_checkpoint):
-                    best_eval_state = {
-                        key: value.detach().cpu().clone()
-                        for key, value in model.state_dict().items()
-                    }
+                    best_eval_state = cpu_model_state_dict(model)
+                    if bool(args.save_best_periodic_checkpoint):
+                        save_training_checkpoint(
+                            out_dir=checkpoint_out_dir,
+                            filename="best_periodic.pt",
+                            model=model,
+                            args=args,
+                            tokenizer=tokenizer,
+                            step=step,
+                            last_loss=last_loss,
+                            last_lr=last_lr,
+                            periodic_eval_records=periodic_eval_records,
+                            best_eval_record=best_eval_record,
+                            model_state=best_eval_state,
+                            update_latest=False,
+                        )
+        if int(args.save_every_steps) > 0 and (
+            step % int(args.save_every_steps) == 0 or step == int(args.steps)
+        ):
+            save_training_checkpoint(
+                out_dir=checkpoint_out_dir,
+                filename=f"checkpoint_step_{step:06d}.pt",
+                model=model,
+                args=args,
+                tokenizer=tokenizer,
+                step=step,
+                last_loss=last_loss,
+                last_lr=last_lr,
+                periodic_eval_records=periodic_eval_records,
+                best_eval_record=best_eval_record,
+            )
 
     if bool(args.restore_best_eval_checkpoint) and best_eval_state is not None:
         model.load_state_dict(best_eval_state)
@@ -6139,6 +6240,23 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--restore-best-eval-checkpoint", action="store_true")
+    parser.add_argument(
+        "--save-every-steps",
+        type=int,
+        default=0,
+        help=(
+            "Write checkpoint_step_XXXXXX.pt and latest.pt every N training "
+            "steps so long runs can be resumed after interruption. 0 disables."
+        ),
+    )
+    parser.add_argument(
+        "--save-best-periodic-checkpoint",
+        action="store_true",
+        help=(
+            "When periodic checkpoint selection improves and "
+            "--restore-best-eval-checkpoint is enabled, write best_periodic.pt."
+        ),
+    )
     parser.add_argument("--accept-min-exact", type=float, default=0.70)
     parser.add_argument("--accept-min-depth-gain", type=float, default=0.10)
     parser.add_argument("--accept-min-ablation-drop", type=float, default=0.10)

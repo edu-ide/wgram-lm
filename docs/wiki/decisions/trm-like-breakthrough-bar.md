@@ -361,6 +361,172 @@ because it improves the len16 family floor without changing the base tensors.
 Promotion requires a standalone 512-case rerun, route-specialization stability,
 and len20/longer transfer.
 
+Standalone 512-case rerun:
+
+```text
+report:
+  DGX local_eval/dgx_single_order_router_chain_target_512rerun_20260517_205432/report.json
+
+decision:
+  accepted_single_order_router_chain_target_len16_512rerun
+
+metrics:
+  full_generation_exact: 0.140625
+  think0_generation_exact: 0.0
+  full_minus_think0: 0.140625
+  full_minus_worst_ablation: 0.119140625
+  min_family_generation_exact: 0.06432748538011696
+  state_reset_generation_exact: 0.021484375
+  op_zero_generation_exact: 0.01953125
+
+family exact:
+  checksum: 0.27647058823529413
+  modchain: 0.08187134502923976
+  revchain: 0.06432748538011696
+
+router last_hlh_prob:
+  checksum: 0.17065902054309845
+  modchain: 0.9107509851455688
+  revchain: 0.9774150252342224
+```
+
+Decision consequence:
+
+```text
+The repair is now reproduced on the stronger standalone gate. This confirms
+causal recurrent compute and route-conditioned family separation, but the
+absolute score and forced route1 score are still too small for a breakthrough
+claim. The next falsifiable gate is len20 transfer with the same destructive
+ablations.
+```
+
+Len20 route-conditioned transfer:
+
+```text
+accepted report:
+  DGX local_eval/dgx_single_order_router_len20_familyfloor_select_20260517_222156/report.json
+
+decision:
+  accepted_single_order_router_len20_familyfloor
+
+metrics:
+  full_generation_exact: 0.1953125
+  think0_generation_exact: 0.0
+  full_minus_think0: 0.1953125
+  full_minus_worst_ablation: 0.158203125
+  min_family_generation_exact: 0.07602339181286549
+  state_reset_generation_exact: 0.03125
+  op_zero_generation_exact: 0.037109375
+
+family exact:
+  checksum: 0.43529411764705883
+  modchain: 0.07602339181286549
+  revchain: 0.07602339181286549
+
+best periodic eval:
+  step: 600
+  generation_exact: 0.1953125
+  min_family_generation_exact: 0.07602339181286549
+```
+
+Why this matters:
+
+```text
+The previous len20 attempts failed mostly because the ordered-chain families
+were under-selected, not because the route-conditioned core was unusable.
+Balanced chain data, family-DRO pressure, and family-floor checkpoint selection
+converted a near miss into an accepted len20 gate while preserving the normal
+LM-logit answer path and destructive core ablations.
+```
+
+Promotion constraint:
+
+```text
+Do not call this a breakthrough yet. It is an accepted synthetic len20 raw
+reasoning result on the selection seed. Promotion requires an independent
+eval-seed rerun, then len24 or a public-style gate where the same
+recurrent-core/depth ablation remains causal.
+```
+
+Independent seed check:
+
+```text
+report:
+  DGX local_eval/dgx_single_order_router_len20_seed9338_20260517_230036/report.json
+
+decision:
+  rejected
+
+metrics:
+  full_generation_exact: 0.1640625
+  full_minus_think0: 0.1640625
+  full_minus_worst_ablation: 0.1328125
+  min_family_generation_exact: 0.029239766081871343
+
+family exact:
+  checksum: 0.4117647058823529
+  modchain: 0.029239766081871343
+  revchain: 0.05263157894736842
+```
+
+Decision consequence:
+
+```text
+The len20 route-conditioned core remains a useful architecture foothold, but it
+is not stable enough for promotion. The next work is data-scale and multi-seed
+family-floor selection for modchain/revchain, not len24 transfer.
+```
+
+Data-scale seed repair:
+
+```text
+report:
+  DGX local_eval/dgx_single_order_router_len20_seed9338_datascale_20260517_230608/report.json
+
+decision:
+  rejected
+
+settings:
+  train_cases: 32768
+  steps: 1200
+  eval_seed: 9338
+  periodic_score_mode: family_floor
+
+metrics:
+  full_generation_exact: 0.166015625
+  full_minus_think0: 0.166015625
+  full_minus_worst_ablation: 0.134765625
+  min_family_generation_exact: 0.04093567251461988
+  state_reset_generation_exact: 0.03125
+  op_zero_generation_exact: 0.03125
+
+best periodic eval:
+  step: 200
+  generation_exact: 0.166015625
+  min_family_generation_exact: 0.04093567251461988
+```
+
+Decision consequence:
+
+```text
+More synthetic cases and longer route-only continuation did not repair the
+seed instability. The bottleneck is now classified as ordered-chain transition
+generalization, not merely dataset quantity. Future long runs must use
+checkpoint saving, and the next promoted candidate must change the transition
+objective/state representation before repeating the multi-seed gate.
+```
+
+Operational guardrail:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py now supports:
+  --save-every-steps
+  --save-best-periodic-checkpoint
+
+Use these for long DGX runs so interruptions do not destroy all intermediate
+training state.
+```
+
 Implemented repair path:
 
 ```text

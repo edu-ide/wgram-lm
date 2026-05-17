@@ -24271,3 +24271,244 @@ step is not to claim breakthrough. The next step is route specialization:
 checksum route0, chain route1, and then a 512-case standalone rerun plus
 len20 transfer.
 ```
+
+512-case standalone rerun:
+
+```text
+DGX local_eval/dgx_single_order_router_chain_target_512rerun_20260517_205432/report.json
+decision: accepted_single_order_router_chain_target_len16_512rerun
+
+full: 0.140625
+think0: 0.0
+full_minus_think0: 0.140625
+ablation_drop: 0.119140625
+min_family: 0.06432748538011696
+state_reset: 0.021484375
+op_zero: 0.01953125
+
+by_family:
+  checksum: 0.27647058823529413
+  modchain: 0.08187134502923976
+  revchain: 0.06432748538011696
+
+router last_hlh_prob:
+  checksum: 0.17065902054309845
+  modchain: 0.9107509851455688
+  revchain: 0.9774150252342224
+
+forced route0:
+  full: 0.09375
+
+forced route1:
+  full: 0.078125
+```
+
+Interpretation:
+
+```text
+The route-conditioned repair reproduced on a 512-case standalone gate.
+This is stronger than the 200-case report because it confirms:
+  - no-think/core-off cannot solve the task;
+  - 16 recurrent steps are causally useful;
+  - corrupting recurrent state or operations removes most of the gain;
+  - the router consistently separates checksum from ordered-chain families.
+
+This is still not an ASI or public-benchmark breakthrough. It is the first
+preservation-first architectural foothold after many rejected route variants.
+The canonical next experiment is length transfer from len16 to len20 while
+retaining the same route-conditioned core.
+```
+
+## 2026-05-17 - Len20 Route-Conditioned Core Accepted
+
+The len20 transfer showed that the remaining bottleneck was not just
+architecture. It was data/selection pressure on the ordered-chain families.
+
+Naive len20 transfer from the accepted len16 route-conditioned checkpoint:
+
+```text
+DGX local_eval/dgx_single_order_router_len20_transfer_resize_20260517_210209/report.json
+decision: rejected
+reason: family_exact_below_threshold
+
+full: 0.11328125
+think0: 0.0
+full_minus_think0: 0.11328125
+ablation_drop: 0.08203125
+min_family: 0.029239766081871343
+
+by_family:
+  checksum: 0.27647058823529413
+  modchain: 0.03508771929824561
+  revchain: 0.029239766081871343
+```
+
+Route1-only repair nearly passed:
+
+```text
+DGX local_eval/dgx_single_order_router_len20_route1_repair_20260517_213141/report.json
+decision: rejected
+reason: family_exact_below_threshold
+
+full: 0.173828125
+think0: 0.0
+full_minus_think0: 0.173828125
+ablation_drop: 0.13671875
+min_family: 0.05847953216374269
+
+by_family:
+  checksum: 0.38823529411764707
+  modchain: 0.05847953216374269
+  revchain: 0.07602339181286549
+```
+
+A modchain-only continuation over-corrected and damaged the family floor:
+
+```text
+DGX local_eval/dgx_single_order_router_len20_modchain_floor_20260517_220346/report.json
+decision: rejected
+reason: family_exact_below_threshold
+
+full: 0.17578125
+min_family: 0.04093567251461988
+
+by_family:
+  checksum: 0.43529411764705883
+  modchain: 0.05263157894736842
+  revchain: 0.04093567251461988
+```
+
+The accepted run used balanced chain data, family-DRO losses, and periodic
+family-floor checkpoint selection:
+
+```text
+DGX local_eval/dgx_single_order_router_len20_familyfloor_select_20260517_222156/report.json
+decision: accepted_single_order_router_len20_familyfloor
+
+full: 0.1953125
+think0: 0.0
+full_minus_think0: 0.1953125
+ablation_drop: 0.158203125
+min_family: 0.07602339181286549
+state_reset: 0.03125
+op_zero: 0.037109375
+
+by_family:
+  checksum: 0.43529411764705883
+  modchain: 0.07602339181286549
+  revchain: 0.07602339181286549
+
+best periodic eval:
+  step: 600
+  full: 0.1953125
+  family_floor: 0.07602339181286549
+  teacher_forced_answer_loss: 0.857588529586792
+```
+
+Interpretation:
+
+```text
+The data/selection hypothesis was correct for len20:
+  - checksum stayed learnable across rejected runs;
+  - modchain/revchain were the limiting families;
+  - route1-only pressure moved the family floor to the acceptance boundary;
+  - blind single-family repair overfit the target family and hurt the other;
+  - family-floor periodic selection accepted the same architecture without
+    changing the final LM-logit path.
+
+This is the first accepted len20 QTRM-native route-conditioned recurrent core
+on the selection seed. It is still a synthetic raw-reasoning gate, not
+public-benchmark intelligence. The next canonical step is an independent
+eval-seed rerun of this len20 checkpoint, followed by len24 transfer only if
+the rerun holds.
+```
+
+Independent eval seed 9338 did not hold:
+
+```text
+DGX local_eval/dgx_single_order_router_len20_seed9338_20260517_230036/report.json
+decision: rejected
+reason: family_exact_below_threshold
+
+full: 0.1640625
+think0: 0.0
+full_minus_think0: 0.1640625
+ablation_drop: 0.1328125
+min_family: 0.029239766081871343
+
+by_family:
+  checksum: 0.4117647058823529
+  modchain: 0.029239766081871343
+  revchain: 0.05263157894736842
+```
+
+Consequence:
+
+```text
+Len20 is architecturally alive but not seed-stable. This strengthens the
+data/selection diagnosis: checksum is robust, recursive ablations are causal,
+but ordered-chain generalization is still under-trained. Do not promote to
+len24 or public-style claims until a multi-seed len20 gate holds.
+```
+
+Data-scale repair against seed 9338 also rejected:
+
+```text
+DGX local_eval/dgx_single_order_router_len20_seed9338_datascale_20260517_230608/report.json
+decision: rejected
+reason: family_exact_below_threshold
+
+settings:
+  train_cases: 32768
+  steps: 1200
+  eval_seed: 9338
+  periodic_selection: family_floor
+
+full: 0.166015625
+think0: 0.0
+full_minus_think0: 0.166015625
+ablation_drop: 0.134765625
+min_family: 0.04093567251461988
+state_reset: 0.03125
+op_zero: 0.03125
+
+best periodic eval:
+  step: 200
+  full: 0.166015625
+  family_floor: 0.04093567251461988
+  teacher_forced_answer_loss: 0.8592787981033325
+```
+
+Interpretation:
+
+```text
+Simply increasing synthetic case count and step budget did not stabilize
+seed9338. The core remains causal, but ordered-chain generalization does not
+cross the family-floor gate. The next architecture/debugging action is not a
+larger blind run; it is a smaller diagnostic that changes the transition
+objective or state representation and then reruns the same multi-seed gate.
+```
+
+Operational fix added after this long run:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+new flags:
+  --save-every-steps N
+  --save-best-periodic-checkpoint
+
+smoke:
+  PYTHONPATH=src .venv/bin/python scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py ...
+  local_eval/checkpoint_save_smoke/checkpoint_step_000001.pt
+  local_eval/checkpoint_save_smoke/latest.pt
+  local_eval/checkpoint_save_smoke/best_periodic.pt
+  local_eval/checkpoint_save_smoke/latest_progress.json
+```
+
+Long runs should now use, at minimum:
+
+```text
+--save-every-steps 100
+--save-best-periodic-checkpoint
+```
