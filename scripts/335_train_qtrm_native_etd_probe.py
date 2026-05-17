@@ -765,6 +765,7 @@ SUPPORTED_CARRIER_STATE_MODES = (
 SUPPORTED_THINK_STRUCTURES = (
     "single",
     "single_core_carrier",
+    "single_order_router",
     "trm_dual_z",
     "trm_dual_z_interactive",
     "trm_dual_z_interactive_transition_gate",
@@ -1308,6 +1309,17 @@ class NativeQTRMETDLM(nn.Module):
             )
             self.single_carrier_norm = nn.LayerNorm(int(d_model))
             self.single_carrier_gate_logit = nn.Parameter(torch.tensor(self.carrier_gate_init))
+        if self.think_structure == "single_order_router":
+            self.trm_order_router = nn.Linear(int(d_model), 2)
+            self.single_order_route1_gru = nn.GRU(
+                int(d_model),
+                int(d_model),
+                num_layers=1,
+                batch_first=True,
+            )
+            self.single_order_route1_context_norm = nn.LayerNorm(int(d_model))
+            self.single_order_route1_input_norm = nn.LayerNorm(int(d_model))
+            self.single_order_route1_update_gate = nn.Linear(3 * int(d_model), int(d_model))
         if self.think_structure == "trm_dual_z_interactive_transition_gate":
             self.trm_l_transition_gate_logit = nn.Parameter(torch.tensor(1.3862944))
             self.trm_h_transition_gate_logit = nn.Parameter(torch.tensor(1.3862944))
@@ -1596,6 +1608,14 @@ class NativeQTRMETDLM(nn.Module):
                 elif "bias" in name:
                     nn.init.zeros_(parameter)
             self.single_carrier_gate_logit.data.fill_(self.carrier_gate_init)
+        if hasattr(self, "single_order_route1_gru"):
+            for name, parameter in self.single_order_route1_gru.named_parameters():
+                if "weight" in name:
+                    nn.init.xavier_uniform_(parameter)
+                elif "bias" in name:
+                    nn.init.zeros_(parameter)
+            nn.init.zeros_(self.single_order_route1_update_gate.weight)
+            nn.init.constant_(self.single_order_route1_update_gate.bias, -6.0)
         if hasattr(self, "trm_l_transition_gate_logit"):
             self.trm_l_transition_gate_logit.data.fill_(1.3862944)
         if hasattr(self, "trm_h_transition_gate_logit"):
@@ -1667,9 +1687,12 @@ class NativeQTRMETDLM(nn.Module):
             nn.init.constant_(self.trm_semantic_h_carry_gate.bias, -3.0)
         if hasattr(self, "trm_order_router"):
             nn.init.zeros_(self.trm_order_router.weight)
-            self.trm_order_router.bias.data.copy_(
-                torch.tensor([2.0, -2.0], dtype=self.trm_order_router.bias.dtype)
+            bias = (
+                torch.tensor([8.0, -8.0], dtype=self.trm_order_router.bias.dtype)
+                if self.think_structure == "single_order_router"
+                else torch.tensor([2.0, -2.0], dtype=self.trm_order_router.bias.dtype)
             )
+            self.trm_order_router.bias.data.copy_(bias)
         if hasattr(self, "trm_nested_order_router"):
             nn.init.zeros_(self.trm_nested_order_router.weight)
             self.trm_nested_order_router.bias.data.copy_(
@@ -2074,6 +2097,58 @@ class NativeQTRMETDLM(nn.Module):
         carrier_state, _ = self.single_carrier_rnn(torch.tanh(carrier_input))
         gate = torch.sigmoid(self.single_carrier_gate_logit).to(dtype=state.dtype)
         return self.single_carrier_norm(state + gate * carrier_state.to(dtype=state.dtype))
+
+    def _single_order_route1_context(self, encoded: torch.Tensor) -> torch.Tensor:
+        """Causal suffix-biased context for reverse-order recurrent transitions.
+
+        The GRU runs left-to-right over the token stream, so the answer logit at
+        a position only sees previous input tokens. The route is still a normal
+        LM path; it does not compute or inject the answer.
+        """
+        route_state, _ = self.single_order_route1_gru(encoded)
+        alpha = 0.75
+        running = encoded[:, 0, :]
+        rows = [running]
+        for index in range(1, int(encoded.shape[1])):
+            running = alpha * running + (1.0 - alpha) * encoded[:, index, :]
+            rows.append(running)
+        recent = torch.stack(rows, dim=1)
+        return self.single_order_route1_context_norm(
+            encoded + route_state.to(dtype=encoded.dtype) + recent.to(dtype=encoded.dtype)
+        )
+
+    def _run_single_order_router_step(
+        self,
+        state: torch.Tensor,
+        encoded: torch.Tensor,
+        *,
+        causal_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        route0 = self._run_stage(self.think, state, causal_mask=causal_mask)
+        route1_context = self._single_order_route1_context(encoded)
+        route1_candidate = self._run_stage(
+            self.think,
+            self.single_order_route1_input_norm(state + route1_context),
+            causal_mask=causal_mask,
+        )
+        route1_gate = torch.sigmoid(
+            self.single_order_route1_update_gate(
+                torch.cat([route0, route1_candidate, route1_context], dim=-1)
+            )
+        )
+        route1 = route0 + route1_gate * (route1_candidate - route0)
+        force_route = getattr(self, "trm_order_router_force_route", None)
+        if force_route is None:
+            route = torch.softmax(self.trm_order_router(encoded), dim=-1)
+        else:
+            route_id = int(force_route)
+            if route_id not in {0, 1}:
+                raise ValueError("trm_order_router_force_route must be 0, 1, or None")
+            route = encoded.new_zeros((*encoded.shape[:-1], 2))
+            route[..., route_id] = 1.0
+        route0_weight = route[..., 0:1].to(dtype=route0.dtype)
+        route1_weight = route[..., 1:2].to(dtype=route1.dtype)
+        return route0_weight * route0 + route1_weight * route1
 
     def _run_trm_h_cycle(
         self,
@@ -3570,11 +3645,18 @@ class NativeQTRMETDLM(nn.Module):
 
         if bool(thinking_block_off) or int(think_steps) <= 0:
             return finish(encoded)
-        if self.think_structure in {"single", "single_core_carrier"}:
+        if self.think_structure in {"single", "single_core_carrier", "single_order_router"}:
             h = encoded
             for step_index in range(max(0, int(think_steps))):
                 base = encoded if bool(state_reset_each_step) else h
-                h = self._run_stage(self.think, base, causal_mask=causal_mask)
+                if self.think_structure == "single_order_router":
+                    h = self._run_single_order_router_step(
+                        base,
+                        encoded,
+                        causal_mask=causal_mask,
+                    )
+                else:
+                    h = self._run_stage(self.think, base, causal_mask=causal_mask)
                 if self.think_structure == "single_core_carrier":
                     h = self._apply_single_core_carrier(h, encoded)
                 if collect_state_trace:

@@ -319,6 +319,48 @@ RESUME_FROM=<accepted len12 last.pt> PROGRAM_LEN=16 THINK_STEPS=16 bash scripts/
 RESUME_FROM=<accepted len16 last.pt> STEPS=0 PROGRAM_LEN=16 THINK_STEPS=16 EVAL_CASES=512 bash scripts/411_dgx_trm_raw_scaleout_gate.sh run
 ```
 
+## Accepted Route-Conditioned Repair
+
+The first accepted post-len16 architecture repair is
+`single_order_router` with `chain_vs_checksum` router targets:
+
+```text
+source checkpoint:
+  local_eval/dgx_trm_raw_scaleout_len16_resume_len12_to_len16_20260517_191926/last.pt
+
+accepted report:
+  DGX local_eval/dgx_single_order_router_chain_target_s200_20260517_204312/report.json
+
+decision:
+  accepted_single_order_router_chain_target_len16
+
+metrics:
+  full_generation_exact: 0.12890625
+  full_minus_think0: 0.12890625
+  full_minus_worst_ablation: 0.11328125
+  min_family_generation_exact: 0.06976744186046512
+
+family exact:
+  checksum: 0.24705882352941178
+  modchain: 0.06976744186046512
+  revchain: 0.07058823529411765
+```
+
+Why this matters:
+
+```text
+The accepted single recurrent transition remains route0 and is preserved:
+forced route0 full exact is 0.109375.  The additive route1 path is derived from
+the same token stream and feeds the same recurrent/LM-logit answer path.  The
+router learned to send ordered chain tasks to route1 while checksum remains
+mostly route0.
+```
+
+This is still not a TRM-like breakthrough. It is a valid architecture foothold
+because it improves the len16 family floor without changing the base tensors.
+Promotion requires a standalone 512-case rerun, route-specialization stability,
+and len20/longer transfer.
+
 Implemented repair path:
 
 ```text

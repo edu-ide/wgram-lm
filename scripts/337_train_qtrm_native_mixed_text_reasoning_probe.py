@@ -2799,13 +2799,23 @@ def order_router_family_order_targets(
     cases: list[TextReasoningCase],
     *,
     device: torch.device,
+    target_mode: str = "family_order",
 ) -> torch.Tensor:
-    """Route target from task causal order: forward families use 0, revchain uses 1."""
-    return torch.tensor(
-        [1 if str(case.family) == "revchain" else 0 for case in cases],
-        dtype=torch.long,
-        device=device,
-    )
+    """Route targets for recurrent transition specialization.
+
+    `family_order` keeps the original forward-vs-reverse split.  The
+    `chain_vs_checksum` mode treats both ordered chain tasks as route1 and
+    reserves route0 for checksum, which is useful when the bottleneck is
+    computation-chain floor rather than reverse order alone.
+    """
+    mode = str(target_mode)
+    if mode == "family_order":
+        labels = [1 if str(case.family) == "revchain" else 0 for case in cases]
+    elif mode == "chain_vs_checksum":
+        labels = [0 if str(case.family) == "checksum" else 1 for case in cases]
+    else:
+        raise ValueError(f"unsupported order-router aux target mode: {target_mode}")
+    return torch.tensor(labels, dtype=torch.long, device=device)
 
 
 def order_router_family_order_loss(
@@ -2817,6 +2827,7 @@ def order_router_family_order_loss(
     include_family_tag: bool,
     state_anchor: bool = False,
     state_anchor_position: str = "before_answer",
+    target_mode: str = "family_order",
 ) -> torch.Tensor:
     """Low-weight auxiliary that makes the route selector learnable.
 
@@ -2840,7 +2851,11 @@ def order_router_family_order_loss(
         device=device,
     )
     logits = _order_router_encoded_logits(model, input_ids)[:, -1, :]
-    targets = order_router_family_order_targets(cases, device=device)
+    targets = order_router_family_order_targets(
+        cases,
+        device=device,
+        target_mode=str(target_mode),
+    )
     return F.cross_entropy(logits, targets)
 
 
@@ -5018,10 +5033,6 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 temperature=float(args.answer_space_ranking_temperature),
             )
         if float(args.order_router_aux_loss_weight) > 0.0:
-            if str(args.order_router_aux_target_mode) != "family_order":
-                raise ValueError(
-                    f"unsupported order-router aux target mode: {args.order_router_aux_target_mode}"
-                )
             loss = loss + float(
                 args.order_router_aux_loss_weight
             ) * order_router_family_order_loss(
@@ -5032,6 +5043,7 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 include_family_tag=include_family_tag,
                 state_anchor=state_anchor,
                 state_anchor_position=state_anchor_position,
+                target_mode=str(args.order_router_aux_target_mode),
             )
         if (
             float(args.forced_route_answer_loss_weight) > 0.0
@@ -5932,7 +5944,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--order-router-aux-loss-weight", type=float, default=0.0)
     parser.add_argument(
         "--order-router-aux-target-mode",
-        choices=("family_order",),
+        choices=("family_order", "chain_vs_checksum"),
         default="family_order",
     )
     parser.add_argument("--order-router-lr-multiplier", type=float, default=1.0)

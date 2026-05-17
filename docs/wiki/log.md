@@ -24173,3 +24173,101 @@ condition transition routes by family/causal order, then force every route to
 retain a recurrent-depth gain. More global CE, family-DRO, or late-op replay is
 not enough.
 ```
+
+## 2026-05-17 - Preserved Single-Order Router Accepted
+
+The len16 trajectory-routing bottleneck was addressed with a preservation-first
+architecture change:
+
+```text
+new think_structure:
+  single_order_router
+
+mechanism:
+  route0 = the existing accepted single recurrent transition
+  route1 = causal GRU + suffix-biased context, then the same think block
+  router = token-stream-derived 2-route selector
+
+preservation rule:
+  forced route0 must match the accepted single checkpoint before any route
+  training. No route-output LayerNorm is allowed because it changes route0.
+```
+
+The first smoke exposed a bug in the design: a post-blend LayerNorm broke
+route0 preservation and collapsed full exact to 0. That was removed, and the
+router bias was initialized to `[8, -8]` so additive resume starts as the
+accepted single model.
+
+Preservation smoke:
+
+```text
+DGX local_eval/dgx_trm_raw_scaleout_len16_single_order_router_preserve_smoke_20260517_202312/report.json
+steps: 0
+resume: local_eval/dgx_trm_raw_scaleout_len16_resume_len12_to_len16_20260517_191926/last.pt
+
+full: 0.109375
+order_route0: 0.109375
+order_route1: 0.125
+min_family: 0.09090909090909091
+```
+
+The first route-training attempt used the old `family_order` target
+(`revchain -> route1`, others route0). It improved full exact but missed the
+family floor by a hair:
+
+```text
+DGX local_eval/dgx_single_order_router_fast_s200_20260517_203439/report.json
+decision: rejected
+full: 0.1328125
+full_minus_think0: 0.1328125
+ablation_drop: 0.1171875
+min_family: 0.05813953488372093
+```
+
+The accepted repair changed the router target to `chain_vs_checksum`: both
+ordered chain families (`modchain`, `revchain`) are route1, while checksum stays
+route0. Only the new missing route/router parameters were trainable; the
+accepted single checkpoint tensors were frozen.
+
+```text
+DGX local_eval/dgx_single_order_router_chain_target_s200_20260517_204312/report.json
+decision: accepted_single_order_router_chain_target_len16
+
+full: 0.12890625
+think0: 0.0
+full_minus_think0: 0.12890625
+ablation_drop: 0.11328125
+min_family: 0.06976744186046512
+
+by_family:
+  checksum: 0.24705882352941178
+  modchain: 0.06976744186046512
+  revchain: 0.07058823529411765
+
+router last_hlh_prob:
+  checksum: 0.16707628965377808
+  modchain: 0.9165406227111816
+  revchain: 0.9740087985992432
+
+forced route0:
+  full: 0.109375
+
+forced route1:
+  full: 0.078125
+```
+
+Interpretation:
+
+```text
+This is a real architecture result, not just more CE:
+  - route0 preserves the accepted checkpoint exactly enough to remain usable;
+  - only additive route parameters were trained;
+  - the learned router moves chain families onto the new route;
+  - depth/state/op ablations still remove the gain;
+  - the final output remains normal LM logits.
+
+The route1 candidate itself is still weak when forced globally, so the next
+step is not to claim breakthrough. The next step is route specialization:
+checksum route0, chain route1, and then a 512-case standalone rerun plus
+len20 transfer.
+```
