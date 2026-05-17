@@ -16702,3 +16702,68 @@ diagnostic baseline, but promotion requires standalone rerun evidence where
 core_on beats core_off beyond the configured threshold and the same checkpoint
 passes strict generation or explicit LM-logit causality checks.
 ```
+
+## DGX Qwen3.6 Proxy And M7B Scale-Out 2026-05-17
+
+DGX now has a reproducible llama-server proxy for Qwen3.6-27B MTP GGUF:
+
+```text
+server:
+  /mnt/data4tb/llama-cpp-turboquant-cuda/build/bin/llama-server
+
+model:
+  /mnt/data4tb/models/Qwen3.6-27B-MTP-GGUF/Qwen3.6-27B-UD-Q4_K_XL.gguf
+
+endpoint:
+  http://192.168.219.113:18082/v1
+
+scripts:
+  local control: scripts/407_dgx_qwen36_mtp_llama_server.sh
+  DGX direct: /mnt/data4tb/qwen36-mtp-llama-server.sh
+```
+
+M6 scoped raw-reasoning baseline rerun:
+
+```text
+Qwen3.6-27B-MTP-GGUF DGX llama-server:
+  64 cases:  7 / 64  = 0.109375
+  256 cases: 35 / 256 = 0.13671875
+  512 cases: 75 / 512 = 0.146484375
+
+accepted QTRM-native L5 baseline:
+  0.6067708333333334 over 768 cases
+  core_gain: 0.5859375
+  ablation_drop: 0.5716145833333334
+  min_family_generation_exact: 0.4140625
+```
+
+M6 consequence:
+
+```text
+The scoped synthetic raw-reasoning win remains accepted against the DGX
+Qwen3.6-MTP-GGUF proxy. This is still a narrow custom-suite result, not public
+benchmark parity.
+```
+
+M7B public MCQ scale-out:
+
+```text
+64-case DGX rerun:
+  depth0: 6 / 64 = 0.09375
+  depth4: 9 / 64 = 0.140625
+  decision: accepted
+
+256-case DGX rerun:
+  depth0: 39 / 256 = 0.15234375
+  depth4: 24 / 256 = 0.09375
+  decision: rejected
+```
+
+Architecture consequence:
+
+```text
+Do not promote the current M7B public-MCQ core-depth signal beyond a small
+diagnostic slice. The recursive core shows a real 64-case effect, but the same
+checkpoint loses to depth0 at 256 cases. The next architecture/training step is
+core-depth scale-out repair, not more answer-token CE or benchmark claims.
+```

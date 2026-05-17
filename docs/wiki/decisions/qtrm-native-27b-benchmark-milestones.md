@@ -435,6 +435,72 @@ QWEN36_BASELINE_REPORT=local_eval/m6_qwen36_mtp_proxy_baseline/report.json \
   bash scripts/380_refresh_m6_status.sh
 ```
 
+DGX llama-server proxy, 2026-05-17:
+
+```text
+server script, local control:
+  scripts/407_dgx_qwen36_mtp_llama_server.sh
+
+server script, on DGX:
+  /mnt/data4tb/qwen36-mtp-llama-server.sh
+  /mnt/data4tb/qtrm_multimodal_memoryos/scripts/407_qwen36_mtp_llama_server_dgx_local.sh
+
+endpoint:
+  http://192.168.219.113:18082/v1
+
+server:
+  /mnt/data4tb/llama-cpp-turboquant-cuda/build/bin/llama-server
+
+model:
+  /mnt/data4tb/models/Qwen3.6-27B-MTP-GGUF/Qwen3.6-27B-UD-Q4_K_XL.gguf
+
+runtime:
+  ctx 131072
+  reasoning off
+  MTP draft on
+  ngram-mod on
+  V cache turbo4
+  K cache requested turbo4 but auto-upgraded to q8_0 for GQA quality
+```
+
+DGX proxy rerun results:
+
+```text
+64-case report:
+  local_eval/dgx_qwen36_mtp_proxy_baseline_64_20260517/report.json
+  score: 7 / 64 = 0.109375
+
+256-case report:
+  local_eval/dgx_qwen36_mtp_proxy_baseline_256_20260517/report.json
+  score: 35 / 256 = 0.13671875
+  checksum: 31 / 85 = 0.36470588235294116
+  modchain: 4 / 86 = 0.046511627906976744
+  revchain: 0 / 85 = 0.0
+
+512-case report:
+  local_eval/dgx_qwen36_mtp_proxy_baseline_512_20260517/report.json
+  score: 75 / 512 = 0.146484375
+  checksum: 59 / 170 = 0.34705882352941175
+  modchain: 12 / 171 = 0.07017543859649122
+  revchain: 4 / 171 = 0.023391812865497075
+
+DGX 512 manifest:
+  local_eval/m6_scoped_raw_reasoning_manifest_dgx512_20260517/report.json
+  decision: accepted_m6_scoped_raw_reasoning_win
+```
+
+Interpretation:
+
+```text
+The DGX llama-server baseline reproduces the earlier local GGUF-proxy
+conclusion: Qwen3.6-27B-MTP-GGUF remains weak on this deterministic scoped
+modchain/revchain/checksum suite, while the accepted QTRM-native L5 report is
+0.6067708333333334 over 768 cases with large core/state ablation drops.
+
+This keeps M6 accepted as a scoped raw-reasoning win. It still does not imply
+public benchmark parity or full-precision Qwen3.6 parity.
+```
+
 DGX full-precision command when reachable:
 
 ```bash
@@ -615,6 +681,39 @@ Next M7C target:
     prediction histogram stays non-collapsed
     full depth keeps beating depth0 and best shallow
   then expand from 64 to 256/512/full public slices.
+```
+
+M7B DGX scale-out rerun, 2026-05-17:
+
+```text
+64-case DGX rerun:
+  local_eval/dgx_m7b_core_depth_gate_m7a_s300_20260517/m7b_gate_report.json
+  decision: accepted_m7b_public_mcq_core_depth_gate
+  depth0: 6 / 64 = 0.09375
+  depth1: 7 / 64 = 0.109375
+  depth2: 7 / 64 = 0.109375
+  depth4: 9 / 64 = 0.140625
+  gain_vs_baseline: +0.046875
+  gain_vs_best_shallow: +0.03125
+
+256-case DGX scale-out:
+  local_eval/dgx_m7b_core_depth_gate_m7a_s300_256_20260517/m7b_gate_report.json
+  decision: rejected_m7b_public_mcq_core_depth_gate
+  depth0: 39 / 256 = 0.15234375
+  depth1: 23 / 256 = 0.08984375
+  depth2: 21 / 256 = 0.08203125
+  depth4: 24 / 256 = 0.09375
+  gain_vs_baseline: -0.05859375
+  gain_vs_best_shallow: -0.05859375
+```
+
+Scale-out decision:
+
+```text
+The 64-case M7B core-depth gain is reproducible, but it does not scale to 256
+held-out public MCQ cases. Treat M7B as a small-slice causal-depth diagnostic,
+not a promoted public benchmark result. The next public-MCQ work must repair
+core-depth scale-out before any M7C/M7 parity claim.
 ```
 
 M7C rejected answer-CE variants, 2026-05-16:

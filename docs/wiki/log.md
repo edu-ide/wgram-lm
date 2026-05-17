@@ -23896,3 +23896,92 @@ Training-periodic eval, best-checkpoint selection metrics, and old reports are
 not promotion evidence unless the exact checkpoint is rerun through the
 standalone SSOT gate.
 ```
+
+## 2026-05-17 DGX llama-server baseline and M7B scale-out audit
+
+Set up DGX llama-server for the Qwen3.6-27B MTP GGUF baseline:
+
+```text
+DGX server script:
+  /mnt/data4tb/qwen36-mtp-llama-server.sh
+
+DGX repo copy:
+  /mnt/data4tb/qtrm_multimodal_memoryos/scripts/407_qwen36_mtp_llama_server_dgx_local.sh
+
+local control script:
+  scripts/407_dgx_qwen36_mtp_llama_server.sh
+
+endpoint:
+  http://192.168.219.113:18082/v1
+
+server:
+  /mnt/data4tb/llama-cpp-turboquant-cuda/build/bin/llama-server
+
+model:
+  /mnt/data4tb/models/Qwen3.6-27B-MTP-GGUF/Qwen3.6-27B-UD-Q4_K_XL.gguf
+```
+
+Runtime:
+
+```text
+ctx: 131072
+reasoning: off
+MTP draft: on
+ngram-mod: on
+KV: V turbo4, K auto-upgraded to q8_0 for GQA quality
+```
+
+M6 scoped raw-reasoning baseline reruns:
+
+```text
+64-case:
+  local_eval/dgx_qwen36_mtp_proxy_baseline_64_20260517/report.json
+  score: 7 / 64 = 0.109375
+
+256-case:
+  local_eval/dgx_qwen36_mtp_proxy_baseline_256_20260517/report.json
+  score: 35 / 256 = 0.13671875
+
+512-case:
+  local_eval/dgx_qwen36_mtp_proxy_baseline_512_20260517/report.json
+  score: 75 / 512 = 0.146484375
+
+DGX 512 manifest:
+  local_eval/m6_scoped_raw_reasoning_manifest_dgx512_20260517/report.json
+  decision: accepted_m6_scoped_raw_reasoning_win
+```
+
+M6 interpretation:
+
+```text
+The QTRM-native L5 scoped raw-reasoning result remains accepted against the
+DGX Qwen3.6-MTP-GGUF proxy:
+  QTRM: 0.6067708333333334 over 768 cases
+  DGX Qwen proxy: 0.146484375 over 512 cases
+
+This remains a scoped custom-suite win, not public benchmark parity.
+```
+
+M7B public MCQ core-depth scale-out:
+
+```text
+64-case DGX rerun:
+  local_eval/dgx_m7b_core_depth_gate_m7a_s300_20260517/m7b_gate_report.json
+  decision: accepted
+  depth0: 6 / 64 = 0.09375
+  depth4: 9 / 64 = 0.140625
+
+256-case DGX rerun:
+  local_eval/dgx_m7b_core_depth_gate_m7a_s300_256_20260517/m7b_gate_report.json
+  decision: rejected
+  depth0: 39 / 256 = 0.15234375
+  depth4: 24 / 256 = 0.09375
+```
+
+Decision:
+
+```text
+M7B remains useful as a small-slice causal-depth diagnostic, but it cannot be
+promoted as a public-MCQ reasoning result. The next work item is core-depth
+scale-out repair on 256/512 public-style cases.
+```
