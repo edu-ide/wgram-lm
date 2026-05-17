@@ -118,6 +118,13 @@ M7 final-token repair:
   batch: 32
   train cases: available validation/auxiliary only
   eval: held-out balanced 256
+  think_steps: 8
+
+  objective:
+    primary option-letter CE at depth8
+    multi-depth CE at depth4 and depth8
+    depth-gain margin: depth8 gold score > depth0/1/2/4
+    trajectory KL: depth6 should be close to depth8
 
 M7 depth gate:
   depths: 0, 1, 2, 4, 8
@@ -162,4 +169,3 @@ The hard final promotion gate is documented separately:
 ```text
 docs/wiki/decisions/trm-like-breakthrough-bar.md
 ```
-

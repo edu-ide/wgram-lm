@@ -249,6 +249,76 @@ def option_distribution_log_probs(
     return torch.log_softmax(torch.stack(scores), dim=0)
 
 
+def multi_depth_ce_loss_for_row(
+    model,
+    tokenizer,
+    row: dict[str, Any],
+    *,
+    seq_len: int,
+    depths: Sequence[int],
+    device: torch.device,
+    margin_weight: float,
+    margin: float,
+    target_rendering: str,
+) -> torch.Tensor:
+    if not depths:
+        return torch.zeros((), device=device)
+    losses = [
+        mcq_loss_for_row(
+            model,
+            tokenizer,
+            row,
+            seq_len=int(seq_len),
+            think_steps=int(depth),
+            device=device,
+            margin_weight=float(margin_weight),
+            margin=float(margin),
+            target_rendering=str(target_rendering),
+        )
+        for depth in depths
+    ]
+    return torch.stack(losses).mean()
+
+
+def trajectory_kl_loss_for_row(
+    model,
+    tokenizer,
+    row: dict[str, Any],
+    *,
+    seq_len: int,
+    anchor_depth: int,
+    compare_depths: Sequence[int],
+    device: torch.device,
+) -> torch.Tensor:
+    if not compare_depths:
+        return torch.zeros((), device=device)
+    anchor_log_probs = option_distribution_log_probs(
+        model,
+        tokenizer,
+        row,
+        seq_len=int(seq_len),
+        think_steps=int(anchor_depth),
+        device=device,
+    )
+    anchor_probs = anchor_log_probs.detach().exp()
+    losses: list[torch.Tensor] = []
+    for depth in compare_depths:
+        if int(depth) == int(anchor_depth):
+            continue
+        current_log_probs = option_distribution_log_probs(
+            model,
+            tokenizer,
+            row,
+            seq_len=int(seq_len),
+            think_steps=int(depth),
+            device=device,
+        )
+        losses.append(torch.sum(anchor_probs * (anchor_log_probs.detach() - current_log_probs)))
+    if not losses:
+        return torch.zeros((), device=device)
+    return torch.stack(losses).mean()
+
+
 def preserve_option_kl_loss(
     model,
     base_model,
@@ -386,6 +456,23 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             for row in batch
         ]
         loss = torch.stack(losses).mean()
+        if float(args.multi_depth_ce_weight) > 0.0:
+            multi_depths = parse_depths(str(args.multi_depth_ce_depths))
+            multi_depth_losses = [
+                multi_depth_ce_loss_for_row(
+                    model,
+                    tokenizer,
+                    row,
+                    seq_len=int(eval_args.seq_len),
+                    depths=multi_depths,
+                    device=device,
+                    margin_weight=float(args.margin_weight),
+                    margin=float(args.margin),
+                    target_rendering=str(args.target_rendering),
+                )
+                for row in batch
+            ]
+            loss = loss + float(args.multi_depth_ce_weight) * torch.stack(multi_depth_losses).mean()
         if float(args.depth_gain_weight) > 0.0:
             shallow_depths = parse_depths(str(args.depth_gain_shallow_depths))
             depth_losses = [
@@ -403,6 +490,21 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 for row in batch
             ]
             loss = loss + float(args.depth_gain_weight) * torch.stack(depth_losses).mean()
+        if float(args.trajectory_kl_weight) > 0.0:
+            compare_depths = parse_depths(str(args.trajectory_kl_compare_depths))
+            trajectory_losses = [
+                trajectory_kl_loss_for_row(
+                    model,
+                    tokenizer,
+                    row,
+                    seq_len=int(eval_args.seq_len),
+                    anchor_depth=int(args.trajectory_kl_anchor_depth),
+                    compare_depths=compare_depths,
+                    device=device,
+                )
+                for row in batch
+            ]
+            loss = loss + float(args.trajectory_kl_weight) * torch.stack(trajectory_losses).mean()
         if base_model is not None:
             preserve_batch = random.choices(preserve_rows, k=max(1, int(args.preserve_batch_size)))
             kl_losses = [
@@ -450,9 +552,14 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "margin": float(args.margin),
         "preserve_kl_weight": float(args.preserve_kl_weight),
         "preserve_batch_size": int(args.preserve_batch_size),
+        "multi_depth_ce_weight": float(args.multi_depth_ce_weight),
+        "multi_depth_ce_depths": str(args.multi_depth_ce_depths),
         "depth_gain_weight": float(args.depth_gain_weight),
         "depth_gain_margin": float(args.depth_gain_margin),
         "depth_gain_shallow_depths": str(args.depth_gain_shallow_depths),
+        "trajectory_kl_weight": float(args.trajectory_kl_weight),
+        "trajectory_kl_anchor_depth": int(args.trajectory_kl_anchor_depth),
+        "trajectory_kl_compare_depths": str(args.trajectory_kl_compare_depths),
         "trainable_name_regex": str(args.trainable_name_regex),
         "trainable_params": trainable_param_count,
         "total_params": total_param_count,
@@ -498,9 +605,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-preserve-cases", type=int, default=0)
     parser.add_argument("--preserve-batch-size", type=int, default=4)
     parser.add_argument("--preserve-kl-weight", type=float, default=0.0)
+    parser.add_argument("--multi-depth-ce-weight", type=float, default=0.0)
+    parser.add_argument("--multi-depth-ce-depths", default="")
     parser.add_argument("--depth-gain-weight", type=float, default=0.0)
     parser.add_argument("--depth-gain-margin", type=float, default=0.25)
     parser.add_argument("--depth-gain-shallow-depths", default="0,1,2")
+    parser.add_argument("--trajectory-kl-weight", type=float, default=0.0)
+    parser.add_argument("--trajectory-kl-anchor-depth", type=int, default=8)
+    parser.add_argument("--trajectory-kl-compare-depths", default="")
     parser.add_argument("--max-eval-cases", type=int, default=64)
     parser.add_argument("--margin-weight", type=float, default=0.5)
     parser.add_argument("--margin", type=float, default=0.5)

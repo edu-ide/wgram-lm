@@ -99,10 +99,31 @@ changes must target the recurrent trajectory itself:
    Repair only the public-style families where depth hurts.
 ```
 
+Implemented repair path:
+
+```text
+scripts/400_train_qtrm_native_public_mcq_final_token.py
+
+new objective knobs:
+  --multi-depth-ce-weight
+  --multi-depth-ce-depths
+  --depth-gain-weight
+  --depth-gain-shallow-depths
+  --trajectory-kl-weight
+  --trajectory-kl-anchor-depth
+  --trajectory-kl-compare-depths
+
+DGX fastlane default:
+  think_steps=8
+  multi_depth_ce_depths=4,8
+  depth_gain_shallow_depths=0,1,2,4
+  trajectory_kl_anchor_depth=8
+  trajectory_kl_compare_depths=6
+```
+
 ## Kill / Pivot Rule
 
 If repeated DGX runs cannot make M7B 256 pass while preserving M6 and language
 non-regression, stop claiming the current QTRM-native architecture is a TRM-like
 breakthrough. At that point the correct move is a root redesign of the recurrent
 transition objective, not more final-answer tuning.
-
