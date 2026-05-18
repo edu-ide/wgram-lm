@@ -24831,6 +24831,84 @@ seed9338:
 then original-seed retention rerun with the same gate
 ```
 
+## 2026-05-18 - Len20 Number/Op-Role Circular Curriculum Early Rejection
+
+Implemented runner:
+
+```text
+scripts/420_dgx_len20_number_oprole_circular_curriculum_gate.sh
+```
+
+Purpose:
+
+```text
+Test whether the accepted L6 number/op-role circular QTRM-native checkpoint can
+be lifted directly to len20 by preserving the same canonical LM path and using
+active-length curriculum, L6 replay, retention KL, family-DRO, and sampled
+state-trace depth credit.
+```
+
+Base checkpoint:
+
+```text
+local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/last.pt
+```
+
+DGX run:
+
+```text
+out_dir:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_len20_number_oprole_circular_curriculum_seed9338_20260518_193321
+
+log:
+  local_eval/runner_logs/len20_number_oprole_circular_20260518_193321.log
+```
+
+Early signal:
+
+```text
+step0:
+  full_generation_exact: 0.00390625
+  min_family_generation_exact: 0.0
+  teacher_forced_answer_loss: 3.522706985473633
+
+step100:
+  full_generation_exact: 0.015625
+  min_family_generation_exact: 0.0058823529411764705
+  teacher_forced_answer_loss: 2.0215940475463867
+```
+
+Decision:
+
+```text
+early rejected / stopped at step100
+```
+
+Interpretation:
+
+```text
+Teacher-forced loss improves, but strict greedy generation and worst-family
+accuracy remain far below the promotion gate:
+
+  required min_family: 0.06000
+  observed min_family: 0.00588
+
+This rejects the direct L6 -> len20 curriculum jump for this checkpoint. The
+next action is not another len20 continuation with the same shape. Use a staged
+ladder that promotes only after each length passes:
+
+  len6 accepted checkpoint
+  -> len8 retention/family-floor gate
+  -> len12
+  -> len16
+  -> len20
+
+The purpose is to preserve the accepted recurrent transition behavior while
+increasing horizon gradually instead of asking the core to bridge the full
+generalization gap in one run.
+```
+
 ## 2026-05-18 - State-Trace Depth-Credit Gate Candidate
 
 Implemented runner:
