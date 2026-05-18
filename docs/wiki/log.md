@@ -24976,3 +24976,69 @@ Promote only if:
   original-seed retention also passes
   core/depth/op ablations still remove the gain
 ```
+
+## 2026-05-18 - Literature Watch While Chain Trace Gate Runs
+
+Additional current papers/pages found while the chain-family anti-collapse gate
+is running:
+
+```text
+LoopFormer: Elastic-Depth Looped Transformers for Latent Reasoning via
+Shortcut Modulation
+https://loopformer.github.io/
+
+Mechanism:
+  condition each loop on internal time t and step size delta-t;
+  align shortcut/coarser trajectories to full trajectories;
+  make looped depth budget-aware instead of fixed-depth only.
+
+QTRM implication if the current gate rejects:
+  QTRM should not only penalize collapse after it happens. It may need an
+  explicit trajectory-conditioning signal, because len20 hard-family failure
+  looks like a fixed-depth trajectory problem.
+
+State Stream Transformer (SST) V2: Parallel Training of Nonlinear Recurrence
+for Latent Space Reasoning
+https://arxiv.org/abs/2605.00206
+
+Mechanism:
+  stream latent residual state horizontally across positions through learned
+  blending; use latent deliberation per position; analyze distinct semantic
+  basins and first-token latent survivability under extra computation.
+
+QTRM implication if the current gate rejects:
+  investigate whether z_H-only recurrent correction is too local at the final
+  answer position. A future candidate may need a lightweight state stream over
+  prompt positions, not an external memory or side solver.
+
+Tracing the Traces: Latent Temporal Signals for Efficient and Accurate
+Reasoning
+https://www.microsoft.com/en-us/research/publication/tracing-the-traces-latent-temporal-signals-for-efficient-and-accurate-reasoning/
+
+Mechanism:
+  use latent trajectory change, accumulated movement, and movement toward the
+  final state as predictors of successful reasoning traces.
+
+QTRM implication:
+  the new state-trace comparator follows this spirit: do not inspect only
+  final exact; inspect whether the recurrent trajectory itself is productive.
+```
+
+Current run:
+
+```text
+script:
+  scripts/415_dgx_len20_chain_trace_anticollapse_gate.sh
+
+mid-run seed9338 at step100:
+  generation_exact: 0.166015625
+  min_family_generation_exact: 0.029239766081871343
+
+mid-run seed9338 at step200:
+  generation_exact: 0.166015625
+  min_family_generation_exact: 0.03508771929824561
+
+Interpretation:
+  slight worst-family movement, but still below the 0.06 gate. Let the 600-step
+  run finish, then compare state traces before selecting the next candidate.
+```
