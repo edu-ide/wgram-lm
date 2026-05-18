@@ -1373,6 +1373,53 @@ def depth_counterfactual_loss(
     return F.relu(float(margin) - (chosen_logprob - counterfactual_logprob)).mean()
 
 
+def attractor_lookahead_consistency_loss(
+    model,
+    base_logits: torch.Tensor,
+    targets: torch.Tensor,
+    input_ids: torch.Tensor,
+    *,
+    prompt_len: int,
+    answer_len: int,
+    base_think_steps: int,
+    lookahead_steps: int,
+    ce_weight: float = 1.0,
+    kl_weight: float = 0.1,
+    loss_type: str = "ce",
+) -> torch.Tensor:
+    """Attractor-style loop stability through the canonical LM logits."""
+    extra_steps = int(lookahead_steps)
+    if extra_steps <= 0:
+        return base_logits.sum() * 0.0
+    lookahead_logits = model(
+        input_ids,
+        think_steps=max(1, int(base_think_steps) + extra_steps),
+    )
+    start = int(prompt_len) - 1
+    end = start + int(answer_len)
+    total = base_logits.sum() * 0.0
+    if float(ce_weight) > 0.0:
+        total = total + float(ce_weight) * answer_text_loss(
+            lookahead_logits,
+            targets,
+            prompt_len=prompt_len,
+            answer_len=answer_len,
+            loss_type=loss_type,
+        )
+    if float(kl_weight) > 0.0:
+        base_probs = F.softmax(base_logits[:, start:end, :].detach(), dim=-1)
+        lookahead_log_probs = F.log_softmax(
+            lookahead_logits[:, start:end, :],
+            dim=-1,
+        )
+        total = total + float(kl_weight) * F.kl_div(
+            lookahead_log_probs.reshape(-1, lookahead_log_probs.shape[-1]),
+            base_probs.reshape(-1, base_probs.shape[-1]),
+            reduction="batchmean",
+        )
+    return total
+
+
 def state_reset_counterfactual_loss(
     model,
     chosen_logits: torch.Tensor,
@@ -5288,6 +5335,28 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 margin=float(args.depth_counterfactual_margin),
             )
         if (
+            float(args.attractor_lookahead_loss_weight) > 0.0
+            and (
+                int(args.attractor_lookahead_every) <= 1
+                or step % int(args.attractor_lookahead_every) == 0
+            )
+        ):
+            loss = loss + float(
+                args.attractor_lookahead_loss_weight
+            ) * attractor_lookahead_consistency_loss(
+                model,
+                logits,
+                y,
+                x,
+                prompt_len=prompt_len,
+                answer_len=answer_len,
+                base_think_steps=int(args.train_think_steps),
+                lookahead_steps=int(args.attractor_lookahead_steps),
+                ce_weight=float(args.attractor_lookahead_ce_weight),
+                kl_weight=float(args.attractor_lookahead_kl_weight),
+                loss_type=str(args.answer_loss_type),
+            )
+        if (
             float(args.state_reset_counterfactual_loss_weight) > 0.0
             and (
                 int(args.state_reset_counterfactual_every) <= 1
@@ -6348,6 +6417,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=1,
         help="Apply full-vs-shallow depth counterfactual every N training steps.",
     )
+    parser.add_argument("--attractor-lookahead-loss-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--attractor-lookahead-steps",
+        type=int,
+        default=1,
+        help="Extra recurrent steps used for Attractor-style fixed-point consistency.",
+    )
+    parser.add_argument(
+        "--attractor-lookahead-every",
+        type=int,
+        default=1,
+        help="Apply Attractor-style lookahead consistency every N training steps.",
+    )
+    parser.add_argument("--attractor-lookahead-ce-weight", type=float, default=1.0)
+    parser.add_argument("--attractor-lookahead-kl-weight", type=float, default=0.1)
     parser.add_argument("--state-reset-counterfactual-loss-weight", type=float, default=0.0)
     parser.add_argument("--state-reset-counterfactual-margin", type=float, default=1.0)
     parser.add_argument(
