@@ -24615,3 +24615,84 @@ train only route1/router, and add:
 Promote only if seed9338 and the original selection seed both pass len20
 family-floor gates.
 ```
+
+## 2026-05-18 - Continuous Literature Watch For QTRM Bottlenecks
+
+The research loop is now explicit: QTRM architecture work should keep checking
+recent papers while experiments run, but every paper idea must be translated
+into a bottleneck-specific, falsifiable local gate. Newness alone is not a
+reason to mutate the architecture.
+
+Latest scan targets for the current ordered-chain / latent recurrence
+bottleneck:
+
+```text
+Depth-recurrent latent reasoning:
+  Thinking Deeper, Not Longer: Depth-Recurrent Transformers for
+  Compositional Generalization
+  https://arxiv.org/abs/2603.21676
+
+Relevance:
+  shared-weight latent recurrence, final-answer-only silent thinking,
+  LayerScale/identity-biased recurrence, and explicit depth scaling are directly
+  relevant to QTRM core stability.
+
+Latent reasoning framing:
+  LLM Reasoning Is Latent, Not the Chain of Thought
+  https://arxiv.org/abs/2604.15726
+
+Relevance:
+  supports evaluating hidden-state trajectories separately from visible CoT and
+  serial compute; matches QTRM's raw-intelligence gate philosophy.
+
+Latent CoT limits:
+  Capabilities and Fundamental Limits of Latent Chain-of-Thought
+  https://arxiv.org/abs/2602.01148
+
+Relevance:
+  warns that latent CoT can excel on exploration-like tasks but fail on exact
+  computation; reinforces curriculum and family-floor gates.
+
+Abstract latent tokens:
+  Thinking Without Words: Efficient Latent Reasoning with Abstract
+  Chain-of-Thought
+  https://arxiv.org/abs/2604.22709
+
+Relevance:
+  reserved latent tokens may be useful later for language-model integration,
+  but current QTRM-native gates should first prove recurrent core causality.
+
+Adaptive stopping:
+  Adaptive Stopping for Multi-Turn LLM Reasoning
+  https://arxiv.org/abs/2604.01413
+
+Relevance:
+  useful for future halt/uncertainty policy, but only after the recurrent core
+  produces a measurable family-floor gain.
+
+Recursive sparse structure:
+  ReSSFormer: A Recursive Sparse Structured Transformer for Scalable and
+  Long-Context Reasoning
+  https://arxiv.org/abs/2510.01585
+
+Relevance:
+  recurrent memory and sparse structure are relevant to later long-context
+  scaling, not the immediate len20 ordered-chain repair.
+```
+
+Immediate consequence:
+
+```text
+If the current prefix-anchor len20 run rejects, the next architecture repair
+should not be another data-scale continuation. The most relevant prior-guided
+candidate is recurrence stabilization:
+
+  identity-biased recurrent update
+  LayerScale/small residual update around the recursive core
+  final-answer-only or delayed-depth supervision variant
+
+The gate remains the same:
+  seed9338 len20 family-floor pass
+  original-seed retention pass
+  destructive core/depth/route ablations still remove the gain
+```
