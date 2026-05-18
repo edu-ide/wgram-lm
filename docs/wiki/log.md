@@ -24696,3 +24696,137 @@ The gate remains the same:
   original-seed retention pass
   destructive core/depth/route ablations still remove the gain
 ```
+
+## 2026-05-18 - Len20 Prefix-Anchor DGX Result
+
+Run:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  dgx_single_order_router_len20_prefix_anchor_seed9338_20260518_090836/report.json
+```
+
+Summary:
+
+```text
+decision: rejected
+reject_reasons:
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact: 0.171875
+  think0_generation_exact: 0.0
+  full_minus_think0: 0.171875
+  full_minus_worst_ablation: 0.140625
+  min_family_generation_exact: 0.0409357
+  state_reset_generation_exact: 0.03125
+  op_zero_generation_exact: 0.0273438
+
+best_periodic:
+  step: 200
+  generation_exact: 0.171875
+  min_family_generation_exact: 0.0409357
+```
+
+Interpretation:
+
+```text
+Prefix-anchor did not solve the len20 worst-family bottleneck. It preserved a
+strong causal recurrent-core signal:
+
+  full - think0 = 0.171875
+  full - worst ablation = 0.140625
+
+But it failed the promotion threshold because the weakest family stayed below
+0.06. The failure is therefore not "no core effect"; it is unstable
+ordered-chain family generalization.
+```
+
+Next architecture direction:
+
+```text
+Stop increasing dataset size or prefix-anchor pressure. The next candidate
+should target recurrence stability directly, guided by current
+depth-recurrent/latent-reasoning literature:
+
+  identity-biased recurrent update
+  LayerScale/small residual recurrent delta
+  delayed-depth or final-answer-only supervision variant
+
+Acceptance remains unchanged:
+  seed9338 len20 family-floor >= 0.06
+  original seed retention pass
+  destructive recurrent-state ablations remove the gain
+```
+
+## 2026-05-18 - Recurrent LayerScale Repair Candidate
+
+Implemented candidate:
+
+```text
+think_structure:
+  single_order_router_residual_scale
+
+files:
+  scripts/335_train_qtrm_native_etd_probe.py
+  scripts/414_dgx_len20_recurrent_layerscale_gate.sh
+```
+
+Mechanism:
+
+```text
+old single_order_router:
+  next_state = route_mix(state)
+
+new single_order_router_residual_scale:
+  mixed = route_mix(state)
+  next_state = state + layer_scale * (mixed - state)
+
+layer_scale:
+  shape [1, 1, d_model]
+  initialized to 1.0
+```
+
+Why this is preservation-first:
+
+```text
+When layer_scale = 1.0, the new structure reproduces the previous router path.
+This lets the accepted len20 checkpoint be loaded with --resume-allow-missing
+without destroying the accepted route. Training then only learns whether some
+recurrent dimensions should move less or more aggressively.
+```
+
+Local verification:
+
+```text
+.venv/bin/python -m py_compile \
+  scripts/335_train_qtrm_native_etd_probe.py \
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+random preservation smoke:
+  old single_order_router vs new single_order_router_residual_scale
+  max_abs_diff: 7.152557373046875e-07
+
+runner smoke:
+  RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python ... \
+    scripts/414_dgx_len20_recurrent_layerscale_gate.sh run-local
+  decision: layerscale_runner_local_smoke
+```
+
+DGX command:
+
+```text
+scripts/414_dgx_len20_recurrent_layerscale_gate.sh submit
+```
+
+Promotion gate:
+
+```text
+seed9338:
+  full >= 0.10
+  full - think0 >= 0.06
+  full - worst ablation >= 0.06
+  min_family >= 0.06
+
+then original-seed retention rerun with the same gate
+```

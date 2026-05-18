@@ -766,6 +766,7 @@ SUPPORTED_THINK_STRUCTURES = (
     "single",
     "single_core_carrier",
     "single_order_router",
+    "single_order_router_residual_scale",
     "trm_dual_z",
     "trm_dual_z_interactive",
     "trm_dual_z_interactive_transition_gate",
@@ -813,6 +814,10 @@ COUPLED_THINK_STRUCTURES = tuple(
 )
 DUAL_Z_THINK_STRUCTURES = tuple(
     structure for structure in SUPPORTED_THINK_STRUCTURES if structure.startswith("trm_dual_z")
+)
+SINGLE_ORDER_ROUTER_THINK_STRUCTURES = (
+    "single_order_router",
+    "single_order_router_residual_scale",
 )
 
 
@@ -1309,7 +1314,7 @@ class NativeQTRMETDLM(nn.Module):
             )
             self.single_carrier_norm = nn.LayerNorm(int(d_model))
             self.single_carrier_gate_logit = nn.Parameter(torch.tensor(self.carrier_gate_init))
-        if self.think_structure == "single_order_router":
+        if self.think_structure in SINGLE_ORDER_ROUTER_THINK_STRUCTURES:
             self.trm_order_router = nn.Linear(int(d_model), 2)
             self.single_order_route1_gru = nn.GRU(
                 int(d_model),
@@ -1320,6 +1325,12 @@ class NativeQTRMETDLM(nn.Module):
             self.single_order_route1_context_norm = nn.LayerNorm(int(d_model))
             self.single_order_route1_input_norm = nn.LayerNorm(int(d_model))
             self.single_order_route1_update_gate = nn.Linear(3 * int(d_model), int(d_model))
+            if self.think_structure == "single_order_router_residual_scale":
+                # Preserve the previous router path at initialization while
+                # allowing training to damp unstable recurrent deltas.
+                self.single_order_recurrent_layerscale = nn.Parameter(
+                    torch.ones(1, 1, int(d_model))
+                )
         if self.think_structure == "trm_dual_z_interactive_transition_gate":
             self.trm_l_transition_gate_logit = nn.Parameter(torch.tensor(1.3862944))
             self.trm_h_transition_gate_logit = nn.Parameter(torch.tensor(1.3862944))
@@ -1616,6 +1627,8 @@ class NativeQTRMETDLM(nn.Module):
                     nn.init.zeros_(parameter)
             nn.init.zeros_(self.single_order_route1_update_gate.weight)
             nn.init.constant_(self.single_order_route1_update_gate.bias, -6.0)
+        if hasattr(self, "single_order_recurrent_layerscale"):
+            self.single_order_recurrent_layerscale.data.fill_(1.0)
         if hasattr(self, "trm_l_transition_gate_logit"):
             self.trm_l_transition_gate_logit.data.fill_(1.3862944)
         if hasattr(self, "trm_h_transition_gate_logit"):
@@ -1689,7 +1702,7 @@ class NativeQTRMETDLM(nn.Module):
             nn.init.zeros_(self.trm_order_router.weight)
             bias = (
                 torch.tensor([8.0, -8.0], dtype=self.trm_order_router.bias.dtype)
-                if self.think_structure == "single_order_router"
+                if self.think_structure in SINGLE_ORDER_ROUTER_THINK_STRUCTURES
                 else torch.tensor([2.0, -2.0], dtype=self.trm_order_router.bias.dtype)
             )
             self.trm_order_router.bias.data.copy_(bias)
@@ -2148,7 +2161,11 @@ class NativeQTRMETDLM(nn.Module):
             route[..., route_id] = 1.0
         route0_weight = route[..., 0:1].to(dtype=route0.dtype)
         route1_weight = route[..., 1:2].to(dtype=route1.dtype)
-        return route0_weight * route0 + route1_weight * route1
+        mixed = route0_weight * route0 + route1_weight * route1
+        if hasattr(self, "single_order_recurrent_layerscale"):
+            scale = self.single_order_recurrent_layerscale.to(dtype=mixed.dtype)
+            return state + scale * (mixed - state)
+        return mixed
 
     def _run_trm_h_cycle(
         self,
@@ -3645,11 +3662,15 @@ class NativeQTRMETDLM(nn.Module):
 
         if bool(thinking_block_off) or int(think_steps) <= 0:
             return finish(encoded)
-        if self.think_structure in {"single", "single_core_carrier", "single_order_router"}:
+        if self.think_structure in {
+            "single",
+            "single_core_carrier",
+            *SINGLE_ORDER_ROUTER_THINK_STRUCTURES,
+        }:
             h = encoded
             for step_index in range(max(0, int(think_steps))):
                 base = encoded if bool(state_reset_each_step) else h
-                if self.think_structure == "single_order_router":
+                if self.think_structure in SINGLE_ORDER_ROUTER_THINK_STRUCTURES:
                     h = self._run_single_order_router_step(
                         base,
                         encoded,
