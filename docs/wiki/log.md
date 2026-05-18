@@ -25042,3 +25042,132 @@ Interpretation:
   slight worst-family movement, but still below the 0.06 gate. Let the 600-step
   run finish, then compare state traces before selecting the next candidate.
 ```
+
+## 2026-05-18 - Chain Trace Anti-Collapse DGX Result
+
+Run:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  dgx_single_order_router_len20_chain_trace_anticollapse_seed9338_20260518_154718/report.json
+```
+
+Decision:
+
+```text
+rejected
+reject_reasons:
+  family_exact_below_threshold
+```
+
+Metrics:
+
+```text
+full_generation_exact: 0.171875
+think0_generation_exact: 0.0
+full_minus_think0: 0.171875
+full_minus_worst_ablation: 0.140625
+min_family_generation_exact: 0.03508771929824561
+state_reset_generation_exact: 0.03125
+op_zero_generation_exact: 0.025390625
+```
+
+Trace comparison against the seed9338 diagnostic:
+
+```text
+checksum:
+  late_cosine:     0.879184 -> 0.877564
+  final_variance:  6.10126  -> 5.90741
+  exact:           0.411765 -> 0.441176
+
+modchain:
+  late_cosine:     0.999044 -> 0.998876
+  final_variance:  2.43117  -> 2.62017
+  exact:           0.029240 -> 0.040936
+
+revchain:
+  late_cosine:     0.999169 -> 0.999090
+  final_variance:  2.38877  -> 2.52960
+  exact:           0.052632 -> 0.035088
+```
+
+Interpretation:
+
+```text
+The loss moved the intended trace metrics only slightly. It did not move the
+worst-family floor enough and regressed revchain. Therefore the failure is not
+solved by a weak after-the-fact anti-collapse penalty.
+
+Next candidate should modify the recurrent trajectory itself while preserving
+the accepted route. The most direct literature-driven candidate is
+LoopFormer-style time/step conditioning:
+
+  route state receives normalized t and dt
+  initialization preserves the old route exactly
+  train only the new time-condition path plus route1/router first
+  gate remains seed9338 family floor and destructive ablations
+```
+
+## 2026-05-18 - Time-Conditioned Router Candidate
+
+Implemented candidate:
+
+```text
+think_structure:
+  single_order_router_time_conditioned
+
+files:
+  scripts/335_train_qtrm_native_etd_probe.py
+  scripts/417_dgx_len20_time_conditioned_router_gate.sh
+```
+
+Mechanism:
+
+```text
+At each recurrent step, route1 receives a learned zero-initialized bias from:
+
+  t  = (step_index + 1) / total_steps
+  dt = 1 / total_steps
+
+This is a minimal LoopFormer-inspired trajectory-conditioning test. It does
+not add a side solver or hidden answer path; it only modulates the accepted
+recurrent route's internal trajectory.
+```
+
+Preservation check:
+
+```text
+old:
+  single_order_router
+
+new:
+  single_order_router_time_conditioned
+
+load old state into new with strict=False:
+  missing: single_order_time_condition.weight
+  unexpected: none
+  max_abs_diff at zero init: 0.0
+  allclose_1e-6: true
+```
+
+Local runner smoke:
+
+```text
+RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python ... \
+  scripts/417_dgx_len20_time_conditioned_router_gate.sh run-local
+
+result:
+  completed
+```
+
+Promotion gate:
+
+```text
+seed9338:
+  full >= 0.10
+  full - think0 >= 0.06
+  full - worst ablation >= 0.06
+  min_family >= 0.06
+
+then original-seed retention rerun with the same gate
+```

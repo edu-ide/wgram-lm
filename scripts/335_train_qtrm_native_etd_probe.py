@@ -767,6 +767,7 @@ SUPPORTED_THINK_STRUCTURES = (
     "single_core_carrier",
     "single_order_router",
     "single_order_router_residual_scale",
+    "single_order_router_time_conditioned",
     "trm_dual_z",
     "trm_dual_z_interactive",
     "trm_dual_z_interactive_transition_gate",
@@ -818,6 +819,7 @@ DUAL_Z_THINK_STRUCTURES = tuple(
 SINGLE_ORDER_ROUTER_THINK_STRUCTURES = (
     "single_order_router",
     "single_order_router_residual_scale",
+    "single_order_router_time_conditioned",
 )
 
 
@@ -1325,6 +1327,12 @@ class NativeQTRMETDLM(nn.Module):
             self.single_order_route1_context_norm = nn.LayerNorm(int(d_model))
             self.single_order_route1_input_norm = nn.LayerNorm(int(d_model))
             self.single_order_route1_update_gate = nn.Linear(3 * int(d_model), int(d_model))
+            if self.think_structure == "single_order_router_time_conditioned":
+                self.single_order_time_condition = nn.Linear(
+                    2,
+                    int(d_model),
+                    bias=False,
+                )
             if self.think_structure == "single_order_router_residual_scale":
                 # Preserve the previous router path at initialization while
                 # allowing training to damp unstable recurrent deltas.
@@ -1627,6 +1635,8 @@ class NativeQTRMETDLM(nn.Module):
                     nn.init.zeros_(parameter)
             nn.init.zeros_(self.single_order_route1_update_gate.weight)
             nn.init.constant_(self.single_order_route1_update_gate.bias, -6.0)
+        if hasattr(self, "single_order_time_condition"):
+            nn.init.zeros_(self.single_order_time_condition.weight)
         if hasattr(self, "single_order_recurrent_layerscale"):
             self.single_order_recurrent_layerscale.data.fill_(1.0)
         if hasattr(self, "trm_l_transition_gate_logit"):
@@ -2136,9 +2146,18 @@ class NativeQTRMETDLM(nn.Module):
         encoded: torch.Tensor,
         *,
         causal_mask: torch.Tensor,
+        step_index: int = 0,
+        total_steps: int = 1,
     ) -> torch.Tensor:
         route0 = self._run_stage(self.think, state, causal_mask=causal_mask)
         route1_context = self._single_order_route1_context(encoded)
+        if hasattr(self, "single_order_time_condition"):
+            denom = max(1, int(total_steps))
+            progress = encoded.new_tensor(
+                [float(step_index + 1) / float(denom), 1.0 / float(denom)]
+            )
+            time_bias = self.single_order_time_condition(progress).view(1, 1, -1)
+            route1_context = route1_context + time_bias.to(dtype=route1_context.dtype)
         route1_candidate = self._run_stage(
             self.think,
             self.single_order_route1_input_norm(state + route1_context),
@@ -3675,6 +3694,8 @@ class NativeQTRMETDLM(nn.Module):
                         base,
                         encoded,
                         causal_mask=causal_mask,
+                        step_index=step_index,
+                        total_steps=int(think_steps),
                     )
                 else:
                     h = self._run_stage(self.think, base, causal_mask=causal_mask)
