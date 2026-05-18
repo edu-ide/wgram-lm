@@ -1619,7 +1619,7 @@ class NativeQTRMETDLM(nn.Module):
         nn.init.normal_(self.token_embed.weight, mean=0.0, std=0.02)
         nn.init.normal_(self.pos_embed.weight, mean=0.0, std=0.02)
         if hasattr(self, "op_order_embed"):
-            nn.init.normal_(self.op_order_embed.weight, mean=0.0, std=0.02)
+            nn.init.zeros_(self.op_order_embed.weight)
         if hasattr(self, "z_l_init"):
             nn.init.normal_(self.z_l_init, mean=0.0, std=0.02)
         if hasattr(self, "z_h_init"):

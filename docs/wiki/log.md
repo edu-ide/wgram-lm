@@ -24973,6 +24973,156 @@ result:
   completed
 ```
 
+## 2026-05-18 - Research Loop: Recurrent-Depth Stability Before More Architecture Shopping
+
+Current bottleneck:
+
+```text
+The accepted len6 QTRM-native recurrent checkpoint is real, but length scaling
+to len8/len20 remains unstable. Learned absolute positions fit len6, while
+positionless/randomized-position variants expose ordered-chain weaknesses.
+The next step must preserve the accepted route first, then add only one
+causal order signal at a time.
+```
+
+Recent literature watch used for this decision:
+
+```text
+Thinking Deeper, Not Longer: Depth-Recurrent Transformers for Compositional
+Generalization, 2026
+  https://arxiv.org/abs/2603.21676
+  Mechanism to port:
+    silent/final-only reasoning objective
+    identity-biased recurrence
+    LayerScale-style small residual insertion
+    explicit depth-sweep and overthinking checks
+
+Loop, Think, & Generalize: Implicit Reasoning in Recurrent-Depth Transformers,
+2026
+  https://arxiv.org/abs/2604.07822
+  Mechanism to port:
+    recurrent-depth extrapolation gates
+    detect overthinking when extra recurrent steps hurt
+
+The Silent Thought / FLAIR, 2026
+  https://arxiv.org/abs/2603.17837
+  Mechanism to port:
+    causal latent recurrence over embeddings without explicit text CoT
+
+Latent-GRPO, 2026
+  https://arxiv.org/abs/2604.27998
+  Decision:
+    do not add latent RL yet; latent rollouts are unstable unless the latent
+    manifold and sampling path are controlled.
+
+NEAT, 2026
+  https://arxiv.org/abs/2602.02010
+  Decision:
+    early exit belongs after a strong core exists; it is not the current
+    len-scaling fix.
+```
+
+Rejected paper-shopping rule:
+
+```text
+Do not add Mamba/GatedDelta/diffusion/RL/early-exit just because it is recent.
+Add a mechanism only when it targets the measured bottleneck and has a
+destructive ablation in the same LM-logit path.
+```
+
+## 2026-05-18 - Op-Order Coupling Random-Init Result And Preservation Fix
+
+Random-init op-order run:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_number_oprole_circular_ladder_len6_seed9338_
+      oporder_learned_l6_20260518_212615
+
+observed periodic metrics:
+  step0:
+    full_generation_exact:       0.00390625
+    min_family_generation_exact: 0.0
+  step500:
+    full_generation_exact:       0.06640625
+    min_family_generation_exact: 0.04093567251461988
+  step1000:
+    full_generation_exact:       0.044921875
+    min_family_generation_exact: 0.029239766081871343
+  step1500:
+    full_generation_exact:       0.05078125
+    min_family_generation_exact: 0.005847953216374269
+  step2000:
+    full_generation_exact:       0.0703125
+    min_family_generation_exact: 0.017543859649122806
+
+action:
+  stopped early
+```
+
+Interpretation:
+
+```text
+Randomly initialized op-order embeddings do not preserve the accepted recurrent
+route. They inject noise into the canonical token embedding path before the
+encoder/core/decoder and make the model relearn a task it already solved at
+len6. This violates the preservation-first rule for modifying an accepted
+checkpoint.
+```
+
+Implemented fix:
+
+```text
+op_order_embed is now zero-initialized.
+
+Reason:
+  At insertion time, op_order_on and op_order_off should be identical. Only
+  missing route parameters should train first. This mirrors the identity-biased
+  recurrence / small residual principle in recent recurrent-depth work.
+```
+
+Next falsifiable gate:
+
+```text
+1. Load the accepted len6 checkpoint with op-order enabled.
+2. Use --train-only-resume-missing-params so only op_order_embed trains.
+3. First verify route preservation on len6.
+4. Only then attempt len8 scaling.
+5. Promote only if:
+     full generation improves or is preserved,
+     op_order_off removes the new gain,
+     destructive core ablations still remove the recurrent gain,
+     min family floor passes.
+```
+
+Local preservation smoke:
+
+```text
+command:
+  RESUME_FROM=local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/last.pt
+  OUT_TAG=local_oporder_preserve_smoke
+  LENGTHS=6 STEPS_PER_STAGE=1
+  EXTRA_ARGS='--position-embedding-mode learned
+    --op-order-embedding-mode learned --op-order-max-positions 32
+    --train-only-resume-missing-params'
+  bash scripts/421_dgx_number_oprole_circular_len_ladder_gate.sh run-local
+
+result:
+  completed
+  missing trainable route:
+    op_order_embed.weight
+  op_order_off_generation_exact:
+    0.3333333333333333
+  full_generation_exact:
+    0.3333333333333333
+
+interpretation:
+  With zero-init, enabling op-order does not change the accepted route on this
+  small preservation smoke. This is not a promotion result; it only clears the
+  next DGX preservation-first run.
+```
+
 Randomized positional L6 result:
 
 ```text
