@@ -3511,7 +3511,11 @@ def prefix_depth_anchor_loss(
     modulus: int,
     min_depth: int = 1,
     depth_weight_power: float = 0.0,
+    max_cases: int = 0,
 ) -> torch.Tensor:
+    selected_cases = cases[: int(max_cases)] if int(max_cases) > 0 else cases
+    if not selected_cases:
+        return torch.zeros((), device=device)
     losses: list[tuple[float, torch.Tensor]] = []
     first_depth = max(1, int(min_depth))
     for depth in range(1, max(1, int(max_depth)) + 1):
@@ -3523,7 +3527,7 @@ def prefix_depth_anchor_loss(
                 prefix_len=int(depth),
                 modulus=int(modulus),
             )
-            for case in cases
+            for case in selected_cases
         ]
         prefix_x, prefix_y, prefix_prompt_len, prefix_answer_len = cases_to_batch(
             prefix_cases,
@@ -5738,6 +5742,7 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 modulus=int(args.modulus),
                 min_depth=int(args.prefix_depth_anchor_min_depth),
                 depth_weight_power=float(args.prefix_depth_anchor_weight_power),
+                max_cases=int(args.prefix_depth_anchor_max_cases),
             )
         if float(args.residue_aux_loss_weight) > 0.0:
             loss = loss + float(args.residue_aux_loss_weight) * residue_auxiliary_loss(
@@ -6262,6 +6267,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--prefix-depth-anchor-loss-weight", type=float, default=0.0)
     parser.add_argument("--prefix-depth-anchor-min-depth", type=int, default=1)
     parser.add_argument("--prefix-depth-anchor-weight-power", type=float, default=0.0)
+    parser.add_argument("--prefix-depth-anchor-max-cases", type=int, default=0)
     parser.add_argument("--residue-aux-loss-weight", type=float, default=0.0)
     parser.add_argument(
         "--residue-aux-moduli",
