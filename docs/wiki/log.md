@@ -25428,6 +25428,231 @@ train causal prefix/state transitions or add a renderer-specific generation
 objective that preserves the final-only recurrent trajectory.
 ```
 
+## 2026-05-18 - Len8 Renderer/Transition Repair Experiments
+
+Exposure-bias / teacher-forcing mismatch scan:
+
+```text
+Recent search target:
+  teacher-forcing vs greedy generation mismatch
+  exposure bias
+  sequence-level training / scheduled sampling
+
+Relevant mechanism:
+  If teacher-forced answer loss keeps improving while greedy generation exact
+  drops, the gate must optimize the free-running or sequence-level answer path,
+  not just token CE. This matches the observed final-only len8 result:
+  step200 had better generation than step300, even though teacher-forced loss
+  kept improving.
+```
+
+Answer-space ranking repair:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_finalonly_rankrepair_len8_20260518_223314
+
+resume:
+  posnone_finalonly_len8_20260518_222032/best_periodic.pt
+
+setting:
+  answer_space_ranking_loss_weight: 0.08
+  answer_space_ranking_max_cases: 8
+  answer_space_ranking_every: 4
+  lr: 8e-6
+
+periodic:
+  step0:
+    full:       0.08203125
+    min_family: 0.029239766081871343
+  step40:
+    full:       0.029296875
+    min_family: 0.011695906432748537
+
+action:
+  stopped early after destructive regression
+```
+
+Interpretation:
+
+```text
+Candidate-answer ranking is not the right repair for this checkpoint. It
+lowers the free-running generation metric and worsens the family floor.
+```
+
+General prefix-anchor cost control:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+added:
+  --prefix-depth-anchor-max-cases
+
+reason:
+  prefix_depth_anchor_loss is the right transition-objective candidate, but it
+  loops over all prefix depths. Cost must be bounded so small falsification
+  gates can run before long DGX experiments.
+```
+
+Positionless final-only + prefix-anchor len8:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_finalonly_prefixanchor_len8_20260518_223748
+
+resume:
+  posnone_finalonly_len8_20260518_222032/best_periodic.pt
+
+setting:
+  position_embedding_mode: none
+  depth_intermediate_loss_weight: 0
+  state_trace_depth_loss_weight: 0
+  active_len_replay_loss_weight: 0
+  prefix_depth_anchor_loss_weight: 0.04
+  prefix_depth_anchor_max_cases: 8
+  prefix_depth_anchor_weight_power: 1.0
+  lr: 8e-6
+  steps: 160
+
+periodic:
+  step0:
+    full:       0.08203125
+    min_family: 0.029239766081871343
+  step40:
+    full:       0.025390625
+    min_family: 0.017543859649122806
+  step80:
+    full:       0.05859375
+    min_family: 0.017543859649122806
+  step120:
+    full:       0.10546875
+    min_family: 0.03508771929824561
+  step160:
+    full:       0.095703125
+    min_family: 0.011695906432748537
+
+decision:
+  rejected
+
+reject_reasons:
+  ablation_drop_below_threshold
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact:       0.10546875
+  think0_generation_exact:     0.0390625
+  full_minus_think0:           0.06640625
+  full_minus_worst_ablation:   0.046875
+  min_family_generation_exact: 0.03508771929824561
+  z_h_zero_generation_exact:   0.0
+```
+
+Interpretation:
+
+```text
+This is the first len8 candidate in this series to pass full exact and
+depth-gain thresholds. It misses the strict gate only on ablation drop and
+family floor. The result strongly supports the causal-prefix transition
+objective over input feature repair, ranking repair, or blind continuation.
+
+By family at best:
+  checksum:  0.22941176470588234
+  modchain:  0.03508771929824561
+  revchain:  0.05263157894736842
+
+Remaining bottleneck:
+  modchain floor and z_l/carrier ablation margin.
+```
+
+Modchain-biased prefix-anchor continuation:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_prefixanchor_modrepair_len8_20260518_224242
+
+resume:
+  posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
+
+setting:
+  task_families: modchain,modchain,modchain,revchain,checksum
+  prefix_depth_anchor_loss_weight: 0.04
+  lr: 4e-6
+
+periodic:
+  step0:
+    full:       0.10546875
+    min_family: 0.03508771929824561
+  step25:
+    full:       0.060546875
+    min_family: 0.029239766081871343
+  step50:
+    full:       0.0625
+    min_family: 0.011695906432748537
+  step75:
+    full:       0.087890625
+    min_family: 0.023391812865497075
+  step100:
+    full:       0.08203125
+    min_family: 0.029239766081871343
+
+decision:
+  rejected; best remains step0
+```
+
+Counterfactual causal-margin continuation:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_prefixanchor_causalrepair_len8_20260518_224624
+
+resume:
+  posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
+
+setting:
+  prefix_depth_anchor_loss_weight: 0.02
+  z_l_counterfactual_loss_weight: 0.04
+  state_reset_counterfactual_loss_weight: 0.04
+  margin: 0.5
+  lr: 3e-6
+
+periodic:
+  step0:
+    full:       0.10546875
+    min_family: 0.03508771929824561
+  step20:
+    full:       0.08203125
+    min_family: 0.029239766081871343
+  step40:
+    full:       0.06640625
+    min_family: 0.017543859649122806
+  step60:
+    full:       0.0703125
+    min_family: 0.017543859649122806
+  step80:
+    full:       0.099609375
+    min_family: 0.017543859649122806
+
+decision:
+  rejected; best remains step0
+```
+
+Conclusion:
+
+```text
+Canonical len8 best:
+  posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
+
+Do not keep repairing this checkpoint with more post-hoc objectives. Ranking,
+family-biased continuation, and counterfactual margin continuation all degrade
+the selected checkpoint. The next action should train with prefix-anchor from
+the start of the len8 adaptation, or make prefix-anchor part of the native
+objective before selection rather than adding it after selection.
+```
+
 Randomized positional L6 result:
 
 ```text
