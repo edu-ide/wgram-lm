@@ -3512,8 +3512,14 @@ def prefix_depth_anchor_loss(
     min_depth: int = 1,
     depth_weight_power: float = 0.0,
     max_cases: int = 0,
+    families: tuple[str, ...] = (),
 ) -> torch.Tensor:
-    selected_cases = cases[: int(max_cases)] if int(max_cases) > 0 else cases
+    if families:
+        family_set = {str(family) for family in families}
+        selected_cases = [case for case in cases if str(case.family) in family_set]
+    else:
+        selected_cases = list(cases)
+    selected_cases = selected_cases[: int(max_cases)] if int(max_cases) > 0 else selected_cases
     if not selected_cases:
         return torch.zeros((), device=device)
     losses: list[tuple[float, torch.Tensor]] = []
@@ -5743,6 +5749,11 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 min_depth=int(args.prefix_depth_anchor_min_depth),
                 depth_weight_power=float(args.prefix_depth_anchor_weight_power),
                 max_cases=int(args.prefix_depth_anchor_max_cases),
+                families=(
+                    parse_families(str(args.prefix_depth_anchor_families))
+                    if str(args.prefix_depth_anchor_families).strip()
+                    else ()
+                ),
             )
         if float(args.residue_aux_loss_weight) > 0.0:
             loss = loss + float(args.residue_aux_loss_weight) * residue_auxiliary_loss(
@@ -6268,6 +6279,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--prefix-depth-anchor-min-depth", type=int, default=1)
     parser.add_argument("--prefix-depth-anchor-weight-power", type=float, default=0.0)
     parser.add_argument("--prefix-depth-anchor-max-cases", type=int, default=0)
+    parser.add_argument(
+        "--prefix-depth-anchor-families",
+        default="",
+        help="Optional comma-separated family filter for prefix-anchor loss.",
+    )
     parser.add_argument("--residue-aux-loss-weight", type=float, default=0.0)
     parser.add_argument(
         "--residue-aux-moduli",
