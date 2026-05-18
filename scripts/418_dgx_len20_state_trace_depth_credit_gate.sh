@@ -5,6 +5,8 @@ ACTION="${1:-run}"
 
 STATE_TRACE_DEPTH_WEIGHT="${STATE_TRACE_DEPTH_WEIGHT:-0.45}"
 STATE_TRACE_DEPTH_MIN_DEPTH="${STATE_TRACE_DEPTH_MIN_DEPTH:-4}"
+STATE_TRACE_DEPTH_SAMPLE_COUNT="${STATE_TRACE_DEPTH_SAMPLE_COUNT:-0}"
+STATE_TRACE_DEPTH_SAMPLE_MODE="${STATE_TRACE_DEPTH_SAMPLE_MODE:-uniform}"
 STATE_TRACE_DEPTH_WEIGHT_POWER="${STATE_TRACE_DEPTH_WEIGHT_POWER:-1.0}"
 STATE_TRACE_DEPTH_SOURCE="${STATE_TRACE_DEPTH_SOURCE:-h}"
 STATE_TRACE_DEPTH_FAMILY_DRO_TEMP="${STATE_TRACE_DEPTH_FAMILY_DRO_TEMP:-1.0}"
@@ -25,6 +27,10 @@ Mechanism:
   Decode each traced state through the existing LM path and supervise it on the
   answer for the causal prefix available at that depth. This gives dense credit
   to the latent trajectory, not only final-answer CE.
+
+  Set STATE_TRACE_DEPTH_SAMPLE_COUNT > 0 to supervise only a deterministic
+  subset of depths. That keeps the same mechanism but makes the gate practical
+  when full-depth credit is too slow.
 
 Promotion:
   seed9338 min_family >= 0.06
@@ -48,6 +54,8 @@ export TRAIN_PARAM_NAME_REGEX="${TRAIN_PARAM_NAME_REGEX:-single_order_route1|trm
 STATE_TRACE_EXTRA_ARGS="--state-trace-depth-loss-weight ${STATE_TRACE_DEPTH_WEIGHT} \
 --state-trace-depth-state-source ${STATE_TRACE_DEPTH_SOURCE} \
 --state-trace-depth-min-depth ${STATE_TRACE_DEPTH_MIN_DEPTH} \
+--state-trace-depth-max-depth-samples ${STATE_TRACE_DEPTH_SAMPLE_COUNT} \
+--state-trace-depth-sample-mode ${STATE_TRACE_DEPTH_SAMPLE_MODE} \
 --state-trace-depth-weight-power ${STATE_TRACE_DEPTH_WEIGHT_POWER} \
 --state-trace-depth-family-dro \
 --state-trace-depth-family-dro-temperature ${STATE_TRACE_DEPTH_FAMILY_DRO_TEMP}"

@@ -1927,6 +1927,8 @@ def state_trace_depth_answer_loss_from_runtime(
     answer_len: int,
     max_depth: int,
     min_depth: int = 1,
+    max_depth_samples: int = 0,
+    depth_sample_mode: str = "uniform",
     depth_weight_power: float = 0.0,
     state_source: str = "h",
     family_dro: bool = False,
@@ -1959,6 +1961,34 @@ def state_trace_depth_answer_loss_from_runtime(
     if first_depth > depth_count:
         first_value = next(iter(runtime.values()))
         return first_value.float().sum() * 0.0
+    depths = list(range(first_depth, depth_count + 1))
+    sample_count = int(max_depth_samples)
+    if sample_count > 0 and len(depths) > sample_count:
+        mode = str(depth_sample_mode)
+        if mode == "late":
+            depths = depths[-sample_count:]
+        elif mode == "uniform":
+            if sample_count == 1:
+                selected_positions = [len(depths) - 1]
+            else:
+                span = len(depths) - 1
+                selected_positions = sorted(
+                    {
+                        int(round(float(index) * float(span) / float(sample_count - 1)))
+                        for index in range(sample_count)
+                    }
+                )
+                fill = len(depths) - 1
+                while len(selected_positions) < sample_count and fill >= 0:
+                    if fill not in selected_positions:
+                        selected_positions.append(fill)
+                    fill -= 1
+                selected_positions = sorted(selected_positions[:sample_count])
+            depths = [depths[position] for position in selected_positions]
+        else:
+            raise ValueError(
+                f"unsupported state-trace depth sample mode: {depth_sample_mode}"
+            )
 
     start = int(prompt_len) - 1
     end = start + int(answer_len)
@@ -1966,7 +1996,7 @@ def state_trace_depth_answer_loss_from_runtime(
     for trace in trace_parts:
         seq_len = int(trace.shape[2])
         causal_mask = model._causal_mask(seq_len, trace.device)
-        for depth in range(first_depth, depth_count + 1):
+        for depth in depths:
             depth_index = depth - 1
             state = trace[:, depth_index]
             decoded = model._run_stage(model.decode, state, causal_mask=causal_mask)
@@ -5572,6 +5602,8 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 answer_len=answer_len,
                 max_depth=int(args.train_think_steps),
                 min_depth=int(args.state_trace_depth_min_depth),
+                max_depth_samples=int(args.state_trace_depth_max_depth_samples),
+                depth_sample_mode=str(args.state_trace_depth_sample_mode),
                 depth_weight_power=float(args.state_trace_depth_weight_power),
                 state_source=str(args.state_trace_depth_state_source),
                 family_dro=bool(args.state_trace_depth_family_dro),
@@ -6429,6 +6461,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default="h",
     )
     parser.add_argument("--state-trace-depth-min-depth", type=int, default=1)
+    parser.add_argument("--state-trace-depth-max-depth-samples", type=int, default=0)
+    parser.add_argument(
+        "--state-trace-depth-sample-mode",
+        choices=("uniform", "late"),
+        default="uniform",
+    )
     parser.add_argument("--state-trace-depth-weight-power", type=float, default=0.0)
     parser.add_argument("--state-trace-depth-family-dro", action="store_true")
     parser.add_argument("--state-trace-depth-family-dro-temperature", type=float, default=0.0)

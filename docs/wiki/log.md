@@ -24895,6 +24895,83 @@ result:
   completed
 ```
 
+DGX early-stop result:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    dgx_single_order_router_len20_state_trace_depth_credit_seed9338_20260518_182111
+
+log:
+  local_eval/runner_logs/len20_state_trace_depth_credit_20260518_182111.log
+
+step0:
+  full_generation_exact: 0.1640625
+  min_family_generation_exact: 0.029239766081871343
+
+step100:
+  full_generation_exact: 0.16796875
+  min_family_generation_exact: 0.029239766081871343
+
+step200 best:
+  full_generation_exact: 0.169921875
+  min_family_generation_exact: 0.03508771929824561
+
+step300:
+  full_generation_exact: 0.1640625
+  min_family_generation_exact: 0.029239766081871343
+
+action:
+  stopped early at step300 to save GPU time
+```
+
+Interpretation:
+
+```text
+Full-depth state-trace credit is directionally relevant but too slow and too
+weak. It improved the family floor from 0.02924 to 0.03509 at best, below the
+time-conditioned/time-gated plateau of 0.04094 and far below the 0.06 gate.
+
+Do not continue the full-depth variant. Keep the mechanism but reduce compute:
+sample a small deterministic subset of depths so the trajectory-credit idea can
+be tested at useful speed.
+```
+
+Follow-up implementation:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added:
+    --state-trace-depth-max-depth-samples
+    --state-trace-depth-sample-mode uniform|late
+
+scripts/418_dgx_len20_state_trace_depth_credit_gate.sh
+  now accepts:
+    STATE_TRACE_DEPTH_SAMPLE_COUNT
+    STATE_TRACE_DEPTH_SAMPLE_MODE
+
+scripts/419_dgx_len20_sampled_state_trace_depth_credit_gate.sh
+  default sampled gate:
+    STATE_TRACE_DEPTH_SAMPLE_COUNT=5
+    STATE_TRACE_DEPTH_SAMPLE_MODE=uniform
+    STATE_TRACE_DEPTH_WEIGHT=0.55
+```
+
+Sampled local smoke:
+
+```text
+RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python \
+OUT_TAG=local_sampled_state_trace_depth_credit_smoke \
+STEPS=2 TRAIN_CASES=64 EVAL_CASES=24 BATCH_SIZE=8 \
+PROGRAM_LEN=6 THINK_STEPS=6 \
+EXTRA_ARGS='--device cpu --accept-min-exact 0 --accept-min-depth-gain 0 \
+  --accept-min-ablation-drop 0 --accept-min-family-exact 0' \
+bash scripts/419_dgx_len20_sampled_state_trace_depth_credit_gate.sh run-local
+
+result:
+  completed
+```
+
 ## 2026-05-18 - Continuous Latest-Paper Search Rule Reaffirmed
 
 Answer to the process question:
