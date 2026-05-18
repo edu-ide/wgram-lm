@@ -4224,10 +4224,17 @@ def state_trace_metrics(
             return_state_trace=True,
         )
 
+    def indexes_by_family() -> dict[str, list[int]]:
+        grouped: dict[str, list[int]] = {}
+        for index, case in enumerate(cases):
+            grouped.setdefault(str(case.family), []).append(index)
+        return {family: indexes for family, indexes in sorted(grouped.items())}
+
     def summarize(trace: torch.Tensor) -> dict[str, object]:
         if int(trace.shape[1]) == 0:
             return {
                 "depths": 0,
+                "cases": int(trace.shape[0]),
                 "mean_batch_variance_by_depth": [],
                 "mean_step_delta_norm": [],
                 "mean_consecutive_cosine": [],
@@ -4247,6 +4254,7 @@ def state_trace_metrics(
             cosine = torch.empty(0)
         return {
             "depths": int(last_token_trace.shape[1]),
+            "cases": int(last_token_trace.shape[0]),
             "mean_batch_variance_by_depth": [
                 float(value) for value in variance_by_depth.tolist()
             ],
@@ -4256,9 +4264,19 @@ def state_trace_metrics(
 
     result: dict[str, object] = {}
     if "core_state_trace_h" in runtime:
-        result["z_h"] = summarize(runtime["core_state_trace_h"])
+        trace_h = runtime["core_state_trace_h"]
+        result["z_h"] = summarize(trace_h)
+        result["z_h_by_family"] = {
+            family: summarize(trace_h[indexes])
+            for family, indexes in indexes_by_family().items()
+        }
     if "core_state_trace_l" in runtime:
-        result["z_l"] = summarize(runtime["core_state_trace_l"])
+        trace_l = runtime["core_state_trace_l"]
+        result["z_l"] = summarize(trace_l)
+        result["z_l_by_family"] = {
+            family: summarize(trace_l[indexes])
+            for family, indexes in indexes_by_family().items()
+        }
     return result
 
 
