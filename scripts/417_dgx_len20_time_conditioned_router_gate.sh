@@ -25,10 +25,15 @@ EVAL_EVERY="${EVAL_EVERY:-100}"
 FAMILY_DRO_WEIGHT="${FAMILY_DRO_WEIGHT:-0.35}"
 FORCED_ROUTE_ANSWER_WEIGHT="${FORCED_ROUTE_ANSWER_WEIGHT:-0.20}"
 FORCED_ROUTE_DEPTH_WEIGHT="${FORCED_ROUTE_DEPTH_WEIGHT:-0.10}"
+RUN_LABEL="${RUN_LABEL:-time_conditioned_router}"
+OUT_PREFIX="${OUT_PREFIX:-time_conditioned}"
+TARGET_LABEL="${TARGET_LABEL:-time-conditioned}"
+THINK_STRUCTURE="${THINK_STRUCTURE:-single_order_router_time_conditioned}"
+TRAIN_PARAM_NAME_REGEX="${TRAIN_PARAM_NAME_REGEX:-single_order_time_condition|single_order_route1|trm_order_router}"
 EXTRA_ARGS="${EXTRA_ARGS:-}"
 REMOTE_LOG_DIR="${REMOTE_LOG_DIR:-local_eval/runner_logs}"
-REMOTE_LOG="${REMOTE_LOG:-${REMOTE_LOG_DIR}/len20_time_conditioned_router_${OUT_TAG}.log}"
-REMOTE_PID="${REMOTE_PID:-${REMOTE_LOG_DIR}/len20_time_conditioned_router_${OUT_TAG}.pid}"
+REMOTE_LOG="${REMOTE_LOG:-${REMOTE_LOG_DIR}/len20_${RUN_LABEL}_${OUT_TAG}.log}"
+REMOTE_PID="${REMOTE_PID:-${REMOTE_LOG_DIR}/len20_${RUN_LABEL}_${OUT_TAG}.pid}"
 
 usage() {
   cat <<USAGE
@@ -55,7 +60,7 @@ case "${ACTION}" in
 Len20 time-conditioned router gate:
 
 1. Resume the accepted len20 single-order-router checkpoint.
-2. Switch to single_order_router_time_conditioned with --resume-allow-missing.
+2. Switch to the configured THINK_STRUCTURE with --resume-allow-missing.
 3. The new time conditioner is initialized to zero, so the old route is
    preserved before training.
 4. Train only time-condition parameters plus route1/router.
@@ -66,13 +71,13 @@ PLAN
   status)
     remote "pwd; git status --short --branch; git rev-parse --short HEAD; \
       echo; echo '[processes]'; pgrep -af '337_train|417_dgx_len20_time_conditioned' || true; \
-      echo; echo '[latest outputs]'; ls -dt local_eval/dgx_single_order_router_len20_time_conditioned_seed* 2>/dev/null | head -5 || true; \
-      echo; echo '[latest progress]'; latest=\$(ls -dt local_eval/dgx_single_order_router_len20_time_conditioned_seed* 2>/dev/null | head -1 || true); \
+      echo; echo '[latest outputs]'; ls -dt local_eval/dgx_single_order_router_len20_${OUT_PREFIX}_seed* 2>/dev/null | head -5 || true; \
+      echo; echo '[latest progress]'; latest=\$(ls -dt local_eval/dgx_single_order_router_len20_${OUT_PREFIX}_seed* 2>/dev/null | head -1 || true); \
       if [ -n \"\$latest\" ] && [ -f \"\$latest/latest_progress.json\" ]; then cat \"\$latest/latest_progress.json\"; fi; \
-      echo; echo '[runner logs]'; ls -lt '${REMOTE_LOG_DIR}'/len20_time_conditioned_router_*.log 2>/dev/null | head -5 || true"
+      echo; echo '[runner logs]'; ls -lt '${REMOTE_LOG_DIR}'/len20_${RUN_LABEL}_*.log 2>/dev/null | head -5 || true"
     ;;
   tail)
-    remote "latest_log=\$(ls -t '${REMOTE_LOG_DIR}'/len20_time_conditioned_router_*.log 2>/dev/null | head -1 || true); \
+    remote "latest_log=\$(ls -t '${REMOTE_LOG_DIR}'/len20_${RUN_LABEL}_*.log 2>/dev/null | head -1 || true); \
       if [ -z \"\$latest_log\" ]; then echo 'no runner log found'; exit 0; fi; \
       echo \"==> \$latest_log <==\"; tail -80 \"\$latest_log\""
     ;;
@@ -84,7 +89,9 @@ PLAN
         BATCH_SIZE='${BATCH_SIZE}' D_MODEL='${D_MODEL}' N_HEADS='${N_HEADS}' D_FF='${D_FF}' LR='${LR}' \
         SAVE_EVERY_STEPS='${SAVE_EVERY_STEPS}' LOG_EVERY='${LOG_EVERY}' EVAL_EVERY='${EVAL_EVERY}' \
         FAMILY_DRO_WEIGHT='${FAMILY_DRO_WEIGHT}' FORCED_ROUTE_ANSWER_WEIGHT='${FORCED_ROUTE_ANSWER_WEIGHT}' \
-        FORCED_ROUTE_DEPTH_WEIGHT='${FORCED_ROUTE_DEPTH_WEIGHT}' EXTRA_ARGS='${EXTRA_ARGS}' \
+        FORCED_ROUTE_DEPTH_WEIGHT='${FORCED_ROUTE_DEPTH_WEIGHT}' RUN_LABEL='${RUN_LABEL}' OUT_PREFIX='${OUT_PREFIX}' \
+        TARGET_LABEL='${TARGET_LABEL}' THINK_STRUCTURE='${THINK_STRUCTURE}' TRAIN_PARAM_NAME_REGEX='${TRAIN_PARAM_NAME_REGEX}' \
+        EXTRA_ARGS='${EXTRA_ARGS}' \
         bash scripts/417_dgx_len20_time_conditioned_router_gate.sh run-local > '${REMOTE_LOG}' 2>&1 < /dev/null & \
       pid=\$!; echo \"\$pid\" > '${REMOTE_PID}'; \
       echo \"submitted pid=\$pid\"; echo \"log=${REMOTE_LOG}\"; echo \"pid_file=${REMOTE_PID}\""
@@ -95,7 +102,9 @@ PLAN
       BATCH_SIZE='${BATCH_SIZE}' D_MODEL='${D_MODEL}' N_HEADS='${N_HEADS}' D_FF='${D_FF}' LR='${LR}' \
       SAVE_EVERY_STEPS='${SAVE_EVERY_STEPS}' LOG_EVERY='${LOG_EVERY}' EVAL_EVERY='${EVAL_EVERY}' \
       FAMILY_DRO_WEIGHT='${FAMILY_DRO_WEIGHT}' FORCED_ROUTE_ANSWER_WEIGHT='${FORCED_ROUTE_ANSWER_WEIGHT}' \
-      FORCED_ROUTE_DEPTH_WEIGHT='${FORCED_ROUTE_DEPTH_WEIGHT}' EXTRA_ARGS='${EXTRA_ARGS}' \
+      FORCED_ROUTE_DEPTH_WEIGHT='${FORCED_ROUTE_DEPTH_WEIGHT}' RUN_LABEL='${RUN_LABEL}' OUT_PREFIX='${OUT_PREFIX}' \
+      TARGET_LABEL='${TARGET_LABEL}' THINK_STRUCTURE='${THINK_STRUCTURE}' TRAIN_PARAM_NAME_REGEX='${TRAIN_PARAM_NAME_REGEX}' \
+      EXTRA_ARGS='${EXTRA_ARGS}' \
       bash scripts/417_dgx_len20_time_conditioned_router_gate.sh run-local"
     ;;
   run-local)
@@ -105,8 +114,8 @@ PLAN
     fi
 
     PYTHONPATH=src "${REMOTE_PYTHON}" scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
-      --out-dir "local_eval/dgx_single_order_router_len20_time_conditioned_seed${EVAL_SEED}_${OUT_TAG}" \
-      --target-level "single-order-router len20 time-conditioned seed${EVAL_SEED}" \
+      --out-dir "local_eval/dgx_single_order_router_len20_${OUT_PREFIX}_seed${EVAL_SEED}_${OUT_TAG}" \
+      --target-level "single-order-router len20 ${TARGET_LABEL} seed${EVAL_SEED}" \
       "${resume_args[@]}" \
       --steps "${STEPS}" \
       --train-cases "${TRAIN_CASES}" \
@@ -126,8 +135,8 @@ PLAN
       --train-think-steps "${THINK_STEPS}" \
       --eval-think-steps "${THINK_STEPS}" \
       --backbone mha_etd \
-      --think-structure single_order_router_time_conditioned \
-      --train-param-name-regex 'single_order_time_condition|single_order_route1|trm_order_router' \
+      --think-structure "${THINK_STRUCTURE}" \
+      --train-param-name-regex "${TRAIN_PARAM_NAME_REGEX}" \
       --family-dro-loss-weight "${FAMILY_DRO_WEIGHT}" \
       --family-dro-temperature 1.0 \
       --depth-intermediate-family-dro \
@@ -161,7 +170,7 @@ PLAN
       --accept-min-depth-gain 0.06 \
       --accept-min-ablation-drop 0.06 \
       --accept-min-family-exact 0.06 \
-      --accepted-decision "accepted_single_order_router_len20_time_conditioned_seed${EVAL_SEED}" \
+      --accepted-decision "accepted_single_order_router_len20_${OUT_PREFIX}_seed${EVAL_SEED}" \
       --log-every "${LOG_EVERY}" \
       ${EXTRA_ARGS}
     ;;

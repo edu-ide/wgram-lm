@@ -24831,6 +24831,142 @@ seed9338:
 then original-seed retention rerun with the same gate
 ```
 
+## 2026-05-18 - Time-Conditioned Router DGX Result
+
+Run:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  dgx_single_order_router_len20_time_conditioned_seed9338_20260518_163145/report.json
+```
+
+Decision:
+
+```text
+rejected
+reject_reasons:
+  family_exact_below_threshold
+```
+
+Metrics:
+
+```text
+full_generation_exact: 0.173828125
+think0_generation_exact: 0.0
+full_minus_think0: 0.173828125
+full_minus_worst_ablation: 0.142578125
+min_family_generation_exact: 0.04093567251461988
+state_reset_generation_exact: 0.03125
+op_zero_generation_exact: 0.02734375
+```
+
+Comparison:
+
+```text
+seed9338 diagnostic:
+  min_family: 0.0292398
+
+chain trace anti-collapse:
+  min_family: 0.0350877
+
+time-conditioned router:
+  min_family: 0.0409357
+```
+
+Trace comparison:
+
+```text
+modchain:
+  late_cosine:     0.999044 -> 0.999106
+  final_variance:  2.43117  -> 2.17447
+  exact:           0.029240 -> 0.040936
+
+revchain:
+  late_cosine:     0.999169 -> 0.999189
+  final_variance:  2.38877  -> 2.24329
+  exact:           0.052632 -> 0.052632
+```
+
+Interpretation:
+
+```text
+Time conditioning improved the family-floor metric more than the weak
+anti-collapse penalty, but it did not fix the latent trajectory collapse.
+The improvement came without making late-depth chain states less collapsed.
+
+Therefore route1 context-level time bias is too weak or placed too late. The
+next candidate should inject trajectory conditioning directly into the
+route1 update gate, still zero-initialized and preservation-first:
+
+  route1_gate_logits =
+    update_gate([route0, route1_candidate, route1_context])
+    + time_gate([t, dt])
+
+Promote only with the same seed9338/original-seed family-floor gate.
+```
+
+## 2026-05-18 - Time-Gated Router Candidate
+
+Implemented candidate:
+
+```text
+think_structure:
+  single_order_router_time_gate
+
+files:
+  scripts/335_train_qtrm_native_etd_probe.py
+  scripts/417_dgx_len20_time_conditioned_router_gate.sh
+```
+
+Mechanism:
+
+```text
+route1_gate_logits =
+  single_order_route1_update_gate([route0, route1_candidate, route1_context])
+  + single_order_time_gate([t, dt])
+
+t  = (step_index + 1) / total_steps
+dt = 1 / total_steps
+```
+
+Why this is the next sharper candidate:
+
+```text
+The rejected time-conditioned router added time only to route1 context. That
+barely changed the late-depth chain traces. Time-gated router puts trajectory
+conditioning directly on the route1 update gate, so each recurrent step can
+learn how much to accept the route1 transition.
+```
+
+Preservation check:
+
+```text
+old:
+  single_order_router
+
+new:
+  single_order_router_time_gate
+
+load old state into new with strict=False:
+  missing: single_order_time_gate.weight
+  unexpected: none
+  max_abs_diff at zero init: 0.0
+  allclose_1e-6: true
+```
+
+Local runner smoke:
+
+```text
+RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python \
+RUN_LABEL=time_gate_router OUT_PREFIX=time_gate TARGET_LABEL=time-gate \
+THINK_STRUCTURE=single_order_router_time_gate \
+TRAIN_PARAM_NAME_REGEX='single_order_time_gate|single_order_route1|trm_order_router' \
+... scripts/417_dgx_len20_time_conditioned_router_gate.sh run-local
+
+result:
+  completed
+```
+
 ## 2026-05-18 - Recurrent LayerScale DGX Result
 
 Run:

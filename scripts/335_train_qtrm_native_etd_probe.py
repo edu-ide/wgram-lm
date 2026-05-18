@@ -768,6 +768,7 @@ SUPPORTED_THINK_STRUCTURES = (
     "single_order_router",
     "single_order_router_residual_scale",
     "single_order_router_time_conditioned",
+    "single_order_router_time_gate",
     "trm_dual_z",
     "trm_dual_z_interactive",
     "trm_dual_z_interactive_transition_gate",
@@ -820,6 +821,7 @@ SINGLE_ORDER_ROUTER_THINK_STRUCTURES = (
     "single_order_router",
     "single_order_router_residual_scale",
     "single_order_router_time_conditioned",
+    "single_order_router_time_gate",
 )
 
 
@@ -1333,6 +1335,12 @@ class NativeQTRMETDLM(nn.Module):
                     int(d_model),
                     bias=False,
                 )
+            if self.think_structure == "single_order_router_time_gate":
+                self.single_order_time_gate = nn.Linear(
+                    2,
+                    int(d_model),
+                    bias=False,
+                )
             if self.think_structure == "single_order_router_residual_scale":
                 # Preserve the previous router path at initialization while
                 # allowing training to damp unstable recurrent deltas.
@@ -1637,6 +1645,8 @@ class NativeQTRMETDLM(nn.Module):
             nn.init.constant_(self.single_order_route1_update_gate.bias, -6.0)
         if hasattr(self, "single_order_time_condition"):
             nn.init.zeros_(self.single_order_time_condition.weight)
+        if hasattr(self, "single_order_time_gate"):
+            nn.init.zeros_(self.single_order_time_gate.weight)
         if hasattr(self, "single_order_recurrent_layerscale"):
             self.single_order_recurrent_layerscale.data.fill_(1.0)
         if hasattr(self, "trm_l_transition_gate_logit"):
@@ -2151,11 +2161,17 @@ class NativeQTRMETDLM(nn.Module):
     ) -> torch.Tensor:
         route0 = self._run_stage(self.think, state, causal_mask=causal_mask)
         route1_context = self._single_order_route1_context(encoded)
-        if hasattr(self, "single_order_time_condition"):
+        progress = None
+        if hasattr(self, "single_order_time_condition") or hasattr(
+            self,
+            "single_order_time_gate",
+        ):
             denom = max(1, int(total_steps))
             progress = encoded.new_tensor(
                 [float(step_index + 1) / float(denom), 1.0 / float(denom)]
             )
+        if hasattr(self, "single_order_time_condition"):
+            assert progress is not None
             time_bias = self.single_order_time_condition(progress).view(1, 1, -1)
             route1_context = route1_context + time_bias.to(dtype=route1_context.dtype)
         route1_candidate = self._run_stage(
@@ -2163,11 +2179,16 @@ class NativeQTRMETDLM(nn.Module):
             self.single_order_route1_input_norm(state + route1_context),
             causal_mask=causal_mask,
         )
-        route1_gate = torch.sigmoid(
-            self.single_order_route1_update_gate(
-                torch.cat([route0, route1_candidate, route1_context], dim=-1)
-            )
+        route1_gate_logits = self.single_order_route1_update_gate(
+            torch.cat([route0, route1_candidate, route1_context], dim=-1)
         )
+        if hasattr(self, "single_order_time_gate"):
+            assert progress is not None
+            time_gate = self.single_order_time_gate(progress).view(1, 1, -1)
+            route1_gate_logits = route1_gate_logits + time_gate.to(
+                dtype=route1_gate_logits.dtype
+            )
+        route1_gate = torch.sigmoid(route1_gate_logits)
         route1 = route0 + route1_gate * (route1_candidate - route0)
         force_route = getattr(self, "trm_order_router_force_route", None)
         if force_route is None:
