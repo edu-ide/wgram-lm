@@ -24831,6 +24831,85 @@ seed9338:
 then original-seed retention rerun with the same gate
 ```
 
+## 2026-05-18 - Continuous Latest-Paper Search Rule Reaffirmed
+
+Answer to the process question:
+
+```text
+Yes. QTRM architecture work must keep searching current papers while improving
+the model. But the loop is not paper shopping. A new paper is useful only if it
+maps to the measured bottleneck and can be converted into one falsifiable gate.
+```
+
+Current measured bottleneck:
+
+```text
+The accepted len20 recurrent route has a real causal core signal, but hard
+ordered-chain families still fail the family-floor gate. Recent failed repairs
+show that weak after-the-fact anti-collapse loss, scalar time conditioning,
+time-gated routing, and zero-init state stream adapters do not break the
+0.0409 min-family plateau.
+```
+
+Fresh literature implications checked on 2026-05-18:
+
+```text
+LoopFormer
+  https://loopformer.github.io/
+  Mechanism: variable loop trajectories, t/dt conditioning, shortcut
+  consistency. Already tested in minimal form through time-conditioned and
+  time-gated routers; result plateaued, so the next attempt needs stronger
+  trajectory-level supervision, not another scalar time adapter.
+
+RLTT: Rewarding Latent Thought Trajectories
+  https://arxiv.org/abs/2602.10520
+  Mechanism: assign credit across the whole latent reasoning trajectory rather
+  than only final answer state. This directly targets the QTRM failure where
+  final LM CE preserves core causality but does not teach hard-family
+  transitions well enough.
+
+Solve the Loop: Attractor Models for Language and Reasoning
+  https://huggingface.co/papers/2605.12466
+  Mechanism: fixed-point iterative refinement with implicit differentiation
+  and adaptive convergence. This is relevant as a future larger redesign if
+  explicit recurrent unroll training keeps showing trajectory collapse.
+
+Latent Lookahead Training
+  https://machinelearning.apple.com/research/latent-lookahead
+  Mechanism: recursively feed hidden states forward for selected tokens and
+  supervise multiple future targets. This supports a prefix/depth trajectory
+  objective for QTRM rather than only final-token answer CE.
+
+ADEPT
+  https://arxiv.org/abs/2601.03700
+  Mechanism: adaptive early exit. Useful for halt/compute policy later, but not
+  the next fix until the recurrent trajectory itself improves.
+
+Continuous Latent Diffusion Language Model / Latent-DARM
+  https://huggingface.co/papers/2605.06548
+  https://arxiv.org/abs/2603.09184
+  Mechanism: globally revisable or diffusion-like latent planning. Relevant as
+  a long-term alternative branch, but it would change the core training regime;
+  it should not replace the current TRM/LoopLM proof gate without a separate
+  minimal comparison.
+```
+
+Next research-driven action:
+
+```text
+Stop adding small route adapters. The next candidate should implement
+trajectory-level credit/supervision for the recurrent core:
+
+  per-depth latent trajectory targets
+  or RLTT-style dense trajectory reward/proxy
+  or latent-lookahead prefix/depth supervision
+
+Promotion is unchanged:
+  seed9338 min_family >= 0.06
+  original-seed retention pass
+  think0/state_reset/op_zero/route ablations remove the gain
+```
+
 ## 2026-05-18 - Time-Conditioned Router DGX Result
 
 Run:
