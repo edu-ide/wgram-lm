@@ -105,11 +105,16 @@ for report_path in sorted(pathlib.Path("local_eval").glob(f"{pathlib.Path(prefix
     train = report.get("train", {})
     mode = train.get("carrier_state_mode", report_path.parent.name)
     decisive = report.get("decisive_metrics", {})
-    by_family = (
+    by_family_raw = (
         report.get("eval_metrics", {})
         .get(f"think{train.get('eval_think_steps', '')}", {})
-        .get("by_family_generation_exact", {})
+        .get("by_family", {})
     )
+    by_family = {
+        name: stats.get("generation_exact")
+        for name, stats in by_family_raw.items()
+        if isinstance(stats, dict)
+    }
     rows.append(
         {
             "mode": mode,

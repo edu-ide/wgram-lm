@@ -26921,6 +26921,73 @@ core or a smaller LoopFormer-style trajectory-conditioning gate, not a side
 solver or MemoryOS/RAG path.
 ```
 
+## 2026-05-18 - Len8 Carrier Mode Probe Result
+
+Purpose:
+
+```text
+Before adding a larger Attractor/LoopFormer-style architecture change, test
+whether the current len8 bottleneck is merely the learned GRU carrier source.
+This is an eval-only probe: no training steps, same checkpoint, same len8
+512-case seed9338 gate.
+```
+
+Script:
+
+```text
+scripts/424_dgx_len8_carrier_mode_probe.sh
+```
+
+Canonical checkpoint:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+  posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
+```
+
+DGX run:
+
+```text
+OUT_TAG=carrier_modes_len8_20260518_232355
+```
+
+Results:
+
+```text
+mode                full_exact   min_family   depth_gain   ablation_drop   carrier_drop
+gru                 0.105469     0.035088     0.066406     0.046875        0.037109
+state_mean          0.058594     0.035088     0.019531     0.013672       -0.009766
+encoded_state_mean  0.060547     0.035088     0.021484     0.009766       -0.007812
+encoded             0.056641     0.023392     0.017578     0.005859       -0.011719
+state_delta         0.054688     0.023392     0.015625    -0.003906       -0.013672
+```
+
+Interpretation:
+
+```text
+The learned GRU carrier is still the only mode preserving the partial len8
+breakthrough. Deterministic carrier substitutions do not improve the weak
+family floor and usually make the carrier worse than turning it off.
+
+Therefore the next high-priority architecture move is not carrier-source
+replacement. The bottleneck is the recurrent trajectory/finite-loop objective:
+
+  - fixed-depth unroll is still too brittle
+  - z_H remains causally essential
+  - z_L/carrier influence is too weak for the required destructive-ablation gate
+
+Next candidate should follow the verified prior cluster:
+
+  Attractor-style QTRM core:
+    persistent proposal injection
+    convergence/fixed-point training signal
+    optional adaptive halt based on residual delta
+
+or the smaller LoopFormer-style gate:
+    explicit time/dt trajectory conditioning plus shortcut consistency
+```
+
 Promotion gate:
 
 ```text
