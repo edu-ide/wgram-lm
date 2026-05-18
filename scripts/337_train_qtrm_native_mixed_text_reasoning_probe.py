@@ -4893,6 +4893,8 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         halt_pooling=str(args.halt_pooling),
         carrier_gate_init=float(args.carrier_gate_init),
         carrier_state_mode=str(args.carrier_state_mode),
+        trm_recurrent_layerscale_mode=str(args.trm_recurrent_layerscale_mode),
+        trm_recurrent_layerscale_init=float(args.trm_recurrent_layerscale_init),
     ).to(device)
     resume_load_summary: dict[str, object] | None = None
     if str(args.resume_from):
@@ -6196,6 +6198,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "Carrier state source. Non-GRU modes are deterministic probes for "
             "reducing random-init dependence in additive carrier experiments."
         ),
+    )
+    parser.add_argument(
+        "--trm-recurrent-layerscale-mode",
+        choices=("none", "scalar", "channel"),
+        default="none",
+        help=(
+            "Scale nested TRM recurrent updates as previous + scale * "
+            "(updated - previous). init=1.0 preserves an existing route; "
+            "small init tests identity-biased recurrence."
+        ),
+    )
+    parser.add_argument(
+        "--trm-recurrent-layerscale-init",
+        type=float,
+        default=1.0,
+        help="Initial scale for --trm-recurrent-layerscale-mode.",
     )
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=3e-4)

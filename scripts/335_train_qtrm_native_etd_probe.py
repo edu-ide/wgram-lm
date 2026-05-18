@@ -825,6 +825,14 @@ SINGLE_ORDER_ROUTER_THINK_STRUCTURES = (
     "single_order_router_time_gate",
     "single_order_router_state_stream",
 )
+TRM_NESTED_RECURRENT_LAYERSCALE_STRUCTURES = (
+    "trm_dual_z_nested_reversed_mha_etd",
+    "trm_dual_z_nested_reversed_mha_etd_joint_readout",
+    "trm_dual_z_nested_reversed_mha_etd_residual_joint_readout",
+    "trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier",
+    "trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier_cross_exchange",
+    "trm_dual_z_nested_reversed_mha_etd_residual_joint_readout_core_carrier_step_conditioned",
+)
 
 
 def applicable_ablation_names(think_structure: str) -> tuple[str, ...]:
@@ -897,6 +905,8 @@ class NativeQTRMETDLM(nn.Module):
         halt_pooling: str = "last",
         carrier_gate_init: float = -1.0,
         carrier_state_mode: str = "gru",
+        trm_recurrent_layerscale_mode: str = "none",
+        trm_recurrent_layerscale_init: float = 1.0,
         tie_embeddings: bool = False,
     ) -> None:
         super().__init__()
@@ -912,6 +922,8 @@ class NativeQTRMETDLM(nn.Module):
         self.halt_pooling = str(halt_pooling)
         self.carrier_gate_init = float(carrier_gate_init)
         self.carrier_state_mode = str(carrier_state_mode)
+        self.trm_recurrent_layerscale_mode = str(trm_recurrent_layerscale_mode)
+        self.trm_recurrent_layerscale_init = float(trm_recurrent_layerscale_init)
         self.tie_embeddings = bool(tie_embeddings)
         self.delta_backend = str(delta_backend)
         self.delta_head_dim = int(delta_head_dim) if delta_head_dim else None
@@ -979,6 +991,11 @@ class NativeQTRMETDLM(nn.Module):
             raise ValueError(f"unknown halt_pooling: {self.halt_pooling}")
         if self.carrier_state_mode not in SUPPORTED_CARRIER_STATE_MODES:
             raise ValueError(f"unknown carrier_state_mode: {self.carrier_state_mode}")
+        if self.trm_recurrent_layerscale_mode not in {"none", "scalar", "channel"}:
+            raise ValueError(
+                "unknown trm_recurrent_layerscale_mode: "
+                f"{self.trm_recurrent_layerscale_mode}"
+            )
         stage_backbones = {
             self.encode_backbone,
             self.think_backbone,
@@ -1234,6 +1251,22 @@ class NativeQTRMETDLM(nn.Module):
                 int(d_model),
                 int(d_model),
                 bias=False,
+            )
+        if (
+            self.trm_recurrent_layerscale_mode != "none"
+            and self.think_structure in TRM_NESTED_RECURRENT_LAYERSCALE_STRUCTURES
+        ):
+            scale_shape = (
+                (1, 1, int(d_model))
+                if self.trm_recurrent_layerscale_mode == "channel"
+                else (1,)
+            )
+            init = float(self.trm_recurrent_layerscale_init)
+            self.trm_nested_l_recurrent_layerscale = nn.Parameter(
+                torch.full(scale_shape, init)
+            )
+            self.trm_nested_h_recurrent_layerscale = nn.Parameter(
+                torch.full(scale_shape, init)
             )
         if self.think_structure == "trm_dual_z_reversed_hybrid_3to1_semantic_carry":
             self.trm_semantic_l_carry_gate = nn.Linear(3 * int(d_model), int(d_model))
@@ -2078,6 +2111,21 @@ class NativeQTRMETDLM(nn.Module):
     ) -> torch.Tensor:
         update_gate = torch.sigmoid(gate(torch.cat([previous, candidate, context], dim=-1)))
         return norm(previous + update_gate * (candidate - previous))
+
+    def _apply_trm_recurrent_layerscale(
+        self,
+        previous: torch.Tensor,
+        updated: torch.Tensor,
+        *,
+        state_name: str,
+    ) -> torch.Tensor:
+        if self.trm_recurrent_layerscale_mode == "none":
+            return updated
+        parameter_name = f"trm_nested_{state_name}_recurrent_layerscale"
+        if not hasattr(self, parameter_name):
+            return updated
+        scale = getattr(self, parameter_name).to(dtype=updated.dtype)
+        return previous + scale * (updated - previous)
 
     def _apply_semantic_carry(
         self,
@@ -3116,6 +3164,7 @@ class NativeQTRMETDLM(nn.Module):
                 z_l = torch.zeros_like(z_l)
             if bool(z_h_zero):
                 z_h = torch.zeros_like(z_h)
+            previous_l = z_l
             l_context = encoded + z_h
             baseline_l = self._run_stage(
                 self.think,
@@ -3182,10 +3231,16 @@ class NativeQTRMETDLM(nn.Module):
                         self.trm_nested_step_update_gate_logit
                     ).to(dtype=z_l.dtype)
                     z_l = z_l + step_gate * step_l_delta
+            z_l = self._apply_trm_recurrent_layerscale(
+                previous_l,
+                z_l,
+                state_name="l",
+            )
             if bool(z_l_zero):
                 z_l = torch.zeros_like(z_l)
         if bool(z_h_zero):
             z_h = torch.zeros_like(z_h)
+        previous_h = z_h
         h_context = encoded + z_l
         baseline_h = self._run_stage(
             self.think,
@@ -3252,6 +3307,11 @@ class NativeQTRMETDLM(nn.Module):
                     self.trm_nested_step_update_gate_logit
                 ).to(dtype=z_h.dtype)
                 z_h = z_h + step_gate * step_h_delta
+        z_h = self._apply_trm_recurrent_layerscale(
+            previous_h,
+            z_h,
+            state_name="h",
+        )
         if (
             self.think_structure
             in {
@@ -4716,6 +4776,8 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         halt_pooling=str(args.halt_pooling),
         carrier_gate_init=float(args.carrier_gate_init),
         carrier_state_mode=str(args.carrier_state_mode),
+        trm_recurrent_layerscale_mode=str(args.trm_recurrent_layerscale_mode),
+        trm_recurrent_layerscale_init=float(args.trm_recurrent_layerscale_init),
     ).to(device)
     optimizer, optimizer_report = build_memory_efficient_optimizer(
         model,
@@ -4960,6 +5022,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "Carrier state source. Non-GRU modes are deterministic probes for "
             "reducing random-init dependence in additive carrier experiments."
         ),
+    )
+    parser.add_argument(
+        "--trm-recurrent-layerscale-mode",
+        choices=("none", "scalar", "channel"),
+        default="none",
+        help=(
+            "Scale full nested TRM recurrent updates as previous + scale * "
+            "(updated - previous). Use init=1.0 to preserve an existing route "
+            "or a small init for identity-biased recurrence experiments."
+        ),
+    )
+    parser.add_argument(
+        "--trm-recurrent-layerscale-init",
+        type=float,
+        default=1.0,
+        help="Initial scale for --trm-recurrent-layerscale-mode.",
     )
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--optimizer", choices=MEMORY_EFFICIENT_OPTIMIZERS, default="adamw")

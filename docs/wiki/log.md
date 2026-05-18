@@ -25123,6 +25123,127 @@ interpretation:
   next DGX preservation-first run.
 ```
 
+DGX preservation-first len8 attempt:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+      oporder_preserve_l8_20260518_215143
+
+command shape:
+  resume accepted len6 checkpoint
+  program_len=8
+  op_order_embedding_mode=learned
+  train_only_resume_missing_params=true
+  trainable new route:
+    op_order_embed.weight
+
+step0:
+  full_generation_exact:       0.0
+  min_family_generation_exact: 0.0
+  teacher_forced_answer_loss:  9.577259063720703
+
+step150:
+  full_generation_exact:       0.0
+  min_family_generation_exact: 0.0
+  teacher_forced_answer_loss:  8.956474304199219
+
+action:
+  stopped early
+```
+
+Interpretation:
+
+```text
+The preservation fix works for not damaging the len6 route, but op-order alone
+cannot extrapolate the accepted learned-position checkpoint to len8. This
+rejects "add only a learned op index route" as the length-scaling solution.
+
+Next action should follow the recurrent-depth literature more directly:
+  change recurrence stability/trajectory, not only input order features.
+  Candidate mechanisms:
+    identity-biased recurrent residual for the dual/nested core
+    LayerScale-style trainable small recurrent update scale
+    final-only/silent objective sweep to reduce intermediate shortcutting
+    explicit depth sweep to detect overthinking before len extrapolation
+```
+
+## 2026-05-18 - Nested TRM Recurrent LayerScale Candidate
+
+Motivation:
+
+```text
+The op-order experiment shows that the bottleneck is not only input order
+features. Recent recurrent-depth papers emphasize stable deep recurrence:
+identity-biased updates, small residuals/LayerScale, final-only objectives, and
+explicit overthinking checks. Therefore the next candidate targets the
+recursive transition itself.
+```
+
+Implemented candidate:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+
+new args:
+  --trm-recurrent-layerscale-mode none|scalar|channel
+  --trm-recurrent-layerscale-init FLOAT
+
+mechanism:
+  nested TRM update becomes:
+    next = previous + scale * (updated - previous)
+
+default:
+  mode=none
+  existing checkpoints and previous experiments are unchanged.
+
+preservation mode:
+  mode=scalar
+  init=1.0
+  loading an accepted checkpoint should preserve the old recurrent path while
+  adding only two missing trainable scale parameters:
+    trm_nested_l_recurrent_layerscale
+    trm_nested_h_recurrent_layerscale
+
+identity-biased mode:
+  mode=scalar or channel
+  init<1.0
+  used for fresh recurrent-depth training if preservation-first continuation
+  fails.
+```
+
+Local preservation smoke:
+
+```text
+command:
+  RESUME_FROM=local_eval/qtrm_native_l6_d256_number_oprole_circular_trace_revrepair_s3000_20260515/last.pt
+  OUT_TAG=local_layerscale_preserve_smoke
+  LENGTHS=6 STEPS_PER_STAGE=1
+  EXTRA_ARGS='--position-embedding-mode learned
+    --trm-recurrent-layerscale-mode scalar
+    --trm-recurrent-layerscale-init 1.0
+    --train-only-resume-missing-params'
+  bash scripts/421_dgx_number_oprole_circular_len_ladder_gate.sh run-local
+
+result:
+  completed
+  missing route params:
+    trm_nested_l_recurrent_layerscale
+    trm_nested_h_recurrent_layerscale
+  step0 full_generation_exact:
+    0.3333333333333333
+  step1 full_generation_exact:
+    0.3333333333333333
+
+interpretation:
+  init=1.0 preserves the accepted recurrent route on the local smoke. This
+  clears a DGX len8 test where the full recurrent path can learn stable update
+  scales instead of trying to solve length scaling through op-order input
+  features alone.
+```
+
 Randomized positional L6 result:
 
 ```text
