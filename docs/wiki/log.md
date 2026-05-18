@@ -24898,3 +24898,81 @@ The gate remains unchanged:
   original-seed retention pass
   state_reset/op_zero/route ablations remove the gain
 ```
+
+## 2026-05-18 - Continuous Literature Watch Refresh
+
+The literature loop is active and must continue during QTRM work. The rule is
+not "add every new paper"; the rule is:
+
+```text
+latest paper
+-> measured QTRM bottleneck
+-> one causal mechanism
+-> one small falsifiable gate
+-> wiki result, accepted or rejected
+```
+
+Fresh scan additions relevant to the current len20 ordered-chain bottleneck:
+
+```text
+Loop, Think, & Generalize: Implicit Reasoning in Recurrent-Depth Transformers
+https://arxiv.org/abs/2604.07822
+
+Relevance:
+  identifies overthinking as a recurrent-depth failure mode where excessive
+  recurrence degrades predictions. This matches the current QTRM diagnostic:
+  hard chain families keep core causality, but late-depth z_h trajectories
+  become nearly frozen.
+
+Latent Chain-of-Thought Improves Structured-Data Transformers
+https://arxiv.org/abs/2605.11262
+
+Relevance:
+  recurrent latent feedback tokens improve structured prediction, but the
+  immediate QTRM action is not to add a new token interface. The useful
+  mechanism is measuring whether repeated latent feedback preserves
+  discriminative state for hard families.
+
+The Recurrent Transformer: Greater Effective Depth and Efficient Decoding
+https://arxiv.org/abs/2604.21215
+
+Relevance:
+  supports recurrence as a depth/parameter tradeoff for language pretraining.
+  It strengthens the long-term QTRM-native direction, but does not replace the
+  current family-floor gate.
+```
+
+Current diagnostic consequence:
+
+```text
+LayerScale did not fix the worst-family floor. State-trace diagnostics show a
+more specific failure:
+
+  checksum:
+    higher final state variance
+    lower late-depth consecutive cosine
+    much better exact accuracy
+
+  modchain/revchain:
+    route1 selected almost always
+    late-depth consecutive cosine near 0.999
+    weak exact accuracy
+
+This points to chain-family late-depth over-smoothing / trajectory collapse,
+not simply lack of data, lack of route selection, or global recurrence
+instability.
+```
+
+Next falsifiable candidate:
+
+```text
+Add a chain-family state-trace anti-collapse objective:
+  penalize late-depth consecutive cosine above a threshold for modchain/revchain
+  preserve or raise final-state variance for modchain/revchain
+  keep the same canonical LM answer path
+
+Promote only if:
+  seed9338 min_family >= 0.06
+  original-seed retention also passes
+  core/depth/op ablations still remove the gain
+```

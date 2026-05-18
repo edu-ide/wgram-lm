@@ -1752,6 +1752,92 @@ def state_trace_anti_collapse_loss(
     return torch.stack(losses).mean()
 
 
+def state_trace_family_anti_collapse_loss(
+    runtime: dict[str, torch.Tensor],
+    cases: list[TextReasoningCase],
+    *,
+    families: tuple[str, ...],
+    state_source: str,
+    max_consecutive_cosine: float,
+    min_final_variance: float,
+    late_fraction: float,
+    cosine_loss_scale: float,
+    reduction: str,
+) -> torch.Tensor:
+    """Prevent hard-family recurrent traces from freezing at late depths.
+
+    This is not a side answer head. It only regularizes the recurrent state
+    trace that already feeds the canonical LM logits.
+    """
+    if not runtime:
+        return torch.zeros(())
+    device = next(iter(runtime.values())).device
+    family_set = {str(family) for family in families}
+    if not family_set:
+        return torch.zeros((), device=device)
+    source = str(state_source)
+    trace_keys = [
+        key
+        for key, enabled in (
+            ("core_state_trace_h", source in {"h", "both"}),
+            ("core_state_trace_l", source in {"l", "both"}),
+        )
+        if enabled and key in runtime
+    ]
+    if not trace_keys:
+        return torch.zeros((), device=device)
+
+    family_losses: list[torch.Tensor] = []
+    for family in sorted(family_set):
+        indexes = [
+            index for index, case in enumerate(cases) if str(case.family) == family
+        ]
+        if not indexes:
+            continue
+        index_tensor = torch.tensor(indexes, dtype=torch.long, device=device)
+        trace_losses: list[torch.Tensor] = []
+        for key in trace_keys:
+            trace = runtime.get(key)
+            if trace is None or int(trace.shape[1]) == 0:
+                continue
+            last_token_trace = trace.index_select(0, index_tensor)[:, :, -1, :].float()
+            if (
+                float(max_consecutive_cosine) < 1.0
+                and int(last_token_trace.shape[1]) > 1
+            ):
+                cosine = F.cosine_similarity(
+                    last_token_trace[:, 1:, :],
+                    last_token_trace[:, :-1, :],
+                    dim=-1,
+                )
+                late_count = max(
+                    1,
+                    int(math.ceil(float(late_fraction) * int(cosine.shape[1]))),
+                )
+                late_cosine = cosine[:, -late_count:]
+                trace_losses.append(
+                    float(cosine_loss_scale)
+                    * F.relu(late_cosine - float(max_consecutive_cosine)).mean()
+                )
+            if float(min_final_variance) > 0.0 and int(last_token_trace.shape[0]) > 1:
+                final_variance = last_token_trace[:, -1, :].var(
+                    dim=0,
+                    unbiased=False,
+                ).mean()
+                trace_losses.append(
+                    F.relu(float(min_final_variance) - final_variance)
+                    / max(float(min_final_variance), 1.0e-6)
+                )
+        if trace_losses:
+            family_losses.append(torch.stack(trace_losses).mean())
+    if not family_losses:
+        return torch.zeros((), device=device)
+    stacked = torch.stack(family_losses)
+    if str(reduction) == "max":
+        return stacked.max()
+    return stacked.mean()
+
+
 def shared_lm_logits(model, hidden: torch.Tensor) -> torch.Tensor:
     """Use the model's canonical LM/value-codec readout when available."""
     lm_logits = getattr(model, "_lm_logits", None)
@@ -5029,6 +5115,7 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         state_trace_runtime: dict[str, torch.Tensor] | None = None
         needs_state_trace_runtime = (
             float(args.state_trace_anti_collapse_loss_weight) > 0.0
+            or float(args.state_trace_family_anti_collapse_loss_weight) > 0.0
             or float(args.core_step_codec_loss_weight) > 0.0
             or float(args.core_step_op_codec_loss_weight) > 0.0
             or float(args.core_step_position_codec_loss_weight) > 0.0
@@ -5424,6 +5511,27 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 state_trace_runtime,
                 min_variance=float(args.state_trace_min_variance),
                 min_delta_norm=float(args.state_trace_min_delta_norm),
+            )
+        if (
+            float(args.state_trace_family_anti_collapse_loss_weight) > 0.0
+            and state_trace_runtime is not None
+        ):
+            loss = loss + float(
+                args.state_trace_family_anti_collapse_loss_weight
+            ) * state_trace_family_anti_collapse_loss(
+                state_trace_runtime,
+                batch,
+                families=parse_families(
+                    str(args.state_trace_family_anti_collapse_families)
+                ),
+                state_source=str(args.state_trace_family_anti_collapse_state_source),
+                max_consecutive_cosine=float(
+                    args.state_trace_family_max_consecutive_cosine
+                ),
+                min_final_variance=float(args.state_trace_family_min_final_variance),
+                late_fraction=float(args.state_trace_family_late_fraction),
+                cosine_loss_scale=float(args.state_trace_family_cosine_loss_scale),
+                reduction=str(args.state_trace_family_anti_collapse_reduction),
             )
         if (
             float(args.latent_refine_loss_weight) > 0.0
@@ -6274,6 +6382,41 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--state-trace-anti-collapse-loss-weight", type=float, default=0.0)
     parser.add_argument("--state-trace-min-variance", type=float, default=0.6)
     parser.add_argument("--state-trace-min-delta-norm", type=float, default=3.5)
+    parser.add_argument(
+        "--state-trace-family-anti-collapse-loss-weight",
+        type=float,
+        default=0.0,
+    )
+    parser.add_argument(
+        "--state-trace-family-anti-collapse-families",
+        default="modchain,revchain",
+    )
+    parser.add_argument(
+        "--state-trace-family-anti-collapse-state-source",
+        choices=("h", "l", "both"),
+        default="h",
+    )
+    parser.add_argument(
+        "--state-trace-family-max-consecutive-cosine",
+        type=float,
+        default=0.997,
+    )
+    parser.add_argument(
+        "--state-trace-family-min-final-variance",
+        type=float,
+        default=3.0,
+    )
+    parser.add_argument("--state-trace-family-late-fraction", type=float, default=0.5)
+    parser.add_argument(
+        "--state-trace-family-cosine-loss-scale",
+        type=float,
+        default=20.0,
+    )
+    parser.add_argument(
+        "--state-trace-family-anti-collapse-reduction",
+        choices=("mean", "max"),
+        default="max",
+    )
     parser.add_argument("--latent-refine-loss-weight", type=float, default=0.0)
     parser.add_argument("--latent-refine-min-depth", type=int, default=1)
     parser.add_argument("--latent-refine-noise-std", type=float, default=0.0)
