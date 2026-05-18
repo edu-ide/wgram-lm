@@ -1420,6 +1420,72 @@ def attractor_lookahead_consistency_loss(
     return total
 
 
+def attractor_state_lookahead_loss_from_runtime(
+    model,
+    base_runtime: dict[str, torch.Tensor],
+    input_ids: torch.Tensor,
+    *,
+    base_think_steps: int,
+    lookahead_steps: int,
+    state_source: str = "both",
+    cosine_weight: float = 1.0,
+    relative_delta_weight: float = 0.1,
+    detach_base: bool = True,
+) -> torch.Tensor:
+    """Attractor-style fixed-point loss on recurrent states, not answer logits."""
+    extra_steps = int(lookahead_steps)
+    if extra_steps <= 0:
+        logits = base_runtime.get("logits")
+        if logits is None:
+            raise ValueError("base_runtime logits are required for zero loss")
+        return logits.sum() * 0.0
+    sources = {
+        "h": ("core_state_trace_h",),
+        "l": ("core_state_trace_l",),
+        "both": ("core_state_trace_h", "core_state_trace_l"),
+    }
+    if state_source not in sources:
+        raise ValueError(f"unsupported attractor state source: {state_source}")
+    lookahead_runtime = model.forward_with_runtime(
+        input_ids,
+        think_steps=max(1, int(base_think_steps) + extra_steps),
+        return_state_trace=True,
+    )
+    losses: list[torch.Tensor] = []
+    for key in sources[state_source]:
+        base_trace = base_runtime.get(key)
+        lookahead_trace = lookahead_runtime.get(key)
+        if base_trace is None or lookahead_trace is None:
+            raise ValueError(f"{key} is required for attractor state lookahead")
+        if int(base_trace.shape[1]) == 0 or int(lookahead_trace.shape[1]) == 0:
+            continue
+        base_state = base_trace[:, -1].float()
+        lookahead_state = lookahead_trace[:, -1].float()
+        if bool(detach_base):
+            base_state = base_state.detach()
+        pair_losses: list[torch.Tensor] = []
+        if float(cosine_weight) > 0.0:
+            cosine = F.cosine_similarity(
+                lookahead_state.reshape(lookahead_state.shape[0], -1),
+                base_state.reshape(base_state.shape[0], -1),
+                dim=-1,
+            )
+            pair_losses.append(float(cosine_weight) * (1.0 - cosine).mean())
+        if float(relative_delta_weight) > 0.0:
+            delta = (lookahead_state - base_state).reshape(base_state.shape[0], -1)
+            ref = base_state.reshape(base_state.shape[0], -1).norm(dim=1).clamp_min(1e-9)
+            relative_delta = delta.norm(dim=1) / ref
+            pair_losses.append(float(relative_delta_weight) * relative_delta.mean())
+        if pair_losses:
+            losses.append(torch.stack(pair_losses).sum())
+    if not losses:
+        logits = base_runtime.get("logits")
+        if logits is None:
+            raise ValueError("base_runtime logits are required for zero loss")
+        return logits.sum() * 0.0
+    return torch.stack(losses).mean()
+
+
 def state_reset_counterfactual_loss(
     model,
     chosen_logits: torch.Tensor,
@@ -5242,6 +5308,7 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
             or float(args.core_step_position_codec_loss_weight) > 0.0
             or float(args.latent_refine_loss_weight) > 0.0
             or float(args.state_trace_depth_loss_weight) > 0.0
+            or float(args.attractor_state_lookahead_loss_weight) > 0.0
         )
         if needs_state_trace_runtime:
             state_trace_runtime = model.forward_with_runtime(
@@ -5721,6 +5788,29 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                 state_source=str(args.state_trace_depth_state_source),
                 family_dro=bool(args.state_trace_depth_family_dro),
                 family_dro_temperature=float(args.state_trace_depth_family_dro_temperature),
+            )
+        if (
+            float(args.attractor_state_lookahead_loss_weight) > 0.0
+            and state_trace_runtime is not None
+            and (
+                int(args.attractor_state_lookahead_every) <= 1
+                or step % int(args.attractor_state_lookahead_every) == 0
+            )
+        ):
+            loss = loss + float(
+                args.attractor_state_lookahead_loss_weight
+            ) * attractor_state_lookahead_loss_from_runtime(
+                model,
+                state_trace_runtime,
+                x,
+                base_think_steps=int(args.train_think_steps),
+                lookahead_steps=int(args.attractor_state_lookahead_steps),
+                state_source=str(args.attractor_state_lookahead_state_source),
+                cosine_weight=float(args.attractor_state_lookahead_cosine_weight),
+                relative_delta_weight=float(
+                    args.attractor_state_lookahead_relative_delta_weight
+                ),
+                detach_base=bool(args.attractor_state_lookahead_detach_base),
             )
         if (
             float(args.core_step_codec_loss_weight) > 0.0
@@ -6432,6 +6522,35 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--attractor-lookahead-ce-weight", type=float, default=1.0)
     parser.add_argument("--attractor-lookahead-kl-weight", type=float, default=0.1)
+    parser.add_argument("--attractor-state-lookahead-loss-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--attractor-state-lookahead-steps",
+        type=int,
+        default=1,
+        help="Extra recurrent steps for fixed-point consistency on z_L/z_H states.",
+    )
+    parser.add_argument(
+        "--attractor-state-lookahead-every",
+        type=int,
+        default=1,
+        help="Apply recurrent-state lookahead consistency every N training steps.",
+    )
+    parser.add_argument(
+        "--attractor-state-lookahead-state-source",
+        choices=("h", "l", "both"),
+        default="both",
+    )
+    parser.add_argument("--attractor-state-lookahead-cosine-weight", type=float, default=1.0)
+    parser.add_argument(
+        "--attractor-state-lookahead-relative-delta-weight",
+        type=float,
+        default=0.1,
+    )
+    parser.add_argument(
+        "--attractor-state-lookahead-detach-base",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     parser.add_argument("--state-reset-counterfactual-loss-weight", type=float, default=0.0)
     parser.add_argument("--state-reset-counterfactual-margin", type=float, default=1.0)
     parser.add_argument(
