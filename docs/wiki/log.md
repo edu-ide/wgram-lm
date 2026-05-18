@@ -24596,6 +24596,9 @@ Next DGX candidate once connectivity returns:
 
 ```text
 scripts/412_dgx_len20_prefix_anchor_gate.sh run
+scripts/412_dgx_len20_prefix_anchor_gate.sh submit
+scripts/412_dgx_len20_prefix_anchor_gate.sh status
+scripts/412_dgx_len20_prefix_anchor_gate.sh tail
 
 Use the accepted len20 selection checkpoint or the seed9338 failed checkpoint,
 train only route1/router, and add:

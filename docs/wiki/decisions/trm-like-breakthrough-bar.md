@@ -554,6 +554,9 @@ promotion gate:
 
 runner:
   scripts/412_dgx_len20_prefix_anchor_gate.sh
+  scripts/412_dgx_len20_prefix_anchor_gate.sh submit
+  scripts/412_dgx_len20_prefix_anchor_gate.sh status
+  scripts/412_dgx_len20_prefix_anchor_gate.sh tail
 ```
 
 Implemented repair path:
