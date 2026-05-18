@@ -24831,6 +24831,70 @@ seed9338:
 then original-seed retention rerun with the same gate
 ```
 
+## 2026-05-18 - State-Trace Depth-Credit Gate Candidate
+
+Implemented runner:
+
+```text
+scripts/418_dgx_len20_state_trace_depth_credit_gate.sh
+```
+
+Purpose:
+
+```text
+Test an RLTT / latent-lookahead style trajectory-credit objective without
+adding a side solver or changing the canonical answer path.
+```
+
+Canonical path preserved:
+
+```text
+prompt tokens
+-> QTRM recurrent core
+-> core_state_trace_h at each recurrent depth
+-> existing decode stack
+-> existing norm / LM logits
+-> answer CE for the causal-prefix answer at that depth
+```
+
+Default settings:
+
+```text
+think_structure: single_order_router
+train_param_name_regex: single_order_route1|trm_order_router
+state_trace_depth_loss_weight: 0.45
+state_trace_depth_state_source: h
+state_trace_depth_min_depth: 4
+state_trace_depth_weight_power: 1.0
+state_trace_depth_family_dro: true
+state_trace_depth_family_dro_temperature: 1.0
+```
+
+Why this is not another route adapter:
+
+```text
+The route architecture is unchanged. The experiment changes the training
+credit assignment: intermediate latent states must become answer-useful through
+the same LM path before the final depth. This directly targets the failure mode
+where final CE and weak anti-collapse losses preserve core causality but do not
+teach hard-family transition trajectories.
+```
+
+Local smoke:
+
+```text
+RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python \
+OUT_TAG=local_state_trace_depth_credit_smoke \
+STEPS=2 TRAIN_CASES=64 EVAL_CASES=24 BATCH_SIZE=8 \
+PROGRAM_LEN=6 THINK_STEPS=6 \
+EXTRA_ARGS='--device cpu --accept-min-exact 0 --accept-min-depth-gain 0 \
+  --accept-min-ablation-drop 0 --accept-min-family-exact 0' \
+bash scripts/418_dgx_len20_state_trace_depth_credit_gate.sh run-local
+
+result:
+  completed
+```
+
 ## 2026-05-18 - Continuous Latest-Paper Search Rule Reaffirmed
 
 Answer to the process question:
