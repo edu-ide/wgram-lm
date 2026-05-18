@@ -76,6 +76,7 @@ site:x.com github recursive language model reasoning
 - Solve the Loop: Attractor Models for Language and Reasoning
   - Primary source: https://arxiv.org/html/2605.12466v1
   - Official code: https://github.com/jacobfa/Attractor
+  - Local clone: `references/official/attractor`
   - QTRM relevance: fixed-point refinement, informative output-space
     initialization, persistent proposal injection, and convergence-based
     stopping directly address unstable finite unrolling. This is the strongest

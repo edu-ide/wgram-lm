@@ -26988,6 +26988,109 @@ or the smaller LoopFormer-style gate:
     explicit time/dt trajectory conditioning plus shortcut consistency
 ```
 
+## 2026-05-18 - Attractor Lookahead Loss Probe Rejected Early
+
+Prior checked:
+
+```text
+Solve the Loop: Attractor Models for Language and Reasoning
+  paper: https://arxiv.org/abs/2605.12466
+  code:  https://github.com/jacobfa/Attractor
+  local: references/official/attractor
+```
+
+Mechanism extracted:
+
+```text
+Attractor models iterate a fixed-point head with persistent context injection.
+The direct QTRM-safe approximation tested here was not a side solver:
+
+  prompt -> QTRM recurrent core at depth D -> LM logits
+  prompt -> same QTRM recurrent core at depth D+1 -> LM logits
+
+Loss:
+  CE(D+1, gold answer) + KL(logits_D+1 || stopgrad(logits_D))
+
+Goal:
+  make one extra recurrent step stable and answer-preserving.
+```
+
+Implementation:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added:
+    --attractor-lookahead-loss-weight
+    --attractor-lookahead-steps
+    --attractor-lookahead-every
+    --attractor-lookahead-ce-weight
+    --attractor-lookahead-kl-weight
+```
+
+Smoke:
+
+```text
+local_attractor_lookahead_smoke
+  completed
+```
+
+DGX run:
+
+```text
+OUT_TAG=posnone_attractor_lookahead_len8_20260518_233451
+resume:
+  local_eval/qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+  posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
+
+settings:
+  steps: 160 planned
+  lr: 6e-6
+  batch_size: 48
+  attractor_lookahead_loss_weight: 0.08
+  attractor_lookahead_steps: 1
+  attractor_lookahead_ce_weight: 1.0
+  attractor_lookahead_kl_weight: 0.10
+```
+
+Early result:
+
+```text
+step0:
+  full_exact: 0.10546875
+  min_family: 0.03508771929824561
+  teacher_forced_answer_loss: 1.6854037046432495
+
+step40:
+  full_exact: 0.044921875
+  min_family: 0.03508771929824561
+  teacher_forced_answer_loss: 1.7641308307647705
+```
+
+Decision:
+
+```text
+rejected_early
+```
+
+Reason:
+
+```text
+The naive D+1 lookahead objective rapidly destroys the partial len8 behavior.
+It stabilizes against the current logits too late and does not provide the
+official Attractor ingredients that matter:
+
+  - a separate fixed-point map/head
+  - contractive LayerScale-style recurrent head initialization
+  - solver/trajectory objective on the state map itself
+  - phantom/implicit-gradient style training, or at least controlled BPTT
+
+Therefore the next Attractor candidate cannot be just an extra-depth CE/KL
+continuation. It must change the recurrent state transition, likely by adding a
+preservation-initialized fixed-point residual head around z_H/z_L, or by using a
+LoopFormer-style shortcut-consistency objective that compares trajectories
+without forcing the already fragile answer logits to chase D+1 immediately.
+```
+
 Promotion gate:
 
 ```text
