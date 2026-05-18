@@ -889,6 +889,9 @@ class NativeQTRMETDLM(nn.Module):
         strict_backends: bool = False,
         rope_theta: float = 100000.0,
         position_embedding_mode: str = "learned",
+        op_order_embedding_mode: str = "none",
+        op_order_max_positions: int = 32,
+        op_token_ids: Iterable[int] | None = None,
         value_codec: str = "learned",
         value_token_ids: Iterable[int] | None = None,
         halt_pooling: str = "last",
@@ -919,6 +922,8 @@ class NativeQTRMETDLM(nn.Module):
         self.delta_conv_size = int(delta_conv_size)
         self.delta_norm_eps = float(delta_norm_eps)
         self.position_embedding_mode = str(position_embedding_mode)
+        self.op_order_embedding_mode = str(op_order_embedding_mode)
+        self.op_order_max_positions = max(1, int(op_order_max_positions))
         self.value_codec = str(value_codec)
         if value_token_ids is None:
             value_token_ids = range(value_base(), int(vocab))
@@ -946,10 +951,22 @@ class NativeQTRMETDLM(nn.Module):
             raise ValueError(
                 f"unknown position_embedding_mode: {self.position_embedding_mode}"
             )
+        if self.op_order_embedding_mode not in {"none", "learned"}:
+            raise ValueError(
+                f"unknown op_order_embedding_mode: {self.op_order_embedding_mode}"
+            )
         if self.value_codec not in {"learned", "circular"}:
             raise ValueError(f"unknown value_codec: {self.value_codec}")
         self.token_embed = nn.Embedding(int(vocab), int(d_model))
         self.pos_embed = nn.Embedding(int(max_seq_len), int(d_model))
+        op_token_lookup = torch.zeros((int(vocab),), dtype=torch.bool)
+        if op_token_ids is not None:
+            for token_id in op_token_ids:
+                if 0 <= int(token_id) < int(vocab):
+                    op_token_lookup[int(token_id)] = True
+        self.register_buffer("_op_token_lookup", op_token_lookup, persistent=False)
+        if self.op_order_embedding_mode == "learned":
+            self.op_order_embed = nn.Embedding(self.op_order_max_positions, int(d_model))
         self.value_feature_dim = 6
         if self.value_codec == "circular":
             self.value_code_proj = nn.Linear(self.value_feature_dim, int(d_model), bias=False)
@@ -1601,6 +1618,8 @@ class NativeQTRMETDLM(nn.Module):
     def reset_parameters(self) -> None:
         nn.init.normal_(self.token_embed.weight, mean=0.0, std=0.02)
         nn.init.normal_(self.pos_embed.weight, mean=0.0, std=0.02)
+        if hasattr(self, "op_order_embed"):
+            nn.init.normal_(self.op_order_embed.weight, mean=0.0, std=0.02)
         if hasattr(self, "z_l_init"):
             nn.init.normal_(self.z_l_init, mean=0.0, std=0.02)
         if hasattr(self, "z_h_init"):
@@ -1829,18 +1848,45 @@ class NativeQTRMETDLM(nn.Module):
             raise RuntimeError("circular value embeddings requested for learned codec")
         return self.value_code_proj(self._value_features(device))
 
-    def _token_embeddings(self, input_ids: torch.Tensor) -> torch.Tensor:
+    def _op_order_embeddings(
+        self,
+        input_ids: torch.Tensor,
+        *,
+        op_order_off: bool = False,
+    ) -> torch.Tensor | None:
+        if self.op_order_embedding_mode == "none" or bool(op_order_off):
+            return None
+        if not hasattr(self, "op_order_embed"):
+            return None
+        op_mask = self._op_token_lookup.to(device=input_ids.device)[input_ids]
+        if not bool(op_mask.any()):
+            return None
+        op_index = op_mask.long().cumsum(dim=1) - 1
+        op_index = op_index.clamp(0, int(self.op_order_max_positions) - 1)
+        order_embeddings = self.op_order_embed(op_index)
+        return order_embeddings * op_mask.unsqueeze(-1).to(dtype=order_embeddings.dtype)
+
+    def _token_embeddings(
+        self,
+        input_ids: torch.Tensor,
+        *,
+        op_order_off: bool = False,
+    ) -> torch.Tensor:
         embeddings = self.token_embed(input_ids)
-        if self.value_codec != "circular":
-            return embeddings
-        value_ids_for_tokens = self._value_id_lookup.to(device=input_ids.device)[input_ids]
-        value_mask = value_ids_for_tokens >= 0
-        if not bool(value_mask.any()):
-            return embeddings
-        value_ids = value_ids_for_tokens[value_mask].clamp(0, int(self.modulus) - 1)
-        value_embeddings = self._circular_value_embeddings(input_ids.device)
-        embeddings = embeddings.clone()
-        embeddings[value_mask] = value_embeddings[value_ids]
+        if self.value_codec == "circular":
+            value_ids_for_tokens = self._value_id_lookup.to(device=input_ids.device)[input_ids]
+            value_mask = value_ids_for_tokens >= 0
+            if bool(value_mask.any()):
+                value_ids = value_ids_for_tokens[value_mask].clamp(0, int(self.modulus) - 1)
+                value_embeddings = self._circular_value_embeddings(input_ids.device)
+                embeddings = embeddings.clone()
+                embeddings[value_mask] = value_embeddings[value_ids]
+        op_order_embeddings = self._op_order_embeddings(
+            input_ids,
+            op_order_off=bool(op_order_off),
+        )
+        if op_order_embeddings is not None:
+            embeddings = embeddings + op_order_embeddings
         return embeddings
 
     def _lm_logits(self, hidden: torch.Tensor) -> torch.Tensor:
@@ -4196,6 +4242,7 @@ class NativeQTRMETDLM(nn.Module):
         adaptive_halt: bool = False,
         halt_threshold: float = 0.5,
         halt_min_steps: int = 1,
+        op_order_off: bool = False,
         return_runtime: bool = False,
         return_state_trace: bool = False,
     ) -> torch.Tensor | dict[str, torch.Tensor]:
@@ -4204,7 +4251,7 @@ class NativeQTRMETDLM(nn.Module):
         seq_len = int(input_ids.shape[1])
         if seq_len > self.max_seq_len:
             raise ValueError("input sequence exceeds max_seq_len")
-        x = self._token_embeddings(input_ids)
+        x = self._token_embeddings(input_ids, op_order_off=bool(op_order_off))
         if self.position_embedding_mode in {"learned", "randomized"}:
             x = x + self.pos_embed(self._position_ids(seq_len, input_ids.device))
         return self._forward_embedded_impl(
@@ -4286,6 +4333,7 @@ class NativeQTRMETDLM(nn.Module):
         adaptive_halt: bool = False,
         halt_threshold: float = 0.5,
         halt_min_steps: int = 1,
+        op_order_off: bool = False,
     ) -> torch.Tensor:
         """Run the native LM path from precomputed token/bag embeddings."""
         x = embeddings
@@ -4325,6 +4373,7 @@ class NativeQTRMETDLM(nn.Module):
         adaptive_halt: bool = False,
         halt_threshold: float = 0.5,
         halt_min_steps: int = 1,
+        op_order_off: bool = False,
     ) -> torch.Tensor:
         return self._forward_impl(
             input_ids,
@@ -4338,6 +4387,7 @@ class NativeQTRMETDLM(nn.Module):
             adaptive_halt=bool(adaptive_halt),
             halt_threshold=float(halt_threshold),
             halt_min_steps=int(halt_min_steps),
+            op_order_off=bool(op_order_off),
             return_runtime=False,
         )
 
@@ -4355,6 +4405,7 @@ class NativeQTRMETDLM(nn.Module):
         adaptive_halt: bool = False,
         halt_threshold: float = 0.5,
         halt_min_steps: int = 1,
+        op_order_off: bool = False,
         return_state_trace: bool = False,
     ) -> dict[str, torch.Tensor]:
         out = self._forward_impl(
@@ -4369,6 +4420,7 @@ class NativeQTRMETDLM(nn.Module):
             adaptive_halt=bool(adaptive_halt),
             halt_threshold=float(halt_threshold),
             halt_min_steps=int(halt_min_steps),
+            op_order_off=bool(op_order_off),
             return_runtime=True,
             return_state_trace=bool(return_state_trace),
         )
@@ -4657,6 +4709,9 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         strict_backends=bool(args.strict_backends),
         rope_theta=float(args.rope_theta),
         position_embedding_mode=str(args.position_embedding_mode),
+        op_order_embedding_mode=str(args.op_order_embedding_mode),
+        op_order_max_positions=int(args.op_order_max_positions),
+        op_token_ids=range(OP_BASE, OP_BASE + len(OP_SPECS)),
         value_codec=str(args.value_codec),
         halt_pooling=str(args.halt_pooling),
         carrier_gate_init=float(args.carrier_gate_init),
@@ -4871,6 +4926,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "training for length-generalization experiments."
         ),
     )
+    parser.add_argument(
+        "--op-order-embedding-mode",
+        choices=("none", "learned"),
+        default="none",
+        help="Add learned operation-index embeddings to operation tokens.",
+    )
+    parser.add_argument("--op-order-max-positions", type=int, default=32)
     parser.add_argument(
         "--value-codec",
         choices=("learned", "circular"),

@@ -25059,6 +25059,81 @@ Next architecture direction:
   of ordered operation index that is separable from absolute token position.
 ```
 
+## 2026-05-18 - Explicit Op-Order Coupling Candidate
+
+Bottleneck:
+
+```text
+Length/generalization failures point to a conflation of:
+
+  absolute token position
+  operation value token
+  operation index in the program
+
+The accepted learned-pos L6 checkpoint fits short programs well but fails
+L6 -> L8/L20 scaling. No-pos and random-pos isolate the issue but do not
+recover the full accepted L6 gate.
+```
+
+Implemented candidate:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+  NativeQTRMETDLM now supports:
+    op_order_embedding_mode: none|learned
+    op_order_max_positions
+    op_token_ids
+
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added:
+    --op-order-embedding-mode none|learned
+    --op-order-max-positions
+    op_order_off evaluation ablation
+```
+
+Mechanism:
+
+```text
+At token-embedding time:
+
+  detect opXX tokens
+  compute op_index = cumulative count of opXX tokens in the sequence
+  add learned op_order_embed[op_index] only to opXX tokens
+
+The canonical path is preserved:
+
+  prompt tokens -> token/value embeddings + op-order embeddings
+  -> encode -> dual/nested recurrent core -> decode -> LM logits
+  -> greedy answer
+
+This is not a side solver. It supplies a learned order signal to the same
+causal LM path and is evaluated with an op_order_off ablation.
+```
+
+Smoke:
+
+```text
+RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python \
+OUT_TAG=local_oporder_smoke LENGTHS=6 STEPS_PER_STAGE=2 \
+EXTRA_ARGS='--position-embedding-mode learned \
+  --op-order-embedding-mode learned --op-order-max-positions 32' \
+bash scripts/421_dgx_number_oprole_circular_len_ladder_gate.sh run-local
+
+result:
+  completed
+  eval includes:
+    op_order_off
+```
+
+Promotion test:
+
+```text
+1. Train learned-pos + op-order L6 from scratch.
+2. Require the same strict L6 family-floor and destructive-ablation gate.
+3. If accepted, attempt L8 with the same op-order path.
+4. Promote only if op_order_off and core ablations remove the measured gain.
+```
+
 DGX early-stop result:
 
 ```text

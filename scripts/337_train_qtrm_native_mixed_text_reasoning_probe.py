@@ -2773,7 +2773,10 @@ def _order_router_encoded_logits(
     if input_ids.ndim != 2:
         raise ValueError("input_ids must have shape [batch, seq]")
     seq_len = int(input_ids.shape[1])
-    x = model.token_embed(input_ids)
+    if hasattr(model, "_token_embeddings"):
+        x = model._token_embeddings(input_ids)
+    else:
+        x = model.token_embed(input_ids)
     if str(getattr(model, "position_embedding_mode", "learned")) in {
         "learned",
         "randomized",
@@ -3770,6 +3773,7 @@ def generate_answer(
     z_l_zero: bool = False,
     z_h_zero: bool = False,
     carrier_off: bool = False,
+    op_order_off: bool = False,
     adaptive_halt: bool = False,
     halt_threshold: float = 0.5,
     halt_min_steps: int = 1,
@@ -3785,6 +3789,7 @@ def generate_answer(
         z_l_zero=z_l_zero,
         z_h_zero=z_h_zero,
         carrier_off=carrier_off,
+        op_order_off=op_order_off,
         adaptive_halt=adaptive_halt,
         halt_threshold=halt_threshold,
         halt_min_steps=halt_min_steps,
@@ -3804,6 +3809,7 @@ def generate_answer_with_runtime(
     z_l_zero: bool = False,
     z_h_zero: bool = False,
     carrier_off: bool = False,
+    op_order_off: bool = False,
     adaptive_halt: bool = False,
     halt_threshold: float = 0.5,
     halt_min_steps: int = 1,
@@ -3823,6 +3829,7 @@ def generate_answer_with_runtime(
                 z_l_zero=bool(z_l_zero),
                 z_h_zero=bool(z_h_zero),
                 carrier_off=bool(carrier_off),
+                op_order_off=bool(op_order_off),
                 adaptive_halt=True,
                 halt_threshold=float(halt_threshold),
                 halt_min_steps=int(halt_min_steps),
@@ -3845,6 +3852,7 @@ def generate_answer_with_runtime(
                 z_l_zero=bool(z_l_zero),
                 z_h_zero=bool(z_h_zero),
                 carrier_off=bool(carrier_off),
+                op_order_off=bool(op_order_off),
             )
         next_id = logits[:, -1, :].argmax(dim=-1, keepdim=True)
         out = torch.cat([out, next_id], dim=1)
@@ -3923,6 +3931,7 @@ def evaluate(
     z_l_zero = ablation == "z_l_zero"
     z_h_zero = ablation == "z_h_zero"
     carrier_off = ablation == "carrier_off"
+    op_order_off = ablation == "op_order_off"
     adaptive_halt = ablation == "adaptive_halt"
     route_force: int | None = None
     if ablation == "order_route0":
@@ -3959,6 +3968,7 @@ def evaluate(
             z_l_zero=z_l_zero,
             z_h_zero=z_h_zero,
             carrier_off=carrier_off,
+            op_order_off=op_order_off,
             adaptive_halt=True,
             halt_threshold=float(args.halt_threshold),
             halt_min_steps=int(args.halt_min_steps),
@@ -3979,6 +3989,7 @@ def evaluate(
             z_l_zero=z_l_zero,
             z_h_zero=z_h_zero,
             carrier_off=carrier_off,
+            op_order_off=op_order_off,
         )
     loss = answer_text_loss(
         logits,
@@ -4042,6 +4053,7 @@ def evaluate(
             z_l_zero=z_l_zero,
             z_h_zero=z_h_zero,
             carrier_off=carrier_off,
+            op_order_off=op_order_off,
             adaptive_halt=adaptive_halt,
             halt_threshold=float(args.halt_threshold),
             halt_min_steps=int(args.halt_min_steps),
@@ -4649,7 +4661,9 @@ def save_training_checkpoint(
 def make_decision(metrics: dict[str, object], args: argparse.Namespace) -> dict[str, object]:
     full = metrics[f"think{args.eval_think_steps}"]
     think0 = metrics["think0"]
-    ablation_names = applicable_ablation_names(str(args.think_structure))
+    ablation_names = list(applicable_ablation_names(str(args.think_structure)))
+    if str(args.op_order_embedding_mode) != "none":
+        ablation_names.append("op_order_off")
     ablation_exact = {
         name: float(metrics[name]["generation_exact"])
         for name in ablation_names
@@ -4827,6 +4841,11 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
             tokenizer,
             modulus=int(args.modulus),
         )
+    op_token_ids = tuple(
+        token_id
+        for token_id, token in enumerate(tokenizer.chars)
+        if token.startswith("op") and len(token) == 4 and token[2:].isdigit()
+    )
     input_ids, targets, prompt_len, answer_len = cases_to_batch(
         [train_cases[0]],
         tokenizer=tokenizer,
@@ -4866,6 +4885,9 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         attention_backend=str(args.attention_backend),
         strict_backends=bool(args.strict_backends),
         position_embedding_mode=str(args.position_embedding_mode),
+        op_order_embedding_mode=str(args.op_order_embedding_mode),
+        op_order_max_positions=int(args.op_order_max_positions),
+        op_token_ids=op_token_ids,
         value_codec=str(args.value_codec),
         value_token_ids=value_token_ids,
         halt_pooling=str(args.halt_pooling),
@@ -5873,6 +5895,15 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
             ablation="thinking_block_off",
         ),
     }
+    if str(args.op_order_embedding_mode) != "none":
+        eval_metrics["op_order_off"] = evaluate(
+            model,
+            eval_cases,
+            args,
+            tokenizer=tokenizer,
+            think_steps=int(args.eval_think_steps),
+            ablation="op_order_off",
+        )
     for ablation_name in applicable_ablation_names(str(args.think_structure)):
         if ablation_name in eval_metrics:
             continue
@@ -6121,6 +6152,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "--position-embedding-mode randomized so short training examples "
             "can sample positions from a longer target context."
         ),
+    )
+    parser.add_argument(
+        "--op-order-embedding-mode",
+        choices=("none", "learned"),
+        default="none",
+        help=(
+            "Add a learned operation-index embedding to opXX tokens. This is "
+            "a canonical token-embedding path for separating operation order "
+            "from absolute token position."
+        ),
+    )
+    parser.add_argument(
+        "--op-order-max-positions",
+        type=int,
+        default=32,
+        help="Maximum operation index for learned op-order embeddings.",
     )
     parser.add_argument(
         "--value-codec",
