@@ -25029,6 +25029,58 @@ Next action:
     trace loss that supervises the transition state, not just answer logits
 ```
 
+Late-depth sampled follow-up:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    dgx_single_order_router_len20_late_state_trace_depth_credit_seed9338_20260518_190508
+
+log:
+  local_eval/runner_logs/len20_late_state_trace_depth_credit_20260518_190508.log
+
+settings:
+  state_trace_depth_max_depth_samples: 5
+  state_trace_depth_sample_mode: late
+  state_trace_depth_loss_weight: 0.55
+
+step0:
+  full_generation_exact: 0.1640625
+  min_family_generation_exact: 0.029239766081871343
+
+step100:
+  full_generation_exact: 0.1640625
+  min_family_generation_exact: 0.029239766081871343
+
+step200:
+  full_generation_exact: 0.169921875
+  min_family_generation_exact: 0.029239766081871343
+
+action:
+  stopped early at step200
+```
+
+Interpretation:
+
+```text
+Late-depth-only CE trajectory credit is worse than uniform sampled credit.
+It does not move the hard-family floor at all and slightly worsens
+teacher-forced loss. This closes the simple CE-style state-trace depth-credit
+ladder for the current seed9338 len20 checkpoint.
+
+Do not run more depth sampling sweeps as the next action. The evidence now
+points to transition representation, not credit placement:
+
+  route/time/LayerScale adapters:       plateau near 0.04094
+  trace anti-collapse penalty:          best 0.03509
+  full-depth CE trajectory credit:      best 0.03509
+  uniform sampled CE trajectory credit: best 0.04094
+  late sampled CE trajectory credit:    best 0.02924
+
+The next falsifiable candidate must change what the route1 recurrent transition
+state represents, not simply where CE is applied.
+```
+
 ## 2026-05-18 - Continuous Latest-Paper Search Rule Reaffirmed
 
 Answer to the process question:
