@@ -25244,6 +25244,190 @@ interpretation:
   features alone.
 ```
 
+DGX learned-position LayerScale len8:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    layerscale_len8_20260518_220427
+
+setting:
+  resume accepted len6
+  position_embedding_mode=learned
+  trm_recurrent_layerscale_mode=scalar
+  trm_recurrent_layerscale_init=1.0
+  steps=300
+
+periodic:
+  step0:
+    full:       0.0
+    min_family: 0.0
+  step100:
+    full:       0.0
+    min_family: 0.0
+  step200:
+    full:       0.021484375
+    min_family: 0.005847953216374269
+  step300:
+    full:       0.03515625
+    min_family: 0.017543859649122806
+
+decision:
+  rejected
+
+decisive_metrics:
+  full_generation_exact:       0.03515625
+  full_minus_think0:           0.0234375
+  full_minus_worst_ablation:  -0.00390625
+  min_family_generation_exact: 0.017543859649122806
+  carrier_off_generation_exact: 0.048828125
+```
+
+Interpretation:
+
+```text
+Learned absolute position remains a bad len8 path. LayerScale improves
+teacher-forced rank/loss but does not produce causal generation gain; carrier
+off beats full, so the recurrent carrier is harmful in this setting.
+```
+
+DGX positionless LayerScale len8:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_layerscale_len8_20260518_221220
+
+setting:
+  resume accepted len6
+  position_embedding_mode=none
+  trm_recurrent_layerscale_mode=scalar
+  trm_recurrent_layerscale_init=1.0
+  steps=300
+
+periodic:
+  step0:
+    full:       0.00390625
+    min_family: 0.0
+  step100:
+    full:       0.029296875
+    min_family: 0.0
+  step200:
+    full:       0.0390625
+    min_family: 0.023391812865497075
+  step300:
+    full:       0.076171875
+    min_family: 0.017543859649122806
+
+decision:
+  rejected
+
+decisive_metrics:
+  full_generation_exact:       0.0390625
+  full_minus_think0:           0.017578125
+  full_minus_worst_ablation:  -0.009765625
+  min_family_generation_exact: 0.023391812865497075
+```
+
+Interpretation:
+
+```text
+Positionless + LayerScale helps average generation more than learned-position
+LayerScale, but periodic family-floor selection rejects it. It does not beat
+the earlier positionless len8 best and still lacks destructive-ablation gain.
+```
+
+DGX positionless final-only len8:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_finalonly_len8_20260518_222032
+
+setting:
+  resume accepted len6
+  position_embedding_mode=none
+  depth_intermediate_loss_weight=0
+  state_trace_depth_loss_weight=0
+  active_len_replay_loss_weight=0
+  family_dro_loss_weight=0.16
+  steps=300
+
+periodic:
+  step0:
+    full:       0.00390625
+    min_family: 0.0
+  step100:
+    full:       0.03125
+    min_family: 0.011695906432748537
+  step200:
+    full:       0.08203125
+    min_family: 0.029239766081871343
+  step300:
+    full:       0.05859375
+    min_family: 0.023391812865497075
+
+decision:
+  rejected
+
+decisive_metrics:
+  full_generation_exact:       0.08203125
+  full_minus_think0:           0.056640625
+  full_minus_worst_ablation:   0.025390625
+  min_family_generation_exact: 0.029239766081871343
+  z_h_zero_generation_exact:   0.0
+```
+
+Interpretation:
+
+```text
+Final-only is the strongest of today's len8 candidates. It improves full
+generation and keeps z_h causality, but misses all strict gates. The drop from
+step200 to step300 while teacher-forced loss keeps improving is an
+over-optimization/greedy-render signal. This supports the recurrent-depth
+paper warning that lower supervised loss is not enough; the gate must track
+generation and ablation causality.
+```
+
+Family-repair continuation from final-only best:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_finalonly_familyrepair_len8_20260518_222640
+
+resume:
+  posnone_finalonly_len8_20260518_222032/best_periodic.pt
+
+setting:
+  lr=1e-5
+  family_dro_loss_weight=0.35
+  family_dro_temperature=0.75
+
+periodic:
+  step0:
+    full:       0.08203125
+    min_family: 0.029239766081871343
+  step50:
+    full:       0.03125
+    min_family: 0.017543859649122806
+  step100:
+    full:       0.052734375
+    min_family: 0.011695906432748537
+
+action:
+  stopped early
+```
+
+Interpretation:
+
+```text
+Strong family-DRO continuation damages the best checkpoint. The next step
+should not be another continuation. It should change the transition objective:
+train causal prefix/state transitions or add a renderer-specific generation
+objective that preserves the final-only recurrent trajectory.
+```
+
 Randomized positional L6 result:
 
 ```text
