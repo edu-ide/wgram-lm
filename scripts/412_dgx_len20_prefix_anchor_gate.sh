@@ -56,6 +56,9 @@ Background submit:
   $0 submit
   $0 status
   $0 tail
+
+Smoke/debug:
+  RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python EXTRA_ARGS='--device cpu' $0 run-local
 USAGE
 }
 
@@ -117,10 +120,15 @@ PLAN
       bash scripts/412_dgx_len20_prefix_anchor_gate.sh run-local"
     ;;
   run-local)
+    resume_args=()
+    if [[ -n "${RESUME_FROM}" && "${RESUME_FROM}" != "none" ]]; then
+      resume_args+=(--resume-from "${RESUME_FROM}")
+    fi
+
     PYTHONPATH=src "${REMOTE_PYTHON}" scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
       --out-dir "local_eval/dgx_single_order_router_len20_prefix_anchor_seed${EVAL_SEED}_${OUT_TAG}" \
       --target-level "single-order-router len20 prefix-anchor seed${EVAL_SEED}" \
-      --resume-from "${RESUME_FROM}" \
+      "${resume_args[@]}" \
       --steps "${STEPS}" \
       --train-cases "${TRAIN_CASES}" \
       --eval-cases "${EVAL_CASES}" \
