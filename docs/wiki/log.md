@@ -24973,6 +24973,92 @@ result:
   completed
 ```
 
+Randomized positional L6 result:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_number_oprole_circular_ladder_len6_seed9338_randompos_native_l6_20260518_204049
+
+decision:
+  rejected
+
+reject_reasons:
+  full_exact_below_threshold
+  depth_gain_below_threshold
+  ablation_drop_below_threshold
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact:       0.08984375
+  think0_generation_exact:     0.03125
+  full_minus_think0:           0.05859375
+  full_minus_worst_ablation:   0.04296875
+  min_family_generation_exact: 0.04678362573099415
+  full_minus_carrier_off:      0.041015625
+
+by_family:
+  checksum: 0.17647058823529413
+  modchain: 0.04678362573099415
+  revchain: 0.04678362573099415
+```
+
+Comparison:
+
+```text
+learned-pos accepted L6:
+  full:       0.37891
+  min_family: 0.11696
+  but L8/Len20 extrapolation is poor.
+
+native no-pos L6:
+  full:       0.14258
+  min_family: 0.02924
+
+native random-pos L6:
+  full:       0.08984
+  min_family: 0.04678
+
+random-pos -> learned polish:
+  step0:
+    full:       0.08984
+    min_family: 0.04678
+  step250:
+    full:       0.09961
+    min_family: 0.00585
+  action:
+    stopped early
+
+random-pos preserve continuation:
+  step0:
+    full:       0.08984
+    min_family: 0.04678
+  step250:
+    full:       0.06836
+    min_family: 0.02339
+  action:
+    stopped early
+```
+
+Interpretation:
+
+```text
+Randomized positions help family balance compared with no-pos, but reduce full
+exact and causal ablation margins compared with learned-pos. Post-hoc
+continuations from the random-pos checkpoint damage the family floor.
+
+This is a real bottleneck isolation result, not a breakthrough acceptance:
+
+  learned absolute position = high L6 fit, weak extrapolation
+  no-pos                   = better extrapolation signal, weak family balance
+  random-pos               = better balance, weak full/depth margins
+
+Next architecture direction:
+  implement an explicit order/role coupling path instead of relying on input
+  position embeddings alone. The recurrent core needs a stable learned notion
+  of ordered operation index that is separable from absolute token position.
+```
+
 DGX early-stop result:
 
 ```text
