@@ -2773,8 +2773,16 @@ def _order_router_encoded_logits(
     if input_ids.ndim != 2:
         raise ValueError("input_ids must have shape [batch, seq]")
     seq_len = int(input_ids.shape[1])
-    pos = torch.arange(seq_len, device=input_ids.device).unsqueeze(0)
-    x = model.token_embed(input_ids) + model.pos_embed(pos)
+    x = model.token_embed(input_ids)
+    if str(getattr(model, "position_embedding_mode", "learned")) in {
+        "learned",
+        "randomized",
+    }:
+        if hasattr(model, "_position_ids"):
+            pos = model._position_ids(seq_len, input_ids.device)
+        else:
+            pos = torch.arange(seq_len, device=input_ids.device).unsqueeze(0)
+        x = x + model.pos_embed(pos)
     mask = model._causal_mask(seq_len, input_ids.device)
     encoded = model._run_stage(model.encode, x, causal_mask=mask)
     logits = router(encoded)
@@ -4828,6 +4836,8 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         state_anchor_position=state_anchor_position,
     )
     max_seq_len = int(input_ids.shape[1])
+    if int(args.model_max_seq_len) > 0:
+        max_seq_len = max(max_seq_len, int(args.model_max_seq_len))
     model = NativeQTRMETDLM(
         vocab=tokenizer.vocab_size,
         max_seq_len=max_seq_len,
@@ -6094,11 +6104,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--strict-backends", action="store_true")
     parser.add_argument(
         "--position-embedding-mode",
-        choices=("learned", "none"),
+        choices=("learned", "none", "randomized"),
         default="learned",
         help=(
-            "Use learned absolute input position embeddings, or disable them "
-            "for RoPE/relative-position backbone experiments."
+            "Use learned absolute input position embeddings, disable them, "
+            "or sample ordered positions from the model context during "
+            "training for length-generalization experiments."
+        ),
+    )
+    parser.add_argument(
+        "--model-max-seq-len",
+        type=int,
+        default=0,
+        help=(
+            "Override model max_seq_len. This is mainly useful with "
+            "--position-embedding-mode randomized so short training examples "
+            "can sample positions from a longer target context."
         ),
     )
     parser.add_argument(

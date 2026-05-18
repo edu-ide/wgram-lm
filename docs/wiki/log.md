@@ -26130,3 +26130,87 @@ Next falsifiable candidate:
   then rerun the same L6 -> L8 gate. Do not keep repairing a checkpoint whose
   original training relied on learned absolute positions.
 ```
+
+Native positionless L6 result:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_number_oprole_circular_ladder_len6_seed9338_posnone_native_l6_20260518_201107
+
+decision:
+  rejected
+
+reject_reasons:
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact:       0.142578125
+  think0_generation_exact:     0.037109375
+  full_minus_think0:           0.10546875
+  full_minus_worst_ablation:   0.10546875
+  min_family_generation_exact: 0.029239766081871343
+  full_minus_carrier_off:      0.095703125
+
+by_family:
+  checksum: 0.35294117647058826
+  modchain: 0.029239766081871343
+  revchain: 0.04678362573099415
+```
+
+Interpretation:
+
+```text
+NoPE/positionless from scratch learns a real recurrent-core signal, but it does
+not recover the accepted learned-pos L6 family balance. It improves full exact
+past 0.10 but leaves modchain below the 0.06 floor.
+
+The evidence now says:
+
+  learned absolute positions:
+    strong L6, weak length extrapolation
+
+  switched positionless at L8:
+    restores useful core gain but remains fragile
+
+  native positionless:
+    learns core gain but underfits ordered-chain families
+
+Therefore the next architecture candidate should not be pure learned-pos or
+pure no-pos. Following randomized positional encoding work, train L6 with
+learned position embeddings but sample ordered positions from a longer target
+context during training. This gives the model position/order signal while
+reducing out-of-distribution position extrapolation at L8/L20.
+```
+
+Implementation:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+  position_embedding_mode now supports:
+    learned
+    none
+    randomized
+
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added:
+    --model-max-seq-len
+
+Mechanism:
+  if position_embedding_mode=randomized and model.training:
+    sample seq_len ordered positions from [0, model_max_seq_len)
+  else:
+    use normal positions [0, seq_len)
+```
+
+Smoke:
+
+```text
+RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python \
+OUT_TAG=local_randompos_smoke LENGTHS=6 STEPS_PER_STAGE=2 \
+EXTRA_ARGS='--position-embedding-mode randomized --model-max-seq-len 75' \
+bash scripts/421_dgx_number_oprole_circular_len_ladder_gate.sh run-local
+
+result:
+  completed
+```

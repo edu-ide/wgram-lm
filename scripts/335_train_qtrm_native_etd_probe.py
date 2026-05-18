@@ -942,7 +942,7 @@ class NativeQTRMETDLM(nn.Module):
             persistent=False,
         )
         self.register_buffer("_value_id_lookup", value_lookup, persistent=False)
-        if self.position_embedding_mode not in {"learned", "none"}:
+        if self.position_embedding_mode not in {"learned", "none", "randomized"}:
             raise ValueError(
                 f"unknown position_embedding_mode: {self.position_embedding_mode}"
             )
@@ -1864,6 +1864,14 @@ class NativeQTRMETDLM(nn.Module):
             torch.full((seq_len, seq_len), float("-inf"), device=device),
             diagonal=1,
         )
+
+    def _position_ids(self, seq_len: int, device: torch.device) -> torch.Tensor:
+        if self.position_embedding_mode == "randomized" and self.training:
+            if int(seq_len) < int(self.max_seq_len):
+                sampled = torch.randperm(int(self.max_seq_len), device=device)[: int(seq_len)]
+                sampled = sampled.sort().values
+                return sampled.unsqueeze(0)
+        return torch.arange(int(seq_len), device=device).unsqueeze(0)
 
     def _run_stage(
         self,
@@ -4196,10 +4204,9 @@ class NativeQTRMETDLM(nn.Module):
         seq_len = int(input_ids.shape[1])
         if seq_len > self.max_seq_len:
             raise ValueError("input sequence exceeds max_seq_len")
-        pos = torch.arange(seq_len, device=input_ids.device).unsqueeze(0)
         x = self._token_embeddings(input_ids)
-        if self.position_embedding_mode == "learned":
-            x = x + self.pos_embed(pos)
+        if self.position_embedding_mode in {"learned", "randomized"}:
+            x = x + self.pos_embed(self._position_ids(seq_len, input_ids.device))
         return self._forward_embedded_impl(
             x,
             think_steps=int(think_steps),
@@ -4284,12 +4291,11 @@ class NativeQTRMETDLM(nn.Module):
         x = embeddings
         if x.ndim != 3:
             raise ValueError("embeddings must have shape [batch, seq, dim]")
-        if self.position_embedding_mode == "learned":
+        if self.position_embedding_mode in {"learned", "randomized"}:
             seq_len = int(x.shape[1])
             if seq_len > self.max_seq_len:
                 raise ValueError("embedded input sequence exceeds max_seq_len")
-            pos = torch.arange(seq_len, device=x.device).unsqueeze(0)
-            x = x + self.pos_embed(pos)
+            x = x + self.pos_embed(self._position_ids(seq_len, x.device))
         return self._forward_embedded_impl(
             x,
             think_steps=int(think_steps),
@@ -4857,11 +4863,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rope-theta", type=float, default=100000.0)
     parser.add_argument(
         "--position-embedding-mode",
-        choices=("learned", "none"),
+        choices=("learned", "none", "randomized"),
         default="learned",
         help=(
-            "Use learned absolute input position embeddings, or disable them "
-            "for RoPE/relative-position backbone experiments."
+            "Use learned absolute input position embeddings, disable them, "
+            "or sample ordered positions from the model context during "
+            "training for length-generalization experiments."
         ),
     )
     parser.add_argument(
