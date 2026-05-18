@@ -24967,6 +24967,62 @@ result:
   completed
 ```
 
+## 2026-05-18 - Time-Gated Router DGX Result
+
+Run:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  dgx_single_order_router_len20_time_gate_seed9338_20260518_171439/report.json
+```
+
+Decision:
+
+```text
+rejected
+reject_reasons:
+  family_exact_below_threshold
+```
+
+Metrics:
+
+```text
+full_generation_exact: 0.173828125
+think0_generation_exact: 0.0
+full_minus_think0: 0.173828125
+full_minus_worst_ablation: 0.142578125
+min_family_generation_exact: 0.04093567251461988
+state_reset_generation_exact: 0.03125
+op_zero_generation_exact: 0.02734375
+```
+
+Comparison:
+
+```text
+time-conditioned router:
+  min_family: 0.04093567251461988
+
+time-gated router:
+  min_family: 0.04093567251461988
+
+trace metrics:
+  nearly identical to time-conditioned router
+```
+
+Interpretation:
+
+```text
+Time-gate did not add measurable benefit over context-level time conditioning.
+Both variants form the same plateau: a small improvement over the accepted
+seed9338 diagnostic and anti-collapse candidate, but far below the 0.06
+family-floor gate.
+
+Conclusion:
+  scalar trajectory conditioning is insufficient. Proceed to the state-stream
+  candidate, which changes how recurrent state moves across prompt positions
+  while preserving the LM path and zero-init route preservation.
+```
+
 ## 2026-05-18 - Time-Gated Router Mid-Run Signal
 
 Run:
