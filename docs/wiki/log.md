@@ -25653,6 +25653,67 @@ the start of the len8 adaptation, or make prefix-anchor part of the native
 objective before selection rather than adding it after selection.
 ```
 
+Prefix-anchor from the start of len8 adaptation:
+
+```text
+run:
+  qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_finalonly_prefixanchor_from_l6_len8_20260518_225113
+
+resume:
+  accepted len6 checkpoint
+
+setting:
+  position_embedding_mode: none
+  final-only:
+    depth_intermediate_loss_weight: 0
+    state_trace_depth_loss_weight: 0
+    active_len_replay_loss_weight: 0
+  prefix_depth_anchor_loss_weight: 0.04
+  prefix_depth_anchor_max_cases: 8
+  lr: 8e-6
+  steps: 320
+
+periodic:
+  step0:
+    full:       0.00390625
+    min_family: 0.0
+  step80:
+    full:       0.00390625
+    min_family: 0.0
+  step160:
+    full:       0.015625
+    min_family: 0.0
+  step240:
+    full:       0.0390625
+    min_family: 0.0
+
+decision:
+  rejected
+
+decisive_metrics:
+  full_generation_exact:       0.048828125
+  full_minus_think0:           0.021484375
+  full_minus_worst_ablation:   0.021484375
+  min_family_generation_exact: 0.011695906432748537
+```
+
+Interpretation:
+
+```text
+Training prefix-anchor from the beginning of the len8 adaptation is worse than
+the staged path:
+
+  accepted L6 -> final-only len8 best -> prefix-anchor continuation
+
+The staged path first recovers the greedy answer channel, then improves the
+causal prefix transition. Starting both simultaneously leaves family floor at
+zero for too long and never catches up in this budget.
+
+Current canonical len8 checkpoint remains:
+  posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
+```
+
 Randomized positional L6 result:
 
 ```text
