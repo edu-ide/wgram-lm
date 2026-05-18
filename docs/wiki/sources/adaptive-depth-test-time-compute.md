@@ -5,6 +5,83 @@ Date: 2026-05-07
 Use this source cluster for QTRM recursive-depth routing, early exit, and
 verifier-guided test-time compute.
 
+## X/Public Social Search Policy
+
+X/Twitter is allowed as a fast discovery radar for new papers, but it is not a
+source of truth for QTRM architecture decisions.
+
+Workflow:
+
+```text
+public X search finds a paper/repo signal
+-> verify arXiv/OpenReview/publisher primary page
+-> verify official GitHub or model page if code or checkpoints matter
+-> record the primary source here
+-> map the mechanism to a falsifiable QTRM gate
+```
+
+Useful query patterns:
+
+```text
+site:x.com arxiv looped language model latent reasoning
+site:x.com arxiv latent thinking language model
+site:x.com arxiv fixed point looped transformer language model
+site:x.com arxiv adaptive computation early exit language model
+site:x.com github recursive language model reasoning
+```
+
+2026-05-18 public X search signals verified against primary sources:
+
+- A Mechanistic Analysis of Looped Reasoning Language Models
+  - Social signal: X posts linking arXiv 2604.11791
+  - Primary source: https://arxiv.org/abs/2604.11791
+  - QTRM relevance: looped recurrent states often converge to cyclic fixed
+    points; recurrent block size, input injection, and normalization affect
+    stability. This directly supports measuring QTRM state trajectories instead
+    of only final exact accuracy.
+
+- The Depth Ceiling: On the Limits of Large Language Models in Discovering
+  Latent Planning
+  - Social signal: X posts linking arXiv 2604.06427
+  - Primary source: https://arxiv.org/abs/2604.06427
+  - QTRM relevance: final-answer-only supervision may not discover deep latent
+    planning reliably. QTRM should explicitly teach or externalize multi-step
+    latent transitions before claiming deep latent reasoning.
+
+- The Illusion of Superposition? A Principled Analysis of Latent Thinking in
+  Language Models
+  - Social signal: X posts linking arXiv 2604.06374
+  - Primary source: https://arxiv.org/abs/2604.06374
+  - QTRM relevance: latent thinking can collapse or shortcut when adapted from
+    pretrained language models. This supports QTRM-native training gates and
+    probing whether latent states actually carry multiple candidate solutions.
+
+- The Y-Combinator for LLMs: Solving Long-Context Rot with lambda-Calculus
+  - Social signal: X posts linking paper and code
+  - Primary source: https://arxiv.org/abs/2603.20105
+  - Official code: https://github.com/lambda-calculus-LLM/lambda-RLM
+  - QTRM relevance: external recursive control can give termination and cost
+    guarantees, but it is a harness/RLM path, not proof of native latent-core
+    intelligence. Use as a contrast class, not as the canonical QTRM answer
+    channel.
+
+- LoopFormer: Elastic-Depth Looped Transformers for Latent Reasoning via
+  Shortcut Modulation
+  - Primary source: https://loopformer.github.io/
+  - Official code: https://github.com/armenjeddi/loopformer
+  - QTRM relevance: variable trajectory conditioning and shortcut consistency
+    directly target fixed-depth loop collapse. This is a high-priority prior
+    for QTRM len8/len20 recurrence stability.
+
+- Solve the Loop: Attractor Models for Language and Reasoning
+  - Primary source: https://arxiv.org/html/2605.12466v1
+  - Official code: https://github.com/jacobfa/Attractor
+  - QTRM relevance: fixed-point refinement, informative output-space
+    initialization, persistent proposal injection, and convergence-based
+    stopping directly address unstable finite unrolling. This is the strongest
+    next-prior candidate if QTRM fixed-depth loops keep failing family-floor or
+    ablation-drop gates.
+
 ## 2026 Dynamic Depth / Early Exit
 
 - ADEPT: Adaptive Dynamic Early-Exit Process for Transformers

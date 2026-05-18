@@ -26838,6 +26838,89 @@ result:
   completed
 ```
 
+## 2026-05-18 - X/Public Search Radar Added To Research Workflow
+
+User question:
+
+```text
+Can we discover papers by X/Twitter search?
+```
+
+Decision:
+
+```text
+Yes, but only as a discovery radar. X/public social posts are not evidence for
+architecture decisions. The primary source must be arXiv/OpenReview/publisher
+pages and official GitHub/model pages. Every discovered mechanism must map to a
+falsifiable QTRM gate before implementation.
+```
+
+Skill update:
+
+```text
+/home/tripleyoung/.agents/skills/research-driven-architecture-debugging/SKILL.md
+  added X/public social search policy and query patterns
+```
+
+Wiki source update:
+
+```text
+docs/wiki/sources/adaptive-depth-test-time-compute.md
+  added X/Public Social Search Policy
+  added verified 2026-05-18 discovery list
+```
+
+Verified primary-source candidates discovered or re-ranked through X/public
+search:
+
+```text
+A Mechanistic Analysis of Looped Reasoning Language Models
+  https://arxiv.org/abs/2604.11791
+
+The Depth Ceiling: On the Limits of Large Language Models in Discovering
+Latent Planning
+  https://arxiv.org/abs/2604.06427
+
+The Illusion of Superposition? A Principled Analysis of Latent Thinking in
+Language Models
+  https://arxiv.org/abs/2604.06374
+
+The Y-Combinator for LLMs: Solving Long-Context Rot with lambda-Calculus
+  https://arxiv.org/abs/2603.20105
+  https://github.com/lambda-calculus-LLM/lambda-RLM
+
+LoopFormer: Elastic-Depth Looped Transformers for Latent Reasoning via
+Shortcut Modulation
+  https://loopformer.github.io/
+  https://github.com/armenjeddi/loopformer
+
+Solve the Loop: Attractor Models for Language and Reasoning
+  https://arxiv.org/html/2605.12466v1
+  https://github.com/jacobfa/Attractor
+```
+
+QTRM implication:
+
+```text
+The most relevant next-prior cluster is not another backbone-shopping pass.
+It is finite-loop stability:
+
+  LoopFormer:
+    time/dt trajectory conditioning and shortcut consistency
+
+  Mechanistic looped LM analysis:
+    cyclic fixed-point and state-trajectory diagnostics
+
+  Attractor Models:
+    output-space proposal initialization, persistent proposal injection,
+    fixed-point/convergence stopping, and constant-memory implicit training
+
+If len8/len20 family-floor or destructive-ablation gates remain rejected, the
+next canonical architecture candidate should be a QTRM-native attractor-style
+core or a smaller LoopFormer-style trajectory-conditioning gate, not a side
+solver or MemoryOS/RAG path.
+```
+
 Promotion gate:
 
 ```text
