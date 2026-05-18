@@ -24967,6 +24967,62 @@ result:
   completed
 ```
 
+## 2026-05-18 - Time-Gated Router Mid-Run Signal
+
+Run:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  dgx_single_order_router_len20_time_gate_seed9338_20260518_171439
+```
+
+Mid-run:
+
+```text
+step100:
+  generation_exact: 0.169921875
+  min_family_generation_exact: 0.029239766081871343
+
+step200:
+  generation_exact: 0.173828125
+  min_family_generation_exact: 0.04093567251461988
+
+step300:
+  best remains step200
+```
+
+Interpretation:
+
+```text
+Time-gate matches the time-conditioned router curve and has not broken through
+the 0.0409 plateau. This suggests that small route-level time adapters are
+insufficient. The route's local update can preserve the accepted path and give
+a small family-floor gain, but it does not fix the hard-family transition
+representation.
+```
+
+Next candidate if final report also rejects:
+
+```text
+SST-style state stream candidate:
+  maintain a lightweight recurrent state over prompt positions
+  blend encoded token state with previous-position stream state
+  feed the resulting stream into route1 context
+  initialize stream gate near zero to preserve accepted path
+  train only stream gate/projection plus route1/router first
+
+Why:
+  current failures look like answer-position-only trajectory correction is too
+  weak. The model may need position-wise state transport across the prompt
+  before the recurrent answer state can compose len20 ordered chains.
+
+Reject constraints:
+  no external solver
+  no hidden answer path
+  same token -> recurrent core -> LM logits path
+  same seed9338/original-seed family-floor gate
+```
+
 ## 2026-05-18 - Recurrent LayerScale DGX Result
 
 Run:
