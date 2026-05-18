@@ -24972,6 +24972,63 @@ result:
   completed
 ```
 
+Sampled DGX early-stop result:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    dgx_single_order_router_len20_sampled_state_trace_depth_credit_seed9338_20260518_184233
+
+log:
+  local_eval/runner_logs/len20_sampled_state_trace_depth_credit_20260518_184233.log
+
+step0:
+  full_generation_exact: 0.1640625
+  min_family_generation_exact: 0.029239766081871343
+
+step100:
+  full_generation_exact: 0.169921875
+  min_family_generation_exact: 0.029239766081871343
+
+step200 best:
+  full_generation_exact: 0.169921875
+  min_family_generation_exact: 0.04093567251461988
+
+step300:
+  full_generation_exact: 0.162109375
+  min_family_generation_exact: 0.03508771929824561
+
+action:
+  stopped early at step300 to save GPU time
+```
+
+Interpretation:
+
+```text
+Sampled-depth trajectory credit is more practical than full-depth credit and
+reaches the same 0.04094 min-family plateau as time-conditioned/time-gated
+router repair, but it does not break through. This rejects the hypothesis that
+simple LM-CE supervision on a subset of traced recurrent states is enough.
+
+Current accumulated evidence:
+  baseline seed9338 diagnostic:     0.02924 min_family
+  full-depth trajectory credit:     0.03509 best min_family
+  sampled-depth trajectory credit:  0.04094 best min_family
+  time-conditioned/time-gated:      0.04094 best min_family
+  acceptance threshold:             0.06000 min_family
+
+Next action:
+  Stop CE-style trajectory repair for this checkpoint. The next candidate must
+  change the recurrent transition representation itself, ideally by
+  transplanting the reduced transition-control recipe into the canonical
+  token->core->LM path:
+
+    ordered op read
+    circular value manifold
+    recurrent transition state update
+    trace loss that supervises the transition state, not just answer logits
+```
+
 ## 2026-05-18 - Continuous Latest-Paper Search Rule Reaffirmed
 
 Answer to the process question:
