@@ -24967,6 +24967,59 @@ result:
   completed
 ```
 
+## 2026-05-18 - State-Stream Router Early Stop
+
+Run:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  dgx_single_order_router_len20_state_stream_seed9338_20260518_175534
+```
+
+Mid-run:
+
+```text
+step100:
+  best remains initial checkpoint
+
+step200:
+  last_loss: 3.029082775115967
+  best remains initial checkpoint
+
+best_periodic_eval:
+  step: 0
+  generation_exact: 0.1640625
+  min_family_generation_exact: 0.029239766081871343
+```
+
+Action:
+
+```text
+Stopped early to save GPU time.
+```
+
+Interpretation:
+
+```text
+The zero-init state stream preserved the accepted path but did not produce an
+early learning signal. This is weaker than both time-conditioned and time-gated
+routes, which reached min_family 0.0409357 by step200.
+
+Current evidence after this sequence:
+  accepted seed9338 diagnostic: 0.0292398 min_family
+  anti-collapse:                0.0350877 min_family
+  time-conditioned:             0.0409357 min_family
+  time-gated:                   0.0409357 min_family
+  state-stream zero-init:       no improvement by step200
+
+Do not claim innovation yet. The next useful work is not another blind adapter.
+The next design must either:
+  strengthen the core training objective so route1 transition state is directly
+  supervised at intermediate prefixes, or
+  move from adapter repair to a native recurrent pretraining curriculum where
+  the recurrent transition is learned before len20 family-floor promotion.
+```
+
 ## 2026-05-18 - Time-Gated Router DGX Result
 
 Run:
