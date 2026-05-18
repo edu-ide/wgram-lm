@@ -24973,6 +24973,84 @@ result:
   completed
 ```
 
+## 2026-05-18 - Attractor State-Lookahead Probe Rejected
+
+Context:
+
+```text
+Prior X/public discovery radar found Attractor Models, but the official paper
+and implementation show that the key mechanism is a fixed-point state
+refinement head, not simply adding more final-answer CE at a deeper recurrent
+depth.
+
+This probe tested a safer state-level lookahead loss on the current best
+positionless len8 checkpoint:
+
+  local_eval/qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
+```
+
+Run:
+
+```text
+DGX OUT_TAG:
+  posnone_attractor_state_lookahead_len8_20260518_234005
+
+loss:
+  --attractor-state-lookahead-loss-weight 0.02
+  --attractor-state-lookahead-steps 1
+  --attractor-state-lookahead-state-source both
+  --attractor-state-lookahead-cosine-weight 1.0
+  --attractor-state-lookahead-relative-delta-weight 0.1
+
+report:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+    posnone_attractor_state_lookahead_len8_20260518_234005/report.json
+```
+
+Decision:
+
+```text
+rejected
+
+reject_reasons:
+  ablation_drop_below_threshold
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact:       0.10546875
+  think0_generation_exact:     0.0390625
+  full_minus_think0:           0.06640625
+  full_minus_worst_ablation:   0.046875
+  min_family_generation_exact: 0.03508771929824561
+  full_minus_carrier_off:      0.037109375
+
+periodic_eval:
+  step0:
+    full:       0.10546875
+    min_family: 0.03508771929824561
+  step40:
+    full:       0.056640625
+    min_family: 0.023391812865497075
+  step80:
+    full:       0.091796875
+    min_family: 0.029239766081871343
+```
+
+Conclusion:
+
+```text
+State-level Attractor lookahead is less destructive than answer-logit
+lookahead, but it still does not improve the accepted len8 checkpoint. The best
+periodic checkpoint remains the initial checkpoint.
+
+Do not keep tuning this loss. If Attractor is revisited, implement the actual
+architectural mechanism: a preservation-initialized, contractive fixed-point
+refinement head around the recurrent state, with the existing route preserved
+as route0 and evaluated by the same len8 family-floor and ablation gates.
+```
+
 ## 2026-05-18 - Research Loop: Recurrent-Depth Stability Before More Architecture Shopping
 
 Current bottleneck:
