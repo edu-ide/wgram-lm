@@ -25947,3 +25947,186 @@ seed9338:
 
 then original-seed retention rerun with the same gate
 ```
+
+## 2026-05-18 - Len8 Ladder Rejection and Position-Extrapolation Hypothesis
+
+Runner:
+
+```text
+scripts/421_dgx_number_oprole_circular_len_ladder_gate.sh
+```
+
+DGX run:
+
+```text
+out_dir:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_number_oprole_circular_ladder_len8_seed9338_20260518_194634
+
+log:
+  local_eval/runner_logs/number_oprole_circular_ladder_20260518_194634.log
+```
+
+Result:
+
+```text
+decision:
+  rejected
+
+reject_reasons:
+  full_exact_below_threshold
+  depth_gain_below_threshold
+  ablation_drop_below_threshold
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact:       0.041015625
+  think0_generation_exact:     0.0234375
+  full_minus_think0:           0.017578125
+  full_minus_worst_ablation:  -0.021484375
+  min_family_generation_exact: 0.023391812865497075
+  state_reset_generation_exact: 0.0625
+  op_zero_generation_exact:     0.0
+  z_l_zero_generation_exact:    0.03125
+  z_h_zero_generation_exact:    0.0
+  carrier_off_generation_exact: 0.03515625
+```
+
+Interpretation:
+
+```text
+Even len8 fails when resuming the accepted L6 checkpoint. Teacher-forced answer
+loss recovers, but strict greedy exact and core-depth gain do not. The
+state_reset ablation is stronger than the full model, which means this is not
+an accepted recurrent-reasoning improvement.
+
+This narrows the bottleneck. The failure is no longer only "len20 is too far";
+it is already present at L6 -> L8. A likely architectural culprit is learned
+absolute position embedding extrapolation. The accepted L6 checkpoint used
+learned positions and the len8/len20 runs resized them with repeat_last. That
+can preserve tensor shape while destroying horizon extrapolation.
+
+Next falsifiable test:
+
+  resume the same L6 checkpoint
+  run len8 with --position-embedding-mode none
+  keep number/op-role tokens as the order signal
+  require the same strict generation and ablation gates
+
+If positionless len8 improves the family floor and restores positive ablation
+drop, the next native architecture should avoid learned absolute position
+embeddings on algorithmic recurrent-core gates.
+```
+
+Positionless len8 result:
+
+```text
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+    qtrm_native_number_oprole_circular_ladder_len8_seed9338_posnone_len8_20260518_195431
+
+decision:
+  rejected
+
+reject_reasons:
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact:       0.16796875
+  think0_generation_exact:     0.02734375
+  full_minus_think0:           0.140625
+  full_minus_worst_ablation:   0.119140625
+  min_family_generation_exact: 0.03508771929824561
+  full_minus_carrier_off:      0.08984375
+  state_reset_generation_exact: 0.048828125
+  op_zero_generation_exact:     0.015625
+  z_l_zero_generation_exact:    0.01953125
+  z_h_zero_generation_exact:    0.0
+  carrier_off_generation_exact: 0.078125
+
+by_family:
+  checksum: 0.43529411764705883
+  modchain: 0.03508771929824561
+  revchain: 0.03508771929824561
+```
+
+Interpretation:
+
+```text
+This is not accepted, but it is the first useful len8 scaling signal from the
+accepted L6 number/op-role circular checkpoint. Compared to learned positions:
+
+  learned-pos len8:
+    full:       0.04102
+    min_family: 0.02339
+    full-worst-ablation: -0.02148
+
+  positionless len8:
+    full:       0.16797
+    min_family: 0.03509
+    full-worst-ablation: 0.11914
+
+The positionless path restores causal recurrent-core gain and leaves only the
+ordered-chain family floor below threshold. Therefore the immediate follow-up
+is a low-LR hard-chain repair continuation from the positionless len8
+checkpoint, not a new architecture swap.
+```
+
+Follow-up attempts from the positionless len8 checkpoint:
+
+```text
+hard-chain repair:
+  run:
+    qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+      posnone_len8_chainrepair_20260518_200147
+  step0:
+    full:       0.16796875
+    min_family: 0.03508771929824561
+  step150:
+    full:       0.025390625
+    min_family: 0.0
+  action:
+    stopped early
+
+online greedy preference repair:
+  run:
+    qtrm_native_number_oprole_circular_ladder_len8_seed9338_
+      posnone_len8_greedypref_20260518_200604
+  step0:
+    full:       0.16796875
+    min_family: 0.03508771929824561
+  step100:
+    full:       0.048828125
+    min_family: 0.029239766081871343
+  action:
+    stopped early
+```
+
+Interpretation:
+
+```text
+Both continuation-style repairs damage the useful positionless len8 checkpoint.
+This suggests the current checkpoint is a fragile transplant from a learned-pos
+L6 model, not a stable native positionless model.
+
+Fresh literature search after this bottleneck points to length-generalization
+work on positional design:
+
+  Randomized Positional Encodings:
+    https://huggingface.co/papers/2305.16843
+
+  PRISM probabilistic relative-position implicit superposition:
+    https://arxiv.org/abs/2506.00920
+
+  Position Coupling:
+    https://arxiv.org/abs/2405.20671
+
+  Role of Sparsity for Length Generalization:
+    https://arxiv.org/abs/2502.16792
+
+Next falsifiable candidate:
+
+  Train a native positionless / op-role-ordered L6 checkpoint from scratch,
+  then rerun the same L6 -> L8 gate. Do not keep repairing a checkpoint whose
+  original training relied on learned absolute positions.
+```
