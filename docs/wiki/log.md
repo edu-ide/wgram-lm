@@ -24830,3 +24830,71 @@ seed9338:
 
 then original-seed retention rerun with the same gate
 ```
+
+## 2026-05-18 - Recurrent LayerScale DGX Result
+
+Run:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  dgx_single_order_router_len20_layerscale_seed9338_20260518_100529/report.json
+```
+
+Summary:
+
+```text
+decision: rejected
+reject_reasons:
+  family_exact_below_threshold
+
+decisive_metrics:
+  full_generation_exact: 0.175781
+  think0_generation_exact: 0.0
+  full_minus_think0: 0.175781
+  full_minus_worst_ablation: 0.144531
+  min_family_generation_exact: 0.0409357
+  state_reset_generation_exact: 0.03125
+  op_zero_generation_exact: 0.0273438
+
+best_periodic:
+  step: 200
+  generation_exact: 0.175781
+  min_family_generation_exact: 0.0409357
+```
+
+Interpretation:
+
+```text
+LayerScale-style recurrent stabilization slightly improved average exact over
+prefix-anchor:
+
+  prefix-anchor full: 0.171875
+  layerscale full:    0.175781
+
+But it did not move the worst-family floor:
+
+  prefix-anchor min_family: 0.0409357
+  layerscale min_family:    0.0409357
+
+Therefore the current bottleneck is not just recurrence step-size instability.
+The remaining failure is family-specific transition representation: the model
+keeps a causal core advantage, but the weakest ordered-chain family remains
+underrepresented or entangled in the latent state.
+```
+
+Next research-driven candidate:
+
+```text
+Do not rerun the same objective with more steps as the primary action.
+The next candidate should make the transition family/state explicitly
+separable inside the canonical recurrent LM path, then ablate it:
+
+  family-conditioned recurrent delta factor
+  or contrastive family-state separation loss on core_state_trace
+  or route-local state trace probe with stop-gradient target
+
+The gate remains unchanged:
+  seed9338 min_family >= 0.06
+  original-seed retention pass
+  state_reset/op_zero/route ablations remove the gain
+```
