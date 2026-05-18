@@ -25023,6 +25023,74 @@ Reject constraints:
   same seed9338/original-seed family-floor gate
 ```
 
+## 2026-05-18 - State-Stream Router Candidate
+
+Implemented candidate:
+
+```text
+think_structure:
+  single_order_router_state_stream
+
+file:
+  scripts/335_train_qtrm_native_etd_probe.py
+```
+
+Mechanism:
+
+```text
+shifted_state[:, 1:, :] = state[:, :-1, :]
+
+state_stream =
+  LayerNorm(Linear([encoded, shifted_state]))
+
+route1_context =
+  route1_context + state_stream
+```
+
+Why this is different from previous route adapters:
+
+```text
+time-conditioned and time-gated variants only changed the local route update.
+They did not move the chain-family late-depth collapse enough.
+
+state-stream adds a position-wise transport path from the current recurrent
+state at the previous prompt position into the next position. This directly
+targets the hypothesis that answer-position-only correction cannot carry a
+len20 ordered chain through the prompt.
+```
+
+Preservation check:
+
+```text
+old:
+  single_order_router
+
+new:
+  single_order_router_state_stream
+
+load old state into new with strict=False:
+  missing:
+    single_order_state_stream_in.weight
+    single_order_state_stream_norm.weight
+    single_order_state_stream_norm.bias
+  unexpected: none
+  max_abs_diff at zero init: 0.0
+  allclose_1e-6: true
+```
+
+Local runner smoke:
+
+```text
+RESUME_FROM=none REMOTE_PYTHON=.venv/bin/python \
+RUN_LABEL=state_stream_router OUT_PREFIX=state_stream TARGET_LABEL=state-stream \
+THINK_STRUCTURE=single_order_router_state_stream \
+TRAIN_PARAM_NAME_REGEX='single_order_state_stream|single_order_route1|trm_order_router' \
+... scripts/417_dgx_len20_time_conditioned_router_gate.sh run-local
+
+result:
+  completed
+```
+
 ## 2026-05-18 - Recurrent LayerScale DGX Result
 
 Run:

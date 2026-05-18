@@ -769,6 +769,7 @@ SUPPORTED_THINK_STRUCTURES = (
     "single_order_router_residual_scale",
     "single_order_router_time_conditioned",
     "single_order_router_time_gate",
+    "single_order_router_state_stream",
     "trm_dual_z",
     "trm_dual_z_interactive",
     "trm_dual_z_interactive_transition_gate",
@@ -822,6 +823,7 @@ SINGLE_ORDER_ROUTER_THINK_STRUCTURES = (
     "single_order_router_residual_scale",
     "single_order_router_time_conditioned",
     "single_order_router_time_gate",
+    "single_order_router_state_stream",
 )
 
 
@@ -1341,6 +1343,13 @@ class NativeQTRMETDLM(nn.Module):
                     int(d_model),
                     bias=False,
                 )
+            if self.think_structure == "single_order_router_state_stream":
+                self.single_order_state_stream_in = nn.Linear(
+                    2 * int(d_model),
+                    int(d_model),
+                    bias=False,
+                )
+                self.single_order_state_stream_norm = nn.LayerNorm(int(d_model))
             if self.think_structure == "single_order_router_residual_scale":
                 # Preserve the previous router path at initialization while
                 # allowing training to damp unstable recurrent deltas.
@@ -1647,6 +1656,8 @@ class NativeQTRMETDLM(nn.Module):
             nn.init.zeros_(self.single_order_time_condition.weight)
         if hasattr(self, "single_order_time_gate"):
             nn.init.zeros_(self.single_order_time_gate.weight)
+        if hasattr(self, "single_order_state_stream_in"):
+            nn.init.zeros_(self.single_order_state_stream_in.weight)
         if hasattr(self, "single_order_recurrent_layerscale"):
             self.single_order_recurrent_layerscale.data.fill_(1.0)
         if hasattr(self, "trm_l_transition_gate_logit"):
@@ -2161,6 +2172,17 @@ class NativeQTRMETDLM(nn.Module):
     ) -> torch.Tensor:
         route0 = self._run_stage(self.think, state, causal_mask=causal_mask)
         route1_context = self._single_order_route1_context(encoded)
+        if hasattr(self, "single_order_state_stream_in"):
+            shifted_state = torch.zeros_like(state)
+            shifted_state[:, 1:, :] = state[:, :-1, :]
+            state_stream = self.single_order_state_stream_norm(
+                self.single_order_state_stream_in(
+                    torch.cat([encoded, shifted_state], dim=-1)
+                )
+            )
+            route1_context = route1_context + state_stream.to(
+                dtype=route1_context.dtype
+            )
         progress = None
         if hasattr(self, "single_order_time_condition") or hasattr(
             self,
