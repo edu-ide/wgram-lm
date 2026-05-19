@@ -235,3 +235,52 @@ This is not enough to claim a solved language model or a final architecture.
 The absolute exact score is still low, so this is a promotion candidate for a
 larger controlled gate, not a capability claim.
 ```
+
+## Strict TRM Condition Follow-up
+
+Date: 2026-05-19
+
+Concern:
+
+```text
+HRM-style separate H/L should not be assumed better than TRM-style sharing until
+the TRM candidate receives a fairer recurrence schedule.
+```
+
+Added comparison candidates:
+
+```text
+trm_dual_z_official_trm_l3_halt_think
+trm_dual_z_hrm_separate_l3_halt_official_trm_think
+```
+
+Strict schedule:
+
+```text
+L cycles: 3
+halt head: dedicated
+halt loss: active-length cumulative prefixes
+halt-depth final-answer loss: 0.25
+adaptive halt eval: enabled
+```
+
+Result:
+
+```text
+candidate                                           full_exact  depth_gain  ablation_drop
+trm_dual_z_official_trm_think                       0.03125     0.00521    -0.00521
+trm_dual_z_official_trm_l3_halt_think               0.04167     0.03646     0.00000
+trm_dual_z_hrm_separate_official_trm_think          0.06250     0.02083     0.03125
+trm_dual_z_hrm_separate_l3_halt_official_trm_think  0.04688     0.00000     0.01042
+```
+
+Conclusion:
+
+```text
+The stricter TRM recurrence recipe helped the shared TRM candidate but did not
+beat the simpler HRM-style separate H/L candidate in the current short gate.
+
+Therefore, for QTRM-native near-term work, HRM-style role separation remains
+the better empirical prior. TRM-style sharing remains a research candidate, but
+must show positive destructive-ablation drop before promotion.
+```

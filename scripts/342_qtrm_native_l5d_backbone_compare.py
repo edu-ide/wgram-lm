@@ -24,7 +24,9 @@ CANDIDATES = (
     "trm_dual_z_mamba3_think",
     "official_trm_think",
     "trm_dual_z_official_trm_think",
+    "trm_dual_z_official_trm_l3_halt_think",
     "trm_dual_z_hrm_separate_official_trm_think",
+    "trm_dual_z_hrm_separate_l3_halt_official_trm_think",
     "trm_dual_z_official_trm_l2_think",
     "trm_dual_z_official_trm_fullgrad_think",
     "trm_dual_z_gated_official_trm_think",
@@ -212,6 +214,29 @@ def official_fla_args(profile: str) -> list[str]:
     ]
 
 
+def strict_trm_recurrence_args() -> list[str]:
+    """Closer-to-official recurrent schedule for TRM/HRM core comparisons."""
+    return [
+        "--trm-l-cycles",
+        "3",
+        "--halt-pooling",
+        "dedicated",
+        "--adaptive-halt-loss-weight",
+        "0.05",
+        "--adaptive-halt-target-mode",
+        "active_len",
+        "--adaptive-halt-active-len-target",
+        "cumulative",
+        "--adaptive-halt-loss-context",
+        "prefixes",
+        "--adaptive-halt-eval",
+        "--halt-min-steps",
+        "1",
+        "--halt-depth-final-loss-weight",
+        "0.25",
+    ]
+
+
 def candidate_args(candidate: str, profile: str) -> list[str]:
     if candidate == "mha_etd":
         return ["--backbone", "mha_etd"]
@@ -299,6 +324,11 @@ def candidate_args(candidate: str, profile: str) -> list[str]:
             "--think-structure",
             "trm_dual_z",
         ]
+    if candidate == "trm_dual_z_official_trm_l3_halt_think":
+        return [
+            *candidate_args("trm_dual_z_official_trm_think", profile),
+            *strict_trm_recurrence_args(),
+        ]
     if candidate == "trm_dual_z_hrm_separate_official_trm_think":
         return [
             "--backbone",
@@ -311,6 +341,11 @@ def candidate_args(candidate: str, profile: str) -> list[str]:
             "mha_etd",
             "--think-structure",
             "trm_dual_z_hrm_separate",
+        ]
+    if candidate == "trm_dual_z_hrm_separate_l3_halt_official_trm_think":
+        return [
+            *candidate_args("trm_dual_z_hrm_separate_official_trm_think", profile),
+            *strict_trm_recurrence_args(),
         ]
     if candidate == "trm_dual_z_official_trm_l2_think":
         return [

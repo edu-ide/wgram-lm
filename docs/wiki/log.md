@@ -27567,3 +27567,66 @@ run and passes the local causal-ablation check.
 This is still a weak absolute score, so it should become the next candidate for
 a larger controlled gate rather than be treated as a solved QTRM-native LM.
 ```
+
+## 2026-05-19 - Strict TRM Condition Check
+
+Question:
+
+```text
+Did HRM-style separate H/L only win because the shared TRM candidate was missing
+important TRM-like recurrence conditions?
+```
+
+Strict recurrence candidate:
+
+```text
+--trm-l-cycles 3
+--halt-pooling dedicated
+--adaptive-halt-loss-weight 0.05
+--adaptive-halt-target-mode active_len
+--adaptive-halt-active-len-target cumulative
+--adaptive-halt-loss-context prefixes
+--adaptive-halt-eval
+--halt-min-steps 1
+--halt-depth-final-loss-weight 0.25
+```
+
+DGX gate:
+
+```text
+worktree:
+  /mnt/data4tb/qtrm_hrm_exp_20260519
+
+python:
+  /mnt/data4tb/venv_sglang_pr23000/bin/python
+
+report:
+  local_eval/trm_official_condition_compare_short_dgx_20260519/
+    backbone_compare_summary.json
+```
+
+Result:
+
+```text
+candidate                                           full_exact  depth_gain  ablation_drop  causal_ok
+trm_dual_z_official_trm_think                       0.03125     0.00521    -0.00521       false
+trm_dual_z_official_trm_l3_halt_think               0.04167     0.03646     0.00000       false
+trm_dual_z_hrm_separate_official_trm_think          0.06250     0.02083     0.03125       true
+trm_dual_z_hrm_separate_l3_halt_official_trm_think  0.04688     0.00000     0.01042       false
+```
+
+Interpretation:
+
+```text
+Adding a more TRM-like L=3 + halt/depth objective improved the shared TRM
+candidate, but not enough to beat the simple HRM-style separate H/L candidate.
+
+The result does not prove HRM is globally better than TRM. It does show that,
+in the current QTRM-native short gate, role separation is a useful optimization
+prior and the naive strict-halt recipe is not yet the missing TRM condition.
+
+Next action:
+  Keep HRM-style separate H/L as the current best short-gate core candidate.
+  Improve TRM only through targeted changes that restore positive ablation drop,
+  not by assuming TRM should win by name.
+```
