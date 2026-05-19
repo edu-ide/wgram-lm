@@ -17425,3 +17425,41 @@ consequence:
   final latent answer auxiliary is rejected as a checksum4 fix. Next HRM-Text
   adaptation must supervise recurrent trajectory/residue states.
 ```
+
+HRM-Text-style healing status:
+
+```text
+single-train single-eval:
+  local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_20260519
+  accepted: true
+  gain: 0.03125
+  language_top1: 0.96875
+
+single-train multi-eval:
+  local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_multiseed_s60_20260519
+  accepted: false
+  gain: 0.0190972222
+  language_top1: 0.96875
+
+multi-train multi-eval:
+  local_eval/qwen35_preinit_trajcarry_mean_hrmtext_multitrain_multiseed_s80_20260519
+  accepted: false
+  gain: 0.0173611111
+  language_top1: 0.96875
+```
+
+Roadmap consequence:
+
+```text
+HRM-Text methods should be treated as training infrastructure, not proof that
+QTRM is already an HRM-Text-scale breakthrough. They helped preserve language
+while keeping a causal recurrent gain, but the gain is not robust enough across
+seeds.
+
+Next milestone:
+  1. keep QTRM-native and Qwen-backbone preservation fixed
+  2. stop optimizing broad language healing as the main objective
+  3. target recurrent trajectory/depth scaling directly
+  4. promote only after multi-seed gain passes and disappears under core/carry
+     ablation
+```

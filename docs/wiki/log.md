@@ -28652,3 +28652,56 @@ This changes the bottleneck from "language healing destroys the core" to
 should use multi-eval-seed selection as the default gate and improve the
 recurrent objective, not lower the threshold.
 ```
+
+## 2026-05-19 - HRM-Text Multi-Train/Multi-Eval Gate
+
+Question:
+
+```text
+Does importing more HRM-Text-style training discipline become robust if both
+training and evaluation use multiple deterministic seeds?
+```
+
+Implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --train-seed-offsets 0,1,2
+  --eval-seed-offsets 10000,10001,10002
+
+scripts/415_run_qwen35_preinit_hrm_text_healing_multitrain_multiseed.sh
+```
+
+DGX run:
+
+```text
+path:
+  local_eval/qwen35_preinit_trajcarry_mean_hrmtext_multitrain_multiseed_s80_20260519
+
+accepted: false
+train_cases: 6144 total = 2048 x 3 train seeds
+eval_cases: 576 total = 192 x 3 eval seeds
+best_step: 60
+gain: 0.0173611111
+language_top1: 0.96875
+min_family_gain: +0.0104166667
+min_family_core_accuracy: 0.0989583333
+
+family gains:
+  chain5:      +0.015625
+  checksum4:  +0.0260416667
+  select_pair:+0.0104166667
+```
+
+Interpretation:
+
+```text
+HRM-Text-style clean response healing is still useful because language remains
+stable and all measured families have positive gains. However, multi-train
+seeds did not pass the robust promotion gate; aggregate gain fell from the
+single-train multi-eval near miss of 0.0190972222 to 0.0173611111.
+
+Conclusion: HRM-Text training discipline is a good ingredient, not an instant
+breakthrough. The next falsifiable target is recurrent trajectory quality and
+core-depth scaling, not more broad healing CE.
+```

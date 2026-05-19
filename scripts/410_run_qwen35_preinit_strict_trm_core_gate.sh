@@ -42,6 +42,7 @@ fi
   --steps "${STEPS:-120}" \
   --batch-size "${BATCH_SIZE:-2}" \
   --train-cases "${TRAIN_CASES:-1024}" \
+  --train-seed-offsets "${TRAIN_SEED_OFFSETS:-0}" \
   --eval-cases "${EVAL_CASES:-512}" \
   --eval-seed-offsets "${EVAL_SEED_OFFSETS:-10000}" \
   --case-mode "${CASE_MODE:-hard_v1}" \

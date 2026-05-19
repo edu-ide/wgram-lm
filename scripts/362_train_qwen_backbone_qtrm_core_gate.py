@@ -1201,11 +1201,16 @@ def run(args: argparse.Namespace) -> dict[str, object]:
 
     train_case_mode = str(args.train_case_mode or args.case_mode)
     eval_case_mode = str(args.eval_case_mode or args.case_mode)
-    train_cases = build_synthetic_cases(
-        count=int(args.train_cases),
-        seed=int(args.seed),
-        case_mode=train_case_mode,
-    )
+    train_seed_offsets = parse_int_list_or_default(str(args.train_seed_offsets), (0,))
+    train_cases: list[SyntheticCase] = []
+    for offset in train_seed_offsets:
+        train_cases.extend(
+            build_synthetic_cases(
+                count=int(args.train_cases),
+                seed=int(args.seed) + int(offset),
+                case_mode=train_case_mode,
+            )
+        )
     eval_seed_offsets = parse_int_list_or_default(str(args.eval_seed_offsets), (10000,))
     eval_cases: list[SyntheticCase] = []
     for offset in eval_seed_offsets:
@@ -1295,7 +1300,9 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "core_step_conditioning_scale": float(args.core_step_conditioning_scale),
         "steps": int(args.steps),
         "batch_size": int(args.batch_size),
-        "train_cases": int(args.train_cases),
+        "train_cases": len(train_cases),
+        "train_cases_per_seed": int(args.train_cases),
+        "train_seed_offsets": list(train_seed_offsets),
         "eval_cases": len(eval_cases),
         "eval_cases_per_seed": int(args.eval_cases),
         "eval_seed_offsets": list(eval_seed_offsets),
@@ -1443,6 +1450,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--steps", type=int, default=80)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--train-cases", type=int, default=256)
+    parser.add_argument("--train-seed-offsets", default="0")
     parser.add_argument("--eval-cases", type=int, default=96)
     parser.add_argument("--eval-seed-offsets", default="10000")
     parser.add_argument(

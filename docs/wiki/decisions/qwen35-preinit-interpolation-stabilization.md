@@ -1104,3 +1104,53 @@ language and improves the single-seed gate. The next architecture/training
 claim must pass multi-eval-seed selection before carry-off ablation is enough
 for promotion.
 ```
+
+## Multi-Train Seed Decision
+
+Added multi-train-seed support:
+
+```text
+--train-seed-offsets 0,1,2
+```
+
+This builds one larger training set by concatenating equal-sized synthetic
+sets from multiple deterministic seed offsets. It tests whether the
+HRM-Text-style healing gain was underfit to one train seed.
+
+Run:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_multitrain_multiseed_s80_20260519
+
+accepted: false
+train_cases: 6144
+train_seed_offsets: 0,1,2
+eval_cases: 576
+eval_seed_offsets: 10000,10001,10002
+gain: 0.0173611111
+language_top1: 0.96875
+min_family_gain: +0.0104166667
+min_family_core_accuracy: 0.0989583333
+
+family gains:
+  chain5:      +0.015625
+  checksum4:  +0.0260416667
+  select_pair:+0.0104166667
+```
+
+Decision:
+
+```text
+Reject as a robust promotion. The result is directionally healthy but below
+the multi-seed acceptance threshold.
+
+Do keep the mechanism in the toolbox:
+  clean response-only healing
+  Qwen backbone preservation
+  mandatory recurrent core
+  multi-train/multi-eval seed reporting
+
+Do not keep scaling this exact loss as the next main bet. The stronger signal
+is that the model needs a better recurrent trajectory objective so that the
+core changes the answer for the right reason across seeds.
+```
