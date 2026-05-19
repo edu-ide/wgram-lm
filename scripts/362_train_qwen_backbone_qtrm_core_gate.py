@@ -654,6 +654,11 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         ouro_core_layer_indices=parse_int_list(str(args.ouro_core_layer_indices)),
         core_adapter_dim=int(args.core_adapter_dim),
         core_delta_adapter_mode=str(args.core_delta_adapter_mode),
+        core_insertion_mode=str(args.core_insertion_mode),
+        core_insert_after_layer=int(args.core_insert_after_layer),
+        core_residual_gate_mode=str(args.core_residual_gate_mode),
+        core_residual_gate_dim=int(args.core_residual_gate_dim),
+        core_residual_gate_init=float(args.core_residual_gate_init),
         n_core_layers=int(args.n_core_layers),
         h_cycles=int(args.h_cycles),
         l_cycles=int(args.l_cycles),
@@ -768,6 +773,11 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "ouro_core_layer_indices": ouro_core_layers,
         "core_adapter_dim": int(args.core_adapter_dim),
         "core_delta_adapter_mode": str(args.core_delta_adapter_mode),
+        "core_insertion_mode": str(args.core_insertion_mode),
+        "core_insert_after_layer": int(model.core_insert_after_layer),
+        "core_residual_gate_mode": str(args.core_residual_gate_mode),
+        "core_residual_gate_dim": int(args.core_residual_gate_dim),
+        "core_residual_gate_init": float(args.core_residual_gate_init),
         "residual_scale": float(args.residual_scale),
         "h_cycles": int(args.h_cycles),
         "l_cycles": int(args.l_cycles),
@@ -863,6 +873,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=["add", "adapter_only"],
         default="add",
     )
+    parser.add_argument(
+        "--core-insertion-mode",
+        choices=["final_residual", "mid_layer_suffix"],
+        default="final_residual",
+    )
+    parser.add_argument("--core-insert-after-layer", type=int, default=-1)
+    parser.add_argument(
+        "--core-residual-gate-mode",
+        choices=["constant", "token_mlp"],
+        default="constant",
+    )
+    parser.add_argument("--core-residual-gate-dim", type=int, default=128)
+    parser.add_argument("--core-residual-gate-init", type=float, default=-2.0)
     parser.add_argument("--n-core-layers", type=int, default=1)
     parser.add_argument("--h-cycles", type=int, default=1)
     parser.add_argument("--l-cycles", type=int, default=1)

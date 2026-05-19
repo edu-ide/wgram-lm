@@ -27860,3 +27860,47 @@ language logits. The remaining bottleneck is not basic loading or language
 collapse; it is making the mandatory core improve average reasoning gain and
 family-floor robustness at the same checkpoint.
 ```
+
+## 2026-05-19 - Mid-Layer Suffix Qwen Core Probe
+
+Question:
+
+```text
+Is final-residual insertion too weak, and can inserting the QTRM core into an
+intermediate Qwen layer make the causal path stronger?
+```
+
+Patch:
+
+```text
+script 362 now exposes:
+  --core-insertion-mode final_residual|mid_layer_suffix
+  --core-insert-after-layer
+  --core-residual-gate-mode constant|token_mlp
+  --core-residual-gate-dim
+  --core-residual-gate-init
+```
+
+DGX smoke:
+
+```text
+local_eval/qwen35_preinit_strict_trm_mid_suffix_smoke_20260519
+  insert_after_layer: 3
+  residual_scale: 0.05
+  language_top1_agreement: 0.375 -> rejected
+
+local_eval/qwen35_preinit_strict_trm_mid_suffix_scale0005_eval_20260519
+  insert_after_layer: 3
+  residual_scale: 0.005
+  language_top1_agreement: 0.75
+  reasoning_gain: 0.0 on 16-case smoke
+```
+
+Interpretation:
+
+```text
+Mid-layer suffix is a stronger causal route but is not safe by default. It
+should only be retried with residual warmup or a trained token_mlp gate. The
+current default remains final_residual until mid-layer language non-regression
+is reliable.
+```

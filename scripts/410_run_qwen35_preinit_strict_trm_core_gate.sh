@@ -21,6 +21,11 @@ DTYPE="${DTYPE:-bfloat16}"
   --mandatory-core \
   --core-adapter-dim "${CORE_ADAPTER_DIM:-128}" \
   --core-delta-adapter-mode "${CORE_DELTA_ADAPTER_MODE:-add}" \
+  --core-insertion-mode "${CORE_INSERTION_MODE:-final_residual}" \
+  --core-insert-after-layer "${CORE_INSERT_AFTER_LAYER:--1}" \
+  --core-residual-gate-mode "${CORE_RESIDUAL_GATE_MODE:-constant}" \
+  --core-residual-gate-dim "${CORE_RESIDUAL_GATE_DIM:-128}" \
+  --core-residual-gate-init "${CORE_RESIDUAL_GATE_INIT:--2.0}" \
   --residual-scale "${RESIDUAL_SCALE:-0.05}" \
   --h-cycles "${H_CYCLES:-1}" \
   --l-cycles "${L_CYCLES:-3}" \

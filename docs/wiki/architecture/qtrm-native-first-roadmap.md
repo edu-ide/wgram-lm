@@ -16944,3 +16944,35 @@ base Qwen path to absorb the same improvement:
   4. promote only when gain >= 0.02 and min_family_core_accuracy >= 0.08 on the
      same checkpoint
 ```
+
+Mid-layer suffix note:
+
+```text
+final_residual:
+  safer language preservation
+  weaker causal influence because the core only perturbs the final hidden state
+
+mid_layer_suffix:
+  stronger causal route because the core perturbs an intermediate Qwen hidden
+  state and the remaining Qwen layers reinterpret it
+  but unsafe at residual_scale=0.05 on first smoke
+```
+
+DGX smoke:
+
+```text
+mid_layer_suffix, insert_after_layer=3, residual_scale=0.05:
+  language_top1_agreement: 0.375 -> rejected
+
+mid_layer_suffix, insert_after_layer=3, residual_scale=0.005:
+  language_top1_agreement: 0.75 -> barely passes the language threshold
+  reasoning_gain: 0.0 on the 16-case smoke
+```
+
+Consequence:
+
+```text
+Do not promote mid_layer_suffix yet. It needs a residual/gate warmup schedule
+or token_mlp gate training before it can become the default QTRM-native
+pretrained-init route.
+```
