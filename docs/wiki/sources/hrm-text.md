@@ -11,6 +11,9 @@ latent reasoning into an actual text-generation language model.
 - Repo: <https://github.com/sapientinc/HRM-Text>
 - Local clone: `references/official/hrm-text`
 - Local commit: `f99410a`
+- Data pipeline repo: <https://github.com/sapientinc/data_io>
+- Data pipeline local clone: `references/official/data_io`
+- Data pipeline local commit: `4f9bc38`
 - HRM paper: <https://arxiv.org/abs/2506.21734>
 - TRM paper: <https://arxiv.org/abs/2510.04871>
 - TRM repo: `references/official/tiny-recursive-models`
@@ -92,6 +95,73 @@ Important details:
   response tokens attend causally.
 - The training stack is not a small 4090 recipe: the reference L/XL runs assume
   Hopper-class multi-GPU training with FlashAttention 3 and FSDP2.
+
+## Data IO Pipeline Notes
+
+HRM-Text's companion `sapientinc/data_io` repo matters for QTRM because it
+defines the data discipline, not only a preprocessing convenience.
+
+Key source fact:
+
+```text
+HRM-Text Data IO produces instruction-style question-answer pairs and sampled
+tokenized datasets, instead of directly streaming arbitrary web documents.
+```
+
+Canonical cleaned row:
+
+```json
+{
+  "condition": "cot,noisy",
+  "instruction": "Question or prompt text",
+  "response": "Answer or completion text"
+}
+```
+
+Tokenized output preserves boundaries:
+
+```text
+tokens.npy
+inst_start.npy
+inst_len.npy
+resp_start.npy
+resp_len.npy
+metadata.json
+```
+
+Sampler:
+
+```text
+sample_tokenized.py
+prefix_config.yaml
+```
+
+Useful sampling principles:
+
+```text
+1. sample by dataset/task prefix, not uniform raw token stream;
+2. cap over-large sources with max_per_file;
+3. upsample small high-quality datasets with repeat;
+4. track coverage by task/category before training;
+5. treat any token distribution change as a benchmarked breaking change.
+```
+
+Important resource note:
+
+```text
+The full cleaning pipeline states a roughly 512 GiB RAM requirement. For QTRM,
+do not copy that full cleaning path into the fast loop. Prefer the released
+cleaned data or a small Data-IO-compatible local subset first.
+```
+
+QTRM import rule:
+
+```text
+Use Data IO's instruction/response boundaries and stratified sampling style
+for QTRM language healing. Do not switch tokenizers away from Qwen unless the
+goal is a from-scratch native model; Qwen-preinit experiments should keep the
+Qwen tokenizer and only import Data IO's row schema and sampling discipline.
+```
 
 ## HRM vs TRM Correction
 

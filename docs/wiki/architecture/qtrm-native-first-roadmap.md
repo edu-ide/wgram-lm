@@ -17604,3 +17604,59 @@ step is a chain-state trajectory objective or probe that teaches the recurrent
 core the intermediate value transitions while the final answer still exits
 through normal LM logits.
 ```
+
+## Innovation Evidence Bar 2026-05-19
+
+Status:
+
+```text
+The project has a real local causal signal, but not a robust innovation claim.
+The current state is "diagnosed and under repair", not "breakthrough model".
+```
+
+What would count as the first real innovation signal:
+
+```text
+QTRM/Qwen-preinit recurrent core:
+  beats core-off/base on multi-seed held-out synthetic reasoning;
+  has non-negative gain for every family;
+  preserves the Qwen language path;
+  loses the gain under carry-off/core-off/state corruption;
+  produces the answer through normal LM logits.
+```
+
+Current bottleneck:
+
+```text
+bundle2 chain5:
+  base and core both often answer with the start digit;
+  this points to copy-prior dominance and weak recurrent state transition;
+  selector tuning and broad language healing are secondary until this is fixed.
+```
+
+Near-term timeline:
+
+```text
+1-3 days:
+  possible small innovation signal if chain5 trajectory repair passes and
+  ablation proves the gain is recurrent-core causal.
+
+1-3 weeks:
+  possible paper-worthy internal result if the same mechanism generalizes to
+  broader reasoning families and multi-bundle gates.
+
+1-3 months:
+  possible public benchmark relevance if QTRM-preinit improves Qwen3.5-2B on
+  GSM8K/MATH/BBH-style tasks with language preserved.
+
+unknown:
+  2B/3B beating Qwen3.6-27B. This remains a moonshot, not a current evidence-
+  backed promise.
+```
+
+Working rule:
+
+```text
+Do not define "innovation" as adding another paper idea. Define it as verified
+causal recursive reasoning improvement through the canonical LM path.
+```

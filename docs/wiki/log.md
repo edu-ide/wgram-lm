@@ -29111,3 +29111,141 @@ trajectory itself:
 The supervision must still feed the canonical LM-logit path. A side solver or
 renderer would not count.
 ```
+
+## 2026-05-19 - HRM-Text Data IO Added As Data Prior
+
+Question:
+
+```text
+Should sapientinc/data_io be referenced for QTRM?
+```
+
+Answer:
+
+```text
+Yes, but as a data-pipeline prior rather than a full immediate dependency.
+```
+
+Source:
+
+```text
+repo:
+  https://github.com/sapientinc/data_io
+
+local clone:
+  references/official/data_io
+
+local commit:
+  4f9bc38
+```
+
+Relevant mechanism:
+
+```text
+HRM-Text Data IO converts datasets into:
+
+  condition
+  instruction
+  response
+
+and tokenizes them while preserving:
+
+  inst_start / inst_len
+  resp_start / resp_len
+```
+
+It then builds sampled training epochs through `sample_tokenized.py` and
+`prefix_config.yaml`, using prefix-based caps and repeats. This is directly
+relevant to QTRM because our language healing should know exactly which tokens
+are prompt/prefix and which tokens are response targets.
+
+Decision:
+
+```text
+Import the Data IO discipline:
+  instruction/response schema
+  response-boundary-aware CE/KL
+  prefix/task stratified sampling
+  coverage report before scaling
+
+Do not import the whole cleaning pipeline into the fast loop:
+  full cleaning requires about 512 GiB RAM
+  Qwen-preinit should keep the Qwen tokenizer
+  use cleaned data or a small compatible subset first
+```
+
+## 2026-05-19 - Innovation Timeline And Evidence Bar
+
+Question:
+
+```text
+When should this project expect a real QTRM innovation?
+```
+
+Current answer:
+
+```text
+Not today as a Qwen3.6-27B-beating public model. The current project is still
+in the first raw-intelligence proof stage. The useful progress is that the
+failure mode is no longer vague: bundle2 chain5 shows that both the Qwen base
+path and QTRM core often copy the start digit instead of executing the five-step
+state transition.
+```
+
+Current live experiment:
+
+```text
+script:
+  scripts/420_run_qwen35_preinit_chain5_state_repair_bundle2.sh
+
+DGX path:
+  local_eval/qwen35_preinit_chain5_state_repair_bundle2_aggr_s80_20260519
+
+purpose:
+  test whether chain5 intermediate-state trajectory supervision can break the
+  start-digit copy prior while preserving the normal LM-logit path.
+```
+
+Evidence levels:
+
+```text
+Level 0 - Diagnostic progress:
+  A failure is localized to a specific mechanism.
+  Current status: achieved for bundle2 chain5 copy-prior failure.
+
+Level 1 - Small innovation signal:
+  Multi-seed synthetic gate passes with every family non-negative, language
+  preserved, and destructive carry/core ablation removes the gain.
+  Expected time if the current path works: 1-3 days.
+
+Level 2 - Paper-worthy internal result:
+  The recurrent core improves several independent reasoning families, not only
+  checksum/chain/select, and survives multi-bundle evaluation.
+  Expected time if Level 1 repeats: 1-3 weeks.
+
+Level 3 - Public benchmark relevance:
+  QTRM-preinit improves Qwen3.5-2B on GSM8K/MATH/BBH-style public tasks without
+  hiding behind side solvers, RAG, or verifier-only paths.
+  Expected time after Level 2: 1-3 months.
+
+Level 4 - 2B/3B beats Qwen3.6-27B:
+  This is the original moonshot. It is not currently evidenced. It requires
+  architecture, data, curriculum, and benchmark automation to all work.
+  Expected time: unknown; do not promise.
+```
+
+Decision:
+
+```text
+Do not call the project innovative because it imported HRM-Text, Data IO, TRM,
+or Qwen initialization. Innovation begins only when the recursive QTRM core
+causally improves held-out reasoning through normal LM logits and the gain
+vanishes under core/carry/state ablations.
+
+The immediate route is:
+  1. repair chain5 trajectory learning;
+  2. pass bundle2 with non-negative family gains;
+  3. repeat on at least two held-out seed bundles;
+  4. run destructive ablations;
+  5. only then scale language/data using HRM-Text Data IO discipline.
+```

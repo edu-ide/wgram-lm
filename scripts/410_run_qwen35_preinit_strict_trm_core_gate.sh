@@ -55,6 +55,8 @@ fi
   --eval-cases "${EVAL_CASES:-512}" \
   --eval-seed-offsets "${EVAL_SEED_OFFSETS:-10000}" \
   --case-mode "${CASE_MODE:-hard_v1}" \
+  --train-case-mode "${TRAIN_CASE_MODE:-}" \
+  --eval-case-mode "${EVAL_CASE_MODE:-}" \
   --acceptance-metric "${ACCEPTANCE_METRIC:-label_choice}" \
   --lr "${LR:-2.0e-4}" \
   --qwen-lr "${QWEN_LR:-5.0e-5}" \
@@ -89,6 +91,7 @@ fi
   --checksum-latent-answer-lr "${CHECKSUM_LATENT_ANSWER_LR:-1.0e-3}" \
   --checksum-latent-answer-weight-decay "${CHECKSUM_LATENT_ANSWER_WEIGHT_DECAY:-0.01}" \
   --checksum-trajectory-weight "${CHECKSUM_TRAJECTORY_WEIGHT:-0.0}" \
+  --chain5-trajectory-weight "${CHAIN5_TRAJECTORY_WEIGHT:-0.0}" \
   --trajectory-advantage-weight "${TRAJECTORY_ADVANTAGE_WEIGHT:-0.0}" \
   --trajectory-advantage-margin "${TRAJECTORY_ADVANTAGE_MARGIN:-0.0}" \
   --trajectory-monotonic-weight "${TRAJECTORY_MONOTONIC_WEIGHT:-0.0}" \

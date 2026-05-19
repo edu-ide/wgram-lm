@@ -180,6 +180,9 @@ def build_synthetic_cases(
 
 
 _CHECKSUM4_RE = re.compile(r"a=(\d+), b=(\d+), c=(\d+), d=(\d+)")
+_CHAIN5_RE = re.compile(
+    r"Start (\d+); add (\d+); multiply by (\d+); subtract (\d+); add (\d+)"
+)
 
 
 def checksum4_counterfactual_cases(
@@ -225,6 +228,22 @@ def checksum4_residue_targets(case: SyntheticCase) -> list[int]:
         (a + 2 * b + 3 * c) % 10,
         (a + 2 * b + 3 * c + 4 * d) % 10,
     ]
+
+
+def chain5_state_targets(case: SyntheticCase) -> list[int]:
+    if case.family != "chain5":
+        return []
+    match = _CHAIN5_RE.search(case.prompt)
+    if match is None:
+        return []
+    start, add_a, mul, sub, add_b = (
+        int(match.group(index)) for index in range(1, 6)
+    )
+    after_add = (start + add_a) % 10
+    after_mul = (after_add * mul) % 10
+    after_sub = (after_mul - sub) % 10
+    final = (after_sub + add_b) % 10
+    return [after_add, after_mul, after_sub, final]
 
 
 BASIC_LANGUAGE_PROBE_PROMPTS = (
@@ -751,6 +770,7 @@ def train_core(
     checksum_counterfactual_losses = []
     checksum_latent_answer_losses = []
     checksum_trajectory_losses = []
+    chain5_trajectory_losses = []
     trajectory_advantage_losses = []
     trajectory_monotonic_losses = []
     core_preservation_losses = []
@@ -972,6 +992,41 @@ def train_core(
                 )
                 loss = loss + float(args.checksum_trajectory_weight) * trajectory_loss
                 checksum_trajectory_losses.append(float(trajectory_loss.detach().cpu()))
+        if float(args.chain5_trajectory_weight) > 0.0:
+            step_states = getattr(core_outputs, "qtrm_core_step_states", None)
+            if step_states is None:
+                raise RuntimeError("missing qtrm_core_step_states for chain5 trajectory loss")
+            state_rows: list[list[int]] = []
+            state_indices: list[int] = []
+            for item_index, case in enumerate(chunk):
+                states = chain5_state_targets(case)
+                if states:
+                    state_indices.append(item_index)
+                    state_rows.append(states)
+            if state_rows:
+                usable_steps = min(step_states.shape[1], len(state_rows[0]))
+                selected_states = step_states[state_indices, :usable_steps]
+                selected_last = _last_token_step_states(
+                    selected_states,
+                    attention_mask[state_indices] if attention_mask is not None else None,
+                )
+                selected_last = model.core_out_norm(selected_last).to(dtype=core_logits.dtype)
+                trajectory_logits = model._lm_head()(selected_last)
+                trajectory_choice_logits = trajectory_logits.float().index_select(
+                    dim=-1,
+                    index=label_token_ids,
+                )
+                state_targets = torch.tensor(
+                    [row[:usable_steps] for row in state_rows],
+                    device=device,
+                    dtype=torch.long,
+                )
+                chain5_loss = F.cross_entropy(
+                    trajectory_choice_logits.reshape(-1, trajectory_choice_logits.shape[-1]),
+                    state_targets.reshape(-1),
+                )
+                loss = loss + float(args.chain5_trajectory_weight) * chain5_loss
+                chain5_trajectory_losses.append(float(chain5_loss.detach().cpu()))
         if (
             float(args.trajectory_advantage_weight) > 0.0
             or float(args.trajectory_monotonic_weight) > 0.0
@@ -1190,6 +1245,11 @@ def train_core(
         "mean_checksum_trajectory_loss": (
             sum(checksum_trajectory_losses) / len(checksum_trajectory_losses)
             if checksum_trajectory_losses
+            else None
+        ),
+        "mean_chain5_trajectory_loss": (
+            sum(chain5_trajectory_losses) / len(chain5_trajectory_losses)
+            if chain5_trajectory_losses
             else None
         ),
         "mean_trajectory_advantage_loss": (
@@ -1492,6 +1552,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
             args.checksum_latent_answer_weight_decay
         ),
         "checksum_trajectory_weight": float(args.checksum_trajectory_weight),
+        "chain5_trajectory_weight": float(args.chain5_trajectory_weight),
         "trajectory_advantage_weight": float(args.trajectory_advantage_weight),
         "trajectory_advantage_margin": float(args.trajectory_advantage_margin),
         "trajectory_monotonic_weight": float(args.trajectory_monotonic_weight),
@@ -1670,6 +1731,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--checksum-latent-answer-lr", type=float, default=1.0e-3)
     parser.add_argument("--checksum-latent-answer-weight-decay", type=float, default=0.01)
     parser.add_argument("--checksum-trajectory-weight", type=float, default=0.0)
+    parser.add_argument("--chain5-trajectory-weight", type=float, default=0.0)
     parser.add_argument("--trajectory-advantage-weight", type=float, default=0.0)
     parser.add_argument("--trajectory-advantage-margin", type=float, default=0.0)
     parser.add_argument("--trajectory-monotonic-weight", type=float, default=0.0)
