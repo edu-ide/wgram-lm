@@ -43,6 +43,7 @@ fi
   --batch-size "${BATCH_SIZE:-2}" \
   --train-cases "${TRAIN_CASES:-1024}" \
   --eval-cases "${EVAL_CASES:-512}" \
+  --eval-seed-offsets "${EVAL_SEED_OFFSETS:-10000}" \
   --case-mode "${CASE_MODE:-hard_v1}" \
   --acceptance-metric "${ACCEPTANCE_METRIC:-label_choice}" \
   --lr "${LR:-2.0e-4}" \

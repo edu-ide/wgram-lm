@@ -28568,3 +28568,87 @@ The result is a real causal training improvement, not a public benchmark
 breakthrough. Next promotion step: repeat with more seeds and add a small
 generation-quality probe before any broader claim.
 ```
+
+## 2026-05-19 - HRM-Text Healing Multi-Seed Check
+
+Question:
+
+```text
+Was the HRM-Text-style healing result a real robust improvement or a
+single-eval-seed success?
+```
+
+Implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --eval-seed-offsets 10000,10001,10002
+
+scripts/414_run_qwen35_preinit_hrm_text_healing_multiseed.sh
+```
+
+Single-seed repeats:
+
+```text
+seed 20260519:
+  path: local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_20260519
+  accepted: true
+  eval_cases: 512
+  gain: 0.03125
+  language_top1: 0.96875
+  min_family_gain: +0.0058479532
+
+seed 20260520:
+  path: local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_seed20260520_20260519
+  accepted: false
+  eval_cases: 512
+  gain: 0.013671875
+  language_top1: 0.96875
+  min_family_gain: +0.0058479532
+
+seed 20260521:
+  path: local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_seed20260521_20260519
+  accepted: false
+  eval_cases: 512
+  gain: 0.001953125
+  language_top1: 0.96875
+  min_family_gain: -0.0175438596
+```
+
+Multi-eval-seed selection:
+
+```text
+path:
+  local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_multiseed_s60_20260519
+
+eval_seed_offsets:
+  10000,10001,10002
+
+eval_cases:
+  576 total = 192 x 3 seeds
+
+accepted: false
+gain: 0.0190972222
+language_top1: 0.96875
+min_family_gain: +0.0104166667
+min_family_core_accuracy: 0.0989583333
+
+repair attempt:
+  local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_multiseed_adv10_s80_20260519
+  accepted: false
+  gain: 0.0190972222
+```
+
+Interpretation:
+
+```text
+The single-seed HRM-Text healing result is useful but not robust enough to call
+an innovation claim. The stronger multi-seed gate nearly passes: all family
+gains are positive and language is preserved, but aggregate gain misses the
+0.02 threshold by about one correct case out of 576.
+
+This changes the bottleneck from "language healing destroys the core" to
+"multi-seed reasoning selection is still slightly below threshold." Next work
+should use multi-eval-seed selection as the default gate and improve the
+recurrent objective, not lower the threshold.
+```

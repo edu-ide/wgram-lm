@@ -31,6 +31,11 @@ def parse_int_list(value: str) -> tuple[int, ...] | None:
     return tuple(int(part.strip()) for part in text.split(",") if part.strip())
 
 
+def parse_int_list_or_default(value: str, default: tuple[int, ...]) -> tuple[int, ...]:
+    parsed = parse_int_list(value)
+    return default if parsed is None else parsed
+
+
 def parse_float_map(value: str) -> dict[str, float]:
     text = str(value).strip()
     if text == "":
@@ -1201,11 +1206,16 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         seed=int(args.seed),
         case_mode=train_case_mode,
     )
-    eval_cases = build_synthetic_cases(
-        count=int(args.eval_cases),
-        seed=int(args.seed) + 10000,
-        case_mode=eval_case_mode,
-    )
+    eval_seed_offsets = parse_int_list_or_default(str(args.eval_seed_offsets), (10000,))
+    eval_cases: list[SyntheticCase] = []
+    for offset in eval_seed_offsets:
+        eval_cases.extend(
+            build_synthetic_cases(
+                count=int(args.eval_cases),
+                seed=int(args.seed) + int(offset),
+                case_mode=eval_case_mode,
+            )
+        )
     before = evaluate_cases(model, tokenizer, eval_cases, args, label_ids)
     before_language = evaluate_language_non_regression(model, tokenizer, args)
     train_report = train_core(
@@ -1286,7 +1296,9 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "steps": int(args.steps),
         "batch_size": int(args.batch_size),
         "train_cases": int(args.train_cases),
-        "eval_cases": int(args.eval_cases),
+        "eval_cases": len(eval_cases),
+        "eval_cases_per_seed": int(args.eval_cases),
+        "eval_seed_offsets": list(eval_seed_offsets),
         "seed": int(args.seed),
         "lr": float(args.lr),
         "qwen_lr": float(args.qwen_lr),
@@ -1432,6 +1444,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--train-cases", type=int, default=256)
     parser.add_argument("--eval-cases", type=int, default=96)
+    parser.add_argument("--eval-seed-offsets", default="10000")
     parser.add_argument(
         "--case-mode",
         choices=["standard", "hard_v1", "hard_repair_v1", "mixed_v1"],

@@ -1037,3 +1037,70 @@ Do not call this Qwen3.6-27B-level capability. It is a stronger local causal
 gate result. The next requirement is multi-seed repetition and a small
 generation-quality probe.
 ```
+
+## Multi-Seed Repetition Decision
+
+Added multi-eval-seed support:
+
+```text
+--eval-seed-offsets 10000,10001,10002
+```
+
+This builds one evaluation set by concatenating equal-sized held-out synthetic
+sets from multiple deterministic seed offsets. It prevents selecting a
+checkpoint that only works on one 512-case seed.
+
+Results:
+
+```text
+single seed 20260519:
+  accepted: true
+  gain: 0.03125
+  language_top1: 0.96875
+
+single seed 20260520:
+  accepted: false
+  gain: 0.013671875
+  language_top1: 0.96875
+
+single seed 20260521:
+  accepted: false
+  gain: 0.001953125
+  language_top1: 0.96875
+```
+
+Multi-seed selection:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_multiseed_s60_20260519
+
+accepted: false
+eval_cases: 576
+eval_seed_offsets: 10000,10001,10002
+gain: 0.0190972222
+language_top1: 0.96875
+min_family_gain: +0.0104166667
+min_family_core_accuracy: 0.0989583333
+```
+
+Stronger core-advantage repair:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_multiseed_adv10_s80_20260519
+
+accepted: false
+gain: 0.0190972222
+```
+
+Decision:
+
+```text
+Do not promote the HRM-Text healing result as robust yet. It is a real
+single-seed causal gain and a multi-seed near miss, but it does not pass the
+current multi-seed threshold.
+
+Keep response-only language healing as a useful ingredient because it preserves
+language and improves the single-seed gate. The next architecture/training
+claim must pass multi-eval-seed selection before carry-off ablation is enough
+for promotion.
+```

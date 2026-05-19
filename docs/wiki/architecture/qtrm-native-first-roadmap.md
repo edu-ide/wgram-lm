@@ -207,6 +207,38 @@ disabled. This is the first clean sign that language healing and latent
 recursive gain can coexist in the Qwen3.5-preinit QTRM path.
 ```
 
+Multi-seed correction:
+
+```text
+single-seed 20260519:
+  accepted: true
+  gain: 0.03125
+
+single-seed 20260520:
+  accepted: false
+  gain: 0.013671875
+
+single-seed 20260521:
+  accepted: false
+  gain: 0.001953125
+
+multi-eval-seed 576-case gate:
+  accepted: false
+  gain: 0.0190972222
+  min_family_gain: +0.0104166667
+  language_top1: 0.96875
+```
+
+Updated claim discipline:
+
+```text
+The HRM-Text-style healing result is now a single-seed causal improvement and a
+multi-seed near miss, not a robust innovation. It is still progress: language
+healing no longer collapses the core, and all families are positive in the
+multi-seed gate. But the next promotion must pass multi-eval-seed selection
+without lowering the 0.02 threshold.
+```
+
 HRM-Text application rule:
 
 ```text
