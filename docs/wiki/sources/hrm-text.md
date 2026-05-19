@@ -284,3 +284,35 @@ Therefore, for QTRM-native near-term work, HRM-style role separation remains
 the better empirical prior. TRM-style sharing remains a research candidate, but
 must show positive destructive-ablation drop before promotion.
 ```
+
+## Multi-Seed Follow-up
+
+Date: 2026-05-19
+
+Ran three short seeds comparing the best strict-TRM recipe against the simple
+HRM-style separate H/L recipe.
+
+```text
+seed/eval_seed  strict_TRM_exact  strict_TRM_causal  HRM_exact  HRM_causal  winner
+337/9337        0.04167           false              0.06250    true        HRM
+338/9338        0.02083           false              0.05729    true        HRM
+339/9339        0.05208           true               0.04167    false       TRM
+```
+
+Aggregate:
+
+```text
+strict_TRM mean exact: 0.03819
+HRM mean exact:        0.05382
+
+strict_TRM causal_ok: 1/3
+HRM causal_ok:        2/3
+```
+
+Conclusion:
+
+```text
+For this QTRM-native short gate, HRM-style separate H/L is the better empirical
+default. The result is not a general proof against TRM; it is a local
+architecture decision for the current training regime.
+```

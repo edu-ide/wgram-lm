@@ -27630,3 +27630,67 @@ Next action:
   Improve TRM only through targeted changes that restore positive ablation drop,
   not by assuming TRM should win by name.
 ```
+
+## 2026-05-19 - TRM vs HRM Multi-Seed Short Check
+
+Question:
+
+```text
+Was the HRM-style win only a single-seed accident?
+```
+
+Compared candidates:
+
+```text
+strict TRM:
+  trm_dual_z_official_trm_l3_halt_think
+
+simple HRM:
+  trm_dual_z_hrm_separate_official_trm_think
+```
+
+DGX runs:
+
+```text
+local_eval/trm_vs_hrm_multiseed_short_337_9337_20260519
+local_eval/trm_vs_hrm_multiseed_short_338_9338_20260519
+local_eval/trm_vs_hrm_multiseed_short_339_9339_20260519
+```
+
+Results:
+
+```text
+seed/eval_seed  strict_TRM_exact  strict_TRM_causal  HRM_exact  HRM_causal  winner
+337/9337        0.04167           false              0.06250    true        HRM
+338/9338        0.02083           false              0.05729    true        HRM
+339/9339        0.05208           true               0.04167    false       TRM
+```
+
+Aggregate:
+
+```text
+strict_TRM mean exact: 0.03819
+HRM mean exact:        0.05382
+
+strict_TRM causal_ok: 1/3
+HRM causal_ok:        2/3
+```
+
+Interpretation:
+
+```text
+The HRM-style separate H/L advantage is not only a single-seed artifact in this
+short gate. It wins 2 of 3 seeds, has higher mean exact, and has more positive
+causal-ablation checks.
+
+This still does not prove HRM is globally superior to TRM. It means the current
+QTRM-native small-data/short-training regime benefits from explicit role
+separation between low-state refinement and high-state integration.
+
+Current empirical default:
+  HRM-style separate H/L core
+
+Research branch:
+  shared TRM core, but only if a new objective or update rule restores stable
+  destructive-ablation drop across seeds.
+```
