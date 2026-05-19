@@ -345,7 +345,7 @@ def evaluate(
     all_state_acc = []
     all_answer_acc = []
     family_state_acc = {}
-    family_answer_acc = []
+    family_answer_acc = {}
     
     for batch in loader:
         input_ids = batch["input_ids"].to(device)
