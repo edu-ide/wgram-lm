@@ -129,7 +129,8 @@ class OperationConditionedTransition(nn.Module):
             op_vec = (op_soft @ self.op_embed.weight.to(dtype=z_t.dtype))
         else:
             # Hard operation lookup
-            op_vec = self.op_embed(op_ids.to(torch.long))
+            op_ids_safe = op_ids.to(torch.long).clamp(min=0, max=self.n_operations - 1)
+            op_vec = self.op_embed(op_ids_safe)
         
         # Concatenate current state with operation
         combined = torch.cat([z_t, op_vec], dim=-1)
