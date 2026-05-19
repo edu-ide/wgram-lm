@@ -28490,3 +28490,81 @@ causal path:
 Do not claim a Qwen3.6-27B-level or HRM-Text-level breakthrough until public
 benchmarks show it.
 ```
+
+## 2026-05-19 - HRM-Text-Style Language Healing Gate
+
+Question:
+
+```text
+Can an HRM-Text-inspired response-only clean language objective improve or
+preserve language behavior without erasing the carry-dependent QTRM reasoning
+gain?
+```
+
+Implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --language-healing-weight
+  --language-healing-kl-weight
+  --language-healing-batch-size
+
+scripts/413_run_qwen35_preinit_hrm_text_healing.sh
+```
+
+This is not a full HRM-Text reproduction. It is the part that matches the
+canonical QTRM path: prefix prompt tokens condition the model, only response
+tokens receive language CE, and all losses flow through normal Qwen -> QTRM
+core -> Qwen LM-head logits.
+
+DGX run:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_20260519
+
+init:
+  local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_s100_20260519/last_core.pt
+
+steps: 40
+language_probe_set: extended
+language_healing_weight: 0.20
+language_healing_kl_weight: 0.05
+accepted: true
+gain: 0.03125
+language_top1_agreement: 0.96875
+mean_language_healing_loss: 2.1024195373
+mean_language_healing_kl_loss: 0.0009172424
+
+family gains:
+  chain5:      +0.0584795322
+  checksum4:  +0.0058479532
+  select_pair:+0.0294117647
+```
+
+Carry-off ablation:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_carryoff_20260519
+
+accepted: false
+gain: 0.0
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      0.0
+  checksum4:   0.0
+  select_pair: 0.0
+```
+
+Interpretation:
+
+```text
+This is the strongest Qwen3.5-preinit QTRM result so far. Compared with the
+previous best extended-language evaluation, reasoning gain improves from
+0.021484375 to 0.03125 while preserving 31/32 extended language top-1
+agreement. Turning off trajectory carry collapses the gain to 0.0.
+
+The result is a real causal training improvement, not a public benchmark
+breakthrough. Next promotion step: repeat with more seeds and add a small
+generation-quality probe before any broader claim.
+```

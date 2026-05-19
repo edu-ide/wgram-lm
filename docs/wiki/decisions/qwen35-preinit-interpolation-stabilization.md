@@ -968,3 +968,72 @@ PrefixLM-style clean text, but the promotion gate must remain:
 HRM-Text is a training prior here, not proof that innovation will arrive
 quickly by copying its recipe.
 ```
+
+## HRM-Text-Style Healing Follow-Up
+
+Added response-only clean language healing:
+
+```text
+--language-healing-weight
+--language-healing-kl-weight
+--language-healing-batch-size
+```
+
+The objective is deliberately narrow:
+
+```text
+prompt prefix + clean response
+-> Qwen3.5 tokenizer/backbone
+-> mandatory QTRM core
+-> Qwen3.5 LM head
+-> response-token CE/KL only
+```
+
+DGX run:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_20260519
+
+accepted: true
+gain: 0.03125
+language_probe_set: extended
+language_top1_agreement: 0.96875
+num_prompts: 32
+checksum4 gain: +0.0058479532
+min_family_gain: +0.0058479532
+min_family_core_accuracy: 0.1111111111
+
+family gains:
+  chain5:      +0.0584795322
+  checksum4:  +0.0058479532
+  select_pair:+0.0294117647
+```
+
+Carry-off ablation:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_carryoff_20260519
+
+accepted: false
+gain: 0.0
+language_probe_set: extended
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      0.0
+  checksum4:   0.0
+  select_pair: 0.0
+```
+
+Decision:
+
+```text
+Promote response-only language healing as the current canonical HRM-Text
+training import. It improves the 512-case carry-dependent gain from 0.021484375
+to 0.03125 while preserving extended language non-regression, and the gain
+disappears under carry-off ablation.
+
+Do not call this Qwen3.6-27B-level capability. It is a stronger local causal
+gate result. The next requirement is multi-seed repetition and a small
+generation-quality probe.
+```

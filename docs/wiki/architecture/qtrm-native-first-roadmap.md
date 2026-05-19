@@ -179,6 +179,34 @@ language collapse. It is converting this small synthetic causal signal into
 broader language-reasoning improvement.
 ```
 
+HRM-Text-style healing result:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_20260519
+
+response-only clean language healing
+accepted: true
+gain: 0.03125
+language_top1_agreement: 0.96875
+checksum4 gain: +0.0058479532
+
+carry-off ablation:
+  local_eval/qwen35_preinit_trajcarry_mean_hrmtext_heal_s40_carryoff_20260519
+  accepted: false
+  gain: 0.0
+```
+
+Updated best claim:
+
+```text
+The current best local result is an HRM-Text-inspired training improvement, not
+a new architecture claim: response-only clean language healing raises the
+512-case QTRM gain from 0.021484375 to 0.03125, preserves extended language
+top-1 agreement at 0.96875, and the gain disappears when trajectory carry is
+disabled. This is the first clean sign that language healing and latent
+recursive gain can coexist in the Qwen3.5-preinit QTRM path.
+```
+
 HRM-Text application rule:
 
 ```text

@@ -262,12 +262,84 @@ EXTENDED_LANGUAGE_PROBE_PROMPTS = BASIC_LANGUAGE_PROBE_PROMPTS + (
 )
 
 
+LANGUAGE_HEALING_EXAMPLES = (
+    (
+        "User: Explain why evidence should be checked.\nAssistant: ",
+        "Evidence should be checked because weak or outdated evidence can lead to wrong conclusions.",
+    ),
+    (
+        "User: 양자 컴퓨팅이란 무엇인가요?\nAssistant: ",
+        "양자 컴퓨팅은 양자 상태를 이용해 특정 계산을 더 효율적으로 처리하려는 컴퓨팅 방식입니다.",
+    ),
+    (
+        "User: Write one clear sentence about careful reasoning.\nAssistant: ",
+        "Careful reasoning compares evidence, alternatives, and uncertainty before reaching a conclusion.",
+    ),
+    (
+        "User: What should a model do when it is uncertain?\nAssistant: ",
+        "It should say what is uncertain, avoid guessing, and seek better evidence when possible.",
+    ),
+    (
+        "User: Translate to Korean: Careful reasoning reduces mistakes.\nAssistant: ",
+        "신중한 추론은 실수를 줄입니다.",
+    ),
+    (
+        "User: Translate to English: 신중한 판단은 실수를 줄입니다.\nAssistant: ",
+        "Careful judgment reduces mistakes.",
+    ),
+    (
+        "User: 불확실할 때 좋은 답변은 어떻게 해야 하나요?\nAssistant: ",
+        "좋은 답변은 불확실한 부분을 밝히고, 근거를 확인하며, 단정적인 추측을 피해야 합니다.",
+    ),
+    (
+        "User: What is the difference between correlation and causation?\nAssistant: ",
+        "Correlation means two things vary together; causation means one thing directly helps produce the other.",
+    ),
+    (
+        "User: 인과관계와 상관관계의 차이를 짧게 설명해 주세요.\nAssistant: ",
+        "상관관계는 함께 변한다는 뜻이고, 인과관계는 한쪽이 다른 쪽의 원인이 된다는 뜻입니다.",
+    ),
+    (
+        "User: What should happen if two sources conflict?\nAssistant: ",
+        "The answer should compare source quality, dates, methods, and direct evidence before deciding.",
+    ),
+    (
+        "User: 두 자료가 서로 모순될 때 먼저 확인할 것은 무엇인가요?\nAssistant: ",
+        "먼저 출처의 신뢰도, 작성 시점, 근거의 직접성, 측정 방법을 확인해야 합니다.",
+    ),
+    (
+        "User: Explain a checksum in simple terms.\nAssistant: ",
+        "A checksum is a small value used to check whether data was copied or transmitted correctly.",
+    ),
+    (
+        "User: 체크섬이 무엇인지 쉽게 설명해 주세요.\nAssistant: ",
+        "체크섬은 데이터가 중간에 바뀌었는지 확인하기 위해 계산하는 작은 확인값입니다.",
+    ),
+    (
+        "User: Give a short answer: should an AI guess when it lacks evidence?\nAssistant: ",
+        "No. It should state the uncertainty and look for reliable evidence.",
+    ),
+    (
+        "User: 근거가 없을 때 AI가 추측해야 하나요?\nAssistant: ",
+        "아니요. 근거가 부족하다고 말하고 필요한 정보를 더 찾아야 합니다.",
+    ),
+    (
+        "User: Describe a careful debugging process in one sentence.\nAssistant: ",
+        "A careful debugging process reproduces the failure, isolates the cause, changes one thing, and verifies the fix.",
+    ),
+)
+
+
 def language_probe_prompts(probe_set: str = "basic") -> list[str]:
     if str(probe_set) == "extended":
         return list(EXTENDED_LANGUAGE_PROBE_PROMPTS)
     if str(probe_set) != "basic":
         raise ValueError(f"unknown language probe set: {probe_set}")
     return list(BASIC_LANGUAGE_PROBE_PROMPTS)
+
+
+def language_healing_examples() -> list[tuple[str, str]]:
+    return list(LANGUAGE_HEALING_EXAMPLES)
 
 
 def _label_token_ids(tokenizer) -> dict[str, int]:
@@ -305,6 +377,66 @@ def _encode_prompts(tokenizer, prompts: list[str], *, max_seq_len: int, device: 
     if attention_mask is not None:
         attention_mask = attention_mask.to(device)
     return input_ids, attention_mask
+
+
+def _encode_prefix_response_examples(
+    tokenizer,
+    examples: list[tuple[str, str]],
+    *,
+    max_seq_len: int,
+    device: torch.device,
+):
+    texts = [prompt + response for prompt, response in examples]
+    encoded = tokenizer(
+        texts,
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=int(max_seq_len),
+    )
+    input_ids = encoded["input_ids"].to(device)
+    attention_mask = encoded.get("attention_mask")
+    if attention_mask is not None:
+        attention_mask = attention_mask.to(device)
+    labels = torch.full_like(input_ids, -100)
+    for row, (prompt, _response) in enumerate(examples):
+        prompt_len = len(tokenizer.encode(prompt, add_special_tokens=False))
+        row_len = (
+            int(attention_mask[row].sum().item())
+            if attention_mask is not None
+            else int(input_ids.shape[1])
+        )
+        start = min(prompt_len, row_len)
+        if start < row_len:
+            labels[row, start:row_len] = input_ids[row, start:row_len]
+    return input_ids, attention_mask, labels
+
+
+def _response_only_ce_loss(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+    shifted_logits = logits[:, :-1, :].contiguous()
+    shifted_labels = labels[:, 1:].contiguous()
+    return F.cross_entropy(
+        shifted_logits.float().view(-1, shifted_logits.shape[-1]),
+        shifted_labels.view(-1),
+        ignore_index=-100,
+    )
+
+
+def _response_only_kl_loss(
+    core_logits: torch.Tensor,
+    base_logits: torch.Tensor,
+    labels: torch.Tensor,
+) -> torch.Tensor:
+    mask = labels[:, 1:].ne(-100)
+    if not bool(mask.any().item()):
+        return core_logits.new_tensor(0.0, dtype=torch.float32)
+    core_selected = core_logits[:, :-1, :][mask]
+    base_selected = base_logits[:, :-1, :][mask]
+    return F.kl_div(
+        F.log_softmax(core_selected.float(), dim=-1),
+        F.softmax(base_selected.float(), dim=-1),
+        reduction="batchmean",
+    )
 
 
 def _last_token_logits(model, input_ids, attention_mask, *, force_core_off: bool = False):
@@ -600,6 +732,8 @@ def train_core(
     checksum_counterfactual_losses = []
     checksum_latent_answer_losses = []
     checksum_trajectory_losses = []
+    language_healing_losses = []
+    language_healing_kl_losses = []
     best: dict[str, object] | None = None
     best_state: dict[str, torch.Tensor] | None = None
     model.train()
@@ -817,6 +951,36 @@ def train_core(
                 reduction="batchmean",
             )
             loss = loss + float(args.language_kl_weight) * lang_kl
+        if float(args.language_healing_weight) > 0.0:
+            healing_examples = language_healing_examples()
+            healing_chunk = [
+                rng.choice(healing_examples)
+                for _ in range(max(1, int(args.language_healing_batch_size)))
+            ]
+            heal_input_ids, heal_attention_mask, heal_labels = _encode_prefix_response_examples(
+                tokenizer,
+                healing_chunk,
+                max_seq_len=int(args.max_seq_len),
+                device=device,
+            )
+            heal_core_outputs = model(heal_input_ids, attention_mask=heal_attention_mask)
+            heal_ce = _response_only_ce_loss(heal_core_outputs.logits, heal_labels)
+            loss = loss + float(args.language_healing_weight) * heal_ce
+            language_healing_losses.append(float(heal_ce.detach().cpu()))
+            if float(args.language_healing_kl_weight) > 0.0:
+                with torch.no_grad():
+                    heal_base_outputs = model(
+                        heal_input_ids,
+                        attention_mask=heal_attention_mask,
+                        force_core_off=True,
+                    )
+                heal_kl = _response_only_kl_loss(
+                    heal_core_outputs.logits,
+                    heal_base_outputs.logits,
+                    heal_labels,
+                )
+                loss = loss + float(args.language_healing_kl_weight) * heal_kl
+                language_healing_kl_losses.append(float(heal_kl.detach().cpu()))
         if not torch.isfinite(loss.detach()):
             raise RuntimeError(
                 f"non-finite training loss at step {step}: {float(loss.detach().cpu())}"
@@ -895,6 +1059,16 @@ def train_core(
         "mean_checksum_trajectory_loss": (
             sum(checksum_trajectory_losses) / len(checksum_trajectory_losses)
             if checksum_trajectory_losses
+            else None
+        ),
+        "mean_language_healing_loss": (
+            sum(language_healing_losses) / len(language_healing_losses)
+            if language_healing_losses
+            else None
+        ),
+        "mean_language_healing_kl_loss": (
+            sum(language_healing_kl_losses) / len(language_healing_kl_losses)
+            if language_healing_kl_losses
             else None
         ),
         "best_periodic_eval": best,
@@ -1123,6 +1297,10 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "language_kl_weight": float(args.language_kl_weight),
         "language_kl_batch_size": int(args.language_kl_batch_size),
         "language_probe_set": str(args.language_probe_set),
+        "language_healing_weight": float(args.language_healing_weight),
+        "language_healing_kl_weight": float(args.language_healing_kl_weight),
+        "language_healing_batch_size": int(args.language_healing_batch_size),
+        "language_healing_examples": len(language_healing_examples()),
         "selection_language_weight": float(args.selection_language_weight),
         "selection_min_language_top1": float(args.selection_min_language_top1),
         "core_advantage_weight": float(args.core_advantage_weight),
@@ -1282,6 +1460,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=["basic", "extended"],
         default="basic",
     )
+    parser.add_argument("--language-healing-weight", type=float, default=0.0)
+    parser.add_argument("--language-healing-kl-weight", type=float, default=0.0)
+    parser.add_argument("--language-healing-batch-size", type=int, default=2)
     parser.add_argument("--selection-language-weight", type=float, default=0.0)
     parser.add_argument("--selection-min-language-top1", type=float, default=0.0)
     parser.add_argument("--core-advantage-weight", type=float, default=0.0)

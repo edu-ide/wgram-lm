@@ -55,6 +55,9 @@ fi
   --language-kl-weight "${LANGUAGE_KL_WEIGHT:-0.05}" \
   --language-kl-batch-size "${LANGUAGE_KL_BATCH_SIZE:-2}" \
   --language-probe-set "${LANGUAGE_PROBE_SET:-basic}" \
+  --language-healing-weight "${LANGUAGE_HEALING_WEIGHT:-0.0}" \
+  --language-healing-kl-weight "${LANGUAGE_HEALING_KL_WEIGHT:-0.0}" \
+  --language-healing-batch-size "${LANGUAGE_HEALING_BATCH_SIZE:-2}" \
   --selection-language-weight "${SELECTION_LANGUAGE_WEIGHT:-0.0}" \
   --selection-min-language-top1 "${SELECTION_MIN_LANGUAGE_TOP1:-0.0}" \
   --core-advantage-weight "${CORE_ADVANTAGE_WEIGHT:-0.0}" \
