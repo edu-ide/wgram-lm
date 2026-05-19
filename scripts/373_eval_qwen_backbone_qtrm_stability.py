@@ -180,7 +180,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-seq-len", type=int, default=80)
     parser.add_argument(
         "--core-impl",
-        choices=["qwen_layer_wrapped", "ouro_shared_qwen_layer", "ouro_weight_wrapped"],
+        choices=[
+            "qwen_layer_wrapped",
+            "qwen_shared_layer_wrapped",
+            "ouro_shared_qwen_layer",
+            "ouro_weight_wrapped",
+        ],
         default="qwen_layer_wrapped",
     )
     parser.add_argument("--qwen-core-layer-indices", default="3")

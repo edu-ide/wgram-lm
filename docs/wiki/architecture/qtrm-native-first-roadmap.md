@@ -16865,3 +16865,82 @@ All candidates must use:
 Do not jump from HRM-Text to a capability claim. HRM-Text's strong numbers came
 from real text pretraining; QTRM still has to prove the recurrent core first,
 then run language healing/pretraining without erasing that causal gain.
+
+## Qwen3.5 Pretrained-Init Strict TRM Gate 2026-05-19
+
+Canonical QTRM-native pretrained-init path:
+
+```text
+prompt/chat text
+-> Qwen3.5 tokenizer + token embeddings
+-> Qwen3.5 original backbone
+-> mandatory shared z_H/z_L TRM-style recurrent core
+-> Qwen3.5 LM head
+-> AR text/logits
+```
+
+Implementation status:
+
+```text
+core_impl:
+  qwen_shared_layer_wrapped
+
+meaning:
+  reuse a selected original Qwen3.5 layer as the shared recurrent update block
+  keep the core mandatory
+  train the QTRM core first
+  optionally unfreeze the matching Qwen layer with a lower LR for healing
+```
+
+DGX short-gate results:
+
+```text
+frozen Qwen, core-only S80:
+  accepted: false
+  gain: +0.0039
+  min_family_core_accuracy: 0.0465
+  language_top1_agreement: 1.0
+
+partial layer-3 unfreeze S80:
+  accepted: false
+  gain: +0.0234
+  accepted_reasoning_gain: true
+  min_family_core_accuracy: 0.0465
+  language_top1_agreement: 1.0
+
+checksum repair, layer-3 still partial, S80:
+  accepted: false
+  gain: +0.0156
+  accepted_family_core_accuracy: true
+  min_family_core_accuracy: 0.1395
+  language_top1_agreement: 1.0
+```
+
+Interpretation:
+
+```text
+The pretrained-init path runs and preserves the Qwen language surface on the
+small gate. Partial unfreeze of the Qwen layer makes the recurrent core produce
+a measurable reasoning gain, but the gain and family-floor criteria have not
+yet been satisfied at the same checkpoint.
+
+This is not a Qwen3.6-27B-beating model. It is the first executable
+Qwen3.5-pretrained, QTRM-native, mandatory-core gate with non-regressed
+language logits.
+```
+
+Next action:
+
+```text
+Do not change the whole architecture yet.
+Target the measured bottleneck:
+  core gain and family floor are currently separable.
+
+Next candidate should make the core route family-balanced without allowing the
+base Qwen path to absorb the same improvement:
+  1. keep Qwen layer-3 partial healing at low LR
+  2. add balanced family/DRO selection on the same acceptance metric
+  3. keep language KL/top1 non-regression
+  4. promote only when gain >= 0.02 and min_family_core_accuracy >= 0.08 on the
+     same checkpoint
+```

@@ -12,6 +12,7 @@ OUT_DIR="${OUT_DIR:-local_eval/qwen35_integrated_language_knowledge_healing_exte
 DEVICE="${DEVICE:-cuda}"
 DTYPE="${DTYPE:-bfloat16}"
 CHECKPOINT_LOAD_MODE="${CHECKPOINT_LOAD_MODE:-strict_shapes}"
+CORE_IMPL="${CORE_IMPL:-qwen_shared_layer_wrapped}"
 CORE_INSERTION_MODE="${CORE_INSERTION_MODE:-mid_layer_suffix}"
 CORE_INSERT_AFTER_LAYER="${CORE_INSERT_AFTER_LAYER:-11}"
 QWEN_CORE_LAYER_INDICES="${QWEN_CORE_LAYER_INDICES:-3}"
@@ -136,7 +137,7 @@ PYTHONPATH="${PYTHONPATH:-src}" "${PYTHON_BIN}" scripts/394_train_qwen35_integra
   --eval-text-rows "${EVAL_TEXT_ROWS}" \
   --max-mcq-rows "${MAX_MCQ_ROWS}" \
   --eval-mcq-rows "${EVAL_MCQ_ROWS}" \
-  --core-impl qwen_layer_wrapped \
+  --core-impl "${CORE_IMPL}" \
   --core-insertion-mode "${CORE_INSERTION_MODE}" \
   --core-insert-after-layer "${CORE_INSERT_AFTER_LAYER}" \
   --qwen-core-layer-indices "${QWEN_CORE_LAYER_INDICES}" \

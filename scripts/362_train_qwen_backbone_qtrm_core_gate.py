@@ -737,6 +737,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     core_layer_indices = list(getattr(model.core, "layer_indices", []))
     qwen_core_layers = core_layer_indices if str(args.core_impl) in {
         "qwen_layer_wrapped",
+        "qwen_shared_layer_wrapped",
         "ouro_shared_qwen_layer",
     } else []
     ouro_core_layers = core_layer_indices if str(args.core_impl) == "ouro_weight_wrapped" else []
@@ -838,7 +839,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-seq-len", type=int, default=96)
     parser.add_argument(
         "--core-impl",
-        choices=["qwen_layer_wrapped", "ouro_shared_qwen_layer", "ouro_weight_wrapped"],
+        choices=[
+            "qwen_layer_wrapped",
+            "qwen_shared_layer_wrapped",
+            "ouro_shared_qwen_layer",
+            "ouro_weight_wrapped",
+        ],
         default="qwen_layer_wrapped",
     )
     parser.add_argument("--qwen-core-layer-indices", default="3")

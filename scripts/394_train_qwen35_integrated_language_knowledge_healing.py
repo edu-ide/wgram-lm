@@ -1442,7 +1442,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-text-rows", type=int, default=128)
     parser.add_argument("--max-mcq-rows", type=int, default=2000)
     parser.add_argument("--eval-mcq-rows", type=int, default=128)
-    parser.add_argument("--core-impl", choices=["qwen_layer_wrapped"], default="qwen_layer_wrapped")
+    parser.add_argument(
+        "--core-impl",
+        choices=["qwen_layer_wrapped", "qwen_shared_layer_wrapped"],
+        default="qwen_layer_wrapped",
+    )
     parser.add_argument(
         "--core-insertion-mode",
         choices=["final_residual", "mid_layer_suffix"],

@@ -383,7 +383,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-cases", type=int, default=0)
     parser.add_argument("--benchmark-id", default="mmlu_pro")
     parser.add_argument("--benchmark-name", default="MMLU-Pro")
-    parser.add_argument("--core-impl", choices=["qwen_layer_wrapped"], default="qwen_layer_wrapped")
+    parser.add_argument(
+        "--core-impl",
+        choices=["qwen_layer_wrapped", "qwen_shared_layer_wrapped"],
+        default="qwen_layer_wrapped",
+    )
     parser.add_argument(
         "--core-insertion-mode",
         choices=["final_residual", "mid_layer_suffix"],

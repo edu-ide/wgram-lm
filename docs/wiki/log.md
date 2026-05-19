@@ -27801,3 +27801,62 @@ Next action:
   or explicitly accepted as a weak baseline. Candidate fixes should target
   state-reset/op-zero robustness, not another architecture shopping round.
 ```
+
+## 2026-05-19 - Qwen3.5 Pretrained-Init Mandatory Core Smoke
+
+Question:
+
+```text
+Can the canonical QTRM-native path run on Qwen3.5 pretrained weights without
+falling back to donor sidecars?
+```
+
+Implementation:
+
+```text
+added core_impl:
+  qwen_shared_layer_wrapped
+
+canonical path:
+  prompt tokens -> Qwen3.5 backbone -> mandatory shared TRM core -> Qwen LM head
+```
+
+DGX smoke/gate outputs:
+
+```text
+local_eval/qwen35_preinit_strict_trm_core_smoke_20260519
+local_eval/qwen35_preinit_strict_trm_core_gate_s80_20260519
+local_eval/qwen35_preinit_strict_trm_partial_l3_gate_s80_20260519
+local_eval/qwen35_preinit_strict_trm_partial_l3_checksum_repair_s80_20260519
+```
+
+Result summary:
+
+```text
+frozen core-only S80:
+  gain: +0.0039
+  min_family_core_accuracy: 0.0465
+  language_top1_agreement: 1.0
+  decision: rejected
+
+partial Qwen layer-3 S80:
+  gain: +0.0234
+  min_family_core_accuracy: 0.0465
+  language_top1_agreement: 1.0
+  decision: rejected, but reasoning gain criterion passed
+
+checksum-weighted partial repair S80:
+  gain: +0.0156
+  min_family_core_accuracy: 0.1395
+  language_top1_agreement: 1.0
+  decision: rejected, but family-floor criterion passed
+```
+
+Interpretation:
+
+```text
+The Qwen3.5 pretrained-init route is operational and does not immediately break
+language logits. The remaining bottleneck is not basic loading or language
+collapse; it is making the mandatory core improve average reasoning gain and
+family-floor robustness at the same checkpoint.
+```

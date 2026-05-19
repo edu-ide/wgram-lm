@@ -229,13 +229,22 @@ class QwenLayerWrappedStack(nn.Module):
             pass
         return _fallback_causal_mask(hidden_states, attention_mask)
 
-    def _linear_attention_mask(self, attention_mask: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+    def _linear_attention_mask(
+        self,
+        attention_mask: Optional[torch.Tensor],
+        cache_position: torch.Tensor,
+    ) -> Optional[torch.Tensor]:
         updater = getattr(self.text_model, "_update_linear_attn_mask", None)
         if updater is None:
             return attention_mask
         try:
-            return updater(attention_mask, None)
-        except TypeError:
+            return updater(attention_mask, cache_position)
+        except (AttributeError, TypeError):
+            try:
+                return updater(attention_mask, None)
+            except TypeError:
+                return updater(attention_mask)
+        except IndexError:
             return updater(attention_mask)
 
     def forward(
@@ -248,7 +257,7 @@ class QwenLayerWrappedStack(nn.Module):
         hidden_states = x.to(dtype=layer_dtype)
         position_embeddings, text_position_ids = self._position_context(hidden_states)
         causal_mask = self._causal_mask(hidden_states, attention_mask, text_position_ids)
-        linear_mask = self._linear_attention_mask(attention_mask)
+        linear_mask = self._linear_attention_mask(attention_mask, text_position_ids[0])
         for layer, layer_type in zip(self.layers, self.layer_types):
             if str(layer_type) == "linear_attention" and not self.force_causal:
                 layer_mask = linear_mask
@@ -724,12 +733,19 @@ class QwenBackboneQTRM(nn.Module):
         self.core_in_norm = RMSNorm(hidden_size)
         if self.core_impl == "qtrm_block_stack":
             self.core = QTRMRecursiveCore(self.core_cfg)
-        elif self.core_impl in {"qwen_layer_wrapped", "ouro_shared_qwen_layer"}:
+        elif self.core_impl in {
+            "qwen_layer_wrapped",
+            "qwen_shared_layer_wrapped",
+            "ouro_shared_qwen_layer",
+        }:
             self.core = QwenLayerWrappedRecursiveCore(
                 self.core_cfg,
                 self.qwen,
                 layer_indices=qwen_core_layer_indices,
-                shared_stack=self.core_impl == "ouro_shared_qwen_layer",
+                shared_stack=self.core_impl in {
+                    "qwen_shared_layer_wrapped",
+                    "ouro_shared_qwen_layer",
+                },
                 clone_layers=bool(clone_qwen_core_layers),
                 trainable_clones=bool(trainable_qwen_core_clones),
             )
