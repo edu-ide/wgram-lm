@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Bundle2 family-hard selection gate. This targets the observed failure mode:
+# aggregate trajectory repair can improve some families while chain5 regresses.
+# Checkpoint selection now hard-penalizes negative per-family gain/accuracy.
+
+export HF_HOME="${HF_HOME:-/mnt/data4tb/hf-cache-qtrm}"
+export PYTHONPATH="${PYTHONPATH:-src}"
+
+OUT_DIR="${OUT_DIR:-local_eval/qwen35_preinit_family_hard_selection_bundle2_s${STEPS:-120}_$(date +%Y%m%d_%H%M%S)}"
+
+PYTHON="${PYTHON:-.venv/bin/python}" \
+OUT_DIR="${OUT_DIR}" \
+EVAL_SEED_OFFSETS="${EVAL_SEED_OFFSETS:-20000,20001,20002}" \
+SELECTION_HARD_FAMILY_GATE="${SELECTION_HARD_FAMILY_GATE:-1}" \
+SELECTION_HARD_FAMILY_PENALTY="${SELECTION_HARD_FAMILY_PENALTY:-100.0}" \
+TRAJECTORY_LOSS_BASE_ERROR_ONLY="${TRAJECTORY_LOSS_BASE_ERROR_ONLY:-1}" \
+TRAJECTORY_ADVANTAGE_WEIGHT="${TRAJECTORY_ADVANTAGE_WEIGHT:-0.18}" \
+TRAJECTORY_ADVANTAGE_MARGIN="${TRAJECTORY_ADVANTAGE_MARGIN:-0.015}" \
+TRAJECTORY_MONOTONIC_WEIGHT="${TRAJECTORY_MONOTONIC_WEIGHT:-0.01}" \
+CHECKSUM_TRAJECTORY_WEIGHT="${CHECKSUM_TRAJECTORY_WEIGHT:-0.2}" \
+CORE_ADVANTAGE_WEIGHT="${CORE_ADVANTAGE_WEIGHT:-0.03}" \
+CORE_PRESERVATION_WEIGHT="${CORE_PRESERVATION_WEIGHT:-1.5}" \
+CORE_PRESERVATION_MARGIN="${CORE_PRESERVATION_MARGIN:-0.0}" \
+CORE_PRESERVATION_POSITIVE_MARGIN_ONLY="${CORE_PRESERVATION_POSITIVE_MARGIN_ONLY:-1}" \
+FAMILY_LOSS_WEIGHTS="${FAMILY_LOSS_WEIGHTS:-chain5=4.0,checksum4=1.0,select_pair=1.0}" \
+LANGUAGE_HEALING_WEIGHT="${LANGUAGE_HEALING_WEIGHT:-0.08}" \
+STEPS="${STEPS:-120}" \
+EVAL_EVERY_STEPS="${EVAL_EVERY_STEPS:-20}" \
+bash scripts/416_run_qwen35_preinit_recurrent_trajectory_advantage_multiseed.sh

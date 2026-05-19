@@ -28933,3 +28933,68 @@ Next credible experiment:
   family-balanced do-no-harm selection or per-family acceptance selection,
   with a hard reject if any family is negative. Avoid more broad CE scaling.
 ```
+
+## 2026-05-19 - Family-Hard Selection Gate
+
+Question:
+
+```text
+Can checkpoint selection be made strict enough that aggregate gain cannot hide
+a negative family, especially bundle2 chain5 regression?
+```
+
+Implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --selection-hard-family-gate
+  --selection-hard-family-penalty
+
+scripts/418_run_qwen35_preinit_family_hard_selection_bundle2.sh
+```
+
+Mechanism:
+
+```text
+During periodic checkpoint selection, if either accepted_family_gain or
+accepted_family_core_accuracy is false, subtract a large selection penalty.
+This does not change final acceptance thresholds; it prevents the training loop
+from restoring a checkpoint that looks good only by aggregate score.
+```
+
+DGX run:
+
+```text
+path:
+  local_eval/qwen35_preinit_family_hard_selection_bundle2_s120_20260519
+
+accepted: false
+gain: -0.0034722222
+language_top1: 0.96875
+min_family_gain: -0.015625
+min_family_core_accuracy: 0.0833333333
+best_step: 60
+best_score: -98.4513888889
+accepted_selection_family_gain: false
+accepted_selection_family_accuracy: true
+
+family gains:
+  chain5:      -0.015625
+  checksum4:  -0.0052083333
+  select_pair:+0.0104166667
+```
+
+Decision:
+
+```text
+Promote the hard-family selection mechanism, not the checkpoint. The mechanism
+worked: no negative-family checkpoint can look acceptable under selection.
+
+The model still failed to repair bundle2 chain5. The remaining bottleneck is
+not selection leakage; it is the objective/core transition failing to produce a
+non-negative chain5 gain under seed shift.
+
+Next credible architecture/training change:
+  add per-family hard-negative mining or a family-conditioned recurrence probe
+  to identify why chain5 loses under bundle2 before attempting more scaling.
+```

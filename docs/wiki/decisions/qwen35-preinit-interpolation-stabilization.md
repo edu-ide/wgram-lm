@@ -1286,3 +1286,42 @@ Next decision gate:
   multi-bundle eval set, and checkpoint selection must hard-penalize negative
   per-family gain rather than relying on aggregate score.
 ```
+
+## Hard-Family Selection Decision
+
+Implemented:
+
+```text
+--selection-hard-family-gate
+--selection-hard-family-penalty
+```
+
+Run:
+
+```text
+local_eval/qwen35_preinit_family_hard_selection_bundle2_s120_20260519
+
+accepted: false
+gain: -0.0034722222
+language_top1: 0.96875
+min_family_gain: -0.015625
+min_family_core_accuracy: 0.0833333333
+best_score: -98.4513888889
+accepted_selection_family_gain: false
+accepted_selection_family_accuracy: true
+
+family gains:
+  chain5:      -0.015625
+  checksum4:  -0.0052083333
+  select_pair:+0.0104166667
+```
+
+Decision:
+
+```text
+Keep hard-family selection as default for promotion-oriented runs. It correctly
+prevents negative-family checkpoints from being treated as promising.
+
+Do not claim this solved bundle2. It only closed a selection loophole. The
+actual unresolved problem is chain5 non-regression under seed shift.
+```

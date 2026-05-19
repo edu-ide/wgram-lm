@@ -17537,3 +17537,28 @@ Canonical next direction:
   no broader capability claim until every family has non-negative gain on at
   least two held-out seed bundles
 ```
+
+Hard-family selection update:
+
+```text
+implemented:
+  --selection-hard-family-gate
+  --selection-hard-family-penalty
+  scripts/418_run_qwen35_preinit_family_hard_selection_bundle2.sh
+
+bundle2 result:
+  accepted: false
+  gain: -0.0034722222
+  best_score: -98.4513888889
+  chain5 gain: -0.015625
+  checksum4 gain: -0.0052083333
+  select_pair gain: +0.0104166667
+```
+
+Roadmap consequence:
+
+```text
+Selection is now strict enough to reject negative-family checkpoints. The
+remaining work is not "tune the selector"; it is to improve the recurrent
+transition/objective so chain5 does not regress under bundle2.
+```

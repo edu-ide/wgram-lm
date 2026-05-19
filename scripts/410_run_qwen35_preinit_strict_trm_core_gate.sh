@@ -19,6 +19,9 @@ fi
 if [[ "${CORE_PRESERVATION_POSITIVE_MARGIN_ONLY:-0}" == "1" ]]; then
   EXTRA_ARGS+=(--core-preservation-positive-margin-only)
 fi
+if [[ "${SELECTION_HARD_FAMILY_GATE:-0}" == "1" ]]; then
+  EXTRA_ARGS+=(--selection-hard-family-gate)
+fi
 
 "${PYTHON}" scripts/362_train_qwen_backbone_qtrm_core_gate.py \
   --model-id "${MODEL_ID}" \
@@ -68,6 +71,7 @@ fi
   --language-healing-batch-size "${LANGUAGE_HEALING_BATCH_SIZE:-2}" \
   --selection-language-weight "${SELECTION_LANGUAGE_WEIGHT:-0.0}" \
   --selection-min-language-top1 "${SELECTION_MIN_LANGUAGE_TOP1:-0.0}" \
+  --selection-hard-family-penalty "${SELECTION_HARD_FAMILY_PENALTY:-100.0}" \
   --core-advantage-weight "${CORE_ADVANTAGE_WEIGHT:-0.0}" \
   --core-advantage-margin "${CORE_ADVANTAGE_MARGIN:-0.0}" \
   --core-advantage-mode "${CORE_ADVANTAGE_MODE:-target_logp}" \

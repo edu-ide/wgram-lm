@@ -1138,6 +1138,20 @@ def train_core(
                 )
                 if language_top1 < float(args.selection_min_language_top1):
                     summary["score"] = float(summary["score"]) - 10.0
+            if bool(args.selection_hard_family_gate):
+                summary["accepted_selection_family_gain"] = bool(
+                    summary["accepted_family_gain"]
+                )
+                summary["accepted_selection_family_accuracy"] = bool(
+                    summary["accepted_family_core_accuracy"]
+                )
+                if not (
+                    bool(summary["accepted_family_gain"])
+                    and bool(summary["accepted_family_core_accuracy"])
+                ):
+                    summary["score"] = float(summary["score"]) - float(
+                        args.selection_hard_family_penalty
+                    )
             summary["step"] = int(step)
             summary["loss"] = losses[-1]
             if best is None or float(summary["score"]) > float(best["score"]):
@@ -1449,6 +1463,8 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "language_healing_examples": len(language_healing_examples()),
         "selection_language_weight": float(args.selection_language_weight),
         "selection_min_language_top1": float(args.selection_min_language_top1),
+        "selection_hard_family_gate": bool(args.selection_hard_family_gate),
+        "selection_hard_family_penalty": float(args.selection_hard_family_penalty),
         "core_advantage_weight": float(args.core_advantage_weight),
         "core_advantage_margin": float(args.core_advantage_margin),
         "core_advantage_mode": str(args.core_advantage_mode),
@@ -1626,6 +1642,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--language-healing-batch-size", type=int, default=2)
     parser.add_argument("--selection-language-weight", type=float, default=0.0)
     parser.add_argument("--selection-min-language-top1", type=float, default=0.0)
+    parser.add_argument("--selection-hard-family-gate", action="store_true")
+    parser.add_argument("--selection-hard-family-penalty", type=float, default=100.0)
     parser.add_argument("--core-advantage-weight", type=float, default=0.0)
     parser.add_argument("--core-advantage-margin", type=float, default=0.0)
     parser.add_argument(
