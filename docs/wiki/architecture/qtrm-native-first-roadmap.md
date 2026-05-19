@@ -17095,3 +17095,20 @@ architecture shopping or alpha hunting. It is a fixed 256-case family-balanced
 training/selection loop that optimizes the actual promotion gate while
 preserving language non-regression.
 ```
+
+Follow-up:
+
+```text
+scripts/412_run_qwen35_preinit_family_balanced_selection.sh
+local_eval/qwen35_preinit_family_balanced_select_s120_20260519
+
+result:
+  rejected
+  best_periodic_gain: 0.01953125
+  final_gain: 0.01953125
+  language_top1_agreement: 1.0
+
+consequence:
+  selection loop works, but objective still cannot move checksum4. Next target
+  is checksum-specific counterfactual/recurrent trajectory supervision.
+```

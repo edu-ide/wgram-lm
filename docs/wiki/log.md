@@ -28026,3 +28026,37 @@ to stop coarse alpha hunting and build a 256-case family-balanced
 checkpoint-selection loop that directly selects for core-over-base gain,
 min-family non-regression, and language preservation.
 ```
+
+## 2026-05-19 - Qwen3.5 Preinit Family-Balanced Selection Runner
+
+Added:
+
+```text
+scripts/412_run_qwen35_preinit_family_balanced_selection.sh
+```
+
+DGX run:
+
+```text
+local_eval/qwen35_preinit_family_balanced_select_s120_20260519
+```
+
+Result:
+
+```text
+decision: rejected
+best_periodic_eval_step: 10
+best_periodic_gain: 0.01953125
+final_gain: 0.01953125
+language_top1_agreement: 1.0
+```
+
+Interpretation:
+
+```text
+The runner is useful because it selects on the real 256-case promotion gate,
+but this particular objective only preserves the alpha=0.25 near-miss. It does
+not produce the missing checksum4 core-over-base case. The next objective must
+target checksum4 counterfactual state movement or recurrent trajectory
+supervision directly.
+```

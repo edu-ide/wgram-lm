@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Family-balanced continuation from the best Qwen3.5-preinit mandatory-core
+# interpolation. This runner intentionally uses the same 256-case promotion
+# gate during periodic selection; it is for stabilizing the near-miss basin, not
+# for architecture shopping.
+
+export HF_HOME="${HF_HOME:-/mnt/data4tb/hf-cache-qtrm}"
+export PYTHONPATH="${PYTHONPATH:-src}"
+
+INIT_CHECKPOINT="${INIT_CHECKPOINT:-local_eval/qwen35_preinit_ckpt_interp_20260519/alpha_0.25.pt}"
+OUT_DIR="${OUT_DIR:-local_eval/qwen35_preinit_family_balanced_select_s${STEPS:-120}_$(date +%Y%m%d_%H%M%S)}"
+
+PYTHON="${PYTHON:-.venv/bin/python}" \
+INIT_CHECKPOINT="${INIT_CHECKPOINT}" \
+OUT_DIR="${OUT_DIR}" \
+UNFREEZE_QWEN_LAYER_INDICES="${UNFREEZE_QWEN_LAYER_INDICES:-3}" \
+QWEN_LR="${QWEN_LR:-0.0}" \
+LR="${LR:-1.0e-5}" \
+KL_WEIGHT="${KL_WEIGHT:-0.10}" \
+LANGUAGE_KL_WEIGHT="${LANGUAGE_KL_WEIGHT:-0.10}" \
+CORE_ADVANTAGE_WEIGHT="${CORE_ADVANTAGE_WEIGHT:-0.20}" \
+CORE_ADVANTAGE_MARGIN="${CORE_ADVANTAGE_MARGIN:-0.02}" \
+CORE_ADVANTAGE_MODE="${CORE_ADVANTAGE_MODE:-label_choice_margin}" \
+FAMILY_LOSS_WEIGHTS="${FAMILY_LOSS_WEIGHTS:-chain5=1.2,checksum4=1.2,select_pair=1.2}" \
+STEPS="${STEPS:-120}" \
+TRAIN_CASES="${TRAIN_CASES:-2048}" \
+EVAL_CASES="${EVAL_CASES:-256}" \
+BATCH_SIZE="${BATCH_SIZE:-1}" \
+EVAL_EVERY_STEPS="${EVAL_EVERY_STEPS:-10}" \
+MAX_SEQ_LEN="${MAX_SEQ_LEN:-96}" \
+DTYPE="${DTYPE:-bfloat16}" \
+LOG_EVERY="${LOG_EVERY:-10}" \
+bash scripts/410_run_qwen35_preinit_strict_trm_core_gate.sh

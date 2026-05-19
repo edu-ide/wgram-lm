@@ -165,3 +165,58 @@ as a diagnostic. The next credible step is an objective/selection change:
 This preserves the QTRM-native claim because the model remains a single graph
 and the improvement must pass through token -> Qwen backbone -> mandatory core
 -> LM logits.
+
+## Follow-Up Selection Run
+
+Added runner:
+
+```text
+scripts/412_run_qwen35_preinit_family_balanced_selection.sh
+```
+
+DGX output:
+
+```text
+local_eval/qwen35_preinit_family_balanced_select_s120_20260519
+```
+
+Configuration:
+
+```text
+init_checkpoint: alpha_0.25.pt
+steps: 120
+eval_cases: 256
+eval_every_steps: 10
+lr: 1.0e-5
+qwen_lr: 0.0
+kl_weight: 0.10
+language_kl_weight: 0.10
+core_advantage_weight: 0.20
+core_advantage_mode: label_choice_margin
+family_loss_weights: chain5=1.2,checksum4=1.2,select_pair=1.2
+```
+
+Result:
+
+```text
+decision: rejected
+best_periodic_eval_step: 10
+best_periodic_gain: 0.01953125
+final_gain: 0.01953125
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0235294118
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+Interpretation:
+
+```text
+The fixed 256-case selection loop preserves the alpha=0.25 near-miss but does
+not improve it. The bottleneck is now sharper: the current continuation
+objective cannot create checksum4 gain without degrading other families. The
+next experiment should add a checksum-specific contrastive/counterfactual
+objective or a recurrent trajectory loss, not more low-LR CE continuation.
+```
