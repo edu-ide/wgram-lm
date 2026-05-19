@@ -805,6 +805,21 @@ def train_core(
             model.eval()
             evaluation = evaluate_cases(model, tokenizer, eval_cases, args, label_ids)
             summary = evaluation_acceptance_summary(evaluation, args)
+            if (
+                float(args.selection_language_weight) > 0.0
+                or float(args.selection_min_language_top1) > 0.0
+            ):
+                language_summary = evaluate_language_non_regression(model, tokenizer, args)
+                language_top1 = float(language_summary["top1_agreement"])
+                summary["language"] = language_summary
+                summary["accepted_selection_language"] = (
+                    language_top1 >= float(args.selection_min_language_top1)
+                )
+                summary["score"] = float(summary["score"]) + (
+                    float(args.selection_language_weight) * language_top1
+                )
+                if language_top1 < float(args.selection_min_language_top1):
+                    summary["score"] = float(summary["score"]) - 10.0
             summary["step"] = int(step)
             summary["loss"] = losses[-1]
             if best is None or float(summary["score"]) > float(best["score"]):
@@ -1070,6 +1085,8 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "kl_weight": float(args.kl_weight),
         "language_kl_weight": float(args.language_kl_weight),
         "language_kl_batch_size": int(args.language_kl_batch_size),
+        "selection_language_weight": float(args.selection_language_weight),
+        "selection_min_language_top1": float(args.selection_min_language_top1),
         "core_advantage_weight": float(args.core_advantage_weight),
         "core_advantage_margin": float(args.core_advantage_margin),
         "core_advantage_mode": str(args.core_advantage_mode),
@@ -1222,6 +1239,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--kl-weight", type=float, default=0.01)
     parser.add_argument("--language-kl-weight", type=float, default=0.0)
     parser.add_argument("--language-kl-batch-size", type=int, default=2)
+    parser.add_argument("--selection-language-weight", type=float, default=0.0)
+    parser.add_argument("--selection-min-language-top1", type=float, default=0.0)
     parser.add_argument("--core-advantage-weight", type=float, default=0.0)
     parser.add_argument("--core-advantage-margin", type=float, default=0.0)
     parser.add_argument(

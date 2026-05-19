@@ -28346,3 +28346,43 @@ Mean trajectory carry alone preserves language but does not solve checksum4.
 The positive 512 checksum4 signal requires carry plus partial Qwen healing.
 Next test: learned carry mixer and stricter language preservation.
 ```
+
+## 2026-05-19 - Learned Carry Does Not Survive 512 Expansion
+
+DGX runs:
+
+```text
+local_eval/qwen35_preinit_trajcarry_learned_w2_routeonly_s120_20260519
+local_eval/qwen35_preinit_trajcarry_learned_w2_routeonly_eval512_20260519
+local_eval/qwen35_preinit_trajcarry_mean_w2_routeonly_eval512_20260519
+```
+
+Result:
+
+```text
+learned route-only 256:
+  accepted: true
+  gain: 0.03515625
+  language_top1_agreement: 0.875
+  checksum4 gain: 0.0
+
+learned route-only 512:
+  accepted: false
+  gain: 0.00390625
+  language_top1_agreement: 1.0
+  checksum4 gain: 0.0
+
+mean route-only 512:
+  accepted: false
+  gain: 0.00390625
+  language_top1_agreement: 1.0
+  checksum4 gain: 0.0
+```
+
+Conclusion:
+
+```text
+Do not promote learned carry. It overfits the 256 selection gate and does not
+survive 512 expansion. Add language-aware checkpoint selection and use 512-case
+periodic selection for the next serious promotion run.
+```

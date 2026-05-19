@@ -770,3 +770,68 @@ Next candidates:
      or a stricter language suite;
   3. add carry-off and qwen-layer-frozen ablations to every promoted run.
 ```
+
+## Learned Carry Rejection 2026-05-19
+
+Learned carry route-only run:
+
+```text
+local_eval/qwen35_preinit_trajcarry_learned_w2_routeonly_s120_20260519
+
+core_trajectory_carry_mode: learned
+qwen_trainable: false
+steps: 120
+
+256-case decision: accepted
+gain: 0.03515625
+language_top1_agreement: 0.875
+
+family gains:
+  chain5:      +0.0588235294
+  checksum4:   0.0
+  select_pair: +0.0470588235
+```
+
+512-case expansion:
+
+```text
+local_eval/qwen35_preinit_trajcarry_learned_w2_routeonly_eval512_20260519
+
+512-case decision: rejected
+gain: 0.00390625
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:       0.0
+  checksum4:   0.0
+  select_pair:+0.0117647059
+```
+
+Mean carry route-only 512 check:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_w2_routeonly_eval512_20260519
+
+512-case decision: rejected
+gain: 0.00390625
+language_top1_agreement: 1.0
+checksum4 gain: 0.0
+```
+
+Decision:
+
+```text
+Frozen route-only carry, whether mean or learned, does not generalize to 512.
+The best current signal remains the mean carry checkpoint that was trained in
+the previous partial-healing regime:
+
+  local_eval/qwen35_preinit_trajcarry_mean_w2_eval512_20260519
+  gain: 0.037109375
+  checksum4 gain: +0.0058479532
+  carry-off gain: 0.02734375
+  carry-off checksum4 gain: 0.0
+
+Do not promote learned carry. The next run must select checkpoints with
+language-aware periodic scoring and must evaluate 512 cases during selection if
+we want the selected checkpoint to survive 512 expansion.
+```

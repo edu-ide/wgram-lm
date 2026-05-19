@@ -105,6 +105,29 @@ Route-only frozen-Qwen repeat:
 Therefore, frozen mean carry is language-safe but too weak. The next step is a
 learned carry mixer or a deliberately small Qwen healing scope with stricter
 language preservation.
+
+Follow-up:
+
+```text
+learned carry route-only 512:
+  gain: 0.00390625
+  checksum4 gain: 0.0
+  decision: rejected
+
+mean carry route-only 512:
+  gain: 0.00390625
+  checksum4 gain: 0.0
+  decision: rejected
+```
+
+Updated next step:
+
+```text
+Do not continue frozen route-only carry sweeps. The current evidence says the
+route is useful only when paired with a small pretrained-backbone healing
+scope. Future promotion runs must use 512-case periodic selection and
+language-aware checkpoint scoring.
+```
 ```
 
 The current scaling evidence says:

@@ -54,6 +54,8 @@ fi
   --kl-weight "${KL_WEIGHT:-0.05}" \
   --language-kl-weight "${LANGUAGE_KL_WEIGHT:-0.05}" \
   --language-kl-batch-size "${LANGUAGE_KL_BATCH_SIZE:-2}" \
+  --selection-language-weight "${SELECTION_LANGUAGE_WEIGHT:-0.0}" \
+  --selection-min-language-top1 "${SELECTION_MIN_LANGUAGE_TOP1:-0.0}" \
   --core-advantage-weight "${CORE_ADVANTAGE_WEIGHT:-0.0}" \
   --core-advantage-margin "${CORE_ADVANTAGE_MARGIN:-0.0}" \
   --core-advantage-mode "${CORE_ADVANTAGE_MODE:-target_logp}" \
