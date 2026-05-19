@@ -316,3 +316,35 @@ For this QTRM-native short gate, HRM-style separate H/L is the better empirical
 default. The result is not a general proof against TRM; it is a local
 architecture decision for the current training regime.
 ```
+
+## Length-Scaling Revision
+
+Date: 2026-05-19
+
+Follow-up len6/len7 gates changed the practical baseline decision.
+
+```text
+len6:
+  strict TRM exact:   0.05990
+  HRM separate exact: 0.05990
+
+  strict TRM has better depth gain and min-family.
+  HRM has slightly better ablation drop.
+
+len7:
+  strict TRM exact:   0.05208
+  HRM separate exact: 0.04167
+
+  strict TRM also has better depth gain, ablation drop, and min-family.
+```
+
+Revised conclusion:
+
+```text
+HRM-style separate H/L is a useful optimization prior at len4, but strict TRM
+shared recurrence scales better in the current len6/len7 checks.
+
+Use HRM-style separate H/L as a diagnostic candidate, not the canonical
+reasoning core. Use strict TRM L=3 + halt/depth objectives as the current
+scaling baseline until a broader multi-seed len6/len7 run disproves it.
+```

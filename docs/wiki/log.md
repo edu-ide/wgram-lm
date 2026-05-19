@@ -27694,3 +27694,67 @@ Research branch:
   shared TRM core, but only if a new objective or update rule restores stable
   destructive-ablation drop across seeds.
 ```
+
+## 2026-05-19 - Len6/Len7 Scaling Check Reverses the Short-Gate Preference
+
+Question:
+
+```text
+Does the HRM-style separate H/L advantage survive when program length increases
+from len4 to len6/len7?
+```
+
+Candidates:
+
+```text
+strict TRM:
+  trm_dual_z_official_trm_l3_halt_think
+  L cycles = 3
+  dedicated halt head
+  active-length halt loss
+  halt-depth final-answer loss
+
+HRM:
+  trm_dual_z_hrm_separate_official_trm_think
+```
+
+DGX runs:
+
+```text
+local_eval/qtrm_len6_strict_trm_l3_halt_s800_20260519
+local_eval/qtrm_len6_hrm_separate_s800_20260519
+local_eval/qtrm_len7_strict_trm_l3_halt_s1000_20260519
+local_eval/qtrm_len7_hrm_separate_s1000_20260519
+```
+
+Len6 result:
+
+```text
+candidate        exact    depth_gain  ablation_drop  min_family
+strict TRM       0.05990  0.04948     0.03125        0.05469
+HRM separate     0.05990  0.04427     0.03385        0.04688
+```
+
+Len7 result:
+
+```text
+candidate        exact    depth_gain  ablation_drop  min_family
+strict TRM       0.05208  0.04688     0.02344        0.03906
+HRM separate     0.04167  0.03385     0.00260        0.02344
+```
+
+Interpretation:
+
+```text
+The len4 short/multiseed result favored HRM-style separate H/L, but length
+scaling changes the decision. At len6 the candidates tie on exact and strict
+TRM has better depth gain and family floor. At len7 strict TRM is clearly
+better on exact, depth gain, ablation drop, and min-family accuracy.
+
+The current best scaling default is therefore not simple HRM separate H/L. It
+is strict TRM shared z_H/z_L recurrence with L=3 and halt/depth objectives.
+
+Updated rule:
+  len4 short gate is only an optimization-signal probe.
+  len6/len7 scaling gate decides the reasoning-core baseline.
+```
