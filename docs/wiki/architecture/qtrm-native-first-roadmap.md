@@ -16976,3 +16976,84 @@ Do not promote mid_layer_suffix yet. It needs a residual/gate warmup schedule
 or token_mlp gate training before it can become the default QTRM-native
 pretrained-init route.
 ```
+
+## Causal Advantage And Interpolation Breakthrough 2026-05-19
+
+Measured bottleneck:
+
+```text
+partial layer-3 healing:
+  passes aggregate core gain
+  misses family floor
+
+checksum repair:
+  passes family floor
+  misses aggregate core gain
+```
+
+Added objective:
+
+```text
+core_advantage_loss:
+  compare core_on logits against force_core_off logits
+  require the core path to improve the correct answer margin
+
+modes:
+  target_logp
+  label_choice_margin
+```
+
+The direct advantage continuations did not pass the gate. The useful discovery
+was that the two rejected checkpoints are complementary in weight space.
+
+Checkpoint interpolation:
+
+```text
+A:
+  local_eval/qwen35_preinit_strict_trm_partial_l3_gate_s80_20260519/last_core.pt
+
+B:
+  local_eval/qwen35_preinit_strict_trm_partial_l3_checksum_repair_s80_20260519/last_core.pt
+
+alpha:
+  interpolated = (1 - alpha) * A + alpha * B
+```
+
+Best alpha:
+
+```text
+alpha=0.25
+128-case gate:
+  accepted: true
+  gain: +0.0390625
+  min_family_gain: 0.0
+  min_family_core_accuracy: 0.1395348837
+  language_top1_agreement: 1.0
+
+256-case gate:
+  accepted: false
+  gain: +0.01953125
+  min_family_gain: 0.0
+  min_family_core_accuracy: 0.0930232558
+  language_top1_agreement: 1.0
+```
+
+Interpretation:
+
+```text
+This is the first Qwen3.5-pretrained QTRM-native checkpoint composition that
+passes the small strict mandatory-core gate while preserving language logits.
+It is not yet a public benchmark or Qwen3.6-27B result. It is a real
+architecture-training signal: reasoning-gain and family-floor capabilities can
+coexist in the same weight basin, and interpolation can expose the overlap.
+```
+
+Next promotion requirement:
+
+```text
+Turn the alpha=0.25 interpolation into a trained/stable checkpoint:
+  1. rerun independent seeds
+  2. pass 256-case by margin, not near-miss
+  3. run core destructive ablations
+  4. only then attach public MCQ/language healing gates
+```

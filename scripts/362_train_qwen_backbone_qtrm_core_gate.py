@@ -471,6 +471,8 @@ def train_core(
     optimizer = torch.optim.AdamW(param_groups)
     rng = random.Random(int(args.seed) + 17)
     family_loss_weights = parse_float_map(str(args.family_loss_weights))
+    digit_labels = list("0123456789")
+    label_token_ids = torch.tensor([label_ids[digit] for digit in digit_labels], device=device)
     losses = []
     best: dict[str, object] | None = None
     best_state: dict[str, torch.Tensor] | None = None
@@ -489,7 +491,13 @@ def train_core(
             max_seq_len=int(args.max_seq_len),
             device=device,
         )
-        targets = torch.tensor([label_ids[case.label] for case in chunk], device=device)
+        target_labels = [case.label for case in chunk]
+        targets = torch.tensor([label_ids[label] for label in target_labels], device=device)
+        target_choice_indices = torch.tensor(
+            [digit_labels.index(label) for label in target_labels],
+            device=device,
+            dtype=torch.long,
+        )
         core_logits = _last_token_logits(model, input_ids, attention_mask)
         per_item_ce = F.cross_entropy(core_logits.float(), targets, reduction="none")
         if family_loss_weights:
@@ -502,9 +510,41 @@ def train_core(
         else:
             ce = per_item_ce.mean()
         loss = ce
-        if float(args.kl_weight) > 0.0:
+        base_logits = None
+        if float(args.kl_weight) > 0.0 or float(args.core_advantage_weight) > 0.0:
             with torch.no_grad():
                 base_logits = _last_token_logits(model, input_ids, attention_mask, force_core_off=True)
+        if float(args.core_advantage_weight) > 0.0:
+            if base_logits is None:
+                raise RuntimeError("base logits were not computed for core advantage loss")
+            row_index = torch.arange(targets.numel(), device=device)
+            if str(args.core_advantage_mode) == "target_logp":
+                core_log_probs = F.log_softmax(core_logits.float(), dim=-1)
+                base_log_probs = F.log_softmax(base_logits.float(), dim=-1)
+                core_target_logp = core_log_probs[row_index, targets]
+                base_target_logp = base_log_probs[row_index, targets]
+                target_margin = core_target_logp - base_target_logp
+            elif str(args.core_advantage_mode) == "label_choice_margin":
+                core_choice_logits = core_logits.float().index_select(dim=-1, index=label_token_ids)
+                base_choice_logits = base_logits.float().index_select(dim=-1, index=label_token_ids)
+                wrong_mask = torch.ones_like(core_choice_logits, dtype=torch.bool)
+                wrong_mask[row_index, target_choice_indices] = False
+                core_target = core_choice_logits[row_index, target_choice_indices]
+                base_target = base_choice_logits[row_index, target_choice_indices]
+                core_wrong = core_choice_logits.masked_fill(~wrong_mask, float("-inf")).amax(dim=-1)
+                base_wrong = base_choice_logits.masked_fill(~wrong_mask, float("-inf")).amax(dim=-1)
+                target_margin = (core_target - core_wrong) - (base_target - base_wrong)
+            else:
+                raise ValueError(f"unknown core advantage mode: {args.core_advantage_mode}")
+            per_item_advantage = F.relu(float(args.core_advantage_margin) - target_margin)
+            if family_loss_weights:
+                advantage = (per_item_advantage * weights).sum() / weights.sum().clamp_min(1e-6)
+            else:
+                advantage = per_item_advantage.mean()
+            loss = loss + float(args.core_advantage_weight) * advantage
+        if float(args.kl_weight) > 0.0:
+            if base_logits is None:
+                raise RuntimeError("base logits were not computed for KL loss")
             kl = F.kl_div(
                 F.log_softmax(core_logits.float(), dim=-1),
                 F.softmax(base_logits.float(), dim=-1),
@@ -801,6 +841,9 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "kl_weight": float(args.kl_weight),
         "language_kl_weight": float(args.language_kl_weight),
         "language_kl_batch_size": int(args.language_kl_batch_size),
+        "core_advantage_weight": float(args.core_advantage_weight),
+        "core_advantage_margin": float(args.core_advantage_margin),
+        "core_advantage_mode": str(args.core_advantage_mode),
         "case_mode": str(args.case_mode),
         "train_case_mode": train_case_mode,
         "eval_case_mode": eval_case_mode,
@@ -927,6 +970,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--kl-weight", type=float, default=0.01)
     parser.add_argument("--language-kl-weight", type=float, default=0.0)
     parser.add_argument("--language-kl-batch-size", type=int, default=2)
+    parser.add_argument("--core-advantage-weight", type=float, default=0.0)
+    parser.add_argument("--core-advantage-margin", type=float, default=0.0)
+    parser.add_argument(
+        "--core-advantage-mode",
+        choices=["target_logp", "label_choice_margin"],
+        default="target_logp",
+    )
     parser.add_argument("--family-loss-weights", default="")
     parser.add_argument("--eval-every-steps", type=int, default=0)
     parser.add_argument("--restore-best-checkpoint", action="store_true")

@@ -27904,3 +27904,74 @@ should only be retried with residual warmup or a trained token_mlp gate. The
 current default remains final_residual until mid-layer language non-regression
 is reliable.
 ```
+
+## 2026-05-19 - QTRM Causal Advantage And Checkpoint Interpolation
+
+Question:
+
+```text
+Can we combine the checkpoint that passes core gain with the checkpoint that
+passes family floor, instead of continuing to push one objective until it
+forgets the other?
+```
+
+Implementation:
+
+```text
+added:
+  --core-advantage-weight
+  --core-advantage-margin
+  --core-advantage-mode target_logp|label_choice_margin
+
+added:
+  scripts/411_interpolate_trainable_checkpoints.py
+```
+
+Advantage loss result:
+
+```text
+target_logp and label_choice_margin continuations preserved language but did
+not pass the combined gate. They kept family floor but did not recover enough
+aggregate core-vs-base gain.
+```
+
+Interpolation result:
+
+```text
+A:
+  local_eval/qwen35_preinit_strict_trm_partial_l3_gate_s80_20260519/last_core.pt
+
+B:
+  local_eval/qwen35_preinit_strict_trm_partial_l3_checksum_repair_s80_20260519/last_core.pt
+
+alpha=0.25 128-case:
+  accepted: true
+  gain: 0.0390625
+  min_family_gain: 0.0
+  min_family_core_accuracy: 0.13953488372093023
+  language_top1_agreement: 1.0
+  by_family:
+    chain5:      base 0.0930 -> core 0.1628
+    checksum4:   base 0.1395 -> core 0.1395
+    select_pair: base 0.1190 -> core 0.1667
+
+alpha=0.25 256-case:
+  accepted: false
+  gain: 0.01953125
+  min_family_gain: 0.0
+  min_family_core_accuracy: 0.09302325581395349
+  language_top1_agreement: 1.0
+```
+
+Interpretation:
+
+```text
+This is the first small-gate accepted Qwen3.5-pretrained, mandatory-core,
+QTRM-native composition. The 256-case gate is a near miss by one additional
+correct core-over-base case, so it is not yet a robust promotion.
+
+The actionable discovery is that the core-gain and family-floor objectives are
+not mutually exclusive; they occupy nearby weight-space regions. The next
+experiment should stabilize the alpha=0.25 basin rather than restart
+architecture shopping.
+```

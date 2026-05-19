@@ -48,6 +48,9 @@ DTYPE="${DTYPE:-bfloat16}"
   --kl-weight "${KL_WEIGHT:-0.05}" \
   --language-kl-weight "${LANGUAGE_KL_WEIGHT:-0.05}" \
   --language-kl-batch-size "${LANGUAGE_KL_BATCH_SIZE:-2}" \
+  --core-advantage-weight "${CORE_ADVANTAGE_WEIGHT:-0.0}" \
+  --core-advantage-margin "${CORE_ADVANTAGE_MARGIN:-0.0}" \
+  --core-advantage-mode "${CORE_ADVANTAGE_MODE:-target_logp}" \
   --family-loss-weights "${FAMILY_LOSS_WEIGHTS:-}" \
   --eval-every-steps "${EVAL_EVERY_STEPS:-40}" \
   --restore-best-checkpoint \
