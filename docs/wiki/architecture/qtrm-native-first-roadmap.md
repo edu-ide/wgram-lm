@@ -17160,3 +17160,26 @@ consequence:
   a checksum4 diagnostic/probe: record base/core digit predictions, target
   ranks, logit margins, and z_H/z_L operand-binding evidence.
 ```
+
+Checksum latent probe result:
+
+```text
+script:
+  scripts/413_probe_qwen35_preinit_checksum_latents.py
+
+outputs:
+  local_eval/qwen35_preinit_checksum_probe_alpha025_20260519
+  local_eval/qwen35_preinit_checksum_probe_cf_w05_v2_20260519
+  local_eval/qwen35_preinit_checksum_probe_baseerr_w06_20260519
+
+shared checksum4 eval:
+  base_accuracy: 0.0930232555
+  core_accuracy: 0.0930232555
+  core_fixes_base_errors: 0
+
+latent finding:
+  z_h contains operand information, but not the composed checksum answer.
+
+next:
+  add latent answer-composition supervision before more promotion runs.
+```

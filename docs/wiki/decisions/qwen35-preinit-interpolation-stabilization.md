@@ -361,3 +361,87 @@ information. If the latent state is not binding a,b,c,d, the next fix is a
 state/trajectory supervision or operand-binding objective, not a stronger
 answer-margin loss.
 ```
+
+## Checksum Latent Probe 2026-05-19
+
+Added:
+
+```text
+scripts/413_probe_qwen35_preinit_checksum_latents.py
+```
+
+Purpose:
+
+```text
+Diagnose whether checksum4 failure is caused by:
+  A. no operand information in z_H/z_L;
+  B. operand information present but no answer composition;
+  C. answer present in latent but not rendered through LM logits.
+```
+
+DGX probe checkpoints:
+
+```text
+local_eval/qwen35_preinit_checksum_probe_alpha025_20260519
+local_eval/qwen35_preinit_checksum_probe_cf_w05_v2_20260519
+local_eval/qwen35_preinit_checksum_probe_baseerr_w06_20260519
+```
+
+Prediction result across all three:
+
+```text
+checksum4 eval cases: 86
+base_accuracy: 0.0930232555
+core_accuracy: 0.0930232555
+gain: 0.0
+core_fixes_base_errors: 0
+core_breaks_base_correct: 0
+```
+
+Representative alpha=0.25 linear probes:
+
+```text
+z_h -> answer eval accuracy:    0.1046511605
+z_h -> operand_a eval accuracy: 0.8488371968
+z_h -> operand_b eval accuracy: 0.4069767296
+z_h -> operand_c eval accuracy: 0.3488371968
+z_h -> operand_d eval accuracy: 0.4651162922
+```
+
+Representative base-error checkpoint linear probes:
+
+```text
+z_h -> answer eval accuracy:    0.1046511605
+z_h -> operand_a eval accuracy: 0.8488371968
+z_h -> operand_b eval accuracy: 0.4069767296
+z_h -> operand_c eval accuracy: 0.2790697813
+z_h -> operand_d eval accuracy: 0.4418604672
+```
+
+Interpretation:
+
+```text
+The recurrent state is not blank. It carries operand information, especially
+operand_a and partial b/c/d. The failure is compositional: z_H/z_L do not encode
+the final checksum answer strongly enough, and the LM path never flips a
+checksum4 base error into a core-correct answer.
+
+This explains why final-token CE, counterfactual prompt CE, and base-error
+margin losses can improve aggregate 256-case gain through chain5/select_pair
+while checksum4 remains flat.
+```
+
+Next architecture/training target:
+
+```text
+Add a latent answer-composition objective:
+  z_H or delta_h -> Qwen LM head digit logits for checksum4
+  train only as an auxiliary state/trajectory objective
+  inference still uses the normal token -> Qwen -> mandatory core -> LM logits path
+
+Promotion requirement:
+  checksum4 core_fixes_base_errors > 0 on held-out eval
+  checksum4 gain > 0.0
+  512-case aggregate gain >= 0.02
+  language_top1_agreement remains 1.0 or above threshold
+```

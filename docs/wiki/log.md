@@ -28152,3 +28152,48 @@ diagnostic that records base/core digit predictions, target ranks, logit
 margins, and core-state probes. If z_H/z_L is not binding operands, add
 operand-binding or trajectory supervision before another promotion run.
 ```
+
+## 2026-05-19 - Checksum Latent Probe Finds Composition Bottleneck
+
+Added:
+
+```text
+scripts/413_probe_qwen35_preinit_checksum_latents.py
+```
+
+Probe outputs:
+
+```text
+local_eval/qwen35_preinit_checksum_probe_alpha025_20260519
+local_eval/qwen35_preinit_checksum_probe_cf_w05_v2_20260519
+local_eval/qwen35_preinit_checksum_probe_baseerr_w06_20260519
+```
+
+Shared prediction result:
+
+```text
+checksum4 eval cases: 86
+base_accuracy: 0.0930232555
+core_accuracy: 0.0930232555
+core_fixes_base_errors: 0
+core_breaks_base_correct: 0
+```
+
+Key latent signal:
+
+```text
+alpha=0.25 z_h probe:
+  answer eval accuracy:    0.1046511605
+  operand_a eval accuracy: 0.8488371968
+  operand_b eval accuracy: 0.4069767296
+  operand_c eval accuracy: 0.3488371968
+  operand_d eval accuracy: 0.4651162922
+```
+
+Interpretation:
+
+```text
+The core state is not empty. It binds some operands, especially operand_a, but
+does not compose them into the checksum answer. The next fix should be latent
+answer-composition/trajectory supervision, not stronger final-token margin CE.
+```
