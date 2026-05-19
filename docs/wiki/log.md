@@ -28427,3 +28427,66 @@ the aggregate threshold, gives positive checksum4 gain, and fails when the
 trajectory carry route is disabled. It is a genuine causal architecture signal.
 It is not yet a final breakthrough because language top1 is 0.875, not 1.0.
 ```
+
+## 2026-05-19 - Extended Language Probe Added
+
+Question:
+
+```text
+Does the best Qwen3.5-preinit trajectory-carry checkpoint still preserve the
+language path when the language non-regression probe is expanded beyond the
+original 8 prompts?
+```
+
+Implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --language-probe-set basic|extended
+
+scripts/410_run_qwen35_preinit_strict_trm_core_gate.sh
+scripts/412_run_qwen35_preinit_family_balanced_selection.sh
+  LANGUAGE_PROBE_SET=basic|extended
+```
+
+The extended probe keeps the original 8 prompts and adds English/Korean
+translation, uncertainty, evidence conflict, debugging, checksum, and memory
+prompts for 32 total prompts.
+
+DGX evaluation:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_eval512_extendedlang_20260519
+
+init:
+  local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_s100_20260519/last_core.pt
+
+language_probe_set: extended
+num_prompts: 32
+accepted: true
+gain: 0.021484375
+language_top1_agreement: 0.96875
+checksum4 gain: +0.0058479532
+min_family_gain: +0.0058479532
+```
+
+Interpretation:
+
+```text
+The current best checkpoint is not merely passing an 8-prompt language probe.
+It keeps 31/32 top-1 next-token decisions equal to the core-off Qwen path while
+preserving the 512-case carry-dependent reasoning gain.
+
+HRM-Text-style training discipline is therefore plausible as a next training
+method, but not as a capability claim. Import only the parts that match our
+causal path:
+
+1. packed PrefixLM / clean text healing for language preservation;
+2. hierarchical/recurrent core kept mandatory;
+3. checkpoint selection by core-on vs core-off reasoning gates plus language
+   non-regression;
+4. destructive carry/core ablations before promotion.
+
+Do not claim a Qwen3.6-27B-level or HRM-Text-level breakthrough until public
+benchmarks show it.
+```

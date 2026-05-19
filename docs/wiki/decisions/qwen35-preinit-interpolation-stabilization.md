@@ -920,3 +920,51 @@ This is a real architecture signal, not yet the final breakthrough. The next
 promotion requirement is to expand the language probe and raise the language
 floor while preserving the carry-dependent checksum4 gain.
 ```
+
+## Extended Language Probe Follow-Up
+
+Added a selectable language probe set:
+
+```text
+--language-probe-set basic|extended
+```
+
+The extended set contains 32 English/Korean prompts covering ordinary
+explanation, translation, uncertainty, source conflict, debugging, checksum,
+and model-memory descriptions.
+
+DGX evaluation:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_eval512_extendedlang_20260519
+
+init:
+  local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_s100_20260519/last_core.pt
+
+accepted: true
+gain: 0.021484375
+language_probe_set: extended
+language_top1_agreement: 0.96875
+num_prompts: 32
+checksum4 gain: +0.0058479532
+min_family_gain: +0.0058479532
+```
+
+Decision:
+
+```text
+The 512-selected trajectory-carry checkpoint survives a stronger language
+non-regression probe. This upgrades the result from "small language probe
+accepted" to "extended language probe accepted".
+
+The next HRM-Text-inspired move should be language healing with packed
+PrefixLM-style clean text, but the promotion gate must remain:
+
+  reasoning gain over core_off
+  positive family floor
+  extended language non-regression
+  trajectory-carry/core destructive ablation
+
+HRM-Text is a training prior here, not proof that innovation will arrive
+quickly by copying its recipe.
+```

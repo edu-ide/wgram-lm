@@ -155,6 +155,42 @@ carry-dependent reasoning gain. The recurrent trajectory is causally useful in
 the LM-logit path on this synthetic gate. The remaining blocker is language
 preservation at a stronger probe scale.
 ```
+
+Extended language update:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_eval512_extendedlang_20260519
+
+language_probe_set: extended
+num_prompts: 32
+accepted: true
+gain: 0.021484375
+language_top1_agreement: 0.96875
+checksum4 gain: +0.0058479532
+```
+
+Updated best claim:
+
+```text
+The current best Qwen3.5-preinit QTRM checkpoint preserves the Qwen language
+path on a 32-prompt English/Korean probe while keeping the 512-case
+carry-dependent reasoning gain. The next bottleneck is no longer immediate
+language collapse. It is converting this small synthetic causal signal into
+broader language-reasoning improvement.
+```
+
+HRM-Text application rule:
+
+```text
+Apply HRM-Text only as training discipline:
+  packed PrefixLM-style clean language healing
+  recurrent/nested forward always mandatory
+  checkpoint selection by causal reasoning gates plus language preservation
+  destructive core/carry ablations
+
+Do not treat HRM-Text as a shortcut to instant innovation. Its from-scratch
+resource recipe is not the same as our Qwen3.5-preinit route, and its benchmark
+claims do not transfer until our own public benchmarks pass.
 ```
 
 The current scaling evidence says:

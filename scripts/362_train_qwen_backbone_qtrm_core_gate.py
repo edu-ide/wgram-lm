@@ -222,17 +222,52 @@ def checksum4_residue_targets(case: SyntheticCase) -> list[int]:
     ]
 
 
-def language_probe_prompts() -> list[str]:
-    return [
-        "User: Explain why evidence should be checked.\nAssistant: ",
-        "User: 양자 컴퓨팅이란 무엇인가요?\nAssistant: ",
-        "User: Write one clear sentence about careful reasoning.\nAssistant: ",
-        "User: What should a model do when it is uncertain?\nAssistant: ",
-        "User: Explain quantum entanglement in one simple sentence.\nAssistant: ",
-        "User: Translate to Korean: Careful reasoning reduces mistakes.\nAssistant: ",
-        "User: 좋은 연구 노트를 쓰는 방법을 짧게 말해 주세요.\nAssistant: ",
-        "User: 사실과 의견의 차이를 설명해 주세요.\nAssistant: ",
-    ]
+BASIC_LANGUAGE_PROBE_PROMPTS = (
+    "User: Explain why evidence should be checked.\nAssistant: ",
+    "User: 양자 컴퓨팅이란 무엇인가요?\nAssistant: ",
+    "User: Write one clear sentence about careful reasoning.\nAssistant: ",
+    "User: What should a model do when it is uncertain?\nAssistant: ",
+    "User: Explain quantum entanglement in one simple sentence.\nAssistant: ",
+    "User: Translate to Korean: Careful reasoning reduces mistakes.\nAssistant: ",
+    "User: 좋은 연구 노트를 쓰는 방법을 짧게 말해 주세요.\nAssistant: ",
+    "User: 사실과 의견의 차이를 설명해 주세요.\nAssistant: ",
+)
+
+
+EXTENDED_LANGUAGE_PROBE_PROMPTS = BASIC_LANGUAGE_PROBE_PROMPTS + (
+    "User: Summarize this in one sentence: Evidence can be incomplete, so conclusions should stay calibrated.\nAssistant: ",
+    "User: Give a concise reason why repeated experiments matter.\nAssistant: ",
+    "User: What is the difference between correlation and causation?\nAssistant: ",
+    "User: Translate to English: 신중한 판단은 실수를 줄입니다.\nAssistant: ",
+    "User: 다음 문장을 영어로 번역하세요: 증거가 부족하면 결론을 보류해야 합니다.\nAssistant: ",
+    "User: 불확실할 때 좋은 답변은 어떻게 해야 하나요?\nAssistant: ",
+    "User: 인과관계와 상관관계의 차이를 짧게 설명해 주세요.\nAssistant: ",
+    "User: Write a short definition of a hypothesis.\nAssistant: ",
+    "User: Explain why a model should not invent citations.\nAssistant: ",
+    "User: 데이터 품질이 모델 성능에 중요한 이유를 한 문장으로 말해 주세요.\nAssistant: ",
+    "User: What should happen if two sources conflict?\nAssistant: ",
+    "User: 두 자료가 서로 모순될 때 먼저 확인할 것은 무엇인가요?\nAssistant: ",
+    "User: Write one sentence about scientific humility.\nAssistant: ",
+    "User: 과학적 겸손이 왜 필요한지 짧게 말해 주세요.\nAssistant: ",
+    "User: Explain a checksum in simple terms.\nAssistant: ",
+    "User: 체크섬이 무엇인지 쉽게 설명해 주세요.\nAssistant: ",
+    "User: Give a short answer: should an AI guess when it lacks evidence?\nAssistant: ",
+    "User: 근거가 없을 때 AI가 추측해야 하나요?\nAssistant: ",
+    "User: Describe a careful debugging process in one sentence.\nAssistant: ",
+    "User: 버그를 찾을 때 로그가 왜 중요한가요?\nAssistant: ",
+    "User: What does it mean to verify an answer?\nAssistant: ",
+    "User: 답변을 검증한다는 것은 무슨 뜻인가요?\nAssistant: ",
+    "User: Explain memory in a language model at a high level.\nAssistant: ",
+    "User: 언어 모델의 기억을 높은 수준에서 설명해 주세요.\nAssistant: ",
+)
+
+
+def language_probe_prompts(probe_set: str = "basic") -> list[str]:
+    if str(probe_set) == "extended":
+        return list(EXTENDED_LANGUAGE_PROBE_PROMPTS)
+    if str(probe_set) != "basic":
+        raise ValueError(f"unknown language probe set: {probe_set}")
+    return list(BASIC_LANGUAGE_PROBE_PROMPTS)
 
 
 def _label_token_ids(tokenizer) -> dict[str, int]:
@@ -481,9 +516,10 @@ def evaluation_acceptance_summary(evaluation: dict[str, object], args) -> dict[s
 @torch.no_grad()
 def evaluate_language_non_regression(model, tokenizer, args):
     device = next(model.parameters()).device
+    prompts = language_probe_prompts(str(args.language_probe_set))
     input_ids, attention_mask = _encode_prompts(
         tokenizer,
-        language_probe_prompts(),
+        prompts,
         max_seq_len=int(args.max_seq_len),
         device=device,
     )
@@ -500,7 +536,8 @@ def evaluate_language_non_regression(model, tokenizer, args):
         "top1_agreement": float(agreement),
         "mean_abs_delta": float(mean_abs_delta),
         "finite_logits": bool(finite),
-        "num_prompts": len(language_probe_prompts()),
+        "probe_set": str(args.language_probe_set),
+        "num_prompts": len(prompts),
     }
 
 
@@ -755,7 +792,7 @@ def train_core(
             )
             loss = loss + float(args.kl_weight) * kl
         if float(args.language_kl_weight) > 0.0:
-            language_prompts = language_probe_prompts()
+            language_prompts = language_probe_prompts(str(args.language_probe_set))
             language_chunk = [
                 rng.choice(language_prompts)
                 for _ in range(max(1, int(args.language_kl_batch_size)))
@@ -1085,6 +1122,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "kl_weight": float(args.kl_weight),
         "language_kl_weight": float(args.language_kl_weight),
         "language_kl_batch_size": int(args.language_kl_batch_size),
+        "language_probe_set": str(args.language_probe_set),
         "selection_language_weight": float(args.selection_language_weight),
         "selection_min_language_top1": float(args.selection_min_language_top1),
         "core_advantage_weight": float(args.core_advantage_weight),
@@ -1239,6 +1277,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--kl-weight", type=float, default=0.01)
     parser.add_argument("--language-kl-weight", type=float, default=0.0)
     parser.add_argument("--language-kl-batch-size", type=int, default=2)
+    parser.add_argument(
+        "--language-probe-set",
+        choices=["basic", "extended"],
+        default="basic",
+    )
     parser.add_argument("--selection-language-weight", type=float, default=0.0)
     parser.add_argument("--selection-min-language-top1", type=float, default=0.0)
     parser.add_argument("--core-advantage-weight", type=float, default=0.0)
