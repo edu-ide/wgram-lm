@@ -20,3 +20,13 @@ QTRM relevance:
 - Reference for recursive z_H/z_L state updates.
 - Important details: carry state, reset-on-halt, no-grad inner cycles, detach new
   carry, and ACT halt/continue heads.
+
+Correction recorded 2026-05-19:
+
+- TRM is not a single-state model in the official implementation. It keeps
+  `z_H` and `z_L`.
+- TRM's simplification relative to HRM is that it removes the separate
+  `H_level` module: both `z_L` and `z_H` are updated through the same shared
+  recurrent block.
+- Therefore QTRM should distinguish `dual state` from `dual module` when
+  comparing HRM-style and TRM-style cores.

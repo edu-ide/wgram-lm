@@ -36,6 +36,7 @@
 - [Latent Lookahead Renderer](sources/latent-lookahead-renderer.md): PonderLM-2, Latent Lookahead, latent-token multi-token prediction, EBM sequence scoring, and generation-verification sources for QTRM renderer repair.
 - [Diffusion, Token Superposition, And Fast-Slow LLMs 2026](sources/diffusion-fast-slow-llm-2026.md): Mercury diffusion LLMs, Token Superposition Training, and Fast-Slow Training mapped to QTRM-native priorities.
 - [Token Superposition Training](sources/token-superposition-training.md): 2026 TST paper mapped as a QTRM-native language-pretraining efficiency objective with local MCE/bag-loss primitives.
+- [HRM-Text](sources/hrm-text.md): Sapient HRM-Text-1B text-LM prior, HRM/TRM dual-state correction, and QTRM-native shared-vs-separate recurrent-core comparison plan.
 - [Gated DeltaNet](sources/gated-deltanet.md): official gated delta rule mixer reference.
 - [LeWorldModel](sources/leworldmodel.md): newest end-to-end JEPA world-model reference.
 - [Tiny Recursive Models](sources/tiny-recursive-models.md): TRM recursive z_H/z_L and ACT reference.

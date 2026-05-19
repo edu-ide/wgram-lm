@@ -6,6 +6,8 @@ core axis.
 Core contract:
 
 - maintain `z_H` and `z_L` carry states
+- do not confuse this with HRM's separate H/L modules: TRM keeps dual state but
+  shares the recurrent update module
 - reset carry for halted sequences
 - run most H/L cycles under `torch.no_grad()`
 - run the final cycle with gradients
@@ -18,3 +20,6 @@ QTRM implication:
   implement TRM carry semantics or ACT halting.
 - Treat current recursive core as experimental until those gaps are closed or
   deliberately documented.
+- The next fair architecture comparison should include both TRM-style
+  shared-block `z_H/z_L` recurrence and HRM-style separate `H_module` /
+  `L_module` recurrence.

@@ -16767,3 +16767,57 @@ diagnostic slice. The recursive core shows a real 64-case effect, but the same
 checkpoint loses to depth0 at 256 cases. The next architecture/training step is
 core-depth scale-out repair, not more answer-token CE or benchmark claims.
 ```
+
+## HRM-Text Prior Update 2026-05-19
+
+HRM-Text is now a first-class text-LM prior for QTRM-native:
+
+```text
+source:
+  https://huggingface.co/sapientinc/HRM-Text-1B
+  https://github.com/sapientinc/HRM-Text
+
+local clone:
+  references/official/hrm-text@f99410a
+```
+
+Architectural correction:
+
+```text
+TRM:
+  dual latent states z_H / z_L
+  shared recurrent update block
+
+HRM:
+  dual latent states z_H / z_L
+  separate H_module / L_module
+
+HRM-Text:
+  HRM-style dual-module recurrence ported to PrefixLM text pretraining
+```
+
+QTRM-native consequence:
+
+```text
+Do not describe TRM as single-state. The open question is not z_H/z_L versus
+one state; the open question is shared recurrent block versus separate H/L
+modules under the same QTRM-native LM-generation gate.
+```
+
+Next canonical comparison:
+
+```text
+candidate A: TRM-style shared-block z_H/z_L core
+candidate B: HRM-style separate H/L core
+candidate C: current best nested QTRM baseline
+
+All candidates must use:
+  same tokenizer/data/eval seed
+  same H_cycles x L_cycles budget
+  same greedy LM-generation metric
+  same think0/state_reset/z_l_zero/z_h_zero/op_zero destructive ablations
+```
+
+Do not jump from HRM-Text to a capability claim. HRM-Text's strong numbers came
+from real text pretraining; QTRM still has to prove the recurrent core first,
+then run language healing/pretraining without erasing that causal gain.

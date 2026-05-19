@@ -25051,6 +25051,58 @@ refinement head around the recurrent state, with the existing route preserved
 as route0 and evaluated by the same len8 family-floor and ablation gates.
 ```
 
+## 2026-05-19 - HRM-Text Added As Text-LM Prior
+
+Sources:
+
+```text
+HRM-Text model:
+  https://huggingface.co/sapientinc/HRM-Text-1B
+
+HRM-Text repo:
+  https://github.com/sapientinc/HRM-Text
+
+local clone:
+  references/official/hrm-text@f99410a
+
+TRM repo:
+  references/official/tiny-recursive-models@c011037
+```
+
+Correction:
+
+```text
+TRM is not single-state. It keeps z_H and z_L.
+
+The difference is:
+  TRM: shared recurrent update module for both z_H and z_L
+  HRM: separate H_module and L_module
+  HRM-Text: HRM-style recurrence scaled into PrefixLM text pretraining
+```
+
+QTRM consequence:
+
+```text
+The next fair native-core comparison is not "dual state or no dual state".
+Both HRM and TRM use dual state. The comparison is:
+
+  TRM-style shared-block z_H/z_L core
+  HRM-style separate H/L core
+  current nested QTRM baseline
+
+All must run under the same greedy LM-generation gate and the same destructive
+think0/state_reset/z_l_zero/z_h_zero/op_zero ablations.
+```
+
+Documentation:
+
+```text
+docs/wiki/sources/hrm-text.md
+docs/wiki/sources/tiny-recursive-models.md
+docs/wiki/concepts/tiny-recursive-models.md
+docs/wiki/architecture/qtrm-native-first-roadmap.md
+```
+
 ## 2026-05-18 - Research Loop: Recurrent-Depth Stability Before More Architecture Shopping
 
 Current bottleneck:
