@@ -27975,3 +27975,54 @@ not mutually exclusive; they occupy nearby weight-space regions. The next
 experiment should stabilize the alpha=0.25 basin rather than restart
 architecture shopping.
 ```
+
+## 2026-05-19 - Qwen3.5 Preinit Interpolation Stabilization Rejected
+
+Question:
+
+```text
+Can the alpha=0.25 128-case accepted mandatory-core checkpoint composition be
+stabilized into a 256-case accepted checkpoint by continuation or selective
+checkpoint interpolation?
+```
+
+Implementation:
+
+```text
+extended scripts/411_interpolate_trainable_checkpoints.py with:
+  --qwen-alpha
+  --core-alpha
+  --qwen-attn-alpha
+  --qwen-mlp-alpha
+  --qwen-norm-alpha
+  --core-state-alpha
+  --core-adapter-alpha
+```
+
+Key results:
+
+```text
+alpha=0.25, 256-case:
+  rejected, gain 0.01953125, language_top1 1.0
+
+alpha=0.25 continuation S60:
+  rejected, gain 0.015625, language_top1 1.0
+
+q0.25_c0.32 and q0.25_c0.35:
+  rejected, gain 0.01953125, language_top1 1.0
+
+q0.10_c0.50:
+  rejected, gain 0.0078125, min_family_core_accuracy 0.1162790698
+
+qa25_qm25_qn25_cs50_ca25:
+  128-case accepted, but 256-case rejected at gain 0.01953125
+```
+
+Conclusion:
+
+```text
+The current path is a near-miss, not a robust promotion. The right next move is
+to stop coarse alpha hunting and build a 256-case family-balanced
+checkpoint-selection loop that directly selects for core-over-base gain,
+min-family non-regression, and language preservation.
+```

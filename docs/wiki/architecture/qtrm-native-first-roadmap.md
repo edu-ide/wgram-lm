@@ -17057,3 +17057,41 @@ Turn the alpha=0.25 interpolation into a trained/stable checkpoint:
   3. run core destructive ablations
   4. only then attach public MCQ/language healing gates
 ```
+
+## Qwen3.5 Preinit Interpolation Stabilization Attempt 2026-05-19
+
+Decision record:
+
+```text
+docs/wiki/decisions/qwen35-preinit-interpolation-stabilization.md
+```
+
+Result:
+
+```text
+Direct continuation from alpha=0.25:
+  rejected
+  gain: 0.015625
+  language_top1_agreement: 1.0
+
+Best scalar/selective interpolation on 256 cases:
+  q0.25_c0.30 / q0.25_c0.32 / q0.25_c0.35
+  rejected
+  gain: 0.01953125
+  language_top1_agreement: 1.0
+
+Group interpolation:
+  qa25_qm25_qn25_cs50_ca25
+  128-case accepted
+  256-case rejected, gain: 0.01953125
+```
+
+Interpretation:
+
+```text
+The 128-case accepted basin is real but fragile. Coarse interpolation and
+low-LR continuation do not stabilize it. The next credible step is not more
+architecture shopping or alpha hunting. It is a fixed 256-case family-balanced
+training/selection loop that optimizes the actual promotion gate while
+preserving language non-regression.
+```
