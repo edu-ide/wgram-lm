@@ -128,6 +128,33 @@ route is useful only when paired with a small pretrained-backbone healing
 scope. Future promotion runs must use 512-case periodic selection and
 language-aware checkpoint scoring.
 ```
+
+512-selected result:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_s100_20260519
+
+selected directly on 512 cases
+gain: 0.021484375
+checksum4 gain: +0.0058479532
+min_family_gain: +0.0058479532
+language_top1_agreement: 0.875
+decision: accepted
+
+carry-off ablation:
+  gain: 0.0078125
+  checksum4 gain: 0.0
+  decision: rejected
+```
+
+Current best claim:
+
+```text
+Qwen3.5-preinit QTRM with mean trajectory carry now has a 512-selected
+carry-dependent reasoning gain. The recurrent trajectory is causally useful in
+the LM-logit path on this synthetic gate. The remaining blocker is language
+preservation at a stronger probe scale.
+```
 ```
 
 The current scaling evidence says:

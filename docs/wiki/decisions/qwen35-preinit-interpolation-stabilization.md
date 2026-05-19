@@ -835,3 +835,88 @@ Do not promote learned carry. The next run must select checkpoints with
 language-aware periodic scoring and must evaluate 512 cases during selection if
 we want the selected checkpoint to survive 512 expansion.
 ```
+
+## 512-Case Language-Aware Carry Selection 2026-05-19
+
+Strict language selection run:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang_s120_20260519
+
+core_trajectory_carry_mode: mean
+eval_cases: 512
+selection_min_language_top1: 1.0
+selection_language_weight: 1.0
+
+decision: rejected
+selected step: 20
+gain: 0.017578125
+language_top1_agreement: 1.0
+checksum4 gain: 0.0
+```
+
+Interpretation:
+
+```text
+Requiring perfect language top1 preserved language but selected a checkpoint
+below the reasoning threshold. This is useful as a boundary condition: perfect
+language preservation is too strict for the current tiny language probe if we
+want the checksum family to move.
+```
+
+Practical language-aware selection run:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_s100_20260519
+
+core_trajectory_carry_mode: mean
+eval_cases: 512
+selection_min_language_top1: 0.875
+selection_language_weight: 0.5
+selected step: 100
+
+decision: accepted
+gain: 0.021484375
+language_top1_agreement: 0.875
+
+family gains:
+  chain5:      +0.0350877193
+  checksum4:  +0.0058479532
+  select_pair:+0.0235294118
+```
+
+Carry-off ablation:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_eval512_carryoff_20260519
+
+decision: rejected
+gain: 0.0078125
+language_top1_agreement: 0.875
+
+family gains:
+  chain5:      +0.0058479532
+  checksum4:   0.0
+  select_pair:+0.0176470588
+
+failed:
+  accepted_reasoning_gain: false
+  accepted_family_core_accuracy: false
+```
+
+Decision:
+
+```text
+This is the strongest causal Qwen3.5-preinit QTRM result so far:
+
+1. selected directly on 512 cases, not selected on 256 then expanded;
+2. aggregate reasoning gain clears the 0.02 gate;
+3. all three families have non-negative gain and checksum4 is positive;
+4. turning off trajectory carry destroys acceptance and removes checksum4 gain;
+5. language top1 remains above the current non-regression threshold but is not
+   perfectly preserved.
+
+This is a real architecture signal, not yet the final breakthrough. The next
+promotion requirement is to expand the language probe and raise the language
+floor while preserving the carry-dependent checksum4 gain.
+```

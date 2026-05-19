@@ -28386,3 +28386,44 @@ Do not promote learned carry. It overfits the 256 selection gate and does not
 survive 512 expansion. Add language-aware checkpoint selection and use 512-case
 periodic selection for the next serious promotion run.
 ```
+
+## 2026-05-19 - First 512-Selected Carry-Dependent Accepted Checkpoint
+
+DGX runs:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang_s120_20260519
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_s100_20260519
+local_eval/qwen35_preinit_trajcarry_mean_512select_lang0875_eval512_carryoff_20260519
+```
+
+Result:
+
+```text
+strict language floor 1.0:
+  accepted: false
+  gain: 0.017578125
+  language_top1_agreement: 1.0
+  checksum4 gain: 0.0
+
+language floor 0.875:
+  accepted: true
+  gain: 0.021484375
+  language_top1_agreement: 0.875
+  checksum4 gain: +0.0058479532
+  min_family_gain: +0.0058479532
+
+carry-off ablation:
+  accepted: false
+  gain: 0.0078125
+  checksum4 gain: 0.0
+```
+
+Interpretation:
+
+```text
+This is the first checkpoint selected directly on the 512-case gate that clears
+the aggregate threshold, gives positive checksum4 gain, and fails when the
+trajectory carry route is disabled. It is a genuine causal architecture signal.
+It is not yet a final breakthrough because language top1 is 0.875, not 1.0.
+```
