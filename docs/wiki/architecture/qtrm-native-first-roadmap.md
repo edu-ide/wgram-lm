@@ -17463,3 +17463,43 @@ Next milestone:
   4. promote only after multi-seed gain passes and disappears under core/carry
      ablation
 ```
+
+Recurrent trajectory advantage milestone:
+
+```text
+implemented:
+  generic trajectory advantage loss
+  generic trajectory monotonic loss
+  base-error-only trajectory filtering
+  script: scripts/416_run_qwen35_preinit_recurrent_trajectory_advantage_multiseed.sh
+
+accepted run:
+  local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_s80_20260519
+
+metrics:
+  accepted: true
+  gain: 0.0208333333
+  language_top1: 0.96875
+  min_family_gain: +0.015625
+  min_family_core_accuracy: 0.0989583333
+
+carry-off:
+  local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_s80_carryoff_20260519
+  accepted: false
+  gain: 0.0034722222
+```
+
+Roadmap consequence:
+
+```text
+The current strongest path is no longer broad HRM-Text healing. It is
+base-error-focused recurrent trajectory supervision: teach the core's internal
+steps to improve the normal LM-head margin where the base model is weak, then
+select by multi-seed causal gain.
+
+Next steps:
+  1. repeat the accepted base-error trajectory run on a second eval seed bundle
+  2. make paired carry-off/core-off ablation easier to run by default
+  3. if repeated, raise the gate from 576 cases to a larger held-out set
+  4. only then attempt language generation/healing beyond top-1 non-regression
+```

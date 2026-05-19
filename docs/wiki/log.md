@@ -28705,3 +28705,105 @@ Conclusion: HRM-Text training discipline is a good ingredient, not an instant
 breakthrough. The next falsifiable target is recurrent trajectory quality and
 core-depth scaling, not more broad healing CE.
 ```
+
+## 2026-05-19 - Base-Error Recurrent Trajectory Advantage Accepted
+
+Question:
+
+```text
+Can the recurrent core become robust across eval seeds if its intermediate
+trajectory is trained to improve the normal LM digit-choice margin specifically
+on examples where the Qwen/core-off path is weak?
+```
+
+Implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --trajectory-advantage-weight
+  --trajectory-advantage-margin
+  --trajectory-monotonic-weight
+  --trajectory-monotonic-margin
+  --trajectory-loss-base-error-only
+
+scripts/416_run_qwen35_preinit_recurrent_trajectory_advantage_multiseed.sh
+```
+
+Mechanism:
+
+```text
+For each recurrent step state:
+  step_state -> core_out_norm -> Qwen LM head -> digit-choice logits
+
+Loss:
+  1. step target-vs-wrong margin should exceed the core-off/base margin
+  2. optional adjacent-step monotonic margin pressure
+  3. base-error-only mode applies the pressure only where the base margin is
+     already non-positive
+
+This stays inside the canonical LM path. It is not a side answer head.
+```
+
+Rejected broad variant:
+
+```text
+path:
+  local_eval/qwen35_preinit_recurrent_trajadv_multiseed_s80_20260519
+
+accepted: false
+gain: 0.0190972222
+language_top1: 0.96875
+min_family_gain: +0.015625
+
+interpretation:
+  family floor improved, but aggregate gain remained just below 0.02.
+```
+
+Accepted base-error variant:
+
+```text
+path:
+  local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_s80_20260519
+
+accepted: true
+eval_cases: 576 total = 192 x 3 eval seeds
+gain: 0.0208333333
+language_top1: 0.96875
+min_family_gain: +0.015625
+min_family_core_accuracy: 0.0989583333
+best_step: 40
+
+family gains:
+  chain5:      +0.015625
+  checksum4:  +0.0260416667
+  select_pair:+0.0208333333
+```
+
+Carry-off ablation:
+
+```text
+path:
+  local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_s80_carryoff_20260519
+
+accepted: false
+gain: 0.0034722222
+language_top1: 1.0
+
+family gains:
+  chain5:      0.0
+  checksum4:  0.0
+  select_pair:+0.0104166667
+```
+
+Decision:
+
+```text
+Promote base-error recurrent trajectory advantage as the current strongest
+QTRM-native reasoning-training step. It passes the 576-case multi-eval-seed
+gate, preserves extended language non-regression, and the gain mostly
+disappears when trajectory carry is disabled.
+
+This is still not an ASI or Qwen3.6-27B-level result. It is a real causal
+local innovation signal: recurrent trajectory supervision can convert a
+multi-seed near miss into an accepted core-dependent gain.
+```

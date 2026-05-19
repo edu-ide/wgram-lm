@@ -13,6 +13,9 @@ EXTRA_ARGS=()
 if [[ "${EVAL_FORCE_TRAJECTORY_CARRY_OFF:-0}" == "1" ]]; then
   EXTRA_ARGS+=(--eval-force-trajectory-carry-off)
 fi
+if [[ "${TRAJECTORY_LOSS_BASE_ERROR_ONLY:-0}" == "1" ]]; then
+  EXTRA_ARGS+=(--trajectory-loss-base-error-only)
+fi
 
 "${PYTHON}" scripts/362_train_qwen_backbone_qtrm_core_gate.py \
   --model-id "${MODEL_ID}" \
@@ -76,6 +79,10 @@ fi
   --checksum-latent-answer-lr "${CHECKSUM_LATENT_ANSWER_LR:-1.0e-3}" \
   --checksum-latent-answer-weight-decay "${CHECKSUM_LATENT_ANSWER_WEIGHT_DECAY:-0.01}" \
   --checksum-trajectory-weight "${CHECKSUM_TRAJECTORY_WEIGHT:-0.0}" \
+  --trajectory-advantage-weight "${TRAJECTORY_ADVANTAGE_WEIGHT:-0.0}" \
+  --trajectory-advantage-margin "${TRAJECTORY_ADVANTAGE_MARGIN:-0.0}" \
+  --trajectory-monotonic-weight "${TRAJECTORY_MONOTONIC_WEIGHT:-0.0}" \
+  --trajectory-monotonic-margin "${TRAJECTORY_MONOTONIC_MARGIN:-0.0}" \
   --eval-every-steps "${EVAL_EVERY_STEPS:-40}" \
   --restore-best-checkpoint \
   --min-reasoning-gain "${MIN_REASONING_GAIN:-0.02}" \

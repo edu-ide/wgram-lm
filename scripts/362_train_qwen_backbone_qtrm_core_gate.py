@@ -475,6 +475,20 @@ def _last_token_step_states(
     ]
 
 
+def _digit_choice_margins(
+    logits: torch.Tensor,
+    label_token_ids: torch.Tensor,
+    target_choice_indices: torch.Tensor,
+) -> torch.Tensor:
+    choice_logits = logits.float().index_select(dim=-1, index=label_token_ids)
+    row_index = torch.arange(target_choice_indices.numel(), device=choice_logits.device)
+    wrong_mask = torch.ones_like(choice_logits, dtype=torch.bool)
+    wrong_mask[row_index, target_choice_indices] = False
+    target = choice_logits[row_index, target_choice_indices]
+    wrong = choice_logits.masked_fill(~wrong_mask, float("-inf")).amax(dim=-1)
+    return target - wrong
+
+
 @torch.no_grad()
 def evaluate_cases(model, tokenizer, cases: list[SyntheticCase], args, label_ids: dict[str, int]):
     device = next(model.parameters()).device
@@ -737,6 +751,8 @@ def train_core(
     checksum_counterfactual_losses = []
     checksum_latent_answer_losses = []
     checksum_trajectory_losses = []
+    trajectory_advantage_losses = []
+    trajectory_monotonic_losses = []
     language_healing_losses = []
     language_healing_kl_losses = []
     best: dict[str, object] | None = None
@@ -806,6 +822,8 @@ def train_core(
             float(args.kl_weight) > 0.0
             or float(args.core_advantage_weight) > 0.0
             or float(args.checksum_base_error_advantage_weight) > 0.0
+            or float(args.trajectory_advantage_weight) > 0.0
+            or float(args.trajectory_monotonic_weight) > 0.0
         ):
             with torch.no_grad():
                 base_logits = _last_token_logits(model, input_ids, attention_mask, force_core_off=True)
@@ -921,6 +939,67 @@ def train_core(
                 )
                 loss = loss + float(args.checksum_trajectory_weight) * trajectory_loss
                 checksum_trajectory_losses.append(float(trajectory_loss.detach().cpu()))
+        if (
+            float(args.trajectory_advantage_weight) > 0.0
+            or float(args.trajectory_monotonic_weight) > 0.0
+        ):
+            if base_logits is None:
+                raise RuntimeError("base logits were not computed for trajectory loss")
+            step_states = getattr(core_outputs, "qtrm_core_step_states", None)
+            if step_states is None:
+                raise RuntimeError("missing qtrm_core_step_states for trajectory loss")
+            selected_last = _last_token_step_states(step_states, attention_mask)
+            selected_last = model.core_out_norm(selected_last).to(dtype=core_logits.dtype)
+            trajectory_logits = model._lm_head()(selected_last)
+            bsz, num_steps, _ = trajectory_logits.shape
+            flat_logits = trajectory_logits.reshape(bsz * num_steps, trajectory_logits.shape[-1])
+            flat_targets = target_choice_indices[:, None].expand(-1, num_steps).reshape(-1)
+            step_margin = _digit_choice_margins(
+                flat_logits,
+                label_token_ids,
+                flat_targets,
+            ).reshape(bsz, num_steps)
+            base_margin = _digit_choice_margins(
+                base_logits,
+                label_token_ids,
+                target_choice_indices,
+            )
+            item_mask = torch.ones(bsz, device=device, dtype=torch.bool)
+            if bool(args.trajectory_loss_base_error_only):
+                item_mask = base_margin <= 0.0
+            if bool(item_mask.any().item()):
+                step_weights = None
+                if family_loss_weights:
+                    step_weights = weights[item_mask, None]
+                if float(args.trajectory_advantage_weight) > 0.0:
+                    relative_margin = step_margin[item_mask] - base_margin[item_mask, None]
+                    per_step_loss = F.relu(
+                        float(args.trajectory_advantage_margin) - relative_margin
+                    )
+                    if step_weights is not None:
+                        traj_advantage = (
+                            per_step_loss * step_weights
+                        ).sum() / (
+                            step_weights.sum().clamp_min(1e-6) * per_step_loss.shape[1]
+                        )
+                    else:
+                        traj_advantage = per_step_loss.mean()
+                    loss = loss + float(args.trajectory_advantage_weight) * traj_advantage
+                    trajectory_advantage_losses.append(float(traj_advantage.detach().cpu()))
+                if float(args.trajectory_monotonic_weight) > 0.0 and num_steps > 1:
+                    deltas = step_margin[item_mask, 1:] - step_margin[item_mask, :-1]
+                    per_step_loss = F.relu(
+                        float(args.trajectory_monotonic_margin) - deltas
+                    )
+                    if step_weights is not None:
+                        mono_weights = step_weights.expand(-1, per_step_loss.shape[1])
+                        traj_mono = (
+                            per_step_loss * mono_weights
+                        ).sum() / mono_weights.sum().clamp_min(1e-6)
+                    else:
+                        traj_mono = per_step_loss.mean()
+                    loss = loss + float(args.trajectory_monotonic_weight) * traj_mono
+                    trajectory_monotonic_losses.append(float(traj_mono.detach().cpu()))
         if float(args.kl_weight) > 0.0:
             if base_logits is None:
                 raise RuntimeError("base logits were not computed for KL loss")
@@ -1064,6 +1143,16 @@ def train_core(
         "mean_checksum_trajectory_loss": (
             sum(checksum_trajectory_losses) / len(checksum_trajectory_losses)
             if checksum_trajectory_losses
+            else None
+        ),
+        "mean_trajectory_advantage_loss": (
+            sum(trajectory_advantage_losses) / len(trajectory_advantage_losses)
+            if trajectory_advantage_losses
+            else None
+        ),
+        "mean_trajectory_monotonic_loss": (
+            sum(trajectory_monotonic_losses) / len(trajectory_monotonic_losses)
+            if trajectory_monotonic_losses
             else None
         ),
         "mean_language_healing_loss": (
@@ -1341,6 +1430,11 @@ def run(args: argparse.Namespace) -> dict[str, object]:
             args.checksum_latent_answer_weight_decay
         ),
         "checksum_trajectory_weight": float(args.checksum_trajectory_weight),
+        "trajectory_advantage_weight": float(args.trajectory_advantage_weight),
+        "trajectory_advantage_margin": float(args.trajectory_advantage_margin),
+        "trajectory_monotonic_weight": float(args.trajectory_monotonic_weight),
+        "trajectory_monotonic_margin": float(args.trajectory_monotonic_margin),
+        "trajectory_loss_base_error_only": bool(args.trajectory_loss_base_error_only),
         "case_mode": str(args.case_mode),
         "train_case_mode": train_case_mode,
         "eval_case_mode": eval_case_mode,
@@ -1508,6 +1602,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--checksum-latent-answer-lr", type=float, default=1.0e-3)
     parser.add_argument("--checksum-latent-answer-weight-decay", type=float, default=0.01)
     parser.add_argument("--checksum-trajectory-weight", type=float, default=0.0)
+    parser.add_argument("--trajectory-advantage-weight", type=float, default=0.0)
+    parser.add_argument("--trajectory-advantage-margin", type=float, default=0.0)
+    parser.add_argument("--trajectory-monotonic-weight", type=float, default=0.0)
+    parser.add_argument("--trajectory-monotonic-margin", type=float, default=0.0)
+    parser.add_argument("--trajectory-loss-base-error-only", action="store_true")
     parser.add_argument("--eval-every-steps", type=int, default=0)
     parser.add_argument("--restore-best-checkpoint", action="store_true")
     parser.add_argument(

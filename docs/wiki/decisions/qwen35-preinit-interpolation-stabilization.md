@@ -1154,3 +1154,77 @@ Do not keep scaling this exact loss as the next main bet. The stronger signal
 is that the model needs a better recurrent trajectory objective so that the
 core changes the answer for the right reason across seeds.
 ```
+
+## Base-Error Trajectory Advantage Decision
+
+Added a generic recurrent trajectory objective:
+
+```text
+--trajectory-advantage-weight
+--trajectory-advantage-margin
+--trajectory-monotonic-weight
+--trajectory-monotonic-margin
+--trajectory-loss-base-error-only
+```
+
+Unlike the checksum-specific residue objective, this applies to all hard-v1
+families through the normal Qwen LM head:
+
+```text
+qtrm_core_step_states
+-> core_out_norm
+-> Qwen LM head
+-> digit-choice target-vs-wrong margin
+```
+
+Broad trajectory pressure result:
+
+```text
+local_eval/qwen35_preinit_recurrent_trajadv_multiseed_s80_20260519
+
+accepted: false
+gain: 0.0190972222
+language_top1: 0.96875
+min_family_gain: +0.015625
+```
+
+Base-error-only result:
+
+```text
+local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_s80_20260519
+
+accepted: true
+gain: 0.0208333333
+language_top1: 0.96875
+min_family_gain: +0.015625
+min_family_core_accuracy: 0.0989583333
+
+family gains:
+  chain5:      +0.015625
+  checksum4:  +0.0260416667
+  select_pair:+0.0208333333
+```
+
+Carry-off:
+
+```text
+local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_s80_carryoff_20260519
+
+accepted: false
+gain: 0.0034722222
+language_top1: 1.0
+```
+
+Decision:
+
+```text
+Promote base-error trajectory advantage as the first robust multi-eval-seed
+QTRM-native recurrent training improvement after HRM-Text healing. It is not
+just more language CE: the objective trains intermediate recurrent states to
+improve the same LM-head decision margin, and the accepted gain collapses when
+trajectory carry is disabled.
+
+Next promotion requirement:
+  repeat on another seed bundle or run a core-off/carry-off paired report
+  as part of the default script output before claiming broader robustness.
+```
