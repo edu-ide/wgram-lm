@@ -28998,3 +28998,116 @@ Next credible architecture/training change:
   add per-family hard-negative mining or a family-conditioned recurrence probe
   to identify why chain5 loses under bundle2 before attempting more scaling.
 ```
+
+## 2026-05-19 - Bundle2 Chain5 Hard-Negative Probe
+
+Question:
+
+```text
+Is bundle2 chain5 failing because the recurrent core corrupts examples that
+Qwen/base already solves, or because both base and core are stuck in the same
+copy-prior failure mode?
+```
+
+Implementation:
+
+```text
+scripts/419_probe_qwen35_chain5_bundle2_hard_negatives.py
+```
+
+DGX run:
+
+```text
+path:
+  local_eval/qwen35_preinit_chain5_bundle2_hard_negative_probe_v2_20260519/report.json
+
+family:
+  chain5
+
+eval_seed_offsets:
+  20000,20001,20002
+
+filtered_cases:
+  192
+```
+
+Compared checkpoints:
+
+```text
+accepted_bundle1:
+  local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_s80_20260519/last_core.pt
+
+hard_selection_bundle2:
+  local_eval/qwen35_preinit_family_hard_selection_bundle2_s120_20260519/last_core.pt
+
+preserve_strong_bundle2:
+  local_eval/qwen35_preinit_recurrent_trajadv_preserve_strong_bundle2_s80_20260519/last_core.pt
+```
+
+Result:
+
+```text
+For all three checkpoints:
+  base_choice_accuracy: 0.0833333333
+  core_choice_accuracy: 0.0833333333
+  choice_gain: 0.0
+  base_full_accuracy: 0.0833333333
+  core_full_accuracy: 0.0833333333
+  full_gain: 0.0
+
+counts:
+  both_correct: 16
+  base_correct_core_wrong: 0
+  base_wrong_core_correct: 0
+  both_wrong: 176
+
+mean_core_minus_base_margin:
+  accepted_bundle1:        -0.0256754557
+  hard_selection_bundle2:  -0.0268554688
+  preserve_strong_bundle2: -0.0270182292
+```
+
+Representative failure:
+
+```text
+Prompt:
+  Follow the five-step digit chain mod 10.
+  Start 8; add 5; multiply by 3; subtract 7; add 5.
+
+Gold:
+  7
+
+Base:
+  8
+
+Core:
+  8
+```
+
+Diagnosis:
+
+```text
+Bundle2 chain5 is not primarily a renderer/full-vocab problem and not mainly
+a base-correct/core-wrong regression. The Qwen path and the recurrent core
+both usually answer with the start digit. The recurrent trajectory is not yet
+learning the five-step state transition strongly enough to overcome the
+pretrained copy prior.
+```
+
+Decision:
+
+```text
+Do not spend the next step on broader HRM-Text language healing or selector
+tuning. The next useful experiment must teach or probe the chain-state
+trajectory itself:
+
+  start
+  -> after add_a
+  -> after multiply
+  -> after subtract
+  -> after add_b
+  -> final digit
+
+The supervision must still feed the canonical LM-logit path. A side solver or
+renderer would not count.
+```

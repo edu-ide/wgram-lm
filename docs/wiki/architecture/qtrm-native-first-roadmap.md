@@ -17562,3 +17562,45 @@ Selection is now strict enough to reject negative-family checkpoints. The
 remaining work is not "tune the selector"; it is to improve the recurrent
 transition/objective so chain5 does not regress under bundle2.
 ```
+
+Chain5 probe update:
+
+```text
+script:
+  scripts/419_probe_qwen35_chain5_bundle2_hard_negatives.py
+
+report:
+  local_eval/qwen35_preinit_chain5_bundle2_hard_negative_probe_v2_20260519/report.json
+
+cases:
+  hard_v1 / chain5 / eval_seed_offsets=20000,20001,20002 / 192 filtered cases
+
+accepted_bundle1:
+  base_choice_accuracy: 0.0833333333
+  core_choice_accuracy: 0.0833333333
+  full_gain: 0.0
+  both_wrong: 176/192
+
+hard_selection_bundle2:
+  base_choice_accuracy: 0.0833333333
+  core_choice_accuracy: 0.0833333333
+  full_gain: 0.0
+  both_wrong: 176/192
+
+preserve_strong_bundle2:
+  base_choice_accuracy: 0.0833333333
+  core_choice_accuracy: 0.0833333333
+  full_gain: 0.0
+  both_wrong: 176/192
+```
+
+Interpretation:
+
+```text
+The bundle2 chain5 failure is not a simple "core hurts base" regression.
+Both base and core are mostly copying the start digit. HRM-Text-style language
+healing is therefore not the next highest-leverage move. The next canonical
+step is a chain-state trajectory objective or probe that teaches the recurrent
+core the intermediate value transitions while the final answer still exits
+through normal LM logits.
+```
