@@ -35,6 +35,23 @@ objective: PrefixLM
 status: pre-alignment / not chat tuned
 ```
 
+Reference resource targets from the official README:
+
+```text
+L  / 0.6B parameters:  8 H100s,  single node, about 50 hours
+XL / 1.0B parameters: 16 H100s, two nodes,  about 46 hours
+```
+
+QTRM implication:
+
+```text
+HRM-Text is strong evidence for recurrent text-LM pretraining, but its
+reference runs are not a fast single-DGX-Spark recipe. For this project,
+HRM-Text should guide the data/objective/training stack, while the main
+near-term model route uses Qwen3.5 pretrained initialization plus a strict
+TRM recurrent core.
+```
+
 The recurrent core, in simplified form:
 
 ```text

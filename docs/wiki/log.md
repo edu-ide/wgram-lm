@@ -27758,3 +27758,46 @@ Updated rule:
   len4 short gate is only an optimization-signal probe.
   len6/len7 scaling gate decides the reasoning-core baseline.
 ```
+
+## 2026-05-19 - Len8 Scaling Check
+
+Question:
+
+```text
+Does the strict TRM scaling advantage survive at len8?
+```
+
+DGX runs:
+
+```text
+local_eval/qtrm_len8_strict_trm_l3_halt_s1200_20260519
+local_eval/qtrm_len8_hrm_separate_s1200_20260519
+```
+
+Result:
+
+```text
+candidate        exact    depth_gain  ablation_drop  min_family
+strict TRM       0.05469  0.04297    -0.00781        0.05263
+HRM separate     0.05273  0.03320    -0.00586        0.03509
+```
+
+Interpretation:
+
+```text
+Strict TRM still has slightly better exact, depth gain, and family floor than
+HRM at len8. However, both candidates have negative worst-ablation drop, so
+len8 is not yet a clean causal-core pass.
+
+The useful signal is:
+  TRM scales better than HRM from len7 to len8 on accuracy/family floor.
+
+The unresolved bottleneck is:
+  the recurrent core is not robustly causal at len8 because destructive
+  ablations do not always reduce performance.
+
+Next action:
+  do not jump to language pretraining until len8 ablation causality is repaired
+  or explicitly accepted as a weak baseline. Candidate fixes should target
+  state-reset/op-zero robustness, not another architecture shopping round.
+```

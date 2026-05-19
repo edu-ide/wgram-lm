@@ -4,6 +4,50 @@ Date: 2026-05-12
 
 Status: canonical direction, not a completed capability claim.
 
+## Strategic Update 2026-05-19: Pretrained-Init First
+
+HRM-Text shows that recurrent latent-reasoning LMs can be pretrained from
+scratch with far less compute/data than conventional scaling recipes, but its
+reference resource targets are still outside a fast single-DGX-Spark loop:
+
+```text
+HRM-Text L  / 0.6B:  8 x H100 for about 50 hours
+HRM-Text XL / 1.0B: 16 x H100 for about 46 hours
+```
+
+Therefore, the near-term canonical execution path is:
+
+```text
+Qwen3.5 pretrained initialization
++ strict TRM shared z_H/z_L recurrent core
++ L=3 recurrent schedule
++ dedicated halt/depth objectives
++ language healing without erasing core causality
+```
+
+Do not attempt a 0.6B/1B from-scratch HRM-Text-style run on a single DGX Spark
+as the main path. Use from-scratch runs only for small proof models and
+architecture gates. The acceptance target remains:
+
+```text
+QTRM/Qwen-pretrained-init model beats Qwen3.6-27B on the same benchmark suite
+while preserving destructive core-ablation causality.
+```
+
+The current scaling evidence says:
+
+```text
+len4 short gate:
+  HRM-style separate H/L learns faster.
+
+len6/len7/len8 scaling:
+  strict TRM shared z_H/z_L is the better baseline on exact/family floor.
+
+len8 bottleneck:
+  exact improves, but worst-ablation drop is still negative, so core causality
+  must be repaired before claiming a robust reasoning core.
+```
+
 ## Hard Lock 2026-05-16: TRM-Paper-Condition QTRM-Native
 
 The canonical target is now stricter than "QTRM is executed during forward".
