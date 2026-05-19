@@ -17503,3 +17503,37 @@ Next steps:
   3. if repeated, raise the gate from 576 cases to a larger held-out set
   4. only then attempt language generation/healing beyond top-1 non-regression
 ```
+
+Bundle2 repeat update:
+
+```text
+bundle2 eval_seed_offsets:
+  20000,20001,20002
+
+base-error trajectory:
+  accepted: false
+  gain: 0.0
+  min_family_gain: -0.0208333333
+  chain5 gain: -0.0208333333
+
+strong preservation repair:
+  accepted: false
+  gain: -0.0034722222
+  min_family_gain: -0.015625
+  min_family_core_accuracy: 0.0833333333
+```
+
+Roadmap consequence:
+
+```text
+The current architecture has a real local causal signal, but the roadmap must
+not call it robust yet. The next architectural/training bottleneck is
+family-specific non-regression under seed shift, especially chain5.
+
+Canonical next direction:
+  per-family hard-negative selection
+  multi-bundle eval as the default promotion gate
+  do-no-harm loss retained as a support mechanism
+  no broader capability claim until every family has non-negative gain on at
+  least two held-out seed bundles
+```

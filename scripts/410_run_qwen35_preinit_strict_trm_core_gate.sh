@@ -16,6 +16,9 @@ fi
 if [[ "${TRAJECTORY_LOSS_BASE_ERROR_ONLY:-0}" == "1" ]]; then
   EXTRA_ARGS+=(--trajectory-loss-base-error-only)
 fi
+if [[ "${CORE_PRESERVATION_POSITIVE_MARGIN_ONLY:-0}" == "1" ]]; then
+  EXTRA_ARGS+=(--core-preservation-positive-margin-only)
+fi
 
 "${PYTHON}" scripts/362_train_qwen_backbone_qtrm_core_gate.py \
   --model-id "${MODEL_ID}" \
@@ -68,6 +71,9 @@ fi
   --core-advantage-weight "${CORE_ADVANTAGE_WEIGHT:-0.0}" \
   --core-advantage-margin "${CORE_ADVANTAGE_MARGIN:-0.0}" \
   --core-advantage-mode "${CORE_ADVANTAGE_MODE:-target_logp}" \
+  --core-preservation-weight "${CORE_PRESERVATION_WEIGHT:-0.0}" \
+  --core-preservation-margin "${CORE_PRESERVATION_MARGIN:-0.0}" \
+  --core-preservation-base-margin-threshold "${CORE_PRESERVATION_BASE_MARGIN_THRESHOLD:-0.0}" \
   --family-loss-weights "${FAMILY_LOSS_WEIGHTS:-}" \
   --checksum-counterfactual-weight "${CHECKSUM_COUNTERFACTUAL_WEIGHT:-0.0}" \
   --checksum-counterfactual-variants "${CHECKSUM_COUNTERFACTUAL_VARIANTS:-1}" \

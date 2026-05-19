@@ -753,6 +753,7 @@ def train_core(
     checksum_trajectory_losses = []
     trajectory_advantage_losses = []
     trajectory_monotonic_losses = []
+    core_preservation_losses = []
     language_healing_losses = []
     language_healing_kl_losses = []
     best: dict[str, object] | None = None
@@ -821,6 +822,7 @@ def train_core(
         if (
             float(args.kl_weight) > 0.0
             or float(args.core_advantage_weight) > 0.0
+            or float(args.core_preservation_weight) > 0.0
             or float(args.checksum_base_error_advantage_weight) > 0.0
             or float(args.trajectory_advantage_weight) > 0.0
             or float(args.trajectory_monotonic_weight) > 0.0
@@ -855,6 +857,37 @@ def train_core(
             else:
                 advantage = per_item_advantage.mean()
             loss = loss + float(args.core_advantage_weight) * advantage
+        if float(args.core_preservation_weight) > 0.0:
+            if base_logits is None:
+                raise RuntimeError("base logits were not computed for core preservation loss")
+            base_margin = _digit_choice_margins(
+                base_logits,
+                label_token_ids,
+                target_choice_indices,
+            )
+            core_margin = _digit_choice_margins(
+                core_logits,
+                label_token_ids,
+                target_choice_indices,
+            )
+            preserve_mask = torch.ones_like(base_margin, dtype=torch.bool)
+            if bool(args.core_preservation_positive_margin_only):
+                preserve_mask = base_margin > float(args.core_preservation_base_margin_threshold)
+            if bool(preserve_mask.any().item()):
+                preserve_loss = F.relu(
+                    base_margin[preserve_mask]
+                    - core_margin[preserve_mask]
+                    + float(args.core_preservation_margin)
+                )
+                if family_loss_weights:
+                    preserve_weights = weights[preserve_mask]
+                    preservation = (
+                        preserve_loss * preserve_weights
+                    ).sum() / preserve_weights.sum().clamp_min(1e-6)
+                else:
+                    preservation = preserve_loss.mean()
+                loss = loss + float(args.core_preservation_weight) * preservation
+                core_preservation_losses.append(float(preservation.detach().cpu()))
         if float(args.checksum_base_error_advantage_weight) > 0.0:
             if base_logits is None:
                 raise RuntimeError("base logits were not computed for checksum base-error loss")
@@ -1155,6 +1188,11 @@ def train_core(
             if trajectory_monotonic_losses
             else None
         ),
+        "mean_core_preservation_loss": (
+            sum(core_preservation_losses) / len(core_preservation_losses)
+            if core_preservation_losses
+            else None
+        ),
         "mean_language_healing_loss": (
             sum(language_healing_losses) / len(language_healing_losses)
             if language_healing_losses
@@ -1414,6 +1452,14 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "core_advantage_weight": float(args.core_advantage_weight),
         "core_advantage_margin": float(args.core_advantage_margin),
         "core_advantage_mode": str(args.core_advantage_mode),
+        "core_preservation_weight": float(args.core_preservation_weight),
+        "core_preservation_margin": float(args.core_preservation_margin),
+        "core_preservation_positive_margin_only": bool(
+            args.core_preservation_positive_margin_only
+        ),
+        "core_preservation_base_margin_threshold": float(
+            args.core_preservation_base_margin_threshold
+        ),
         "checksum_counterfactual_weight": float(args.checksum_counterfactual_weight),
         "checksum_counterfactual_variants": int(args.checksum_counterfactual_variants),
         "checksum_base_error_advantage_weight": float(
@@ -1587,6 +1633,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=["target_logp", "label_choice_margin"],
         default="target_logp",
     )
+    parser.add_argument("--core-preservation-weight", type=float, default=0.0)
+    parser.add_argument("--core-preservation-margin", type=float, default=0.0)
+    parser.add_argument("--core-preservation-positive-margin-only", action="store_true")
+    parser.add_argument("--core-preservation-base-margin-threshold", type=float, default=0.0)
     parser.add_argument("--family-loss-weights", default="")
     parser.add_argument("--checksum-counterfactual-weight", type=float, default=0.0)
     parser.add_argument("--checksum-counterfactual-variants", type=int, default=1)

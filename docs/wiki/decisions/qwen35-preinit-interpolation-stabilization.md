@@ -1228,3 +1228,61 @@ Next promotion requirement:
   repeat on another seed bundle or run a core-off/carry-off paired report
   as part of the default script output before claiming broader robustness.
 ```
+
+## Bundle2 Repeat Decision
+
+The accepted base-error trajectory result was repeated on a second held-out
+bundle:
+
+```text
+eval_seed_offsets: 20000,20001,20002
+eval_cases: 576
+```
+
+Results:
+
+```text
+base-error trajectory:
+  path: local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_bundle2_s80_20260519
+  accepted: false
+  gain: 0.0
+  language_top1: 0.96875
+  min_family_gain: -0.0208333333
+  chain5 gain: -0.0208333333
+
+multi-train-seed:
+  path: local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multitrain_bundle2_s80_20260519
+  accepted: false
+  gain: -0.0104166667
+  min_family_gain: -0.0260416667
+
+preservation:
+  path: local_eval/qwen35_preinit_recurrent_trajadv_preserve_bundle2_s80_20260519
+  accepted: false
+  gain: -0.0034722222
+  min_family_gain: -0.0208333333
+
+strong preservation:
+  path: local_eval/qwen35_preinit_recurrent_trajadv_preserve_strong_bundle2_s80_20260519
+  accepted: false
+  gain: -0.0034722222
+  min_family_gain: -0.015625
+  min_family_core_accuracy: 0.0833333333
+```
+
+Decision:
+
+```text
+Demote the claim from "robust improvement" to "bundle-specific accepted causal
+signal." The base-error trajectory objective is still valuable because it
+created a carry-dependent accepted result, but it fails broader held-out seed
+repeat.
+
+Keep the preservation loss implementation. It reduced damage and made the
+failure more diagnostic, but it did not solve chain5 non-regression.
+
+Next decision gate:
+  promotion must use at least two held-out seed bundles or a single larger
+  multi-bundle eval set, and checkpoint selection must hard-penalize negative
+  per-family gain rather than relying on aggregate score.
+```

@@ -28807,3 +28807,129 @@ This is still not an ASI or Qwen3.6-27B-level result. It is a real causal
 local innovation signal: recurrent trajectory supervision can convert a
 multi-seed near miss into an accepted core-dependent gain.
 ```
+
+## 2026-05-19 - Bundle2 Repeat Failed, Non-Regression Bottleneck Identified
+
+Question:
+
+```text
+Does the accepted base-error recurrent trajectory objective repeat on a
+different held-out seed bundle?
+```
+
+Bundle2:
+
+```text
+eval_seed_offsets:
+  20000,20001,20002
+
+eval_cases:
+  576 total = 192 x 3 eval seeds
+```
+
+Repeat result:
+
+```text
+path:
+  local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multiseed_bundle2_s80_20260519
+
+accepted: false
+gain: 0.0
+language_top1: 0.96875
+min_family_gain: -0.0208333333
+min_family_core_accuracy: 0.078125
+
+family gains:
+  chain5:      -0.0208333333
+  checksum4:  +0.0104166667
+  select_pair:+0.0104166667
+```
+
+Multi-train-seed variant:
+
+```text
+path:
+  local_eval/qwen35_preinit_recurrent_trajadv_baseerr_multitrain_bundle2_s80_20260519
+
+accepted: false
+train_seed_offsets: 0,1,2
+gain: -0.0104166667
+language_top1: 0.96875
+min_family_gain: -0.0260416667
+
+family gains:
+  chain5:      -0.0260416667
+  checksum4:  -0.0104166667
+  select_pair:+0.0052083333
+```
+
+Preservation-loss implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --core-preservation-weight
+  --core-preservation-margin
+  --core-preservation-positive-margin-only
+  --core-preservation-base-margin-threshold
+
+scripts/417_run_qwen35_preinit_trajadv_preserve_bundle2.sh
+```
+
+Mechanism:
+
+```text
+If the core-off/base digit-choice margin is already positive, penalize the
+core when its final LM-head margin drops below that base margin. This is a
+do-no-harm constraint for base-correct cases, not an external verifier.
+```
+
+Preservation result:
+
+```text
+path:
+  local_eval/qwen35_preinit_recurrent_trajadv_preserve_bundle2_s80_20260519
+
+accepted: false
+gain: -0.0034722222
+language_top1: 0.96875
+min_family_gain: -0.0208333333
+
+family gains:
+  chain5:      -0.0208333333
+  checksum4:   0.0
+  select_pair:+0.0104166667
+```
+
+Strong preservation result:
+
+```text
+path:
+  local_eval/qwen35_preinit_recurrent_trajadv_preserve_strong_bundle2_s80_20260519
+
+accepted: false
+gain: -0.0034722222
+language_top1: 0.96875
+min_family_gain: -0.015625
+min_family_core_accuracy: 0.0833333333
+
+family gains:
+  chain5:      -0.015625
+  checksum4:  -0.0052083333
+  select_pair:+0.0104166667
+```
+
+Decision:
+
+```text
+Do not promote base-error trajectory advantage as broadly robust yet. The first
+accepted result was real and carry-dependent, but it does not repeat on the
+second held-out seed bundle.
+
+The current bottleneck is family-specific non-regression: bundle2 chain5 starts
+below the base path and remains negative even with preservation. Preservation
+helps reduce the damage, but it is not sufficient.
+
+Next credible experiment:
+  family-balanced do-no-harm selection or per-family acceptance selection,
+  with a hard reject if any family is negative. Avoid more broad CE scaling.
+```
