@@ -1944,3 +1944,198 @@ def evidence_span_reader_loss(
         "no_answer_prob": no_answer_prob.detach(),
         "no_answer_span_score": no_answer_span_score.detach(),
     }
+
+
+# =============================================================================
+# State-Transition-First Loss Functions
+# =============================================================================
+
+def state_transition_loss(
+    state_digit_logits: torch.Tensor,  # (B, T+1, 10)
+    state_targets: torch.Tensor,  # (B, T+1) - digit labels for each step
+    answer_logits: torch.Tensor,  # (B, 10)
+    answer_targets: torch.Tensor,  # (B,) - final answer digit
+    operation_logits: Optional[torch.Tensor] = None,  # (B, T, n_ops)
+    operation_targets: Optional[torch.Tensor] = None,  # (B, T)
+    *,
+    state_weight: float = 1.0,
+    answer_weight: float = 0.5,
+    consistency_weight: float = 0.3,
+    operation_weight: float = 0.0,
+    state_ignore_index: int = -100,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """
+    State-transition-first loss function.
+    
+    PRIMARY: State prediction at each depth step
+    SECONDARY: Final answer from last state
+    TERTIARY: Final state consistency with answer
+    QUATERNARY: Operation prediction (optional)
+    
+    This loss makes state prediction the dominant training signal,
+    so the recurrent core learns to form meaningful intermediate states
+    rather than just nudging logits.
+    """
+    device = answer_logits.device
+    zero = answer_logits.sum() * 0.0
+    
+    metrics = {
+        "state_loss": zero.detach(),
+        "answer_loss": zero.detach(),
+        "consistency_loss": zero.detach(),
+        "operation_loss": zero.detach(),
+        "state_accuracy": zero.detach(),
+        "answer_accuracy": zero.detach(),
+    }
+    
+    # ① State Prediction Loss (PRIMARY)
+    # Cross-entropy at each depth step
+    state_loss = F.cross_entropy(
+        state_digit_logits.reshape(-1, state_digit_logits.shape[-1]),
+        state_targets.reshape(-1),
+        ignore_index=state_ignore_index,
+    )
+    
+    # State accuracy
+    state_preds = state_digit_logits.argmax(dim=-1)
+    valid_mask = state_targets != state_ignore_index
+    if valid_mask.any():
+        state_acc = (state_preds == state_targets).float()[valid_mask].mean()
+        metrics["state_accuracy"] = state_acc.detach()
+    
+    # ② Answer Loss (SECONDARY)
+    answer_loss = F.cross_entropy(answer_logits, answer_targets)
+    
+    # Answer accuracy
+    answer_preds = answer_logits.argmax(dim=-1)
+    answer_acc = (answer_preds == answer_targets).float().mean()
+    metrics["answer_accuracy"] = answer_acc.detach()
+    
+    # ③ State-Answer Consistency (TERTIARY)
+    # Final state should predict the same digit as the answer
+    final_state_logits = state_digit_logits[:, -1, :]  # (B, 10)
+    consistency_loss = F.cross_entropy(final_state_logits, answer_targets)
+    
+    # ④ Operation Loss (QUATERNARY, optional)
+    operation_loss = zero
+    if (
+        operation_weight > 0.0
+        and operation_logits is not None
+        and operation_targets is not None
+        and operation_logits.numel() > 0
+    ):
+        operation_loss = F.cross_entropy(
+            operation_logits.reshape(-1, operation_logits.shape[-1]),
+            operation_targets.reshape(-1),
+            ignore_index=state_ignore_index,
+        )
+        metrics["operation_loss"] = operation_loss.detach()
+    
+    # Weighted sum
+    total_loss = (
+        float(state_weight) * state_loss
+        + float(answer_weight) * answer_loss
+        + float(consistency_weight) * consistency_loss
+        + float(operation_weight) * operation_loss
+    )
+    
+    metrics["state_loss"] = state_loss.detach()
+    metrics["answer_loss"] = answer_loss.detach()
+    metrics["consistency_loss"] = consistency_loss.detach()
+    
+    return total_loss, metrics
+
+
+def state_transition_causality_loss(
+    answer_logits: torch.Tensor,  # from state path, shape (B, 10) digit logits
+    base_logits: torch.Tensor,  # from core-off path (donor LM head), shape (B, vocab_size)
+    answer_targets: torch.Tensor,  # (B,) digit targets 0-9
+    label_token_ids: torch.Tensor,  # Qwen vocab token IDs for digits ["0".."9"]
+    *,
+    margin: float = 0.1,
+    weight: float = 0.2,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """
+    Causality gate: ensure the state path answer margin beats the baseline.
+    
+    answer_logits is (B, 10) digit logits (indexed 0-9 directly).
+    base_logits is (B, vocab_size) from the donor LM head; we extract
+    only the digit token logits using label_token_ids to compare.
+    
+    This prevents the donor from bypassing the state path by requiring
+    that the state-path margin is strictly better than the baseline margin.
+    """
+    device = answer_logits.device
+    
+    # answer_logits is already (B, 10) with digit indices 0-9
+    core_logits = answer_logits.float()  # (B, 10)
+    
+    # base_logits is (B, vocab_size); extract only digit token logits
+    base_digits = base_logits.float().index_select(dim=-1, index=label_token_ids)  # (B, 10)
+    
+    target_indices = answer_targets.to(torch.long)  # values in [0, 9]
+    batch_size = len(answer_targets)
+    batch_idx = torch.arange(batch_size, device=device)
+    
+    # Target logits
+    core_target = core_logits[batch_idx, target_indices]
+    base_target = base_digits[batch_idx, target_indices]
+    
+    # Wrong answer margin (max of non-target logits across all 10 digit classes)
+    wrong_mask = torch.ones_like(core_logits, dtype=torch.bool)
+    wrong_mask[batch_idx, target_indices] = False
+    core_wrong = core_logits.masked_fill(~wrong_mask, float("-inf")).amax(dim=-1)
+    base_wrong = base_digits.masked_fill(~wrong_mask, float("-inf")).amax(dim=-1)
+    
+    # Margins
+    core_margin = core_target - core_wrong
+    base_margin = base_target - base_wrong
+    
+    # Require core margin > base margin + threshold
+    relative_margin = core_margin - base_margin
+    causality_loss = F.relu(torch.tensor(float(margin), device=device) - relative_margin).mean()
+    
+    metrics = {
+        "causality_loss": causality_loss.detach(),
+        "core_margin": core_margin.detach().mean(),
+        "base_margin": base_margin.detach().mean(),
+        "relative_margin": relative_margin.detach().mean(),
+    }
+    
+    return float(weight) * causality_loss, metrics
+
+
+def state_monotonic_improvement_loss(
+    state_digit_logits: torch.Tensor,  # (B, T+1, 10)
+    answer_targets: torch.Tensor,  # (B,)
+    *,
+    margin: float = 0.0,
+    weight: float = 0.05,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """
+    Monotonic improvement: each step should be closer to the answer.
+    
+    The confidence (logit margin) for the correct answer should increase
+    monotonically through the trajectory.
+    """
+    device = state_digit_logits.device
+    zero = state_digit_logits.sum() * 0.0
+    
+    if weight == 0.0 or state_digit_logits.shape[1] < 2:
+        return zero, {"monotonic_loss": zero.detach()}
+    
+    # Get target logit at each step
+    target_logit = torch.gather(
+        state_digit_logits,
+        dim=-1,
+        index=answer_targets.unsqueeze(1).unsqueeze(2).expand(-1, state_digit_logits.shape[1], 1),
+    ).squeeze(-1)  # (B, T+1)
+    
+    # Check monotonic: target_logit[t+1] >= target_logit[t]
+    deltas = target_logit[:, 1:] - target_logit[:, :-1]  # (B, T)
+    monotonic_loss = F.relu(torch.tensor(float(margin), device=device) - deltas).mean()
+    
+    return float(weight) * monotonic_loss, {
+        "monotonic_loss": monotonic_loss.detach(),
+        "mean_delta": deltas.detach().mean(),
+    }
