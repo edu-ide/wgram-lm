@@ -179,3 +179,59 @@ candidate C:
 
 Accept only if a candidate improves the same held-out greedy LM-generation
 metric and loses under destructive state/core ablations.
+
+## QTRM Experiment: Separate H/L Candidate
+
+Date: 2026-05-19
+
+Implemented candidate:
+
+```text
+think_structure=trm_dual_z_hrm_separate
+
+z_L update:
+  shared QTRM/TRM-style low recurrent stage
+
+z_H update:
+  separate HRM-style high recurrent stage
+```
+
+Code:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+scripts/342_qtrm_native_l5d_backbone_compare.py
+```
+
+DGX run:
+
+```text
+worktree:
+  /mnt/data4tb/qtrm_hrm_exp_20260519
+
+python:
+  /mnt/data4tb/venv_sglang_pr23000/bin/python
+
+report:
+  local_eval/hrm_text_prior_core_compare_v2_short_dgx_torch_20260519/
+    backbone_compare_summary.json
+```
+
+Result:
+
+```text
+candidate                                      full_exact  depth_gain  worst_ablation_drop
+trm_dual_z_official_trm_think                  0.03125     0.00521     -0.00521
+trm_dual_z_hrm_separate_official_trm_think     0.06250     0.02083      0.03125
+```
+
+Interpretation:
+
+```text
+HRM-style separate H/L modules produced a better short-gate signal than the
+shared TRM-style update under the same seed and data.
+
+This is not enough to claim a solved language model or a final architecture.
+The absolute exact score is still low, so this is a promotion candidate for a
+larger controlled gate, not a capability claim.
+```

@@ -24,6 +24,7 @@ CANDIDATES = (
     "trm_dual_z_mamba3_think",
     "official_trm_think",
     "trm_dual_z_official_trm_think",
+    "trm_dual_z_hrm_separate_official_trm_think",
     "trm_dual_z_official_trm_l2_think",
     "trm_dual_z_official_trm_fullgrad_think",
     "trm_dual_z_gated_official_trm_think",
@@ -297,6 +298,19 @@ def candidate_args(candidate: str, profile: str) -> list[str]:
             "mha_etd",
             "--think-structure",
             "trm_dual_z",
+        ]
+    if candidate == "trm_dual_z_hrm_separate_official_trm_think":
+        return [
+            "--backbone",
+            "trm_official",
+            "--encode-backbone",
+            "mha_etd",
+            "--think-backbone",
+            "trm_official",
+            "--decode-backbone",
+            "mha_etd",
+            "--think-structure",
+            "trm_dual_z_hrm_separate",
         ]
     if candidate == "trm_dual_z_official_trm_l2_think":
         return [

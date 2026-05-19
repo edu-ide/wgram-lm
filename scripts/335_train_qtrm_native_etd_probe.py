@@ -771,6 +771,7 @@ SUPPORTED_THINK_STRUCTURES = (
     "single_order_router_time_gate",
     "single_order_router_state_stream",
     "trm_dual_z",
+    "trm_dual_z_hrm_separate",
     "trm_dual_z_interactive",
     "trm_dual_z_interactive_transition_gate",
     "trm_dual_z_diffusive",
@@ -1050,6 +1051,18 @@ class NativeQTRMETDLM(nn.Module):
             attn_every=int(attn_every),
             strict_backends=bool(strict_backends),
         )
+        if self.think_structure == "trm_dual_z_hrm_separate":
+            self.hrm_h_think = self._build_stage(
+                self.think_backbone,
+                d_model=int(d_model),
+                n_heads=int(n_heads),
+                d_ff=int(d_ff),
+                dropout=float(dropout),
+                cfg=cfg,
+                layers=layers,
+                attn_every=int(attn_every),
+                strict_backends=bool(strict_backends),
+            )
         self.decode = self._build_stage(
             self.decode_backbone,
             d_model=int(d_model),
@@ -1063,6 +1076,7 @@ class NativeQTRMETDLM(nn.Module):
         )
         dual_think_structures = {
             "trm_dual_z",
+            "trm_dual_z_hrm_separate",
             "trm_dual_z_interactive",
             "trm_dual_z_interactive_transition_gate",
             "trm_dual_z_diffusive",
@@ -2362,6 +2376,46 @@ class NativeQTRMETDLM(nn.Module):
             z_h = torch.zeros_like(z_h)
         z_h = self._run_stage(
             self.think,
+            z_h + z_l,
+            causal_mask=causal_mask,
+        )
+        z_h = self.trm_h_post_norm(z_h)
+        if bool(z_h_zero):
+            z_h = torch.zeros_like(z_h)
+        return z_l, z_h
+
+    def _run_trm_hrm_separate_h_cycle(
+        self,
+        z_l: torch.Tensor,
+        z_h: torch.Tensor,
+        encoded: torch.Tensor,
+        *,
+        causal_mask: torch.Tensor,
+        z_l_zero: bool = False,
+        z_h_zero: bool = False,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """HRM-style dual-state update with separate L and H recurrent modules."""
+        if bool(z_l_zero):
+            z_l = torch.zeros_like(z_l)
+        if bool(z_h_zero):
+            z_h = torch.zeros_like(z_h)
+        for _ in range(self.trm_l_cycles):
+            if bool(z_l_zero):
+                z_l = torch.zeros_like(z_l)
+            if bool(z_h_zero):
+                z_h = torch.zeros_like(z_h)
+            z_l = self._run_stage(
+                self.think,
+                z_l + z_h + encoded,
+                causal_mask=causal_mask,
+            )
+            z_l = self.trm_l_post_norm(z_l)
+            if bool(z_l_zero):
+                z_l = torch.zeros_like(z_l)
+        if bool(z_h_zero):
+            z_h = torch.zeros_like(z_h)
+        z_h = self._run_stage(
+            self.hrm_h_think,
             z_h + z_l,
             causal_mask=causal_mask,
         )
@@ -3949,6 +4003,15 @@ class NativeQTRMETDLM(nn.Module):
                             z_l_zero=bool(z_l_zero),
                             z_h_zero=bool(z_h_zero),
                         )
+                    elif self.think_structure == "trm_dual_z_hrm_separate":
+                        z_l, z_h = self._run_trm_hrm_separate_h_cycle(
+                            z_l,
+                            z_h,
+                            encoded,
+                            causal_mask=causal_mask,
+                            z_l_zero=bool(z_l_zero),
+                            z_h_zero=bool(z_h_zero),
+                        )
                     elif self.think_structure in {
                         "trm_dual_z_reversed_mha_etd",
                         "trm_dual_z_nested_reversed_mha_etd",
@@ -4122,6 +4185,15 @@ class NativeQTRMETDLM(nn.Module):
                         encoded,
                         h_step=h_step,
                         total_steps=int(think_steps),
+                        causal_mask=causal_mask,
+                        z_l_zero=bool(z_l_zero),
+                        z_h_zero=bool(z_h_zero),
+                    )
+                elif self.think_structure == "trm_dual_z_hrm_separate":
+                    z_l, z_h = self._run_trm_hrm_separate_h_cycle(
+                        z_l,
+                        z_h,
+                        encoded,
                         causal_mask=causal_mask,
                         z_l_zero=bool(z_l_zero),
                         z_h_zero=bool(z_h_zero),

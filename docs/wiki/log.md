@@ -27499,3 +27499,71 @@ bash scripts/421_dgx_number_oprole_circular_len_ladder_gate.sh run-local
 result:
   completed
 ```
+
+## 2026-05-19 - HRM-Style Separate H/L Core Short Gate
+
+Question:
+
+```text
+Does HRM's separate high/low recurrent module prior improve the QTRM-native
+dual-state reasoning core compared with TRM's shared recurrent update?
+```
+
+Implementation:
+
+```text
+scripts/335_train_qtrm_native_etd_probe.py
+  added think_structure=trm_dual_z_hrm_separate
+  z_L uses the normal recurrent think stage
+  z_H uses a separate HRM-style high recurrent stage
+
+scripts/342_qtrm_native_l5d_backbone_compare.py
+  added candidate:
+    trm_dual_z_hrm_separate_official_trm_think
+```
+
+DGX gate:
+
+```text
+worktree:
+  /mnt/data4tb/qtrm_hrm_exp_20260519
+
+python:
+  /mnt/data4tb/venv_sglang_pr23000/bin/python
+
+command:
+  python scripts/342_qtrm_native_l5d_backbone_compare.py
+    --profile short
+    --out-root local_eval/hrm_text_prior_core_compare_v2_short_dgx_torch_20260519
+    --candidates trm_dual_z_official_trm_think,trm_dual_z_hrm_separate_official_trm_think
+```
+
+Result:
+
+```text
+winner:
+  trm_dual_z_hrm_separate_official_trm_think
+
+trm_dual_z_official_trm_think:
+  full_generation_exact:      0.03125
+  full_minus_think0:          0.0052083333
+  full_minus_worst_ablation: -0.0052083333
+  causal_ok:                  false
+
+trm_dual_z_hrm_separate_official_trm_think:
+  full_generation_exact:      0.0625
+  full_minus_think0:          0.0208333333
+  full_minus_worst_ablation:  0.03125
+  causal_ok:                  true
+```
+
+Interpretation:
+
+```text
+HRM-style separate H/L recurrence gives a real positive short-gate signal.
+It doubles exact accuracy versus the shared TRM-style candidate in this small
+run and passes the local causal-ablation check.
+
+This is still a weak absolute score, so it should become the next candidate for
+a larger controlled gate rather than be treated as a solved QTRM-native LM.
+```
