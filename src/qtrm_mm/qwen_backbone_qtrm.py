@@ -1046,6 +1046,8 @@ class QwenBackboneQTRM(nn.Module):
             dtype=hidden_states.dtype,
             device=hidden_states.device,
         )
+        core_info["core_hidden"] = core_hidden
+        core_info["core_delta"] = core_delta
         if self.core_delta_adapter is not None:
             raw_core_delta = core_delta
             adapter_delta = self.core_delta_adapter(raw_core_delta).to(
@@ -1175,4 +1177,6 @@ class QwenBackboneQTRM(nn.Module):
             result["qtrm_core_convergence_delta"] = core_info.get("convergence_delta")
             result["qtrm_core_residual_gate_mean"] = core_info.get("residual_gate_mean")
             result["qtrm_core_residual_gate"] = core_info.get("residual_gate")
+            result["qtrm_core_hidden"] = core_info.get("core_hidden")
+            result["qtrm_core_delta"] = core_info.get("core_delta")
         return SimpleNamespace(**result)

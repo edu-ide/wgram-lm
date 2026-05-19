@@ -445,3 +445,67 @@ Promotion requirement:
   512-case aggregate gain >= 0.02
   language_top1_agreement remains 1.0 or above threshold
 ```
+
+## Latent Answer Auxiliary Rejected 2026-05-19
+
+Added model/training hooks:
+
+```text
+src/qtrm_mm/qwen_backbone_qtrm.py
+  exposes qtrm_core_hidden and qtrm_core_delta for diagnostics/training
+
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --checksum-latent-answer-weight
+  --checksum-latent-answer-source z_h|delta_h
+  --checksum-latent-answer-lr
+```
+
+The auxiliary head is training-only. It is not saved as an inference answer
+path, so the gate still evaluates the normal LM logits.
+
+DGX runs:
+
+```text
+local_eval/qwen35_preinit_latent_answer_zh_w05_s100_20260519
+local_eval/qwen35_preinit_latent_answer_delta_w05_s80_20260519
+```
+
+Both runs:
+
+```text
+256-case decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+Interpretation:
+
+```text
+The latent answer auxiliary does not transfer into the actual LM answer path
+for checksum4. It again selects a checkpoint where chain5/select_pair carry the
+aggregate gain while checksum4 is unchanged.
+
+This rejects the weak version of "HRM-Text-style supervision": simply adding an
+auxiliary answer probe on final z_H/delta_h is not enough. To borrow HRM-Text
+usefully, supervision must shape the recurrent trajectory itself: slots,
+intermediate residues, carry/state transitions, or a PrefixLM process target
+that the mandatory core must route through the same LM logits.
+```
+
+Next target:
+
+```text
+implement checksum trajectory supervision:
+  target residues after each partial sum:
+    r1 = a
+    r2 = a + 2*b
+    r3 = a + 2*b + 3*c
+    r4 = answer
+  attach the target to recurrent step states or step-conditioned z_H, not only
+  to the final hidden state.
+```

@@ -266,6 +266,13 @@ def _last_token_logits(model, input_ids, attention_mask, *, force_core_off: bool
     return outputs.logits[:, -1, :]
 
 
+def _last_token_state(hidden: torch.Tensor, attention_mask: torch.Tensor | None) -> torch.Tensor:
+    if attention_mask is None:
+        return hidden[:, -1, :]
+    index = attention_mask.long().sum(dim=1).clamp_min(1) - 1
+    return hidden[torch.arange(hidden.shape[0], device=hidden.device), index]
+
+
 @torch.no_grad()
 def evaluate_cases(model, tokenizer, cases: list[SyntheticCase], args, label_ids: dict[str, int]):
     device = next(model.parameters()).device
@@ -507,8 +514,20 @@ def train_core(
     family_loss_weights = parse_float_map(str(args.family_loss_weights))
     digit_labels = list("0123456789")
     label_token_ids = torch.tensor([label_ids[digit] for digit in digit_labels], device=device)
+    latent_answer_head: torch.nn.Linear | None = None
+    latent_answer_head_optimizer = None
+    latent_answer_head_trainable = []
+    if float(args.checksum_latent_answer_weight) > 0.0:
+        latent_answer_head = torch.nn.Linear(int(model.report().hidden_size), 10).to(device=device)
+        latent_answer_head_trainable = list(latent_answer_head.parameters())
+        latent_answer_head_optimizer = torch.optim.AdamW(
+            latent_answer_head_trainable,
+            lr=float(args.checksum_latent_answer_lr),
+            weight_decay=float(args.checksum_latent_answer_weight_decay),
+        )
     losses = []
     checksum_counterfactual_losses = []
+    checksum_latent_answer_losses = []
     best: dict[str, object] | None = None
     best_state: dict[str, torch.Tensor] | None = None
     model.train()
@@ -533,7 +552,8 @@ def train_core(
             device=device,
             dtype=torch.long,
         )
-        core_logits = _last_token_logits(model, input_ids, attention_mask)
+        core_outputs = model(input_ids, attention_mask=attention_mask)
+        core_logits = core_outputs.logits[:, -1, :]
         per_item_ce = F.cross_entropy(core_logits.float(), targets, reduction="none")
         if family_loss_weights:
             weights = torch.tensor(
@@ -632,6 +652,29 @@ def train_core(
                     float(args.checksum_base_error_margin) - core_margin[checksum_mask]
                 ).mean()
                 loss = loss + float(args.checksum_base_error_advantage_weight) * checksum_margin_loss
+        if latent_answer_head is not None:
+            latent_source_name = str(args.checksum_latent_answer_source)
+            latent_source = (
+                getattr(core_outputs, "qtrm_core_delta", None)
+                if latent_source_name == "delta_h"
+                else getattr(core_outputs, "qtrm_core_hidden", None)
+            )
+            if latent_source is None:
+                raise RuntimeError(f"missing latent source for checksum latent answer: {latent_source_name}")
+            checksum_mask = torch.tensor(
+                [case.family == "checksum4" for case in chunk],
+                device=device,
+                dtype=torch.bool,
+            )
+            if bool(checksum_mask.any().item()):
+                latent_last = _last_token_state(latent_source, attention_mask)
+                latent_logits = latent_answer_head(latent_last.float())
+                latent_loss = F.cross_entropy(
+                    latent_logits[checksum_mask].float(),
+                    target_choice_indices[checksum_mask],
+                )
+                loss = loss + float(args.checksum_latent_answer_weight) * latent_loss
+                checksum_latent_answer_losses.append(float(latent_loss.detach().cpu()))
         if float(args.kl_weight) > 0.0:
             if base_logits is None:
                 raise RuntimeError("base logits were not computed for KL loss")
@@ -672,9 +715,15 @@ def train_core(
                 f"non-finite training loss at step {step}: {float(loss.detach().cpu())}"
             )
         optimizer.zero_grad(set_to_none=True)
+        if latent_answer_head_optimizer is not None:
+            latent_answer_head_optimizer.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(trainable, float(args.grad_clip))
+        if latent_answer_head_trainable:
+            torch.nn.utils.clip_grad_norm_(latent_answer_head_trainable, float(args.grad_clip))
         optimizer.step()
+        if latent_answer_head_optimizer is not None:
+            latent_answer_head_optimizer.step()
         losses.append(float(loss.detach().cpu()))
         if step % int(args.log_every) == 0 or step == 1 or step == int(args.steps):
             print(f"step={step} loss={losses[-1]:.4f}")
@@ -714,6 +763,11 @@ def train_core(
         "mean_checksum_counterfactual_loss": (
             sum(checksum_counterfactual_losses) / len(checksum_counterfactual_losses)
             if checksum_counterfactual_losses
+            else None
+        ),
+        "mean_checksum_latent_answer_loss": (
+            sum(checksum_latent_answer_losses) / len(checksum_latent_answer_losses)
+            if checksum_latent_answer_losses
             else None
         ),
         "best_periodic_eval": best,
@@ -948,6 +1002,12 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "checksum_base_error_base_margin_threshold": float(
             args.checksum_base_error_base_margin_threshold
         ),
+        "checksum_latent_answer_weight": float(args.checksum_latent_answer_weight),
+        "checksum_latent_answer_source": str(args.checksum_latent_answer_source),
+        "checksum_latent_answer_lr": float(args.checksum_latent_answer_lr),
+        "checksum_latent_answer_weight_decay": float(
+            args.checksum_latent_answer_weight_decay
+        ),
         "case_mode": str(args.case_mode),
         "train_case_mode": train_case_mode,
         "eval_case_mode": eval_case_mode,
@@ -1087,6 +1147,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--checksum-base-error-advantage-weight", type=float, default=0.0)
     parser.add_argument("--checksum-base-error-margin", type=float, default=0.05)
     parser.add_argument("--checksum-base-error-base-margin-threshold", type=float, default=0.0)
+    parser.add_argument("--checksum-latent-answer-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--checksum-latent-answer-source",
+        choices=["z_h", "delta_h"],
+        default="z_h",
+    )
+    parser.add_argument("--checksum-latent-answer-lr", type=float, default=1.0e-3)
+    parser.add_argument("--checksum-latent-answer-weight-decay", type=float, default=0.01)
     parser.add_argument("--eval-every-steps", type=int, default=0)
     parser.add_argument("--restore-best-checkpoint", action="store_true")
     parser.add_argument(

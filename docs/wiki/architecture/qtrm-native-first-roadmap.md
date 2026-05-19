@@ -17183,3 +17183,26 @@ latent finding:
 next:
   add latent answer-composition supervision before more promotion runs.
 ```
+
+Latent answer auxiliary result:
+
+```text
+implemented:
+  qtrm_core_hidden / qtrm_core_delta outputs
+  --checksum-latent-answer-weight
+  --checksum-latent-answer-source z_h|delta_h
+
+runs:
+  local_eval/qwen35_preinit_latent_answer_zh_w05_s100_20260519
+  local_eval/qwen35_preinit_latent_answer_delta_w05_s80_20260519
+
+256-case:
+  accepted: true
+  gain: 0.0234375
+  language_top1_agreement: 1.0
+  checksum4 gain: 0.0
+
+consequence:
+  final latent answer auxiliary is rejected as a checksum4 fix. Next HRM-Text
+  adaptation must supervise recurrent trajectory/residue states.
+```

@@ -28197,3 +28197,39 @@ The core state is not empty. It binds some operands, especially operand_a, but
 does not compose them into the checksum answer. The next fix should be latent
 answer-composition/trajectory supervision, not stronger final-token margin CE.
 ```
+
+## 2026-05-19 - Latent Answer Auxiliary Does Not Move Checksum4
+
+Added:
+
+```text
+qtrm_core_hidden / qtrm_core_delta output fields
+--checksum-latent-answer-weight
+--checksum-latent-answer-source z_h|delta_h
+```
+
+DGX runs:
+
+```text
+local_eval/qwen35_preinit_latent_answer_zh_w05_s100_20260519
+local_eval/qwen35_preinit_latent_answer_delta_w05_s80_20260519
+```
+
+Result for both:
+
+```text
+256-case decision: accepted
+256-case gain: 0.0234375
+language_top1_agreement: 1.0
+checksum4 gain: 0.0
+```
+
+Interpretation:
+
+```text
+Training a final z_H/delta_h answer probe is not enough. The auxiliary can
+coexist with the current aggregate gain, but it does not make checksum4 correct
+through the canonical LM logits. The next HRM-Text-inspired move must supervise
+the recurrent trajectory or explicit residue slots, not a detached final
+answer probe.
+```

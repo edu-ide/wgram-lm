@@ -57,6 +57,10 @@ DTYPE="${DTYPE:-bfloat16}"
   --checksum-base-error-advantage-weight "${CHECKSUM_BASE_ERROR_ADVANTAGE_WEIGHT:-0.0}" \
   --checksum-base-error-margin "${CHECKSUM_BASE_ERROR_MARGIN:-0.05}" \
   --checksum-base-error-base-margin-threshold "${CHECKSUM_BASE_ERROR_BASE_MARGIN_THRESHOLD:-0.0}" \
+  --checksum-latent-answer-weight "${CHECKSUM_LATENT_ANSWER_WEIGHT:-0.0}" \
+  --checksum-latent-answer-source "${CHECKSUM_LATENT_ANSWER_SOURCE:-z_h}" \
+  --checksum-latent-answer-lr "${CHECKSUM_LATENT_ANSWER_LR:-1.0e-3}" \
+  --checksum-latent-answer-weight-decay "${CHECKSUM_LATENT_ANSWER_WEIGHT_DECAY:-0.01}" \
   --eval-every-steps "${EVAL_EVERY_STEPS:-40}" \
   --restore-best-checkpoint \
   --min-reasoning-gain "${MIN_REASONING_GAIN:-0.02}" \
