@@ -28060,3 +28060,95 @@ not produce the missing checksum4 core-over-base case. The next objective must
 target checksum4 counterfactual state movement or recurrent trajectory
 supervision directly.
 ```
+
+## 2026-05-19 - Checksum Counterfactual Objective Crosses 256-Case Gate
+
+Implementation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --checksum-counterfactual-weight
+  --checksum-counterfactual-variants
+
+scripts/410_run_qwen35_preinit_strict_trm_core_gate.sh
+scripts/412_run_qwen35_preinit_family_balanced_selection.sh
+```
+
+DGX run:
+
+```text
+local_eval/qwen35_preinit_checksum_cf_w05_v2_s80_20260519
+```
+
+Result:
+
+```text
+256-case decision: accepted
+256-case gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+Expansion:
+
+```text
+local_eval/qwen35_preinit_checksum_cf_w05_v2_eval512_20260519
+
+512-case decision: rejected
+512-case gain: 0.015625
+language_top1_agreement: 1.0
+checksum4 gain: 0.0
+```
+
+Interpretation:
+
+```text
+This is progress but not a robust breakthrough. The new objective is the first
+one to cross the 256-case Qwen3.5-preinit mandatory-core gate after the
+alpha=0.25 near miss, but it does not generalize to 512 cases and does not move
+checksum4. The next objective must be base-error targeted on checksum4 rather
+than generic counterfactual CE.
+```
+
+## 2026-05-19 - Base-Error Targeted Checksum Loss Still Does Not Move Checksum4
+
+Added:
+
+```text
+--checksum-base-error-advantage-weight
+--checksum-base-error-margin
+--checksum-base-error-base-margin-threshold
+```
+
+DGX run:
+
+```text
+local_eval/qwen35_preinit_checksum_baseerr_w06_s80_20260519
+```
+
+Result:
+
+```text
+256-case decision: accepted
+256-case gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+Conclusion:
+
+```text
+The base-error targeted answer-margin loss still fails to move checksum4. The
+next research step is not another scalar loss sweep. Build a checksum4
+diagnostic that records base/core digit predictions, target ranks, logit
+margins, and core-state probes. If z_H/z_L is not binding operands, add
+operand-binding or trajectory supervision before another promotion run.
+```

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -171,6 +172,39 @@ def build_synthetic_cases(
             raise AssertionError(f"unknown family: {family}")
         cases.append(SyntheticCase(prompt=prompt, label=str(answer), family=family))
     return cases
+
+
+_CHECKSUM4_RE = re.compile(r"a=(\d+), b=(\d+), c=(\d+), d=(\d+)")
+
+
+def checksum4_counterfactual_cases(
+    case: SyntheticCase,
+    *,
+    variants: int,
+) -> list[SyntheticCase]:
+    if case.family != "checksum4" or int(variants) <= 0:
+        return []
+    match = _CHECKSUM4_RE.search(case.prompt)
+    if match is None:
+        return []
+    values = [int(match.group(index)) for index in range(1, 5)]
+    weights = [1, 2, 3, 4]
+    result: list[SyntheticCase] = []
+    for variant in range(int(variants)):
+        index = 3 - (variant % 4)
+        delta = 1 + (variant // 4)
+        edited = list(values)
+        edited[index] = (edited[index] + delta) % 10
+        a, b, c, d = edited
+        answer = sum(weight * value for weight, value in zip(weights, edited)) % 10
+        prompt = (
+            "Compute the extended checksum mod 10. "
+            "Rule: (a + 2*b + 3*c + 4*d) mod 10. "
+            f"a={a}, b={b}, c={c}, d={d}. "
+            "Answer with one digit. Answer: "
+        )
+        result.append(SyntheticCase(prompt=prompt, label=str(answer), family="checksum4"))
+    return result
 
 
 def language_probe_prompts() -> list[str]:
@@ -474,6 +508,7 @@ def train_core(
     digit_labels = list("0123456789")
     label_token_ids = torch.tensor([label_ids[digit] for digit in digit_labels], device=device)
     losses = []
+    checksum_counterfactual_losses = []
     best: dict[str, object] | None = None
     best_state: dict[str, torch.Tensor] | None = None
     model.train()
@@ -510,8 +545,37 @@ def train_core(
         else:
             ce = per_item_ce.mean()
         loss = ce
+        checksum_counterfactual_weight = float(args.checksum_counterfactual_weight)
+        if checksum_counterfactual_weight > 0.0:
+            counterfactual_cases: list[SyntheticCase] = []
+            for case in chunk:
+                counterfactual_cases.extend(
+                    checksum4_counterfactual_cases(
+                        case,
+                        variants=int(args.checksum_counterfactual_variants),
+                    )
+                )
+            if counterfactual_cases:
+                cf_input_ids, cf_attention_mask = _encode_prompts(
+                    tokenizer,
+                    [case.prompt for case in counterfactual_cases],
+                    max_seq_len=int(args.max_seq_len),
+                    device=device,
+                )
+                cf_targets = torch.tensor(
+                    [label_ids[case.label] for case in counterfactual_cases],
+                    device=device,
+                )
+                cf_logits = _last_token_logits(model, cf_input_ids, cf_attention_mask)
+                cf_ce = F.cross_entropy(cf_logits.float(), cf_targets)
+                loss = loss + checksum_counterfactual_weight * cf_ce
+                checksum_counterfactual_losses.append(float(cf_ce.detach().cpu()))
         base_logits = None
-        if float(args.kl_weight) > 0.0 or float(args.core_advantage_weight) > 0.0:
+        if (
+            float(args.kl_weight) > 0.0
+            or float(args.core_advantage_weight) > 0.0
+            or float(args.checksum_base_error_advantage_weight) > 0.0
+        ):
             with torch.no_grad():
                 base_logits = _last_token_logits(model, input_ids, attention_mask, force_core_off=True)
         if float(args.core_advantage_weight) > 0.0:
@@ -542,6 +606,32 @@ def train_core(
             else:
                 advantage = per_item_advantage.mean()
             loss = loss + float(args.core_advantage_weight) * advantage
+        if float(args.checksum_base_error_advantage_weight) > 0.0:
+            if base_logits is None:
+                raise RuntimeError("base logits were not computed for checksum base-error loss")
+            row_index = torch.arange(targets.numel(), device=device)
+            core_choice_logits = core_logits.float().index_select(dim=-1, index=label_token_ids)
+            base_choice_logits = base_logits.float().index_select(dim=-1, index=label_token_ids)
+            wrong_mask = torch.ones_like(core_choice_logits, dtype=torch.bool)
+            wrong_mask[row_index, target_choice_indices] = False
+            core_target = core_choice_logits[row_index, target_choice_indices]
+            base_target = base_choice_logits[row_index, target_choice_indices]
+            core_wrong = core_choice_logits.masked_fill(~wrong_mask, float("-inf")).amax(dim=-1)
+            base_wrong = base_choice_logits.masked_fill(~wrong_mask, float("-inf")).amax(dim=-1)
+            base_margin = base_target - base_wrong
+            core_margin = core_target - core_wrong
+            family_mask = torch.tensor(
+                [case.family == "checksum4" for case in chunk],
+                device=device,
+                dtype=torch.bool,
+            )
+            weak_base_mask = base_margin < float(args.checksum_base_error_base_margin_threshold)
+            checksum_mask = family_mask & weak_base_mask
+            if bool(checksum_mask.any().item()):
+                checksum_margin_loss = F.relu(
+                    float(args.checksum_base_error_margin) - core_margin[checksum_mask]
+                ).mean()
+                loss = loss + float(args.checksum_base_error_advantage_weight) * checksum_margin_loss
         if float(args.kl_weight) > 0.0:
             if base_logits is None:
                 raise RuntimeError("base logits were not computed for KL loss")
@@ -621,6 +711,11 @@ def train_core(
     return {
         "last_loss": losses[-1] if losses else None,
         "mean_loss": sum(losses) / max(1, len(losses)),
+        "mean_checksum_counterfactual_loss": (
+            sum(checksum_counterfactual_losses) / len(checksum_counterfactual_losses)
+            if checksum_counterfactual_losses
+            else None
+        ),
         "best_periodic_eval": best,
         "restored_best_checkpoint": bool(best_state is not None and bool(args.restore_best_checkpoint)),
     }
@@ -844,6 +939,15 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "core_advantage_weight": float(args.core_advantage_weight),
         "core_advantage_margin": float(args.core_advantage_margin),
         "core_advantage_mode": str(args.core_advantage_mode),
+        "checksum_counterfactual_weight": float(args.checksum_counterfactual_weight),
+        "checksum_counterfactual_variants": int(args.checksum_counterfactual_variants),
+        "checksum_base_error_advantage_weight": float(
+            args.checksum_base_error_advantage_weight
+        ),
+        "checksum_base_error_margin": float(args.checksum_base_error_margin),
+        "checksum_base_error_base_margin_threshold": float(
+            args.checksum_base_error_base_margin_threshold
+        ),
         "case_mode": str(args.case_mode),
         "train_case_mode": train_case_mode,
         "eval_case_mode": eval_case_mode,
@@ -978,6 +1082,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default="target_logp",
     )
     parser.add_argument("--family-loss-weights", default="")
+    parser.add_argument("--checksum-counterfactual-weight", type=float, default=0.0)
+    parser.add_argument("--checksum-counterfactual-variants", type=int, default=1)
+    parser.add_argument("--checksum-base-error-advantage-weight", type=float, default=0.0)
+    parser.add_argument("--checksum-base-error-margin", type=float, default=0.05)
+    parser.add_argument("--checksum-base-error-base-margin-threshold", type=float, default=0.0)
     parser.add_argument("--eval-every-steps", type=int, default=0)
     parser.add_argument("--restore-best-checkpoint", action="store_true")
     parser.add_argument(

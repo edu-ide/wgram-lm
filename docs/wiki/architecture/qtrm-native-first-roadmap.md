@@ -17112,3 +17112,51 @@ consequence:
   selection loop works, but objective still cannot move checksum4. Next target
   is checksum-specific counterfactual/recurrent trajectory supervision.
 ```
+
+Checksum counterfactual follow-up:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --checksum-counterfactual-weight
+  --checksum-counterfactual-variants
+
+run:
+  local_eval/qwen35_preinit_checksum_cf_w05_v2_s80_20260519
+
+256-case:
+  accepted: true
+  gain: 0.0234375
+  language_top1_agreement: 1.0
+
+512-case:
+  accepted: false
+  gain: 0.015625
+  language_top1_agreement: 1.0
+
+remaining bottleneck:
+  checksum4 gain remains 0.0, so the next objective must target checksum4
+  base-error cases directly. The 256-case checkpoint is a useful candidate, not
+  a robust promotion.
+```
+
+Base-error targeted follow-up:
+
+```text
+run:
+  local_eval/qwen35_preinit_checksum_baseerr_w06_s80_20260519
+
+256-case:
+  accepted: true
+  gain: 0.0234375
+  language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+
+consequence:
+  final-token answer-margin pressure is not enough for checksum4. Next step is
+  a checksum4 diagnostic/probe: record base/core digit predictions, target
+  ranks, logit margins, and z_H/z_L operand-binding evidence.
+```

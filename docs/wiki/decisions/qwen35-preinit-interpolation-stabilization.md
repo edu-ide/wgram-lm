@@ -220,3 +220,144 @@ objective cannot create checksum4 gain without degrading other families. The
 next experiment should add a checksum-specific contrastive/counterfactual
 objective or a recurrent trajectory loss, not more low-LR CE continuation.
 ```
+
+## Checksum Counterfactual Objective 2026-05-19
+
+Added training-only checksum4 counterfactual augmentation:
+
+```text
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --checksum-counterfactual-weight
+  --checksum-counterfactual-variants
+```
+
+Mechanism:
+
+```text
+For checksum4 training cases, parse a,b,c,d from the prompt.
+Create counterfactual prompts by changing one digit.
+Train the same canonical LM-logit path to answer the changed prompt.
+No runtime sidecar or external solver is used at inference.
+```
+
+DGX run:
+
+```text
+local_eval/qwen35_preinit_checksum_cf_w05_v2_s80_20260519
+```
+
+Configuration:
+
+```text
+init_checkpoint: alpha_0.25.pt
+steps: 80
+eval_cases: 256
+lr: 2.0e-5
+qwen_lr: 0.0
+checksum_counterfactual_weight: 0.5
+checksum_counterfactual_variants: 2
+family_loss_weights: chain5=1.1,checksum4=1.8,select_pair=1.1
+```
+
+256-case result:
+
+```text
+decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+512-case expansion:
+
+```text
+local_eval/qwen35_preinit_checksum_cf_w05_v2_eval512_20260519
+
+decision: rejected
+gain: 0.015625
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0292397661
+  checksum4:   0.0
+  select_pair: +0.0176470588
+```
+
+Interpretation:
+
+```text
+This is a real step: the Qwen3.5-pretrained mandatory-core path crossed the
+256-case promotion threshold while preserving language logits. It is not yet a
+robust breakthrough because the 512-case expansion rejects and checksum4 still
+has zero core-over-base gain.
+
+The counterfactual objective helped the aggregate gate, mostly by improving
+chain5 retention/gain. It did not solve the intended checksum4 bottleneck.
+```
+
+Next required objective:
+
+```text
+base-error targeted checksum4 objective:
+  compute base/core label-choice logits on checksum4 training cases
+  apply extra margin only where base is wrong or weak
+  select by 512-case gain and require checksum4 positive gain
+
+Do not call the 256-case checkpoint robust until this passes.
+```
+
+## Base-Error Targeted Checksum Objective 2026-05-19
+
+Added:
+
+```text
+--checksum-base-error-advantage-weight
+--checksum-base-error-margin
+--checksum-base-error-base-margin-threshold
+```
+
+Mechanism:
+
+```text
+On checksum4 training cases, compute base/core label-choice margins.
+If the base/core-off path is wrong or weak, add extra loss that pushes the
+core target digit above the strongest wrong digit.
+```
+
+DGX run:
+
+```text
+local_eval/qwen35_preinit_checksum_baseerr_w06_s80_20260519
+```
+
+Result:
+
+```text
+256-case decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+Interpretation:
+
+```text
+The stricter targeted loss still did not move checksum4. The 256-case
+acceptance is therefore not evidence that the intended checksum bottleneck is
+solved. The accepted gain is again carried by chain5/select_pair.
+
+Conclusion: checksum4 is not responding to final-token CE/margin pressure at
+this scale. The next diagnostic must inspect whether the recurrent core changes
+checksum4 predictions/logit ranks at all, and whether z_H/z_L carries operand
+information. If the latent state is not binding a,b,c,d, the next fix is a
+state/trajectory supervision or operand-binding objective, not a stronger
+answer-margin loss.
+```

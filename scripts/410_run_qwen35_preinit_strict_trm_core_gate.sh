@@ -52,6 +52,11 @@ DTYPE="${DTYPE:-bfloat16}"
   --core-advantage-margin "${CORE_ADVANTAGE_MARGIN:-0.0}" \
   --core-advantage-mode "${CORE_ADVANTAGE_MODE:-target_logp}" \
   --family-loss-weights "${FAMILY_LOSS_WEIGHTS:-}" \
+  --checksum-counterfactual-weight "${CHECKSUM_COUNTERFACTUAL_WEIGHT:-0.0}" \
+  --checksum-counterfactual-variants "${CHECKSUM_COUNTERFACTUAL_VARIANTS:-1}" \
+  --checksum-base-error-advantage-weight "${CHECKSUM_BASE_ERROR_ADVANTAGE_WEIGHT:-0.0}" \
+  --checksum-base-error-margin "${CHECKSUM_BASE_ERROR_MARGIN:-0.05}" \
+  --checksum-base-error-base-margin-threshold "${CHECKSUM_BASE_ERROR_BASE_MARGIN_THRESHOLD:-0.0}" \
   --eval-every-steps "${EVAL_EVERY_STEPS:-40}" \
   --restore-best-checkpoint \
   --min-reasoning-gain "${MIN_REASONING_GAIN:-0.02}" \
