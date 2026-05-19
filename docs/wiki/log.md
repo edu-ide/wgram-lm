@@ -28233,3 +28233,116 @@ through the canonical LM logits. The next HRM-Text-inspired move must supervise
 the recurrent trajectory or explicit residue slots, not a detached final
 answer probe.
 ```
+
+## 2026-05-19 - Checksum Trajectory Supervision Gives First 512-Case Aggregate Acceptance
+
+Added:
+
+```text
+qtrm_core_step_states
+--checksum-trajectory-weight
+```
+
+DGX runs:
+
+```text
+local_eval/qwen35_preinit_checksum_traj_w05_s100_20260519
+local_eval/qwen35_preinit_checksum_traj_w2_s120_20260519
+local_eval/qwen35_preinit_checksum_traj_w2_eval512_20260519
+```
+
+Result:
+
+```text
+256-case weak trajectory:
+  accepted: true
+  gain: 0.0234375
+  language_top1_agreement: 1.0
+  checksum4 gain: 0.0
+
+256-case strong trajectory:
+  accepted: true
+  gain: 0.0234375
+  language_top1_agreement: 1.0
+  checksum4 gain: 0.0
+
+512-case strong trajectory expansion:
+  accepted: true
+  gain: 0.0234375
+  language_top1_agreement: 1.0
+  checksum4 gain: 0.0
+```
+
+Interpretation:
+
+```text
+This is the first 512-case accepted Qwen3.5-pretrained mandatory-core result in
+this line. It is a valid progress marker, but not yet an architecture
+breakthrough: checksum4 still does not improve over base. The next step is a
+causal trajectory-carry route into the final LM residual path, not more
+detached probing losses.
+```
+
+## 2026-05-19 - Trajectory Carry Route Produces First Positive Checksum4 Signal
+
+Added:
+
+```text
+--core-trajectory-carry-mode none|mean|learned
+--eval-force-trajectory-carry-off
+```
+
+DGX runs:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_replay512_20260519
+local_eval/qwen35_preinit_trajcarry_mean_w2_s80_20260519
+local_eval/qwen35_preinit_trajcarry_mean_w2_eval512_20260519
+local_eval/qwen35_preinit_trajcarry_mean_w2_eval512_carryoff_20260519
+```
+
+Key result:
+
+```text
+carry-on 512:
+  accepted: true
+  gain: 0.037109375
+  language_top1_agreement: 0.875
+  checksum4 gain: +0.0058479532
+
+carry-off 512:
+  accepted: true
+  gain: 0.02734375
+  language_top1_agreement: 0.875
+  checksum4 gain: 0.0
+```
+
+Interpretation:
+
+```text
+The carry route is the first architecture change that makes checksum4 move
+positive in the 512-case expansion, and the carry-off ablation removes that
+positive checksum4 gain. This is a real but small causal signal, not a finished
+breakthrough. Repeat next with explicit Qwen-frozen route-only training and a
+learned carry mixer.
+```
+
+Route-only repeat:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_w2_routeonly_s80_20260519
+
+qwen_trainable: false
+256-case accepted: true
+gain: 0.0234375
+language_top1_agreement: 1.0
+checksum4 gain: 0.0
+```
+
+Conclusion:
+
+```text
+Mean trajectory carry alone preserves language but does not solve checksum4.
+The positive 512 checksum4 signal requires carry plus partial Qwen healing.
+Next test: learned carry mixer and stricter language preservation.
+```

@@ -207,6 +207,21 @@ def checksum4_counterfactual_cases(
     return result
 
 
+def checksum4_residue_targets(case: SyntheticCase) -> list[int]:
+    if case.family != "checksum4":
+        return []
+    match = _CHECKSUM4_RE.search(case.prompt)
+    if match is None:
+        return []
+    a, b, c, d = (int(match.group(index)) for index in range(1, 5))
+    return [
+        a % 10,
+        (a + 2 * b) % 10,
+        (a + 2 * b + 3 * c) % 10,
+        (a + 2 * b + 3 * c + 4 * d) % 10,
+    ]
+
+
 def language_probe_prompts() -> list[str]:
     return [
         "User: Explain why evidence should be checked.\nAssistant: ",
@@ -273,6 +288,21 @@ def _last_token_state(hidden: torch.Tensor, attention_mask: torch.Tensor | None)
     return hidden[torch.arange(hidden.shape[0], device=hidden.device), index]
 
 
+def _last_token_step_states(
+    step_states: torch.Tensor,
+    attention_mask: torch.Tensor | None,
+) -> torch.Tensor:
+    if attention_mask is None:
+        return step_states[:, :, -1, :]
+    index = attention_mask.long().sum(dim=1).clamp_min(1) - 1
+    return step_states[
+        torch.arange(step_states.shape[0], device=step_states.device),
+        :,
+        index,
+        :,
+    ]
+
+
 @torch.no_grad()
 def evaluate_cases(model, tokenizer, cases: list[SyntheticCase], args, label_ids: dict[str, int]):
     device = next(model.parameters()).device
@@ -297,7 +327,11 @@ def evaluate_cases(model, tokenizer, cases: list[SyntheticCase], args, label_ids
         targets = torch.tensor([label_ids[case.label] for case in chunk], device=device)
         choice_target = torch.tensor([choice_targets[case.label] for case in chunk], device=device)
         base_logits = _last_token_logits(model, input_ids, attention_mask, force_core_off=True)
-        core_outputs = model(input_ids, attention_mask=attention_mask)
+        core_outputs = model(
+            input_ids,
+            attention_mask=attention_mask,
+            force_trajectory_carry_off=bool(args.eval_force_trajectory_carry_off),
+        )
         core_logits = core_outputs.logits[:, -1, :]
         base_logits_finite = bool(base_logits_finite and torch.isfinite(base_logits).all().item())
         core_logits_finite = bool(core_logits_finite and torch.isfinite(core_logits).all().item())
@@ -528,6 +562,7 @@ def train_core(
     losses = []
     checksum_counterfactual_losses = []
     checksum_latent_answer_losses = []
+    checksum_trajectory_losses = []
     best: dict[str, object] | None = None
     best_state: dict[str, torch.Tensor] | None = None
     model.train()
@@ -675,6 +710,41 @@ def train_core(
                 )
                 loss = loss + float(args.checksum_latent_answer_weight) * latent_loss
                 checksum_latent_answer_losses.append(float(latent_loss.detach().cpu()))
+        if float(args.checksum_trajectory_weight) > 0.0:
+            step_states = getattr(core_outputs, "qtrm_core_step_states", None)
+            if step_states is None:
+                raise RuntimeError("missing qtrm_core_step_states for checksum trajectory loss")
+            residue_rows: list[list[int]] = []
+            residue_indices: list[int] = []
+            for item_index, case in enumerate(chunk):
+                residues = checksum4_residue_targets(case)
+                if residues:
+                    residue_indices.append(item_index)
+                    residue_rows.append(residues)
+            if residue_rows:
+                usable_steps = min(step_states.shape[1], len(residue_rows[0]))
+                selected_states = step_states[residue_indices, :usable_steps]
+                selected_last = _last_token_step_states(
+                    selected_states,
+                    attention_mask[residue_indices] if attention_mask is not None else None,
+                )
+                selected_last = model.core_out_norm(selected_last).to(dtype=core_logits.dtype)
+                trajectory_logits = model._lm_head()(selected_last)
+                trajectory_choice_logits = trajectory_logits.float().index_select(
+                    dim=-1,
+                    index=label_token_ids,
+                )
+                residue_targets = torch.tensor(
+                    [row[:usable_steps] for row in residue_rows],
+                    device=device,
+                    dtype=torch.long,
+                )
+                trajectory_loss = F.cross_entropy(
+                    trajectory_choice_logits.reshape(-1, trajectory_choice_logits.shape[-1]),
+                    residue_targets.reshape(-1),
+                )
+                loss = loss + float(args.checksum_trajectory_weight) * trajectory_loss
+                checksum_trajectory_losses.append(float(trajectory_loss.detach().cpu()))
         if float(args.kl_weight) > 0.0:
             if base_logits is None:
                 raise RuntimeError("base logits were not computed for KL loss")
@@ -770,6 +840,11 @@ def train_core(
             if checksum_latent_answer_losses
             else None
         ),
+        "mean_checksum_trajectory_loss": (
+            sum(checksum_trajectory_losses) / len(checksum_trajectory_losses)
+            if checksum_trajectory_losses
+            else None
+        ),
         "best_periodic_eval": best,
         "restored_best_checkpoint": bool(best_state is not None and bool(args.restore_best_checkpoint)),
     }
@@ -848,6 +923,8 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         core_residual_gate_mode=str(args.core_residual_gate_mode),
         core_residual_gate_dim=int(args.core_residual_gate_dim),
         core_residual_gate_init=float(args.core_residual_gate_init),
+        core_trajectory_carry_mode=str(args.core_trajectory_carry_mode),
+        core_trajectory_carry_gate_init=float(args.core_trajectory_carry_gate_init),
         n_core_layers=int(args.n_core_layers),
         h_cycles=int(args.h_cycles),
         l_cycles=int(args.l_cycles),
@@ -967,6 +1044,9 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "core_residual_gate_mode": str(args.core_residual_gate_mode),
         "core_residual_gate_dim": int(args.core_residual_gate_dim),
         "core_residual_gate_init": float(args.core_residual_gate_init),
+        "core_trajectory_carry_mode": str(args.core_trajectory_carry_mode),
+        "core_trajectory_carry_gate_init": float(args.core_trajectory_carry_gate_init),
+        "eval_force_trajectory_carry_off": bool(args.eval_force_trajectory_carry_off),
         "residual_scale": float(args.residual_scale),
         "h_cycles": int(args.h_cycles),
         "l_cycles": int(args.l_cycles),
@@ -1008,6 +1088,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "checksum_latent_answer_weight_decay": float(
             args.checksum_latent_answer_weight_decay
         ),
+        "checksum_trajectory_weight": float(args.checksum_trajectory_weight),
         "case_mode": str(args.case_mode),
         "train_case_mode": train_case_mode,
         "eval_case_mode": eval_case_mode,
@@ -1093,6 +1174,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--core-residual-gate-dim", type=int, default=128)
     parser.add_argument("--core-residual-gate-init", type=float, default=-2.0)
+    parser.add_argument(
+        "--core-trajectory-carry-mode",
+        choices=["none", "mean", "learned"],
+        default="none",
+    )
+    parser.add_argument("--core-trajectory-carry-gate-init", type=float, default=0.0)
+    parser.add_argument("--eval-force-trajectory-carry-off", action="store_true")
     parser.add_argument("--n-core-layers", type=int, default=1)
     parser.add_argument("--h-cycles", type=int, default=1)
     parser.add_argument("--l-cycles", type=int, default=1)
@@ -1155,6 +1243,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--checksum-latent-answer-lr", type=float, default=1.0e-3)
     parser.add_argument("--checksum-latent-answer-weight-decay", type=float, default=0.01)
+    parser.add_argument("--checksum-trajectory-weight", type=float, default=0.0)
     parser.add_argument("--eval-every-steps", type=int, default=0)
     parser.add_argument("--restore-best-checkpoint", action="store_true")
     parser.add_argument(

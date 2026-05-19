@@ -9,6 +9,10 @@ MODEL_ID="${MODEL_ID:-Qwen/Qwen3.5-2B-Base}"
 OUT_DIR="${OUT_DIR:-local_eval/qwen35_preinit_strict_trm_core_gate_s${STEPS:-120}_$(date +%Y%m%d_%H%M%S)}"
 DEVICE="${DEVICE:-cuda}"
 DTYPE="${DTYPE:-bfloat16}"
+EXTRA_ARGS=()
+if [[ "${EVAL_FORCE_TRAJECTORY_CARRY_OFF:-0}" == "1" ]]; then
+  EXTRA_ARGS+=(--eval-force-trajectory-carry-off)
+fi
 
 "${PYTHON}" scripts/362_train_qwen_backbone_qtrm_core_gate.py \
   --model-id "${MODEL_ID}" \
@@ -26,6 +30,8 @@ DTYPE="${DTYPE:-bfloat16}"
   --core-residual-gate-mode "${CORE_RESIDUAL_GATE_MODE:-constant}" \
   --core-residual-gate-dim "${CORE_RESIDUAL_GATE_DIM:-128}" \
   --core-residual-gate-init "${CORE_RESIDUAL_GATE_INIT:--2.0}" \
+  --core-trajectory-carry-mode "${CORE_TRAJECTORY_CARRY_MODE:-none}" \
+  --core-trajectory-carry-gate-init "${CORE_TRAJECTORY_CARRY_GATE_INIT:-0.0}" \
   --residual-scale "${RESIDUAL_SCALE:-0.05}" \
   --h-cycles "${H_CYCLES:-1}" \
   --l-cycles "${L_CYCLES:-3}" \
@@ -61,6 +67,7 @@ DTYPE="${DTYPE:-bfloat16}"
   --checksum-latent-answer-source "${CHECKSUM_LATENT_ANSWER_SOURCE:-z_h}" \
   --checksum-latent-answer-lr "${CHECKSUM_LATENT_ANSWER_LR:-1.0e-3}" \
   --checksum-latent-answer-weight-decay "${CHECKSUM_LATENT_ANSWER_WEIGHT_DECAY:-0.01}" \
+  --checksum-trajectory-weight "${CHECKSUM_TRAJECTORY_WEIGHT:-0.0}" \
   --eval-every-steps "${EVAL_EVERY_STEPS:-40}" \
   --restore-best-checkpoint \
   --min-reasoning-gain "${MIN_REASONING_GAIN:-0.02}" \
@@ -69,4 +76,5 @@ DTYPE="${DTYPE:-bfloat16}"
   --min-family-core-accuracy "${MIN_FAMILY_CORE_ACCURACY:-0.08}" \
   --init-checkpoint "${INIT_CHECKPOINT:-}" \
   --seed "${SEED:-20260519}" \
-  --log-every "${LOG_EVERY:-20}"
+  --log-every "${LOG_EVERY:-20}" \
+  "${EXTRA_ARGS[@]}"

@@ -34,6 +34,79 @@ QTRM/Qwen-pretrained-init model beats Qwen3.6-27B on the same benchmark suite
 while preserving destructive core-ablation causality.
 ```
 
+HRM-Text training lessons to import:
+
+```text
+1. keep a real hierarchical/nested recurrent forward, not an optional sidecar;
+2. train with packed PrefixLM-style language data once core causality is stable;
+3. select checkpoints by causal gates, not only loss;
+4. preserve language logits while adding recurrent computation;
+5. use clean, structured public data before scaling raw token volume;
+6. treat from-scratch HRM-Text-size pretraining as a later multi-H100 path,
+   not the fastest single-DGX-Spark route.
+```
+
+Current Qwen3.5-preinit evidence:
+
+```text
+local_eval/qwen35_preinit_checksum_traj_w2_eval512_20260519
+
+512-case accepted: true
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0467836257
+  checksum4:   0.0
+  select_pair: +0.0235294118
+```
+
+Implication:
+
+```text
+HRM-Text-style trajectory shaping helps stabilize an aggregate mandatory-core
+gain to 512 cases without damaging language logits. It still does not solve
+composition: checksum4 gain is 0.0. The next canonical architecture candidate
+must make recurrent step states causally feed the final LM residual path.
+```
+
+Trajectory carry update:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_w2_eval512_20260519
+
+512-case accepted: true
+gain: 0.037109375
+language_top1_agreement: 0.875
+
+family gains:
+  chain5:      +0.0643274854
+  checksum4:  +0.0058479532
+  select_pair:+0.0411764706
+
+carry-off ablation:
+  gain: 0.02734375
+  checksum4 gain: 0.0
+```
+
+Updated implication:
+
+```text
+The recurrent trajectory now has causal evidence in the LM-logit path: turning
+off carry removes the first positive checksum4 gain. This is the current best
+Qwen3.5-preinit QTRM-native signal. It is not yet a robust public-benchmark
+claim because the checksum gain is small and language top1 drops to 0.875.
+
+Route-only frozen-Qwen repeat:
+  gain: 0.0234375
+  checksum4 gain: 0.0
+  language_top1_agreement: 1.0
+
+Therefore, frozen mean carry is language-safe but too weak. The next step is a
+learned carry mixer or a deliberately small Qwen healing scope with stricter
+language preservation.
+```
+
 The current scaling evidence says:
 
 ```text

@@ -32,6 +32,7 @@ class QwenBackboneQTRMReport:
     core_insertion_mode: str = "final_residual"
     core_insert_after_layer: int = -1
     core_residual_gate_mode: str = "constant"
+    core_trajectory_carry_mode: str = "none"
 
 
 def _text_config(config: Any) -> Any:
@@ -427,6 +428,7 @@ class QwenLayerWrappedRecursiveCore(nn.Module):
         z_l = workspace + self.z_l_init.to(device=workspace.device, dtype=workspace.dtype)
         z_h = workspace + self.z_h_init.to(device=workspace.device, dtype=workspace.dtype)
         trajectory = []
+        step_states = []
         steps = 0
         convergence_deltas = []
         converged = torch.zeros(b, device=workspace.device, dtype=torch.bool)
@@ -443,6 +445,7 @@ class QwenLayerWrappedRecursiveCore(nn.Module):
                         source_l = source_l + step * float(self.cfg.core_step_conditioning_scale)
                     z_l = self.norm_l(z_l + source_l)
                     z_l = self.fast_stack(z_l, attention_mask=attention_mask)
+                    step_states.append(z_l)
                     loop_id += 1
                     steps += 1
                 source_h = z_l
@@ -453,6 +456,7 @@ class QwenLayerWrappedRecursiveCore(nn.Module):
                     source_h = source_h + step * float(self.cfg.core_step_conditioning_scale)
                 z_h = self.norm_h(z_h + source_h)
                 z_h = self.slow_stack(z_h, attention_mask=attention_mask)
+                step_states.append(z_h)
                 loop_id += 1
                 steps += 1
             trajectory.append(z_h)
@@ -483,6 +487,8 @@ class QwenLayerWrappedRecursiveCore(nn.Module):
             "converged": converged,
             "convergence_delta": convergence_delta,
         }
+        if step_states:
+            info["step_states"] = torch.stack(step_states, dim=1)
         return z_l, z_h, trajectory, info
 
 
@@ -542,6 +548,7 @@ class OuroWeightWrappedRecursiveCore(nn.Module):
         z_l = workspace + self.z_l_init.to(device=workspace.device, dtype=workspace.dtype)
         z_h = workspace + self.z_h_init.to(device=workspace.device, dtype=workspace.dtype)
         trajectory = []
+        step_states = []
         steps = 0
         convergence_deltas = []
         converged = torch.zeros(b, device=workspace.device, dtype=torch.bool)
@@ -558,6 +565,7 @@ class OuroWeightWrappedRecursiveCore(nn.Module):
                         source_l = source_l + step * float(self.cfg.core_step_conditioning_scale)
                     z_l = self.norm_l(z_l + source_l)
                     z_l = self.fast_stack(z_l, attention_mask=attention_mask)
+                    step_states.append(z_l)
                     loop_id += 1
                     steps += 1
                 source_h = z_l
@@ -568,6 +576,7 @@ class OuroWeightWrappedRecursiveCore(nn.Module):
                     source_h = source_h + step * float(self.cfg.core_step_conditioning_scale)
                 z_h = self.norm_h(z_h + source_h)
                 z_h = self.slow_stack(z_h, attention_mask=attention_mask)
+                step_states.append(z_h)
                 loop_id += 1
                 steps += 1
             trajectory.append(z_h)
@@ -598,6 +607,8 @@ class OuroWeightWrappedRecursiveCore(nn.Module):
             "converged": converged,
             "convergence_delta": convergence_delta,
         }
+        if step_states:
+            info["step_states"] = torch.stack(step_states, dim=1)
         return z_l, z_h, trajectory, info
 
 
@@ -706,6 +717,8 @@ class QwenBackboneQTRM(nn.Module):
         core_residual_gate_mode: str = "constant",
         core_residual_gate_dim: int = 128,
         core_residual_gate_init: float = -2.0,
+        core_trajectory_carry_mode: str = "none",
+        core_trajectory_carry_gate_init: float = 0.0,
     ) -> None:
         super().__init__()
         self.qwen = qwen_model
@@ -720,6 +733,11 @@ class QwenBackboneQTRM(nn.Module):
         self.core_residual_gate_mode = str(core_residual_gate_mode)
         if self.core_residual_gate_mode not in {"constant", "token_mlp"}:
             raise ValueError(f"unknown core_residual_gate_mode: {self.core_residual_gate_mode}")
+        self.core_trajectory_carry_mode = str(core_trajectory_carry_mode)
+        if self.core_trajectory_carry_mode not in {"none", "mean", "learned"}:
+            raise ValueError(
+                f"unknown core_trajectory_carry_mode: {self.core_trajectory_carry_mode}"
+            )
         hidden_size = _config_int(self.qwen.config, "hidden_size", 2048)
         self.core_cfg = core_config or build_qtrm_core_config_from_qwen(
             self.qwen.config,
@@ -821,6 +839,30 @@ class QwenBackboneQTRM(nn.Module):
             if isinstance(final_gate, nn.Linear):
                 nn.init.zeros_(final_gate.weight)
                 nn.init.constant_(final_gate.bias, float(core_residual_gate_init))
+        self.core_trajectory_carry_norm = (
+            RMSNorm(hidden_size)
+            if self.core_trajectory_carry_mode != "none"
+            else None
+        )
+        self.core_trajectory_carry_proj = (
+            nn.Linear(hidden_size, hidden_size, bias=False)
+            if self.core_trajectory_carry_mode != "none"
+            else None
+        )
+        self.core_trajectory_carry_score = (
+            nn.Linear(hidden_size, 1, bias=False)
+            if self.core_trajectory_carry_mode == "learned"
+            else None
+        )
+        self.core_trajectory_carry_gate_logit = (
+            nn.Parameter(torch.tensor(float(core_trajectory_carry_gate_init)))
+            if self.core_trajectory_carry_mode != "none"
+            else None
+        )
+        if self.core_trajectory_carry_proj is not None:
+            nn.init.zeros_(self.core_trajectory_carry_proj.weight)
+        if self.core_trajectory_carry_score is not None:
+            nn.init.zeros_(self.core_trajectory_carry_score.weight)
         self.core_gate_logit = nn.Parameter(torch.tensor(float(core_gate_init)))
         if self.mandatory_core:
             self.core_gate_logit.requires_grad_(False)
@@ -967,6 +1009,26 @@ class QwenBackboneQTRM(nn.Module):
                     if self.core_residual_gate is not None
                     else 0
                 )
+                + (
+                    _count_parameters(self.core_trajectory_carry_norm)
+                    if self.core_trajectory_carry_norm is not None
+                    else 0
+                )
+                + (
+                    _count_parameters(self.core_trajectory_carry_proj)
+                    if self.core_trajectory_carry_proj is not None
+                    else 0
+                )
+                + (
+                    _count_parameters(self.core_trajectory_carry_score)
+                    if self.core_trajectory_carry_score is not None
+                    else 0
+                )
+                + (
+                    int(self.core_trajectory_carry_gate_logit.numel())
+                    if self.core_trajectory_carry_gate_logit is not None
+                    else 0
+                )
                 + int(self.core_gate_logit.numel())
             ),
             qtrm_trainable_parameters=(
@@ -987,6 +1049,36 @@ class QwenBackboneQTRM(nn.Module):
                     if self.core_residual_gate is not None
                     else 0
                 )
+                + (
+                    _count_parameters(
+                        self.core_trajectory_carry_norm,
+                        trainable_only=True,
+                    )
+                    if self.core_trajectory_carry_norm is not None
+                    else 0
+                )
+                + (
+                    _count_parameters(
+                        self.core_trajectory_carry_proj,
+                        trainable_only=True,
+                    )
+                    if self.core_trajectory_carry_proj is not None
+                    else 0
+                )
+                + (
+                    _count_parameters(
+                        self.core_trajectory_carry_score,
+                        trainable_only=True,
+                    )
+                    if self.core_trajectory_carry_score is not None
+                    else 0
+                )
+                + (
+                    int(self.core_trajectory_carry_gate_logit.numel())
+                    if self.core_trajectory_carry_gate_logit is not None
+                    and self.core_trajectory_carry_gate_logit.requires_grad
+                    else 0
+                )
                 + int(self.core_gate_logit.numel() if self.core_gate_logit.requires_grad else 0)
             ),
             runtime_donor=False,
@@ -999,6 +1091,7 @@ class QwenBackboneQTRM(nn.Module):
             core_insertion_mode=str(self.core_insertion_mode),
             core_insert_after_layer=int(self.core_insert_after_layer),
             core_residual_gate_mode=str(self.core_residual_gate_mode),
+            core_trajectory_carry_mode=str(self.core_trajectory_carry_mode),
         )
 
     def normal_core_gate_value(self) -> float:
@@ -1033,10 +1126,50 @@ class QwenBackboneQTRM(nn.Module):
             return hidden_states
         return norm(hidden_states)
 
+    def _trajectory_carry_delta(
+        self,
+        step_states: Optional[torch.Tensor],
+        *,
+        dtype: torch.dtype,
+        device: torch.device,
+        disabled: bool = False,
+    ) -> tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+        if (
+            bool(disabled)
+            or
+            self.core_trajectory_carry_mode == "none"
+            or step_states is None
+            or self.core_trajectory_carry_norm is None
+            or self.core_trajectory_carry_proj is None
+            or self.core_trajectory_carry_gate_logit is None
+        ):
+            return None, None
+        states = step_states.to(device=device)
+        if self.core_trajectory_carry_mode == "learned":
+            if self.core_trajectory_carry_score is None:
+                raise RuntimeError("learned trajectory carry requires a score layer")
+            scores = self.core_trajectory_carry_score(states.float()).squeeze(-1)
+            weights = torch.softmax(scores, dim=1).to(dtype=states.dtype)
+            carry = (states * weights.unsqueeze(-1)).sum(dim=1)
+        else:
+            carry = states.mean(dim=1)
+        carry = self.core_trajectory_carry_norm(carry).to(dtype=dtype, device=device)
+        carry_delta = self.core_trajectory_carry_proj(carry.float()).to(
+            dtype=dtype,
+            device=device,
+        )
+        carry_gate = torch.sigmoid(self.core_trajectory_carry_gate_logit).to(
+            dtype=dtype,
+            device=device,
+        )
+        return carry_delta * carry_gate, carry_gate.detach()
+
     def _core_delta(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor],
+        *,
+        force_trajectory_carry_off: bool = False,
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         _, core_hidden, _, core_info = self.core(
             self.core_in_norm(hidden_states),
@@ -1048,6 +1181,8 @@ class QwenBackboneQTRM(nn.Module):
         )
         core_info["core_hidden"] = core_hidden
         core_info["core_delta"] = core_delta
+        if "step_states" in core_info:
+            core_info["step_states"] = core_info["step_states"]
         if self.core_delta_adapter is not None:
             raw_core_delta = core_delta
             adapter_delta = self.core_delta_adapter(raw_core_delta).to(
@@ -1058,6 +1193,16 @@ class QwenBackboneQTRM(nn.Module):
                 core_delta = adapter_delta
             else:
                 core_delta = raw_core_delta + adapter_delta
+        trajectory_delta, trajectory_gate = self._trajectory_carry_delta(
+            core_info.get("step_states"),
+            dtype=hidden_states.dtype,
+            device=hidden_states.device,
+            disabled=bool(force_trajectory_carry_off),
+        )
+        if trajectory_delta is not None:
+            core_delta = core_delta + trajectory_delta
+            core_info["trajectory_carry_delta"] = trajectory_delta
+            core_info["trajectory_carry_gate"] = trajectory_gate
         return core_delta, core_info
 
     def _adaptive_residual_gate(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -1074,6 +1219,8 @@ class QwenBackboneQTRM(nn.Module):
         outputs: Any,
         attention_mask: Optional[torch.Tensor],
         gate: torch.Tensor,
+        *,
+        force_trajectory_carry_off: bool = False,
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         if self.core_suffix_stack is None:
             raise RuntimeError("mid_layer_suffix mode requires core_suffix_stack")
@@ -1087,7 +1234,11 @@ class QwenBackboneQTRM(nn.Module):
                 f"index={hidden_index}, available={len(hidden_states_tuple)}"
             )
         insert_hidden = hidden_states_tuple[hidden_index]
-        core_delta, core_info = self._core_delta(insert_hidden, attention_mask)
+        core_delta, core_info = self._core_delta(
+            insert_hidden,
+            attention_mask,
+            force_trajectory_carry_off=bool(force_trajectory_carry_off),
+        )
         residual_gate = self._adaptive_residual_gate(insert_hidden)
         core_info["residual_gate_mean"] = residual_gate.detach().float().mean()
         core_info["residual_gate"] = residual_gate
@@ -1111,6 +1262,7 @@ class QwenBackboneQTRM(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         *,
         force_core_off: bool = False,
+        force_trajectory_carry_off: bool = False,
         core_gate_override: Optional[float] = None,
         return_dict: bool = True,
         **kwargs: Any,
@@ -1145,9 +1297,14 @@ class QwenBackboneQTRM(nn.Module):
                     outputs,
                     attention_mask,
                     gate,
+                    force_trajectory_carry_off=bool(force_trajectory_carry_off),
                 )
             else:
-                core_delta, core_info = self._core_delta(hidden_states, attention_mask)
+                core_delta, core_info = self._core_delta(
+                    hidden_states,
+                    attention_mask,
+                    force_trajectory_carry_off=bool(force_trajectory_carry_off),
+                )
                 residual_gate = self._adaptive_residual_gate(hidden_states)
                 core_info["residual_gate_mean"] = residual_gate.detach().float().mean()
                 core_info["residual_gate"] = residual_gate
@@ -1179,4 +1336,11 @@ class QwenBackboneQTRM(nn.Module):
             result["qtrm_core_residual_gate"] = core_info.get("residual_gate")
             result["qtrm_core_hidden"] = core_info.get("core_hidden")
             result["qtrm_core_delta"] = core_info.get("core_delta")
+            result["qtrm_core_step_states"] = core_info.get("step_states")
+            result["qtrm_core_trajectory_carry_delta"] = core_info.get(
+                "trajectory_carry_delta"
+            )
+            result["qtrm_core_trajectory_carry_gate"] = core_info.get(
+                "trajectory_carry_gate"
+            )
         return SimpleNamespace(**result)

@@ -509,3 +509,264 @@ implement checksum trajectory supervision:
   attach the target to recurrent step states or step-conditioned z_H, not only
   to the final hidden state.
 ```
+
+## Checksum Trajectory Supervision 2026-05-19
+
+Added recurrent step-state exposure and a checksum4 trajectory loss:
+
+```text
+src/qtrm_mm/qwen_backbone_qtrm.py
+  exposes qtrm_core_step_states
+
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --checksum-trajectory-weight
+```
+
+Mechanism:
+
+```text
+For checksum4 cases, parse a,b,c,d and supervise the recurrent step states with
+partial residue targets through the same Qwen LM head:
+
+  step1 -> a mod 10
+  step2 -> a + 2*b mod 10
+  step3 -> a + 2*b + 3*c mod 10
+  step4 -> a + 2*b + 3*c + 4*d mod 10
+
+This is HRM-Text-inspired trajectory shaping, but it remains inside the
+canonical LM-logit path. It is not a runtime calculator or hidden answer
+channel.
+```
+
+DGX weak trajectory run:
+
+```text
+local_eval/qwen35_preinit_checksum_traj_w05_s100_20260519
+
+eval_cases: 256
+checksum_trajectory_weight: 0.5
+checksum_counterfactual_weight: 0.2
+checksum_base_error_advantage_weight: 0.3
+best_periodic_eval_step: 10
+mean_checksum_trajectory_loss: 2.3138490723
+
+decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+DGX stronger trajectory run:
+
+```text
+local_eval/qwen35_preinit_checksum_traj_w2_s120_20260519
+
+eval_cases: 256
+checksum_trajectory_weight: 2.0
+best_periodic_eval_step: 60
+mean_checksum_trajectory_loss: 2.3192725692
+
+decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+512-case expansion of the stronger checkpoint:
+
+```text
+local_eval/qwen35_preinit_checksum_traj_w2_eval512_20260519
+
+eval_cases: 512
+decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0467836257
+  checksum4:   0.0
+  select_pair: +0.0235294118
+```
+
+Interpretation:
+
+```text
+This is the first 512-case accepted Qwen3.5-pretrained mandatory-core QTRM
+checkpoint in this line while preserving language top-1 agreement. That is real
+progress.
+
+It is not yet the requested breakthrough. The checksum4 bottleneck remains
+unsolved: base and core have identical checksum4 accuracy, and checksum4 gain
+is still 0.0. The accepted 512-case aggregate is carried by chain5 and
+select_pair.
+
+Therefore the next architecture change should not be another auxiliary loss
+that only probes step states. The recurrent trajectory must become a causal
+carry route into the final residual/LM path so intermediate computation can
+change the final answer.
+```
+
+Next falsifiable candidate:
+
+```text
+trajectory carry mixer:
+  route0 = existing final z_H/delta path
+  route1 = learned weighted carry over recurrent step states
+  train route parameters preservation-first
+  require route0 replay to preserve the accepted checkpoint before training
+
+Promotion requirement:
+  512-case gain >= 0.02
+  language_top1_agreement remains 1.0 or above threshold
+  checksum4 gain > 0.0
+  checksum4 core_fixes_base_errors > 0
+  disabling the trajectory carry removes the checksum4 gain
+```
+
+## Trajectory Carry Route 2026-05-19
+
+Added a preservation-first trajectory carry route:
+
+```text
+src/qtrm_mm/qwen_backbone_qtrm.py
+  --core-trajectory-carry-mode none|mean|learned
+  --core-trajectory-carry-gate-init
+
+scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  --eval-force-trajectory-carry-off
+```
+
+Design:
+
+```text
+The recurrent step states are pooled and projected back into the final core
+delta before the normal LM head. The projection is zero-initialized, so enabling
+the route preserves the existing checkpoint before training.
+
+This is different from the previous trajectory loss. The previous loss only
+asked step states to predict residues. The carry route gives those states a
+causal path into the answer-producing LM logits.
+```
+
+Preservation replay:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_replay512_20260519
+
+init_checkpoint: local_eval/qwen35_preinit_checksum_traj_w2_s120_20260519/last_core.pt
+core_trajectory_carry_mode: mean
+steps: 0
+
+512-case decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+checksum4 gain: 0.0
+```
+
+Short carry training:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_w2_s80_20260519
+
+init_checkpoint: local_eval/qwen35_preinit_checksum_traj_w2_s120_20260519/last_core.pt
+core_trajectory_carry_mode: mean
+steps: 80
+checksum_trajectory_weight: 2.0
+lr: 3.0e-5
+qwen_lr: 0.0
+note: wrapper default still partially unfroze Qwen layer 3 in this run.
+
+256-case decision: accepted
+gain: 0.02734375
+language_top1_agreement: 0.875
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0470588235
+```
+
+512-case expansion:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_w2_eval512_20260519
+
+512-case decision: accepted
+gain: 0.037109375
+language_top1_agreement: 0.875
+
+family gains:
+  chain5:      +0.0643274854
+  checksum4:  +0.0058479532
+  select_pair:+0.0411764706
+```
+
+Carry-off ablation on the same checkpoint:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_w2_eval512_carryoff_20260519
+
+512-case decision: accepted
+gain: 0.02734375
+language_top1_agreement: 0.875
+
+family gains:
+  chain5:      +0.0643274854
+  checksum4:   0.0
+  select_pair:+0.0176470588
+```
+
+Interpretation:
+
+```text
+This is the first run where checksum4 moves positive on the 512-case expansion.
+The carry-off ablation removes that checksum4 gain and lowers aggregate gain,
+so the new route has causal evidence.
+
+This is still not the final breakthrough. The checksum4 gain is small, language
+top1 drops from 1.0 to 0.875, and the run accidentally kept Qwen layer 3
+trainable through the wrapper default. The next experiment must repeat with an
+explicit frozen-Qwen route-only setting and then test a learned carry mixer.
+```
+
+Route-only frozen-Qwen repeat:
+
+```text
+local_eval/qwen35_preinit_trajcarry_mean_w2_routeonly_s80_20260519
+
+core_trajectory_carry_mode: mean
+qwen_trainable: false
+steps: 80
+
+256-case decision: accepted
+gain: 0.0234375
+language_top1_agreement: 1.0
+
+family gains:
+  chain5:      +0.0352941176
+  checksum4:   0.0
+  select_pair: +0.0352941176
+```
+
+Refined interpretation:
+
+```text
+The route-only mean carry preserves language but does not improve checksum4.
+The previous positive checksum4 signal came from the combination of trajectory
+carry and partial Qwen layer-3 healing. Therefore, the carry route is a useful
+causal pathway, but the frozen route-only version is not yet strong enough.
+
+Next candidates:
+  1. learned trajectory carry weights instead of mean pooling;
+  2. explicitly allow a tiny Qwen healing scope and require language top1 >= 1.0
+     or a stricter language suite;
+  3. add carry-off and qwen-layer-frozen ablations to every promoted run.
+```
