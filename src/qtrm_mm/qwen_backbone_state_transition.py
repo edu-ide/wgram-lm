@@ -27,7 +27,6 @@ from .core import QTRMRecursiveCore
 from .norm import RMSNorm
 from .state_transition_core import (
     N_OPERATIONS,
-    OperationConditionedTransition,
     StateReadoutHead,
     StateTransitionCore,
     StateTransitionOutput,

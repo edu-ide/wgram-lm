@@ -1,18 +1,14 @@
 """
-State-Transition-First Core.
+Strict TRM (Tiny Recursive Model) Dual-State Core.
 
-Operation-conditioned recurrent state machine where intermediate states
-are the PRIMARY supervised target, not a residual adapter.
+Implements the authentic TRM philosophy:
+- Dual Latent States: z_H and z_L.
+- Shared Recurrence: THE SAME module is used for both L-level and H-level updates.
+- Minimalist Design: Information flows through a single shared reasoning engine.
 
 Architecture:
-    prompt -> compressor -> z_0 (initial state)
-    z_t -> transition(z_t, op_t) -> z_{t+1}
-    z_final -> answer_head -> answer logits
-
-Key difference from current QTRM:
-    - State prediction is the PRIMARY loss (not answer CE)
-    - Answer flows ONLY through the state path (no donor bypass)
-    - Operations are explicit embeddings conditioning each transition
+    z_L = Shared_Core(z_L, z_H, op_t)
+    z_H = Shared_Core(z_H, z_L, None)
 """
 
 from __future__ import annotations
@@ -23,6 +19,7 @@ from typing import Optional
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from .config import QTRMConfig
 from .norm import RMSNorm
@@ -38,29 +35,20 @@ OP_FINAL = 3
 @dataclass
 class StateTransitionOutput:
     """Output of the state transition core."""
-    # Full trajectory of states: [z_0, z_1, ..., z_T]
-    state_trajectory: list[torch.Tensor]
-    # Digit logits at each depth step (for state supervision)
+    state_trajectory: torch.Tensor  # (B, T+1, d_state)
     state_digit_logits: torch.Tensor  # (B, T+1, 10)
-    # Final answer logits (from last state only)
     answer_logits: torch.Tensor  # (B, 10)
-    # Operation logits at each step (for operation supervision)
-    operation_logits: Optional[torch.Tensor]  # (B, T, n_ops) or None
-    # Telemetry
+    operation_logits: Optional[torch.Tensor]  # (B, T, n_ops)
     state_norms: torch.Tensor  # (B, T+1)
     transition_norms: torch.Tensor  # (B, T)
-    state_cosines: torch.Tensor  # (B, T) - cosine between consecutive states
+    state_cosines: torch.Tensor  # (B, T)
 
 
-class OperationConditionedTransition(nn.Module):
+class SharedReasoningCore(nn.Module):
     """
-    Operation-conditioned state transition function.
+    The shared core module used for both z_L and z_H updates.
     
-    z_{t+1} = z_t + Transition(z_t, op_t)
-    
-    Where op_t is an operation embedding that conditions the transition.
-    This makes the transition explicit: each operation transforms the state
-    toward the next intermediate answer.
+    In TRM, weight sharing is the key to efficient and robust reasoning.
     """
 
     def __init__(
@@ -74,122 +62,73 @@ class OperationConditionedTransition(nn.Module):
         self.n_operations = n_operations
         self.hidden_dim = hidden_dim or d_state * 4
         
-        # Operation embeddings - each operation has a learned vector
-        self.op_embed = nn.Embedding(n_operations, d_state)
+        # Shared projection for the inputs [state_main, state_side, op_vec]
+        # In TRM, op_vec might be zero when updating z_H
+        self.input_proj = nn.Linear(d_state * 3, self.hidden_dim)
+        self.output_proj = nn.Linear(self.hidden_dim, d_state)
         
-        # Transition MLP: takes [current_state, operation] -> delta
-        self.transition = nn.Sequential(
-            nn.LayerNorm(d_state * 2),
-            nn.Linear(d_state * 2, self.hidden_dim),
-            nn.GELU(),
-            nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.GELU(),
-            nn.Linear(self.hidden_dim, d_state),
-            # Gate to control transition magnitude
-            nn.Sigmoid(),
-        )
+        # Gating mechanism
+        self.gate = nn.Linear(d_state, 1)
         
-        # Separate gate for the magnitude
-        self.transition_gate = nn.Linear(d_state, 1, bias=False)
-        nn.init.zeros_(self.transition_gate.weight)
-        
-        # Output normalization
-        self.output_norm = RMSNorm(d_state)
+        # Normalization
+        self.norm = RMSNorm(d_state)
         
         self._init_weights()
 
     def _init_weights(self):
-        nn.init.normal_(self.op_embed.weight, mean=0.0, std=0.02)
-        # Initialize transition with near-zero output (residual-friendly)
-        for module in self.transition:
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                nn.init.zeros_(module.bias)
+        nn.init.xavier_uniform_(self.input_proj.weight)
+        nn.init.zeros_(self.input_proj.bias)
+        nn.init.zeros_(self.output_proj.weight)
+        nn.init.zeros_(self.output_proj.bias)
+        nn.init.constant_(self.gate.bias, 0.5)
 
     def forward(
         self,
-        z_t: torch.Tensor,  # (B, d_state)
-        op_ids: torch.Tensor,  # (B,) or (B, n_ops) for one-hot/softmax
-        op_soft: Optional[torch.Tensor] = None,  # (B, n_ops) softmax weights
+        z_main: torch.Tensor,
+        z_side: torch.Tensor,
+        op_vec: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Apply one transition step.
-        
-        Args:
-            z_t: Current state (B, d_state)
-            op_ids: Operation IDs (B,) for hard supervision
-            op_soft: Soft operation weights (B, n_ops) for soft mixing
-        
-        Returns:
-            z_{t+1}: Next state (B, d_state)
+        Generic transition step.
+        If updating z_L: z_main=z_L, z_side=z_H, op_vec=op_t
+        If updating z_H: z_main=z_H, z_side=z_L, op_vec=0
         """
-        # Get operation vector
-        if op_soft is not None and op_soft.dim() == 2:
-            # Soft operation mixing
-            op_vec = (op_soft @ self.op_embed.weight.to(dtype=z_t.dtype))
-        else:
-            # Hard operation lookup
-            op_ids_safe = op_ids.to(torch.long).clamp(min=0, max=self.n_operations - 1)
-            op_vec = self.op_embed(op_ids_safe)
+        combined = torch.cat([z_main, z_side, op_vec], dim=-1)
         
-        # Concatenate current state with operation
-        combined = torch.cat([z_t, op_vec], dim=-1)
+        # Reasoning step
+        hidden = torch.nn.functional.gelu(self.input_proj(combined))
+        delta = self.output_proj(hidden)
         
-        # Compute gated transition
-        raw_delta = self.transition(combined)
-        # The last sigmoid layer already applied; raw_delta is in [0, 1]
-        # Scale to reasonable range
-        delta = raw_delta * math.sqrt(self.d_state)
+        # Gating
+        g = torch.tanh(self.gate(z_main))
         
-        # Apply gate to control how much to update
-        gate = torch.tanh(self.transition_gate(z_t)).squeeze(-1)
-        delta = delta * gate.unsqueeze(-1)
-        
-        # Residual update
-        z_next = self.output_norm(z_t + delta)
+        # Residual update with normalization
+        z_next = self.norm(z_main + delta * g)
         
         return z_next
 
 
 class StateReadoutHead(nn.Module):
-    """
-    Read digit logits from a state.
-    
-    Maps the continuous state to digit 0-9 logits.
-    This is the supervised target for intermediate states.
-    """
-
+    """Readout head for digit prediction."""
     def __init__(self, d_state: int, n_digits: int = 10):
         super().__init__()
-        self.d_state = d_state
-        self.n_digits = n_digits
-        
         self.norm = RMSNorm(d_state)
-        self.head = nn.Sequential(
-            nn.Linear(d_state, d_state * 2),
-            nn.GELU(),
-            nn.Linear(d_state * 2, n_digits),
-        )
-        
-        nn.init.xavier_uniform_(self.head[0].weight)
-        nn.init.zeros_(self.head[0].bias)
-        nn.init.zeros_(self.head[2].weight)
-        nn.init.zeros_(self.head[2].bias)
+        self.head = nn.Linear(d_state, n_digits)
+        nn.init.zeros_(self.head.weight)
+        nn.init.zeros_(self.head.bias)
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
-        """(B, d_state) -> (B, n_digits) digit logits."""
         return self.head(self.norm(z))
 
 
 class StateTransitionCore(nn.Module):
     """
-    State-transition-first recurrent core.
+    TRM-style Dual-State Core with Shared Recurrence.
     
-    The primary difference from the current QTRM core:
-    1. State prediction is the PRIMARY learning objective
-    2. Each transition is explicitly conditioned on an operation
-    3. The answer flows ONLY through the final state
-    4. No donor bypass - the state path is mandatory
+    This implements the "TRM-llm" philosophy:
+    - Dual states (z_H, z_L)
+    - SHARED reasoning module (SharedReasoningCore)
+    - Direct state supervision
     """
 
     def __init__(
@@ -200,167 +139,110 @@ class StateTransitionCore(nn.Module):
         n_steps: Optional[int] = None,
     ):
         super().__init__()
-        self.cfg = cfg
         self.d_state = d_state or cfg.d_model
-        self.n_operations = n_operations or max(1, int(cfg.num_actions))
-        self.n_steps = n_steps or max(1, int(cfg.outer_steps))
+        self.n_operations = n_operations or int(cfg.num_actions)
+        self.n_steps = n_steps or int(cfg.outer_steps)
         
-        # Initial state projection: workspace/context -> z_0
-        self.state_init = nn.Sequential(
-            nn.LayerNorm(self.d_state),
-            nn.Linear(self.d_state, self.d_state * 2),
-            nn.GELU(),
-            nn.Linear(self.d_state * 2, self.d_state),
-            RMSNorm(self.d_state),
-        )
-        
-        # Operation-conditioned transition function
-        self.transition = OperationConditionedTransition(
+        # Shared core for ALL updates
+        self.shared_core = SharedReasoningCore(
             d_state=self.d_state,
             n_operations=self.n_operations,
         )
         
-        # Step conditioning (like Parcae-style loop index)
+        # Operation embeddings
+        self.op_embed = nn.Embedding(self.n_operations, self.d_state)
+        nn.init.normal_(self.op_embed.weight, std=0.02)
+        
+        # State initializers
+        self.z_h_init = nn.Linear(self.d_state, self.d_state)
+        self.z_l_start = nn.Parameter(torch.zeros(self.d_state))
+        
+        # Step embeddings
         self.step_embed = nn.Embedding(self.n_steps + 1, self.d_state)
-        nn.init.normal_(self.step_embed.weight, mean=0.0, std=0.02)
         
-        # State readout head for digit supervision at each step
+        # Readout
         self.state_readout = StateReadoutHead(self.d_state)
+        self.op_head = nn.Linear(self.d_state, self.n_operations)
         
-        # Answer head - reads ONLY from the final state
-        self.answer_head = StateReadoutHead(self.d_state)
-        
-        # Operation prediction head (optional, for supervised operation learning)
-        self.op_head = nn.Sequential(
-            RMSNorm(self.d_state),
-            nn.Linear(self.d_state, self.n_operations),
-        )
-        nn.init.zeros_(self.op_head[1].weight)
-        nn.init.zeros_(self.op_head[1].bias)
-        
-        # Stable input injection (Parcae-style decay)
-        self.input_injection_gate = nn.Parameter(torch.tensor(0.5))
-        
-        self._init_weights()
-
-    def _init_weights(self):
-        for module in self.state_init:
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                nn.init.zeros_(module.bias)
+        # Injection gate
+        self.injection_gate = nn.Parameter(torch.tensor(0.2))
 
     def forward(
         self,
-        workspace: torch.Tensor,  # (B, W, d_state) - compressed prompt/context
-        operation_ids: Optional[torch.Tensor] = None,  # (B, T) - hard op targets
-        operation_soft: Optional[torch.Tensor] = None,  # (B, T, n_ops) - soft ops
+        workspace: torch.Tensor,
+        operation_ids: Optional[torch.Tensor] = None,
+        operation_soft: Optional[torch.Tensor] = None,
         n_steps: Optional[int] = None,
-        initial_state: Optional[torch.Tensor] = None,  # (B, d_state) for carry
+        initial_state: Optional[torch.Tensor] = None,
     ) -> StateTransitionOutput:
-        """
-        Run the state transition loop.
-        
-        Args:
-            workspace: Compressed prompt/context representation
-            operation_ids: Hard operation IDs for each step
-            operation_soft: Soft operation weights for each step
-            n_steps: Number of transition steps (defaults to self.n_steps)
-            initial_state: Optional carry state from previous call
-        
-        Returns:
-            StateTransitionOutput with trajectory, logits, and telemetry
-        """
         b, w, d = workspace.shape
         n_steps = n_steps or self.n_steps
         
-        # Initial state: mean-pool workspace + step embedding
-        z = workspace.mean(dim=1)  # (B, d_state)
-        z = self.state_init(z)
-        
+        # Initial z_H
+        ctx = workspace.mean(dim=1)
+        z_h = self.z_h_init(ctx)
         if initial_state is not None:
-            # Blend with carry state (Parcae-style stable injection)
-            gamma = torch.sigmoid(self.input_injection_gate)
-            z = gamma * z + (1 - gamma) * initial_state
+            gamma = torch.sigmoid(self.injection_gate)
+            z_h = gamma * z_h + (1 - gamma) * initial_state
         
-        # Add step 0 embedding
-        step0 = self.step_embed.weight[0:1]  # (1, d_state)
-        z = z + step0
+        # Initial z_L
+        z_l = self.z_l_start.unsqueeze(0).expand(b, -1)
         
-        # Store trajectory
-        state_trajectory = [z]
-        state_norms = [z.pow(2).mean(dim=-1).sqrt()]
+        # Add step 0 embedding to z_H
+        z_h = z_h + self.step_embed.weight[0]
         
-        # Transition loop
+        state_trajectory = [z_h]
+        state_norms = [z_h.norm(dim=-1).mean()]
         transition_norms = []
         state_cosines = []
         
+        zero_op = workspace.new_zeros(b, d)
+        
         for t in range(n_steps):
-            prev_z = z
+            prev_z_h = z_h
             
-            # Get operation for this step
-            if operation_ids is not None and t < operation_ids.shape[1]:
-                op_t = operation_ids[:, t]
-            elif operation_soft is not None and t < operation_soft.shape[1]:
-                op_t_soft = operation_soft[:, t, :]
-                op_t = None  # Will use soft weights
+            # Get operation
+            if operation_ids is not None:
+                op_vec = self.op_embed(operation_ids[:, t].to(torch.long))
+            elif operation_soft is not None:
+                op_vec = operation_soft[:, t] @ self.op_embed.weight.to(dtype=z_h.dtype)
             else:
-                # Default: use operation 0 (identity-like)
-                op_t = workspace.new_zeros(b, dtype=torch.long)
-                op_t_soft = None
+                op_vec = zero_op
             
-            # Apply transition
-            z = self.transition(
-                z,
-                op_ids=op_t,
-                op_soft=op_t_soft if op_t is None else None,
-            )
+            # 1. Update z_L using Shared Core
+            z_l = self.shared_core(z_l, z_h, op_vec)
             
-            # Add step conditioning
-            step_idx = min(t + 1, self.n_steps)
-            step_emb = self.step_embed.weight[step_idx:step_idx + 1]
-            z = z + step_emb
+            # 2. Update z_H using Shared Core (op_vec is zero for z_H update)
+            z_h = self.shared_core(z_h, z_l, zero_op)
             
-            # Stable input injection (keep connection to original workspace)
-            gamma = torch.sigmoid(self.input_injection_gate)
-            workspace_mean = workspace.mean(dim=1)
-            z = gamma * z + (1 - gamma) * self.state_init(workspace_mean)
+            # Add step embedding
+            z_h = z_h + self.step_embed.weight[min(t + 1, self.n_steps)]
             
-            # Store
-            state_trajectory.append(z)
-            state_norms.append(z.pow(2).mean(dim=-1).sqrt())
+            # Injection
+            gamma = torch.sigmoid(self.injection_gate)
+            z_h = gamma * z_h + (1 - gamma) * self.z_h_init(ctx)
             
-            # Transition norm (for telemetry)
-            delta = z - prev_z
-            transition_norms.append(delta.pow(2).mean(dim=-1).sqrt())
+            # Telemetry
+            state_trajectory.append(z_h)
+            state_norms.append(z_h.norm(dim=-1).mean())
             
-            # Cosine similarity between consecutive states
-            cos = torch.sum(prev_z * z, dim=-1) / (
-                prev_z.pow(2).sum(dim=-1).sqrt() * z.pow(2).sum(dim=-1).sqrt() + 1e-8
-            )
+            delta = z_h - prev_z_h
+            transition_norms.append(delta.norm(dim=-1).mean())
+            
+            cos = F.cosine_similarity(prev_z_h, z_h, dim=-1).mean()
             state_cosines.append(cos)
-        
-        # Stack trajectory: (B, T+1, d_state)
+            
         trajectory = torch.stack(state_trajectory, dim=1)
-        
-        # State digit logits at each step: (B, T+1, 10)
         state_digit_logits = self.state_readout(trajectory)
-        
-        # Answer logits from FINAL state only: (B, 10)
-        answer_logits = self.answer_head(state_trajectory[-1])
-        
-        # Operation logits at each step (optional)
-        operation_logits = None
-        if len(state_trajectory) > 1:
-            # Use states 1..T for operation prediction
-            op_states = torch.stack(state_trajectory[1:], dim=1)
-            operation_logits = self.op_head(op_states)
+        answer_logits = state_digit_logits[:, -1, :]
+        operation_logits = self.op_head(trajectory[:, 1:, :])
         
         return StateTransitionOutput(
             state_trajectory=trajectory,
             state_digit_logits=state_digit_logits,
             answer_logits=answer_logits,
             operation_logits=operation_logits,
-            state_norms=torch.stack(state_norms, dim=1),
-            transition_norms=torch.stack(transition_norms, dim=1),
-            state_cosines=torch.stack(state_cosines, dim=1),
+            state_norms=torch.tensor(state_norms, device=workspace.device),
+            transition_norms=torch.tensor(transition_norms, device=workspace.device),
+            state_cosines=torch.tensor(state_cosines, device=workspace.device),
         )
