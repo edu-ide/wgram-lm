@@ -50,6 +50,38 @@ Train:
   - LoRA/adapters if added
 ```
 
+## Phase 3A: Text-Spine Multimodal Graft
+
+For the native-from-scratch 913M route, do not restart from zero when adding
+multimodal ability. Continue from the strongest text-native PrefixLM checkpoint
+first.
+
+```text
+resume:
+  Stage93 text-native checkpoint
+
+freeze first:
+  token embeddings
+  most recurrent thought blocks
+  LM head
+
+train first:
+  visual reader / frozen vision feature adapter
+  multimodal projector
+  workspace resampler
+  OCR/layout/chart source embeddings
+
+then partially unfreeze:
+  late recurrent thought blocks
+  answer-facing adapter/projection layers
+```
+
+The first multimodal continuation should behave like attaching eyes to a person
+who already reads and speaks, not like raising a second person from birth.
+
+Do not claim native multimodal success until visual information changes the
+normal LM answer path and a visual-projector ablation removes the gain.
+
 ## Phase 4: Teacher trace distillation
 
 Teacher candidates:

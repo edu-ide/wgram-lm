@@ -1,0 +1,134 @@
+{
+  "manifest_type": "past_success_reproducibility_manifest",
+  "overall_status": "replayable_not_sealed",
+  "can_replay_any": true,
+  "all_fully_sealed": false,
+  "plain_korean_verdict": "다시 돌려볼 수는 있지만, 아직 논문식 완전 재현 패키지는 아니다.",
+  "rows": [
+    {
+      "label": "Stage56_K128",
+      "summary_path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_101900_LOCAL_STAGE56_PTRM_evalonly_K128_scale1p0/summary.json",
+      "reproducibility_status": "replayable_not_sealed",
+      "can_replay": true,
+      "fully_sealed": false,
+      "metrics": {
+        "selected_accuracy": 0.7682291666666666,
+        "oracle_accuracy": 0.7747395833333334,
+        "packed_register_answer_accuracy": 0.9934895833333334
+      },
+      "settings": {
+        "seed": 103,
+        "eval_seed": 10042,
+        "eval_count": 128,
+        "samples": 128,
+        "eval_depths": [
+          4,
+          6,
+          8,
+          10,
+          12,
+          14
+        ],
+        "train_surface_mode": "mixed_all",
+        "eval_surface_mode": "heldout",
+        "stochastic_high_level_eval": true,
+        "stochastic_transition_mode": "true_gram",
+        "stochastic_posterior_guidance": true,
+        "qwen_model_id": "Qwen/Qwen3.5-0.8B-Base"
+      },
+      "artifacts": [
+        {
+          "name": "summary",
+          "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_101900_LOCAL_STAGE56_PTRM_evalonly_K128_scale1p0/summary.json",
+          "exists": true,
+          "size_bytes": 81752,
+          "sha256": "530f75ec62a7daebdb98a9cf29906ffd0a91dd8ba0eb19a10e7d64477d766a10"
+        },
+        {
+          "name": "generator_checkpoint",
+          "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_092733_LOCAL_STAGE54B_oracle_guard_mixedall_seed42/best_stochastic_oracle.pt",
+          "exists": true,
+          "size_bytes": 306971017,
+          "sha256": "ef171d5b9e49abff9c3ca4f2458a2798dcc67363b1b10726a192f02fdce54eb0"
+        },
+        {
+          "name": "extractor_checkpoint",
+          "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_093200_LOCAL_STAGE55_stage54B_generator_tokenlocal_selector_seed103/best_token_local_register_extractor.pt",
+          "exists": true,
+          "size_bytes": 210025,
+          "sha256": "cd8f3eea645ad04072242a4f1460d69281dcecd92bf6bb12fab48469949489fe"
+        }
+      ],
+      "blocking_gaps": [
+        "no immutable code commit/hash recorded",
+        "no materialized eval JSONL rows stored beside summary",
+        "stochastic eval enabled without deterministic replay proof",
+        "no one-command rerun script with tolerance compare recorded"
+      ],
+      "plain_language_verdict": "Replayable from the surviving artifacts, but not sealed for exact/paper-grade reproduction."
+    },
+    {
+      "label": "Stage58B_K64_top3",
+      "summary_path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_113500_LOCAL_STAGE58B_PTRM_evalonly_K64_top3_stage54B_seed10042/summary.json",
+      "reproducibility_status": "replayable_not_sealed",
+      "can_replay": true,
+      "fully_sealed": false,
+      "metrics": {
+        "selected_accuracy": 0.93359375,
+        "oracle_accuracy": 0.9401041666666666,
+        "packed_register_answer_accuracy": 0.9934895833333334
+      },
+      "settings": {
+        "seed": 103,
+        "eval_seed": 10042,
+        "eval_count": 128,
+        "samples": 64,
+        "candidate_topk_per_sample": 3,
+        "eval_depths": [
+          4,
+          6,
+          8,
+          10,
+          12,
+          14
+        ],
+        "train_surface_mode": "mixed_all",
+        "eval_surface_mode": "heldout",
+        "stochastic_high_level_eval": true,
+        "stochastic_transition_mode": "true_gram",
+        "stochastic_posterior_guidance": true,
+        "qwen_model_id": "Qwen/Qwen3.5-0.8B-Base"
+      },
+      "artifacts": [
+        {
+          "name": "summary",
+          "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_113500_LOCAL_STAGE58B_PTRM_evalonly_K64_top3_stage54B_seed10042/summary.json",
+          "exists": true,
+          "size_bytes": 106044,
+          "sha256": "94162524b44fb78a8000ab37b77dbc28ebb71a56181f4ac8eeb3b8e77f461747"
+        },
+        {
+          "name": "generator_checkpoint",
+          "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_092733_LOCAL_STAGE54B_oracle_guard_mixedall_seed42/best_stochastic_oracle.pt",
+          "exists": true,
+          "size_bytes": 306971017,
+          "sha256": "ef171d5b9e49abff9c3ca4f2458a2798dcc67363b1b10726a192f02fdce54eb0"
+        },
+        {
+          "name": "extractor_checkpoint",
+          "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_093200_LOCAL_STAGE55_stage54B_generator_tokenlocal_selector_seed103/best_token_local_register_extractor.pt",
+          "exists": true,
+          "size_bytes": 210025,
+          "sha256": "cd8f3eea645ad04072242a4f1460d69281dcecd92bf6bb12fab48469949489fe"
+        }
+      ],
+      "blocking_gaps": [
+        "no immutable code commit/hash recorded",
+        "no materialized eval JSONL rows stored beside summary",
+        "stochastic eval enabled without deterministic replay proof",
+        "no one-command rerun script with tolerance compare recorded"
+      ],
+      "plain_language_verdict": "Replayable from the surviving artifacts, but not sealed for exact/paper-grade reproduction."
+    }
+  ]
+}

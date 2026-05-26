@@ -49,6 +49,62 @@ canonical token stream
 | Runtime/eval | Used outside the model during retrieval, evaluation, or ablation. |
 | Scaffold | Code exists, but current training/eval does not prove the capability. |
 
+## SSOT Cleanup Rule
+
+Reusable modules are not automatically promoted architecture. A Python class may
+exist for one of three reasons:
+
+```text
+promoted path:
+  selected by the current SSOT and protected by ablations/gates
+
+diagnostic/probe path:
+  kept to reproduce, compare, or falsify a failed idea
+
+deprecated/rejected path:
+  documented as rejected and not allowed in promoted runs
+```
+
+Do not assume that every class in `src/qtrm_mm` is BEST. BEST requires an
+explicit SSOT page, a current promotion gate, and an ablation signal. Rejected
+paths should either be removed or guarded so they cannot become the default
+training path by accident.
+
+Code SSOT:
+
+- `src/qtrm_mm/architecture/component_registry.py`
+
+The registry is the executable version of this rule. It currently marks:
+
+```text
+promoted:
+  one_body_contract
+  blt_components
+  qtrm_recursive_core
+  state_transition_core
+
+diagnostic:
+  stage99_bridge_readback_selector
+
+deprecated:
+  typed_register_executor_family
+
+scaffold:
+  bltd_byte_latent_prefixlm
+```
+
+Use `assert_promoted_component(...)` before treating a reusable class or
+script path as BEST. In plain Korean: 공구함에 있다고 전부 주력 장비가 아니다.
+주력 장비는 SSOT가 promoted라고 부르고, ablation/gate가 지켜주는 것만이다.
+
+Past-success rule:
+
+- Before using an old high score to justify a new architecture run, separate
+  the exact old metric from the new claim. Stage56/58's 0.768-0.934
+  selected/oracle PTRM arithmetic success is a search/verifier clue, not a
+  general language-generation claim. See
+  [Past-Success Doubt Loop](../decisions/past-success-doubt-loop-stage56-stage58.md).
+
 ## Active Canonical Path
 
 | Component | Status | Current Config/Script | Notes |

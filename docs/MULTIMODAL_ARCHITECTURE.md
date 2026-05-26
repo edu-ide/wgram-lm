@@ -146,3 +146,50 @@ Stage 4: multimodal MemoryOS retrieval
 Stage 5: verifier-grounded multimodal RAG
 Stage 6: video frames + temporal memory
 ```
+
+## 7. Text Spine To Multimodal Continuation
+
+The current HRM-Text PrefixLM route is not a throwaway path. It is the language
+and thought spine for the later multimodal model.
+
+```text
+Stage92/93 text-native checkpoint
+  -> keep token embedding, recurrent thought blocks, LM head
+  -> add visual reader / projector / resampler
+  -> train image/OCR/chart data through the same answer path
+  -> unfreeze selected thought blocks only after the visual path is stable
+```
+
+Do not restart from scratch for the first multimodal model. The default route is
+continued learning from the strongest text-native checkpoint.
+
+```text
+Wrong first move:
+  discard the text checkpoint and pretrain a new multimodal model from zero
+
+Right first move:
+  preserve the text spine and teach new visual inputs to speak the same latent
+  language as the recurrent core and LM head
+```
+
+Plain-language version:
+
+```text
+First grow the person who can read, think, and speak.
+Then attach eyes and a visual workbench to the same person.
+Do not throw away the person and raise a new one just because images arrived.
+```
+
+Native multimodal evidence requires the visual path to affect the normal answer
+logits. OCR text pasted into the prompt, an external solver answer, or a
+separate sidecar visual classifier is not enough.
+
+Minimum Stage94 gate:
+
+```text
+1. text regression: Stage93 text prompts still generate coherent answers;
+2. visual sensitivity: image/chart/OCR perturbations change the answer when they should;
+3. no sidecar bypass: final answer comes through the same recurrent core and LM head;
+4. grounding: OCR/chart/evidence answers point to the right visual source region or token;
+5. ablation: disabling the visual projector drops visual-task performance.
+```

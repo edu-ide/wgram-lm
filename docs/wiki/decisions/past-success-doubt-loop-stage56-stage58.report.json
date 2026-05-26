@@ -1,0 +1,77 @@
+{
+  "report_type": "past_success_doubt_loop",
+  "plain_language_conclusion": "Old selected/oracle arithmetic wins are search-verifier evidence, not general LM ability. Preserve the causal ingredient, not the overclaim.",
+  "old_success_rows": [
+    {
+      "label": "Stage56_K128",
+      "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_101900_LOCAL_STAGE56_PTRM_evalonly_K128_scale1p0/summary.json",
+      "metric_family": "selected_oracle_search",
+      "selected_accuracy": 0.7682291666666666,
+      "oracle_accuracy": 0.7747395833333334,
+      "packed_register_answer_accuracy": 0.9934895833333334,
+      "exact_metric": "selected=0.7682, oracle=0.7747, packed=0.9935",
+      "plain_language_proves": "candidate search plus verifier selection works on a compact synthetic arithmetic/state-space exam",
+      "does_not_prove": "free language generation, multilingual ability, or one-body general LM reasoning",
+      "causal_ingredient": "candidate diversity plus verifier-selected compact answers"
+    },
+    {
+      "label": "Stage58B_K64_top3",
+      "path": "/mnt/sdc1/tripleyoung/qtrm_eval/20260522_113500_LOCAL_STAGE58B_PTRM_evalonly_K64_top3_stage54B_seed10042/summary.json",
+      "metric_family": "selected_oracle_search",
+      "selected_accuracy": 0.93359375,
+      "oracle_accuracy": 0.9401041666666666,
+      "packed_register_answer_accuracy": 0.9934895833333334,
+      "exact_metric": "selected=0.9336, oracle=0.9401, packed=0.9935",
+      "plain_language_proves": "candidate search plus verifier selection works on a compact synthetic arithmetic/state-space exam",
+      "does_not_prove": "free language generation, multilingual ability, or one-body general LM reasoning",
+      "causal_ingredient": "candidate diversity plus verifier-selected compact answers"
+    }
+  ],
+  "current_rows": [
+    {
+      "label": "Stage94_raw_byte_82M",
+      "path": "/tmp/20260524_STAGE94X_LOCAL_RAWBYTE_SEQ768_CAPACITY400.log",
+      "metric_family": "teacher_forced_loss",
+      "initial_eval_loss": 6.572422259341324,
+      "final_eval_loss": 2.1386957075937305,
+      "exact_metric": "eval_loss 6.5724 -> 2.1387",
+      "plain_language_proves": "heldout CE fell under teacher forcing on this data contract",
+      "does_not_prove": "free generation, candidate selection, depth scaling, or general reasoning",
+      "causal_ingredient": "ordinary next-token supervision over the logged heldout rows"
+    },
+    {
+      "label": "Stage94_BLT2_rawteacher_1200",
+      "path": "/tmp/20260524_STAGE94Y_LOCAL_BLT2_RAWTEACHER_DISTILL1200.log",
+      "metric_family": "teacher_forced_loss",
+      "initial_eval_loss": 6.311108927985706,
+      "final_eval_loss": 2.299936977270436,
+      "exact_metric": "eval_loss 6.3111 -> 2.2999",
+      "plain_language_proves": "heldout CE fell under teacher forcing on this data contract",
+      "does_not_prove": "free generation, candidate selection, depth scaling, or general reasoning",
+      "causal_ingredient": "ordinary next-token supervision over the logged heldout rows"
+    }
+  ],
+  "required_comparison_row": {
+    "old_success": "",
+    "exact_metric": "",
+    "causal_ingredient": "",
+    "missing_in_current_run": "",
+    "smallest_restoration_test": ""
+  },
+  "recommended_comparison_row": {
+    "old_success": "Stage58B_K64_top3",
+    "exact_metric": "selected=0.9336, oracle=0.9401, packed=0.9935",
+    "causal_ingredient": "candidate diversity plus verifier-selected compact answers",
+    "missing_in_current_run": "free generation samples; selected-vs-oracle split on the normal one-body answer path; candidate diversity/coverage if search is claimed; depth or recurrent-core-off ablation",
+    "smallest_restoration_test": "Run a small one-body language gate that logs candidate coverage, selected-vs-oracle accuracy, free generation samples, and recurrent/depth-off loss deltas on the same heldout rows."
+  },
+  "launch_recommendation": "do_not_launch_long_run_until_restoration_gate_exists",
+  "minimum_next_gate": [
+    "teacher_forced_heldout_loss",
+    "free_generation_samples",
+    "first_response_token_rank_or_topk",
+    "repetition_and_eos_rate",
+    "selected_vs_oracle_split_when_search_is_used",
+    "depth_or_recurrent_core_off_ablation"
+  ]
+}

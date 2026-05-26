@@ -1,5 +1,2002 @@
 # QTRM LLM Wiki Log
 
+## [2026-05-25] Stage101 | repeated-reject big-jump rule added
+
+The active rule is now stricter:
+
+```text
+If W9 rejects on the same detail/conflict bottleneck, do not tune another
+nearby W9 variant.  Archive that local minimum and jump to Stage101X.
+```
+
+Stage101X is the next route-change candidate:
+
+```text
+counterfactual-imagination answer attractor
+  same one-body LM head
+  original world vs minimally imagined counterfactual world
+  answer margin must separate through the normal answer path
+  feature-reader improvement alone is not enough
+```
+
+Implemented scaffolding:
+
+```text
+builder:
+  scripts/600_build_stage101x_counterfactual_answer_attractor_probe.py
+
+trainer:
+  scripts/601_train_stage101x_counterfactual_answer_attractor.py
+
+tests:
+  tests/test_stage101x_counterfactual_answer_attractor_probe.py
+  tests/test_stage101x_counterfactual_answer_attractor_train.py
+```
+
+Plain-language read:
+
+```text
+The model must stop merely naming evidence states.  It has to mentally ask
+"what small change would make this answer invalid?" and compare that imagined
+world against the real one before speaking.
+```
+
+Updated:
+
+```text
+docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md
+docs/wiki/decisions/0001-active-decision-index.md
+/home/tripleyoung/.agents/skills/research-driven-architecture-debugging/SKILL.md
+```
+
+W9 final local result:
+
+```text
+run:
+  local_eval/20260525_STAGE101W9_LOCAL_PAIRDIFF_READER_FROZEN_W8CINIT_ALLDEPTH_SMOKE960
+
+decision:
+  rejected
+
+heldout depth16:
+  pair_accuracy 0.5000
+  both_world_feature_accuracy 0.0625
+  min_pair_margin -2.2266
+
+read:
+  W9 can fit train-pair feature differences, but the heldout feature/permission
+  state does not transfer.  This confirms the local minimum: feature-reader
+  contrast is not enough to make the normal answer route causal.
+
+action:
+  Do not launch W9-with-a-stronger-loss.  Move to Stage101X.
+```
+
+X smoke result:
+
+```text
+run:
+  local_eval/20260525_STAGE101X_LOCAL_COUNTERFACTUAL_LMHEAD_ATTRACTOR_SMOKE160
+
+decision:
+  rejected, but different failure shape than W9
+
+heldout depth8:
+  pair_accuracy 0.6250
+  conflict_status pair_accuracy 0.8750
+  detail_sufficiency pair_accuracy 0.7500
+  evidence_relevance pair_accuracy 0.7500
+  source_reliability pair_accuracy 0.1250
+
+read:
+  same-LM-head counterfactual imagination is promising for content-level
+  sufficiency/conflict, but it collapses source reliability.  The model can
+  compare "what changed in the evidence"; it still lacks a separate provenance
+  ledger for "who said it and whether that speaker is trusted."
+
+next:
+  Stage101Y provenance-ledger answer attractor.  Keep the same LM-head
+  counterfactual route, but separate source identity/trust from evidence
+  content through a small ledger in the prompt.
+```
+
+## [2026-05-25] Stage101 | W8 latent feature reader narrows bottleneck
+
+Implemented W8 as an actual latent-reader diagnostic, not another answer-label
+prompt:
+
+```text
+builder:
+  scripts/596_build_stage101w8_latent_feature_reader_probe.py
+
+trainer:
+  scripts/597_train_stage101w8_latent_feature_reader.py
+
+tests:
+  tests/test_stage101w8_latent_feature_reader_probe.py
+  tests/test_stage101w8_latent_feature_reader_train.py
+```
+
+Important implementation correction:
+
+```text
+The first W8 trainer tied each row to one depth by cycling row and depth
+together. That made the train/eval contract incoherent because eval tests every
+row at every depth. W8C fixed this: default training now uses all depths
+2/4/8/16 for every row.
+```
+
+Best current W8 run:
+
+```text
+local_eval/20260525_STAGE101W8C_LOCAL_LATENT_FEATURE_READER_FROZEN_WEIGHTED_ALLDEPTH_SMOKE960
+
+heldout depth16:
+  all_feature_accuracy 0.390625
+  min_feature_margin -3.2421875
+  source_reliability 0.890625
+  evidence_relevance 0.765625
+  detail_sufficiency 0.6875
+  conflict_status 0.796875
+  answer_permission 0.875
+
+accepted: false
+```
+
+Plain-language verdict:
+
+```text
+The model can learn "should I answer?" earlier than it can cleanly decompose
+why.  The remaining weak spots are detail sufficiency and conflict status.
+
+Next accepted-probability move:
+  W9 paired latent feature-difference reader.
+  Build pairs where exactly one feature changes, especially:
+    enough detail vs missing detail
+    clear evidence vs conflicting evidence
+  Train pairwise margins over latent feature states at all depths.
+```
+
+Updated SSOT:
+
+```text
+docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md
+docs/wiki/decisions/0001-active-decision-index.md
+```
+
+## [2026-05-25] Stage101 | W5-W7 rejected, next jump is latent feature reader
+
+Ran three non-identical follow-ups after W4-style causal-plausibility labels
+failed:
+
+```text
+W5 counterfactual minimal repair:
+  test: tests/test_stage101w5_counterfactual_repair_probe.py
+  builder: scripts/592_build_stage101w5_counterfactual_repair_probe.py
+  train: local_eval/20260525_STAGE101W5_LOCAL_COUNTERFACTUAL_REPAIR_SMOKE320
+  heldout: local_eval/20260525_STAGE101W5_LOCAL_COUNTERFACTUAL_REPAIR_HELDOUT
+  result: rejected
+  depth16 accuracy 0.5333
+  minimal_repair mean_margin -1.4134
+
+W6 counterfactual twins:
+  test: tests/test_stage101w6_counterfactual_twin_probe.py
+  builder: scripts/593_build_stage101w6_counterfactual_twin_probe.py
+  train: local_eval/20260525_STAGE101W6_LOCAL_COUNTERFACTUAL_TWIN_SMOKE240
+  heldout: local_eval/20260525_STAGE101W6_LOCAL_COUNTERFACTUAL_TWIN_HELDOUT
+  result: rejected
+  depth16 accuracy 0.3750
+  mean_margin -0.7368
+
+W7 siamese counterfactual energy:
+  test: tests/test_stage101w7_siamese_counterfactual_energy_eval.py
+  evaluator: scripts/594_eval_stage101w7_siamese_counterfactual_energy.py
+  W3 heldout: local_eval/20260525_STAGE101W7_W3_SIAMESE_ENERGY_HELDOUT
+  W6-trained heldout: local_eval/20260525_STAGE101W7_W6TRAINED_SIAMESE_ENERGY_HELDOUT
+  result: rejected
+  depth16 accuracy 0.3750 in both W3 and W6-trained checkpoints
+```
+
+Plain-language verdict:
+
+```text
+The model can learn easy permission slogans, but it still does not reliably
+read what changed between two worlds.  More labels, repair words, A/B prompts,
+or inference-only siamese scoring are not enough.
+
+Next accepted-probability move:
+  Stage101W8 latent contrastive feature reader.
+  The reader must encode source reliability, evidence relevance, detail
+  sufficiency, and conflict status as separable latent features, then answer
+  permission must depend on those features.
+```
+
+Updated SSOT:
+
+```text
+docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md
+docs/wiki/decisions/0001-active-decision-index.md
+```
+
+## [2026-05-24] evaluation | Paper-driven tests started on archived recurrent artifacts
+
+Recorded test note:
+
+```text
+docs/wiki/decisions/2026-paper-driven-archived-recurrent-test-run.md
+```
+
+Commands run:
+
+```text
+PYTHONPATH=src python scripts/191_build_raw_intelligence_gate.py ...
+PYTHONPATH=src python scripts/548_build_depth_breadth_probe_report.py ...
+PYTHONPATH=src python tests/test_memory_retrieval_eval.py
+PYTHONPATH=src python tests/test_memory_eval_script.py
+```
+
+Results:
+
+```text
+raw recurrent gate: rejected
+  passed core-vs-donor/core-off
+  failed depth scaling and depth-output diversity
+
+EqR depth/breadth report: inconclusive
+  no convergence/fixed-point residual telemetry in archived rows
+
+VPO candidate diversity smoke:
+  forced-choice oracle coverage present
+  visible generation oracle coverage 0/8 with degenerate outputs
+
+MemoryOS baseline tests:
+  20 + 39 unit tests OK
+```
+
+Plain-language verdict:
+
+```text
+The archived core signal is not empty, but it is not the EqR claim.
+We still need a fresh Stage93/current-recurrent depth x restart run with
+fixed_point_residual or convergence_residual logged per trajectory.
+```
+
+## [2026-05-24] research | May 2026 paper bundle converted into test gates
+
+Ingested user-supplied papers:
+
+```text
+2605.15156 MeMo: Memory as a Model
+2605.21488 Equilibrium Reasoners
+2605.22817 Vector Policy Optimization
+2605.20670 LT2: Linear-Time Looped Transformers
+2605.19932 PEEK: Context Map as an Orientation Cache
+```
+
+Wiki pages:
+
+```text
+docs/wiki/sources/2026-recursive-memory-context-papers.md
+docs/wiki/decisions/2026-paper-driven-test-plan.md
+```
+
+Plain-language synthesis:
+
+```text
+EqR/LT2 test whether thinking longer is real and efficient.
+MeMo/PEEK test whether MemoryOS can keep a useful map of recurring context.
+VPO tests whether generation creates diverse candidates that verifier/search can
+actually use.
+```
+
+Immediate test order:
+
+```text
+1. EqR depth/breadth report on Stage93 or nearest recurrent checkpoint rows.
+2. PEEK/MeMo context-map vs retrieval-only recurring-corpus eval.
+3. VPO-style candidate diversity and verifier-selected best@k.
+4. LT2 mixer-loop efficiency only after depth scaling shows a real signal.
+```
+
+## [2026-05-24] ops | Stage93 DGX I/O bottleneck rule fixed
+
+Observation:
+
+```text
+Stage93 micro training reached step 35750, then repeatedly entered D-state
+around model checkpoint writes.
+
+The DGX GPU was not the blocker. The shared /mnt/data4tb disk was.
+```
+
+Evidence:
+
+```text
+train pid=1154255:
+  write_bytes ~= 133GB
+  state often D/rq_qos_wait or D/balance_dirty_pages
+
+full sample writer pid=1345828:
+  read_bytes ~= 138GB
+  write_bytes ~= 132GB
+  output sampled/ ~= 124GB
+
+sda:
+  observed near 100% util during stalls
+```
+
+Decision:
+
+```text
+When micro training is active, the full textbook printer is lower priority than
+the student reading the already-bound micro handout.
+```
+
+Implementation:
+
+```text
+scripts/539_supervise_stage93_overnight.sh
+scripts/548_pause_stage93_full_sample_writer_until_micro_target.sh
+scripts/549_run_stage93_micro_language_gates_on_target.sh
+scripts/534_train_native_prefixlm_dataio.py
+```
+
+Operational changes:
+
+```text
+sample writer:
+  ionice idle
+  nice +10
+  STOP while micro training is trying to finish
+  CONT when micro target step is reached, training exits, or max_seconds expires
+  default max_seconds=28800
+
+micro hardlink relaunch defaults:
+  MODEL_CHECKPOINT_EVERY=1000
+  CHECKPOINT_EVERY=2000
+  EVAL_EVERY=200
+
+checkpoint writes:
+  write to .<name>.tmp.<pid>
+  os.replace(tmp, final_path)
+  never expose half-written last.pt/last_model.pt after restart
+
+checkpoint selection:
+  choose the newest stable checkpoint among candidates
+  do not blindly prefer last_model.pt over a newer last.pt
+
+train process detection:
+  count only python processes whose command is the PrefixLM trainer
+  do not let pgrep/debug shell command text masquerade as an active train
+
+I/O relief defaults:
+  pause_seconds=300
+  cooldown_seconds=180
+```
+
+Plain-language rule:
+
+```text
+Do not let the printing press block the student.
+
+Full-data binding is useful, but if it shares a slow disk with active training,
+it must wait politely. Otherwise a low-level checkpoint write looks like a
+model/training failure even though it is just a hallway traffic jam.
+```
+
+Live result:
+
+```text
+Manual watcher launched on DGX.
+sample writer paused.
+micro training resumed from the D-state and advanced:
+  step 35500 -> 35600 -> 35700 -> 35800
+
+Additional watcher:
+  wait for micro target step 40000
+  wait for last_model.pt to become stable
+  run language_heldout, multilingual_generation, and raw_intelligence gates
+  write those gates into the Stage93 micro TensorBoard
+  default max_seconds=28800
+
+Relaunch correction:
+  old PID 1154255 used --model-checkpoint-every 250 and stalled at step 36500
+  stable last_model.pt at step 36500 was used for relaunch
+  new PID 1543521 uses --model-checkpoint-every 1000 and --checkpoint-every 2000
+  progress after relaunch: 36500 -> 36700
+```
+
+## [2026-05-24] evaluation | Stage93 language gates now write to TensorBoard
+
+Decision:
+
+```text
+PrefixLM language ability is not proven by train/eval loss alone.
+Language heldout loss, multilingual generation, and raw-intelligence probes
+must all leave TensorBoard scalars, not only JSON files.
+```
+
+Implementation:
+
+```text
+scripts/545_run_prefixlm_language_gates_dgx.sh
+scripts/547_write_prefixlm_raw_intelligence_tensorboard.py
+tests/test_prefixlm_language_gates_wrapper.py
+tests/test_prefixlm_raw_intelligence_tensorboard_writer.py
+```
+
+The language gate wrapper now writes all three JSON reports into TensorBoard:
+
+```text
+eval/language_heldout/*
+eval/multilingual_generation/*
+eval/raw_intelligence/*
+```
+
+Live Stage93 spot-check at step 35250 was also backfilled into the current DGX
+TensorBoard run under:
+
+```text
+eval/now_language_heldout/*
+eval/now_multilingual_generation/*
+```
+
+Plain-language rule:
+
+```text
+TensorBoard is the heartbeat monitor.
+JSON reports are the doctor's notes.
+
+For model-readiness decisions, the notes must be pinned to the monitor, so a
+low training loss cannot masquerade as real language ability.
+```
+
+Latest Stage93 language-readiness verdict:
+
+```text
+Not language-capable yet.
+
+step=35250
+tokens_seen=21689854
+target_tokens_seen=7956726
+heldout_token_accuracy=0.0395
+multilingual_generation_accuracy=0.0
+```
+
+Plain-language diagnosis:
+
+```text
+The model can imitate parts of the problem-sheet texture, especially math-ish
+fragments, but it is not yet answering ordinary questions in natural language.
+```
+
+## [2026-05-24] milestone | Project milestone ladder fixed
+
+Added the current end-to-end milestone page:
+
+```text
+docs/wiki/decisions/qtrm-project-milestones.md
+```
+
+Plain-language rule:
+
+```text
+A milestone is a door the model has actually walked through.
+It is not a hope, run name, paper acronym, or train-loss-only claim.
+```
+
+The ladder now separates:
+
+```text
+M0 one-body text path
+M1 small-handout learning proof
+M2 large HRM-Text continuation
+M3 multilingual text reasoning
+M4 tokenizer/multilingual efficiency audit
+M5 public language/reasoning benchmark readiness
+M6 native multimodal graft
+M7 memory/retrieval reasoning
+M8 multi-turn tool-use agent
+M9 Codex-like long-horizon coding agent
+M10 Qwen3.6-27B target comparison
+```
+
+MSA placement update:
+
+```text
+MSA is M7: Memory/retrieval/MSA reasoning.
+
+It supports M8/M9 as long-horizon workspace memory, but it is not itself
+multi-turn tool use or Codex-like autonomy.
+```
+
+Current stage answer:
+
+```text
+We are in M2.
+
+M0 one-body text path: accepted.
+M1 small-handout learning proof: accepted by Stage92 step24000/eval_loss0.4216.
+M2 large HRM-Text continuation: in progress.
+
+Latest DGX check:
+  2026-05-24 00:10 KST
+  Stage93 tokenized = 220 files / 44GB
+  sampled/tokens.npy = not present yet
+  Stage92 process still holds GPU memory in rq_qos_wait
+```
+
+## [2026-05-23] evaluation | Multilingual PrefixLM probe added
+
+Decision:
+
+```text
+HRM-Text reasoning data and targeted multilingual data should be mixed into the
+same Stage93 multilingual curriculum. Do not train a separate multilingual side
+model.
+```
+
+Implementation:
+
+```text
+data/eval/prefixlm_multilingual_probe.jsonl
+scripts/542_eval_prefixlm_multilingual_probe.py
+tests/test_prefixlm_multilingual_probe_eval.py
+```
+
+The probe wraps Korean, translation, Spanish XQuAD-style, German arithmetic,
+and code-switched instructions with the same HRM-Text Data-IO PrefixLM markers,
+then scores greedy answers from the checkpoint's normal recurrent LM head.
+
+Plain-language rule:
+
+```text
+The reasoning shelf teaches the student how to think.
+The multilingual shelf teaches the same student to think and answer in more
+languages.
+
+If those shelves are taught to two different students, we have no multilingual
+reasoning spine. The first real test is one body, one answer path, multilingual
+questions.
+```
+
+## [2026-05-23] research | Multilingual and native multimodal paper watch fixed
+
+Decision:
+
+```text
+Do not ignore recent tokenizer/native-multimodal papers.
+Do not derail Stage93/94 just because a paper is recent.
+Use papers as gates: what to measure, what to graft, and when to redesign.
+```
+
+Recorded in:
+
+```text
+docs/wiki/concepts/training-diagnostics.md
+```
+
+Plain-language summary:
+
+```text
+Stage93:
+  same student, same reasoning spine, more languages in the textbook.
+
+Stage94:
+  attach eyes to that same student through the normal answer path.
+
+Later:
+  visual tokenizers/unified generation become necessary only when the goal is
+  not just visual QA, but native image generation/editing or fully mixed-modal
+  generation.
+```
+
+## [2026-05-23] research | Agentic multi-turn and tool-calling paper watch fixed
+
+Decision:
+
+```text
+Do not infer agent ability from single-turn language loss or one-shot JSON
+function-call formatting.
+
+The agentic stage needs its own curriculum and gates:
+  user/query -> thought/register -> tool_call -> observation -> memory update
+  -> final answer or next action.
+```
+
+Recorded in:
+
+```text
+docs/wiki/concepts/training-diagnostics.md
+```
+
+Plain-language summary:
+
+```text
+Stage93 teaches the student to read, think, and speak.
+The agentic stage teaches office procedure:
+  remember the request,
+  choose the right tool,
+  fill the form,
+  read the receipt,
+  update the case file,
+  then answer.
+```
+
+Primary mechanisms now fixed as references include UniToolCall, MT-AgentRisk,
+MCPToolBench++, MemTool, MemoryAgentBench, tau^2-bench, T1, DialogTool,
+ToolSandbox, tau-bench, OSWorld, ToolLLM, Toolformer, and ReAct.
+
+## [2026-05-24] research | Codex-like long-horizon coding agent lesson fixed
+
+Decision:
+
+```text
+"Runs alone for hours" is not just a language-model property.
+It is a full agent system:
+  model brain + tool body + workspace memory + sandbox + tests + review gate.
+```
+
+Recorded in:
+
+```text
+docs/wiki/concepts/training-diagnostics.md
+```
+
+Local implication:
+
+```text
+The native QTRM/PV-GRAM path should not claim Codex-like autonomy from text
+loss or single-turn tool-call JSON. A later agentic stage needs repo navigation,
+edit planning, shell/test execution, observation interpretation, context
+compression, interruption recovery, and final evidence generation.
+```
+
+## [2026-05-24] evaluation | Multilingual tokenizer fragmentation audit added
+
+Implementation:
+
+```text
+scripts/543_audit_prefixlm_multilingual_tokenizer.py
+tests/test_prefixlm_multilingual_tokenizer_audit.py
+```
+
+Smoke result on `data/eval/prefixlm_multilingual_probe.jsonl`:
+
+```text
+gate = warn
+language over threshold = ko
+ko max tokens_per_nonspace_char = 2.6667
+es/de/en probe rows stay below 0.51
+```
+
+Decision:
+
+```text
+Do not change the tokenizer before Stage93 multilingual continuation, because
+that would break checkpoint continuation. But do not claim multilingual
+efficiency until Korean generation and fragmentation are both checked after the
+multilingual curriculum run.
+```
+
+## [2026-05-23] operation | Stage80 from-scratch language training uses 4090 as primary, DGX as auxiliary
+
+문과적 결론:
+
+```text
+현재 HRM-Text식 one-body native recurrent LM 학습에서 4090은 작은 밥그릇이지만
+숟가락질이 빠르고, DGX GB10은 큰 밥그릇이지만 현재 PyTorch/커널 스택의 숟가락질이
+느리다.
+
+따라서 "128GB DGX니까 무조건 더 빠르다"가 아니라:
+  - 로컬 RTX 4090: 주 학습 장치
+  - DGX GB10: 큰 batch 보조 학습 장치
+로 운영한다.
+```
+
+Observed throughput:
+
+```text
+Stage76 local batch4:
+  about 4.15k tokens/sec
+
+Stage77 local batch8:
+  about 8.34k tokens/sec
+
+Stage78 local batch16:
+  about 16.65k tokens/sec
+
+Stage79 local batch32:
+  stable, eval_loss at step 35000 = 4.4871
+
+Stage80 local batch64:
+  about 38.29k tokens/sec
+  eval_loss at step 36000 = 4.4847
+  VRAM around 12GB on RTX 4090, no OOM
+
+Stage77 DGX batch8:
+  stable but slower than local
+
+Stage78 DGX batch16:
+  stable, eval_loss at step 26000 = 4.4742
+
+Stage79 DGX batch32:
+  about 8.73k tokens/sec in one measured window
+
+Stage80 DGX batch64:
+  no OOM, running as auxiliary large-batch stream
+```
+
+Current running paths:
+
+```text
+Local:
+  /tmp/qtrm_eval/20260523_STAGE80_LOCAL82M_LANGUAGE_CONT_BS64
+  /tmp/20260523_STAGE80_LOCAL82M_LANGUAGE_CONT_BS64.log
+  TensorBoard root: http://localhost:6007
+  Aim: http://localhost:43806
+
+DGX:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE80_DGX82M_LANGUAGE_CONT_BS64
+  /tmp/20260523_STAGE80_DGX82M_LANGUAGE_CONT_BS64.log
+  TensorBoard root: http://dgx:6008
+```
+
+NVFP4 decision:
+
+```text
+Do not switch the custom trainer to NVFP4 yet.
+DGX reports GB10 capability 12.1, while the current PyTorch reports supported
+capability up to 12.0 and transformer_engine is not installed. Under this stack,
+NVFP4 is a future kernel/Transformer-Engine optimization task, not today's
+fastest path.
+```
+
+Research rule fixed by this run:
+
+```text
+For this trainer, choose batch by measured tokens/sec and eval-loss stability,
+not by GPU memory size alone.
+```
+
+## [2026-05-22] implementation | Stage59 LFCR follows HRM-Text one-body mouth rule
+
+Change:
+
+```text
+Added Ledger-Forced Copy Renderer (LFCR) to
+scripts/530_train_final_typed_register_answerer.py.
+```
+
+문과적 이유:
+
+```text
+HRM-Text 기준에서 중요한 것은 "생각한 몸이 말하는 몸"이어야 한다는 점이다.
+Stage59 v33 LCR은 장부에서 입으로 힌트를 주었지만, 자유 AR speaker가 그
+힌트를 무시하거나 오역할 수 있었다.
+
+LFCR은 최종 typed digit ledger의 digit logits를 실제 answer character vocab의
+digit token logits로 직접 옮긴다. 즉 숫자/list 답변에서 장부가 side note가
+아니라 speaker의 알파벳이 된다.
+```
+
+Local causality contract:
+
+```text
+Promote only if arithmetic_chain or list_transform improves above 0/8 and
+ledger_forced_copy_renderer_off removes that exact gain.
+
+Reject if total accuracy changes but arithmetic/list remains 0/8, or if the
+gain survives with ledger_forced_copy_renderer_off.
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed
+git diff --check passed for Stage59 files and wiki files
+```
+
+## [2026-05-22] experiment | Stage59 v34 LFCR rejects and moves bottleneck to place-value thought
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v34_lfcr_train256_eval64
+epochs=12
+train_limit=256
+eval total=32
+answerer-ledger-forced-copy-renderer=true
+answerer-ledger-causal-renderer=false
+```
+
+Result:
+
+```text
+best_exact = 0.1875 at epoch 7
+final_exact = 0.125 at epoch 12
+
+arithmetic_chain = 0/8
+list_transform = 0/8
+boolean_logic = 3/8
+symbolic_binding = 1/8
+
+typed_register_off = 0.0
+executor_off = 0.0
+writeback_off = 0.0625
+ledger_forced_copy_renderer_off = 0.125
+
+train digit_transition_executor_trace_digit_accuracy = 0.73736
+train typed_digit_register_trace_digit_accuracy = 0.60973
+train char_token_accuracy = 0.75944
+```
+
+Decision:
+
+```text
+Reject / do not promote.
+LFCR did not create arithmetic/list gain, and disabling it did not remove the
+remaining gain. It is not the causal bottleneck breaker yet.
+```
+
+문과적 해석:
+
+```text
+LFCR fixed the kind of mouth we wanted: the answerer can now use the ledger as a
+digit alphabet. But the exam examples show the ledger is still writing the wrong
+large-number world.
+
+Examples:
+  target 8017 -> selected 4077
+  target 8008,8004 -> selected 4024,4024
+
+So the problem is no longer only "the mouth cannot read the note." The note
+itself does not contain the extrapolated place-value computation. The student
+has learned the shape of arithmetic/list answers but not the shared column
+procedure that carries from 0/1000/2000/3000 training bases to the 4000 eval
+base.
+```
+
+Next high-probability implication:
+
+```text
+The next architecture must force a place-value procedure inside the thought
+path, not just a better speaker. A shared columnar executor should read source
+digit columns, carry state, operation, and argument, then write next digit
+columns before LFCR speaks them. Promote only if arithmetic_chain or
+list_transform rises above 0/8 and the column-procedure-off ablation destroys
+that exact gain.
+```
+
+## [2026-05-22] architecture candidate | BECTO place-value thought organ
+
+Candidate:
+
+```text
+BECTO = Base-Equivariant Column Thought Organ
+```
+
+문과적 핵심:
+
+```text
+이제 필요한 것은 더 예쁜 입이 아니라 작업기억 조작 루틴이다.
+
+사람은 4007을 "처음 보는 커다란 덩어리"로 보지 않는다. 4 | 0 | 0 | 7의
+자릿수 칸으로 놓고, 같은 세로셈 절차를 오른쪽에서 왼쪽으로 반복한다.
+훈련에서 7, 1007, 2007, 3007을 봤다면 4007도 같은 칸 절차로 처리되어야
+한다.
+```
+
+Architecture contract:
+
+```text
+source digit columns
+-> shared column procedure cell
+-> carry/procedure state moves across columns
+-> next typed digit ledger
+-> LFCR mouth
+```
+
+Non-negotiable gate:
+
+```text
+This is accepted only if arithmetic_chain or list_transform rises above 0/8 and
+column_procedure_off destroys that exact gain.
+```
+
+Why this is GRAM/PTRM-level rather than tuning:
+
+```text
+GRAM/PTRM changed the path that thinks/searches.
+BECTO changes the numeric world's physics: digits are no longer arbitrary
+semantic blobs; they are columns governed by one shared procedure.
+```
+
+Implementation hook:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  --digit-transition-executor-mode becto_column
+  --eval-column-procedure-off
+
+Tests:
+  test_typed_digit_next_state_executor_becto_reads_source_digit_columns_and_is_ablatable
+  test_digit_transition_executor_context_passes_column_procedure_off_ablation
+```
+
+Implemented contract:
+
+```text
+source_numeric_features digit columns
+-> learned source-digit projection
+-> shared BECTO column GRUCell scanned from right to left
+-> digit/presence logits and typed digit trajectory
+-> committed writeback / LFCR answer mouth
+```
+
+## [2026-05-22] decision | HRM-Text is the mandatory one-body reference standard
+
+Decision:
+
+```text
+Use HRM-Text as the mandatory reference for QTRM/GRAM/PTRM language-reasoning
+architecture decisions until a newer primary source clearly supersedes it.
+```
+
+문과적 해석:
+
+```text
+HRM-Text가 중요한 이유는 "생각 장치를 붙였다"가 아니라, 읽는 몸과 생각하는
+몸과 말하는 몸이 처음부터 같은 모델 안에서 훈련된다는 점이다.
+
+우리 실패는 계산 장부가 없어서만이 아니라, 장부를 보는 입이 따로 놀아서
+생긴다. 따라서 앞으로의 실험은 thought trace 점수만 올리는 것이 아니라
+장부/GRAM/PTRM 상태가 실제 answer token path를 지배해야 한다.
+```
+
+Required gate:
+
+```text
+reader -> recurrent thought -> speaker
+
+The gain must disappear when the thought-to-speaker path is disabled.
+Side probes, standalone typed calculators, or non-causal trace accuracy do not
+count as accepted progress.
+```
+
+Sources:
+
+```text
+HRM-Text: https://arxiv.org/abs/2605.20613
+HF HRM-Text docs: https://huggingface.co/docs/transformers/main/model_doc/hrm_text
+Original HRM: https://arxiv.org/abs/2506.21734
+```
+
+## [2026-05-22] experiment | Stage59 v33 LCR no-op renderer does not solve arithmetic/list
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v33_lcr_noopinit_train256_eval64
+epochs=12
+train_limit=256
+eval total=32
+answerer-ledger-causal-renderer=true
+renderer initialized as no-op to preserve the old mouth at step 0
+```
+
+Result:
+
+```text
+best_exact = 0.1875 at epoch 10
+arithmetic_chain = 0/8
+list_transform = 0/8
+boolean_logic = 5/8
+symbolic_binding = 1/8
+
+typed_register_off = 0.0
+executor_off = 0.0
+attractor_off = 0.1875
+writeback_off = 0.0
+ledger_causal_renderer_off = 0.1875
+
+last train digit_transition_executor_trace_digit_accuracy = 0.67404
+```
+
+Decision:
+
+```text
+Reject / do not promote.
+The renderer did not create arithmetic/list gain, and disabling it did not
+remove a gain. It is not causal yet.
+```
+
+문과적 해석:
+
+```text
+GRAM+PTRM이 빨리 먹힌 것은 닫힌 시험장 안에서 정답 회로를 만든 일이었다.
+범용 사고력은 읽는 눈, 작업대, 손 절차, 검산, 말하는 입이 한 몸으로 맞아야
+한다. 지금은 작업대 전이 점수는 오르지만 입이 숫자 장부를 정확히 베껴
+말하지 못한다.
+
+v33 LCR은 "입 쪽에 장부 렌더러를 하나 더 붙인" 단계였고, 아직 장부를
+speaker의 강제 알파벳으로 만들지는 못했다.
+```
+
+Next stricter candidate:
+
+```text
+Ledger-Forced Copy Renderer:
+  The final answer string for numeric/list rows should be generated through a
+  constrained copy/read policy over ledger digit/presence slots, not a soft
+  additive renderer on the free AR decoder.
+
+Promote only if:
+  arithmetic_chain or list_transform > 0/8 and copy-renderer_off destroys that
+  exact gain.
+```
+
+## [2026-05-22] experiment | Stage59 v32 ELA rejects but localizes the next bottleneck
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v32_ela_train256_eval64
+epochs=12
+train_limit=256
+eval total=32
+digit-ledger-attractor=true
+committed-writeback=true
+```
+
+Result:
+
+```text
+best_exact = 0.3125 at epoch 12
+arithmetic_chain = 0/8
+list_transform = 0/8
+boolean_logic = 5/8
+symbolic_binding = 5/8
+
+typed_register_off = 0.0
+executor_off = 0.0625
+attractor_off = 0.3125
+writeback_off = 0.0
+
+train digit_transition_executor_trace_digit_accuracy = 0.70698
+```
+
+Decision:
+
+```text
+Reject / do not promote.
+ELA as currently wired does not pass the arithmetic/list local gate.
+```
+
+문과적 해석:
+
+```text
+장부 안 글씨는 좋아졌다. 하지만 입이 그 장부를 숫자 문자열로 정확히
+읽어 말하지 못한다. 예: 8017을 6017로, 8008,8004를 6008,6008로 말한다.
+
+따라서 다음 병목은 "검산기 부족"보다 "장부 -> 입 렌더링 계약 부족"이다.
+```
+
+Next candidate:
+
+```text
+Ledger-Causal Renderer (LCR):
+  explicit digit/list ledger state must become the speaker's alphabet.
+
+Promote only if:
+  arithmetic_chain or list_transform moves above 0/8 and renderer/ledger
+  ablations remove that family-specific gain.
+```
+
+## [2026-05-22] implementation | ELA checker path wired before local gate
+
+Plain-language prediction:
+
+```text
+v31 made the worksheet causal but still raw. ELA adds a review desk: draft the
+next ledger line, refine/check it for a few settlement steps, then commit the
+settled line into the main thought state before the register-only speaker talks.
+```
+
+Implemented:
+
+```text
+TypedDigitLedgerAttractor:
+  a learned settlement/refinement module over drafted typed digit/list ledger
+  states.
+
+apply_digit_transition_executor_context:
+  executor draft -> attractor refinement -> committed writeback.
+
+Clean ablation:
+  executor_off also disables the attractor, so the checker cannot create a fake
+  executor-off improvement.
+
+CLI/config:
+  --digit-ledger-attractor
+  --digit-ledger-attractor-steps
+  --digit-ledger-attractor-update-scale
+  --eval-digit-ledger-attractor-off
+```
+
+Local gate remains:
+
+```text
+No DGX promotion until arithmetic_chain or list_transform rises above 0/8 and
+executor_off / attractor_off / writeback_off removes that specific gain.
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed for script and tests
+git diff --check passed for touched Stage59/wiki files
+```
+
+## [2026-05-22] decision | Latest looped-reasoning sweep points to Executable Ledger Attractor
+
+Reason:
+
+```text
+Repeated Stage59 rejects mean the next step must not be another small flag
+tweak. The direction must be grounded in the newest literature and the local
+ablation evidence.
+```
+
+Date-ordered paper sweep:
+
+```text
+2026-05-19 MELT
+  https://arxiv.org/abs/2605.07721
+  Gated in-place recurrent memory update.
+
+2026-05-12 Attractor Models
+  https://arxiv.org/abs/2605.12466
+  Iterative refinement as fixed-point/equilibrium solving.
+
+2026-05-10 LoopUS
+  https://arxiv.org/abs/2605.11011
+  Selective gates, random deep supervision, confidence head, drift control.
+
+2026-04-13 Mechanistic analysis of looped reasoning
+  https://arxiv.org/abs/2604.11791
+  Looped models form stable cyclic fixed-point trajectories.
+
+2026-02-12 RLTT
+  https://arxiv.org/abs/2602.10520
+  Reward latent thought trajectories, not only final states.
+
+2026-01-31 Reasoning as State Transition
+  https://arxiv.org/abs/2602.00770
+  Reasoning evolves as internal representational transitions.
+```
+
+Local evidence integrated:
+
+```text
+v31 made the procedural path causal:
+  full exact = 0.46875
+  executor_off = 0.0
+  writeback_off = 0.25
+
+But arithmetic/list stayed:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+```
+
+New architecture direction:
+
+```text
+Executable Ledger Attractor (ELA)
+
+Qwen reader
+-> typed source slots
+-> typed digit/list ledger
+-> procedural executor drafts next ledger state
+-> attractor checker/refiner settles it
+-> committed writeback makes it the main thought state
+-> register-only speaker
+```
+
+Plain-language read:
+
+```text
+The model needs a real ledger, not a side scratch note. For each operation it
+must draft the next ledger line, check/refine it until stable, then commit that
+line before speaking.
+```
+
+Gate:
+
+```text
+No DGX until local arithmetic_chain or list_transform moves above 0/8 and
+executor_off / attractor_off / writeback_off removes that specific gain.
+```
+
+## [2026-05-22] experiment | Stage59 v31 committed procedural writeback is causal but not arithmetic yet
+
+CoT distinction fixed:
+
+```text
+CoT = verbal trace / explanation text.
+Procedural executor = latent/register state transition.
+
+Stage59 needs procedural state update, not longer CoT.
+```
+
+Implemented:
+
+```text
+TypedDigitCommittedWriteback:
+  executor-rolled typed digit/list state
+  -> cross-attention into main working-register trajectory
+  -> gated committed writeback
+  -> normal register-only speaker
+
+flags:
+  --digit-transition-committed-writeback
+  --eval-digit-transition-writeback-off
+```
+
+Local evidence:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_v31_committed_writeback_train256_eval64
+
+best epoch:
+  12
+
+full:
+  exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+
+ablations:
+  typed_register_off = 0.0
+  digit_transition_executor_off = 0.0
+  digit_transition_writeback_off = 0.25
+```
+
+Plain-language read:
+
+```text
+This is the first run where the procedural path clearly enters the main body.
+Turning the executor off collapses the score. Turning writeback off also hurts.
+
+But the causal path is carrying boolean/symbolic behavior, not arithmetic/list
+calculation. The model is now writing into the real notebook, but it still has
+not learned the numeric transition rule.
+```
+
+Next accepted direction:
+
+```text
+Use the same committed writeback path, but pretrain/evaluate it on the
+transition itself before the final answerer:
+
+  source numbers + operation + previous digit/list state
+  -> next digit/list state
+
+No DGX scaling until arithmetic_chain or list_transform moves above 0/8 and
+executor/writeback-off removes that specific gain.
+```
+
+## [2026-05-22] experiment | Stage59 v29/v30 procedural executors rejected without committed writeback
+
+Clarified terminology:
+
+```text
+"hand movement" is only a plain-language metaphor.
+Formal term: procedural executor.
+Concrete implementation: carry-propagating column-scan executor.
+```
+
+Implemented in `scripts/530_train_final_typed_register_answerer.py`:
+
+```text
+v29:
+  direct digit/presence logits from TypedDigitNextStateExecutor,
+  straight-through discrete digit feedback,
+  direct digit-transition executor trace loss.
+
+v30:
+  --digit-transition-executor-mode column_scan,
+  right-to-left scan over digit/carry columns with recurrent column state.
+```
+
+Local checkpoint evidence:
+
+```text
+v29 best:
+  run = /tmp/stage59_final_typed_register_answerer_v29_discrete_digit_transition_train256_eval64
+  epoch = 11
+  selected exact = 0.46875
+  executor_off exact = 0.46875
+  typed_register_off exact = 0.0
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+
+v30 best:
+  run = /tmp/stage59_final_typed_register_answerer_v30_column_scan_train256_eval64
+  epoch = 9
+  selected exact = 0.46875
+  executor_off exact = 0.46875
+  typed_register_off exact = 0.0
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+```
+
+Plain-language read:
+
+```text
+The worksheet body is real, and the new procedural executor learns to write
+more plausible digit traces. But the final answer still does not depend on that
+executor. If removing the executor does not change the score, the executor is
+not yet the thought path.
+```
+
+Next accepted direction:
+
+```text
+Committed procedural writeback:
+
+  predicted next digit/list state
+  -> authoritative next typed register state
+  -> next recurrent thought step
+  -> register-only speaker
+
+No DGX run until a local gate shows arithmetic_chain or list_transform moving
+above 0/8 and writeback_off removes that gain.
+```
+
+## [2026-05-22] experiment | Stage59 v28 weak digit transition executor rejected
+
+Implemented a learned operation-conditioned digit next-state executor in
+`scripts/530_train_final_typed_register_answerer.py` and recorded the result in
+`docs/wiki/decisions/stage59-final-only-typed-register-answer-path.md`.
+
+Code path:
+
+```text
+TypedDigitNextStateExecutor:
+  previous digit/carry worksheet
+  + operation id
+  + operation argument
+  + source-number feature summary
+  -> executor-rolled digit/carry worksheet
+  -> normal typed-register answer speaker
+```
+
+Local gate:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_v28_digit_transition_executor_train256_eval4000
+
+best exact:
+  full = 0.5 at epoch 28
+  digit_transition_executor_off = 0.5
+  typed_register_off = 0.0
+
+best family split:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+```
+
+Plain-language read:
+
+```text
+The new hand touches the worksheet, but it still writes in soft latent ink.
+The model becomes good at trace-shaped writing, not at changing digit/list
+state by arithmetic rule. Since executor_off ties full, the executor is not yet
+the causal source of the answer.
+```
+
+Next accepted direction:
+
+```text
+Replace the weak continuous worksheet filter with a discrete/straight-through
+digit-state executor:
+
+  previous digit columns + operation/argument
+  -> next digit/carry/list logits
+  -> digit-state embedding fed into the next step and the speaker
+
+The gate remains local only: arithmetic_chain > 0/8 or list_transform > 0/8,
+selected exact > 0.5, typed_register_off = 0.0, and executor_off removes the
+gain.
+```
+
+## [2026-05-22] decision | Stage59 v24-v27 says the missing organ is the transition executor
+
+Recorded the Stage59 final typed-register evidence in
+`docs/wiki/decisions/stage59-final-only-typed-register-answer-path.md`.
+
+Local-only result summary:
+
+```text
+v24 final digit-register output bridge:
+  best exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+
+v25 trace-step digit bridge:
+  best exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+
+v26 multibase train256 -> eval4000:
+  best exact = 0.5
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  max digit-register trace accuracy = 0.9995
+
+v27 multibase + operation-argument conditioning:
+  best exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  max digit-register trace accuracy = 0.9992
+```
+
+Plain-language conclusion:
+
+```text
+The model can read the page, write a digit worksheet, and speak from that
+worksheet. It still cannot perform the hand movement that turns one written
+line into the next written line.
+```
+
+Decision:
+
+```text
+Do not spend the next local run on bigger memory, another mouth bridge, or
+another operation label. The next high-acceptance experiment must add a learned
+operation-conditioned next-state executor inside the normal typed-register
+answer path:
+
+  previous digit/list state + operation + argument + source slots
+  -> next digit/list state
+```
+
+Gate:
+
+```text
+Promote only if arithmetic_chain > 0/8 or list_transform > 0/8 on eval4000,
+selected exact beats 0.5, typed_register_off remains 0.0, and
+transition_executor_off removes the gain.
+```
+
+## [2026-05-22] decision | Stage58 VTE and scoped Qwen3.6-27B claim discipline
+
+Pinned the Stage58 operating rule in
+`docs/wiki/decisions/qwen35-hrmtext-attention-pooling-diagnostics.md`.
+
+Current accepted local result:
+
+```text
+Stage58B VTE-K64-top3:
+  selected synthetic OOD accuracy = 0.9336
+  oracle candidate coverage       = 0.9401
+  typed register checker accuracy = 0.9935
+```
+
+Decision:
+
+```text
+Do not claim broad Qwen3.6-27B parity from this synthetic result.
+
+First target:
+  push local synthetic OOD from 0.9336 to 0.95-0.97.
+
+Scoped 27B claim:
+  only claim a win when QTRM/GRAM/VTE and Qwen3.6-27B are evaluated on the
+  exact same deterministic synthetic/algorithmic suite.
+
+Current bottleneck:
+  not verifier selection, because selected-vs-oracle gap is only 0.0065;
+  next work should improve candidate coverage/top-k oracle via thinker quality.
+```
+
+Next concrete artifact: add a VTE top3 failure dump to distinguish "right
+answer never exposed" from "verifier selected wrong."
+
+## [2026-05-22] eval | Stage58 same-suite Qwen3.6-27B proxy comparison
+
+Materialized the Stage58 VTE heldout suite for Qwen3.6 comparison:
+
+```text
+script:
+  scripts/519_materialize_stage58_vte_qwen36_suite.py
+
+suite:
+  local_eval/stage58_vte_qwen36_suite_answer_only/cases.jsonl
+
+cases:
+  768 total = 128 per depth for depths 4, 6, 8, 10, 12, 14
+
+prompt_protocol:
+  stage58_answer_only_single_digit_v1
+```
+
+Ran the local Qwen3.6-27B-MTP GGUF proxy baseline:
+
+```text
+report:
+  local_eval/stage58_qwen36_mtp_proxy_baseline_full_answeronly_20260522/report.json
+
+model:
+  Qwen3.6-27B-MTP-GGUF-UD-Q4_K_XL
+
+score:
+  324 / 768 = 0.421875
+```
+
+Comparison:
+
+```text
+Stage58B VTE-K64-top3 selected = 0.93359375
+Qwen3.6-27B proxy             = 0.421875
+margin                        = +0.51171875
+```
+
+Depth breakdown:
+
+```text
+depth | Stage58B selected | Qwen3.6 proxy
+4     | 0.9140625         | 0.6328125
+6     | 0.9140625         | 0.484375
+8     | 0.953125          | 0.5234375
+10    | 0.9609375         | 0.4296875
+12    | 0.9140625         | 0.265625
+14    | 0.9453125         | 0.1953125
+```
+
+Claim boundary:
+
+```text
+Accepted:
+  Qwen3.5-0.8B + QTRM/GRAM/VTE beats the local quantized Qwen3.6-27B-MTP GGUF
+  proxy on this exact Stage58 synthetic modulo-10 heldout suite.
+
+Not accepted:
+  broad Qwen3.6-27B parity or public benchmark parity.
+```
+
+## [2026-05-22] decision | Stage58 is not an ASI claim
+
+Pinned the ASI/superintelligence boundary in the Stage58 decision document.
+
+Rule:
+
+```text
+0.95-0.97 on Stage58 synthetic OOD would be a strong specialized reasoning
+result, not ASI.
+
+Use "scoped algorithmic reasoning win" unless broad benchmark evidence exists.
+```
+
+Reason:
+
+```text
+The current system can beat a 27B proxy on a narrow synthetic arithmetic exam
+because it has a specialized reader -> recurrent thinker -> top-k candidate
+exposure -> verifier path.
+
+ASI would require broad transferable superiority across unfamiliar domains such
+as science, coding, planning, tool use, language, memory, and self-correction.
+```
+
+## [2026-05-22] decision | Stage59 general-purpose thought-organ gate is priority
+
+Updated the Stage58 decision document to make the next research priority
+explicit.
+
+Decision:
+
+```text
+Testing whether the architecture becomes a more general thought organ is now
+higher priority than only pushing Stage58 from 0.9336 to 0.95-0.97.
+```
+
+Humanistic rule:
+
+```text
+Making the calculator workshop better is useful, but it does not prove we made
+a general thinking office.
+
+The key transfer question is whether the same organization still works when the
+kind of mental work changes:
+  reader -> recurrent thought/search -> top-k exposure -> verifier -> selected
+  answer.
+```
+
+Immediate Stage59 ladder:
+
+```text
+Stage59A: new symbolic families beyond modulo-10 chains.
+Stage59B: GSM-like natural-language arithmetic with automatic numeric verifier.
+Stage59C: small program/list transformations with executable verifier.
+Stage59D: planning/tool-style toy tasks with sequence-of-actions success.
+```
+
+Promotion:
+
+```text
+Call it more general only if the same causal path improves at least two new
+families without rewriting a task-specific executor for each one.
+```
+
+Local candidate data:
+
+```text
+primary:
+  data/eval/pure_recursive_solver_trace_all_family_heldout_cases.jsonl
+
+smoke:
+  data/eval/pure_recursive_hard_family_heldout200_cases.jsonl
+
+Initial families:
+  - arithmetic_chain
+  - symbolic_binding
+  - boolean_logic
+  - list_transform
+```
+
+This is the first practical Stage59A transfer exam because it changes the answer
+format from single modulo-10 digits to multi-digit arithmetic, symbolic/color
+words, boolean labels, and CSV list outputs.
+
+Preflight:
+
+```text
+script:
+  scripts/520_stage59_generality_preflight.py
+
+report:
+  local_eval/stage59_generality_preflight_all_family/report.json
+
+decision:
+  blocked_direct_reuse_requires_general_answer_interface
+
+failed_axes:
+  - speaker_candidate_exposure_digit_only
+  - verifier_mod10_register_not_general
+```
+
+Interpretation:
+
+```text
+Direct Stage58 reuse is not a fair transfer test. The current path fails at the
+answer interface: it can expose digit candidates and verify modulo-10 registers,
+while Stage59A needs integer, CSV, boolean, and symbolic outputs.
+
+Next architecture work should build a general answer interface while preserving
+reader -> recurrent thought/search -> top-k exposure -> verifier -> selected
+answer.
+```
+
+## [2026-05-22] implementation | Stage59 general answer interface canary
+
+Added a thin answer-object interface for Stage59 transfer gates.
+
+Implementation:
+
+```text
+module:
+  src/qtrm_mm/eval/general_answer_interface.py
+
+tests:
+  tests/test_general_answer_interface.py
+
+candidate evaluator:
+  scripts/521_eval_general_answer_candidates.py
+```
+
+Humanistic rule:
+
+```text
+The thinker should not be judged through a mouth that can only say one digit.
+Stage59 needs a shared mouth that can say integers, CSV lists, boolean labels,
+and symbolic words without installing a new task-specific executor for every
+family.
+```
+
+Important metric split:
+
+```text
+accuracy:
+  score of the actually selected candidate.
+
+oracle_accuracy:
+  candidate-coverage upper bound; useful for debugging whether the right answer
+  appeared anywhere, but not a deployable verifier score.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  src/qtrm_mm/eval/general_answer_interface.py \
+  tests/test_general_answer_interface.py \
+  scripts/521_eval_general_answer_candidates.py
+
+PYTHONPATH=src .venv/bin/python - <<'PY'
+import runpy
+ns = runpy.run_path('tests/test_general_answer_interface.py')
+for name, fn in sorted(ns.items()):
+    if name.startswith('test_'):
+        fn()
+print('general_answer_interface direct assertions passed')
+PY
+```
+
+Local canary:
+
+```text
+PYTHONPATH=src .venv/bin/python scripts/521_eval_general_answer_candidates.py \
+  --eval-jsonl data/eval/pure_recursive_solver_trace_all_family_heldout_cases.jsonl \
+  --candidate-source choices \
+  --selection-mode oracle \
+  --out-json local_eval/stage59_general_answer_interface_choices_oracle/report.json \
+  --out-jsonl local_eval/stage59_general_answer_interface_choices_oracle/records.jsonl
+```
+
+Result:
+
+```text
+rows: 128
+families:
+  arithmetic_chain: 32/32
+  boolean_logic: 32/32
+  list_transform: 32/32
+  symbolic_binding: 32/32
+
+answer kinds:
+  integer: 32/32
+  csv_integer_list: 32/32
+  boolean: 32/32
+  symbolic_or_text: 32/32
+```
+
+Boundary:
+
+```text
+This is not a model-performance result. The row choices are a canary candidate
+source, and in this dataset the first choice is also the gold answer. The result
+only proves that the Stage59 answer interface can score all current answer
+formats without digit/register-specific logic.
+```
+
+Next required model work:
+
+```text
+Build the general candidate speaker:
+  recurrent thought/search -> top-k answer text/object candidates
+
+Then evaluate with:
+  scripts/521_eval_general_answer_candidates.py --candidate-source jsonl
+
+Promotion requires the same thought/search path to improve at least two
+non-modulo families, and the gain must disappear when recurrent thought/search
+or top-k exposure is disabled.
+```
+
+## [2026-05-22] implementation | Stage59 OpenAI-compatible general answer baseline
+
+Added a model-candidate evaluator for Stage59 generality gates.
+
+Implementation:
+
+```text
+script:
+  scripts/522_eval_openai_general_answer_candidates.py
+```
+
+What it does:
+
+```text
+eval JSONL row prompt
+  -> OpenAI-compatible chat completion
+  -> concise answer candidate extraction
+  -> shared Stage59 answer interface
+  -> selected-answer accuracy plus oracle candidate coverage
+```
+
+Why this matters:
+
+```text
+This is the first fair baseline path for general answer formats. It does not
+force all outputs into a digit/register interface, so arithmetic integers,
+boolean labels, symbolic words, and CSV lists can be evaluated through the same
+mouth.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  src/qtrm_mm/eval/general_answer_interface.py \
+  tests/test_general_answer_interface.py \
+  scripts/521_eval_general_answer_candidates.py \
+  scripts/522_eval_openai_general_answer_candidates.py
+
+PYTHONPATH=src .venv/bin/python - <<'PY'
+import runpy
+ns = runpy.run_path('tests/test_general_answer_interface.py')
+for name, fn in sorted(ns.items()):
+    if name.startswith('test_'):
+        fn()
+print('general_answer_interface direct assertions passed')
+PY
+```
+
+Mock integration check:
+
+```text
+The evaluator was monkeypatched with four representative model completions:
+  - "The final answer is 8017."
+  - "Final answer: green."
+  - "Answer: TRUE."
+  - "8008, 8004"
+
+Result:
+  accuracy = 1.0 across integer, symbolic_or_text, boolean, and csv_integer_list.
+```
+
+Local runtime status:
+
+```text
+OpenAI-compatible server at http://127.0.0.1:18082/v1 was not running during
+this check, so no live Qwen/QTRM baseline was launched in this step.
+```
+
+Next gate:
+
+```text
+When a local model server is running:
+
+PYTHONPATH=src .venv/bin/python scripts/522_eval_openai_general_answer_candidates.py \
+  --base-url http://127.0.0.1:18082/v1 \
+  --model local \
+  --model-label <model-label> \
+  --eval-jsonl data/eval/pure_recursive_solver_trace_all_family_heldout_cases.jsonl \
+  --candidate-samples 1 \
+  --selection-mode first \
+  --out-json local_eval/stage59_openai_general_answer_baseline/report.json \
+  --out-jsonl local_eval/stage59_openai_general_answer_baseline/predictions.jsonl
+
+For QTRM/GRAM specifically, bridge the recurrent text generation path in
+scripts/92_eval_qtrm_logits.py into this candidate JSONL contract so the same
+general answer interface can test:
+  full QTRM vs donor_only vs workspace_off vs core_off.
+```
+
+## [2026-05-22] implementation | QTRM text generation to Stage59 candidate JSONL bridge
+
+Added a Stage59 candidate-output bridge to the existing QTRM text-generation
+diagnostic script.
+
+Implementation:
+
+```text
+script:
+  scripts/92_eval_qtrm_logits.py
+
+new option:
+  --stage59-candidates-jsonl <path>
+```
+
+Output contract:
+
+```text
+{id, task_family, ablation_mode, candidates, raw_completions, full_generations}
+```
+
+Humanistic purpose:
+
+```text
+If QTRM is a thinker, we need to hear what it says through the ordinary
+Stage59 mouth, not only through old diagnostic prose or a digit head.
+
+This bridge turns QTRM generations into the same candidate objects consumed by
+the shared Stage59 evaluator.
+```
+
+Verification:
+
+```text
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/92_eval_qtrm_logits.py \
+  src/qtrm_mm/eval/general_answer_interface.py \
+  tests/test_general_answer_interface.py \
+  scripts/521_eval_general_answer_candidates.py \
+  scripts/522_eval_openai_general_answer_candidates.py
+
+PYTHONPATH=src .venv/bin/python - <<'PY'
+import argparse
+import importlib.util
+import json
+spec = importlib.util.spec_from_file_location('qtrm_eval92', 'scripts/92_eval_qtrm_logits.py')
+mod = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(mod)
+args = argparse.Namespace(
+    data_jsonl=['data/eval/pure_recursive_solver_trace_all_family_heldout_cases.jsonl'],
+    max_samples=4,
+    answer_contract='direct',
+)
+items = mod.collect_stage59_items(args)
+assert [item['id'] for item in items] == [
+    'arith-chain-4000', 'symbolic-binding-4000', 'boolean-logic-4000', 'list-transform-4000'
+]
+assert all('/no_think' in item['text'] for item in items)
+print(json.dumps({'stage59_qtrm_bridge_contract': 'passed', 'items': len(items)}, ensure_ascii=False))
+PY
+```
+
+Usage:
+
+```text
+PYTHONPATH=src .venv/bin/python scripts/92_eval_qtrm_logits.py \
+  --config <qtrm-config> \
+  --checkpoint <qtrm-checkpoint> \
+  --data-jsonl data/eval/pure_recursive_solver_trace_all_family_heldout_cases.jsonl \
+  --max-samples 128 \
+  --num-candidates 4 \
+  --do-sample \
+  --temperature 0.7 \
+  --answer-contract direct \
+  --ablation-mode residual \
+  --stage59-candidates-jsonl local_eval/stage59_qtrm_text_full/candidates.jsonl \
+  --json
+
+PYTHONPATH=src .venv/bin/python scripts/521_eval_general_answer_candidates.py \
+  --eval-jsonl data/eval/pure_recursive_solver_trace_all_family_heldout_cases.jsonl \
+  --candidates-jsonl local_eval/stage59_qtrm_text_full/candidates.jsonl \
+  --candidate-source jsonl \
+  --selection-mode first \
+  --out-json local_eval/stage59_qtrm_text_full/report.json \
+  --out-jsonl local_eval/stage59_qtrm_text_full/records.jsonl
+```
+
+Boundary:
+
+```text
+This bridge applies to the QTRMMultimodalModel text-generation path in
+scripts/92. It does not by itself make the Stage58 state_transition/VTE digit
+path produce general text/object candidates.
+
+For the Stage58/GRAM path, the still-missing piece is a general candidate
+speaker trained on:
+  recurrent thought state -> answer text/object candidate
+```
+
+## [2026-05-21] research | LoopFormer-Inspired Continuous Time Conditioning & Elastic-LSCR
+
+We resolved the long-standing synthetic out-of-distribution (OOD) generalization accuracy plateau of ~0.16–0.18 for the Qwen3.5-0.8B + QTRM recurrent reasoning core on the generalized digit checksum task. We implemented a continuous time embedding MLP projection and the Elastic-LSCR alignment objective.
+
+### Proposed Changes & Implementation:
+- **Continuous Time Conditioning**: Replaced step-absolute embeddings with a Continuous Time MLP `time_mlp: [tau = t/T, delta = 1/T]` in `src/qtrm_mm/state_transition_core.py` to prevent representation boundary drift at evaluation depths >= 10.
+- **Elastic-LSCR Formulation**: Aligns shallower recurrent trajectories (student) at matched continuous times $\tau = k / T_{\text{short}}$ to the nearest rounded index in deeper trajectories (teacher: $t_{\text{long\_idx}} = \text{round}(\tau \times T_{\text{long}})$) in `scripts/511_train_qwen_state_transition_hrmtext.py`. Detaches the long-trajectory teacher to prevent representation collapse.
+- **High-Resolution Telemetry**: Added step-level and epoch-level logging for `Train/Step/TransitionNorm_Mean`, `Train/Step/StateNorm_Mean`, and `Train/Step/StateCosine_Mean` to both TensorBoard and Aim.
+- **Launch Script Integration**: Updated `scripts/launch_stage31a_after_stage30b.sh` and `scripts/launch_stage31b_dgx.sh` with the `--continuous-time` CLI flag.
+
+### Verification (Epoch 1):
+- **Telemetry Verification**: Completed training Epoch 1 successfully. The `latent_shortcut` loss outputs a healthy non-zero gradient pressure of `0.0008` (under weight `0.2`), and recurrent computation norm (`TransitionNorm_Mean`) logs actively.
+- **OOD Generalization**: Epoch 1 eval shows a promising generalization bump with `heldout_mean_acc = 17.34%` and OOD depth 10 evaluation accuracy reaching `20.70%` (previously stuck at low limits in epoch 1).
+
 ## [2026-05-12] research | DeltaNet official implementation boundary
 
 Searched and cloned the official DeltaNet/GatedDeltaNet reference stack:
@@ -29248,4 +31245,10321 @@ The immediate route is:
   3. repeat on at least two held-out seed bundles;
   4. run destructive ablations;
   5. only then scale language/data using HRM-Text Data IO discipline.
+```
+
+## 2026-05-21 - LayerScale & Identity-Biased Recurrence Integration
+
+Question:
+```text
+How can we stabilize deep recurrent trajectories (12 unroll steps) and prevent out-of-distribution (OOD) generalization decay or late-epoch drift on the generalized digit checksum task?
+```
+
+Implementation:
+```text
+1. state_transition_core.py:
+   - Added learnable diagonal `layerscale_gamma` (initialized to 1e-5) in SharedReasoningCore and MiniGatedDeltaReasoningCore.
+   - Equipped SharedReasoningCore with configurable `gate_type` ("tanh" or "sigmoid") and custom `gate_bias_init`.
+2. qwen_backbone_state_transition.py:
+   - Propagated new parameters to the StateTransitionCore wrapper/factory initialization.
+3. scripts/511_train_qwen_state_transition_hrmtext.py:
+   - Exposed `--layerscale`, `--layerscale-init`, `--gate-type`, and `--gate-bias-init` arguments in the parser and passed them to the factory model builder.
+4. scripts/launch_stage31a_after_stage30b.sh & scripts/launch_stage31b_dgx.sh:
+   - Configured with `--layerscale`, `--layerscale-init 1e-5`, `--gate-type sigmoid`, and `--gate-bias-init -2.0` (identity-biased recurrence).
+   - Relaxed state-supervision weight decay to `--state-supervision-decay-rate 0.9` (prevents late-epoch supervision loss starvation).
+```
+
+Result:
+```text
+A minimal training dry run (1 epoch, minimal batches, loading weights from legacy checkpoint /mnt/sdc1/tripleyoung/qtrm_eval/20260521_113012_PERSIST_STAGE24A_SilentIdentityCore_from20A_seed102/last.pt) compiled successfully, loaded pre-existing parameters under strict compatibility, trained, backpropagated, and successfully evaluated OOD depth-4/6 generalization before exiting cleanly with EXIT:0.
+```
+
+Decision:
+```text
+We have achieved a backward-compatible, stable gradient highway for deep unrolls using diagonal LayerScale initialization (initialized to 1e-5) and Sigmoid identity gating (with bias initialized to -2.0). We are ready to launch local and DGX runs to verify OOD generalization above 25% by Epoch 5.
+```
+
+## 2026-05-22 - Stage59 State Text Speaker Low-Rank Smoke
+
+Question:
+```text
+Do we need another paper search before continuing, or can the current bottleneck
+be resolved with local evidence?
+```
+
+Plain-language read:
+```text
+No broad paper search is needed right now. The immediate bottleneck is not
+"which new method should be imported"; it is whether the existing recurrent
+thought state can speak ordinary answers at all. If a tiny speaker cannot even
+overfit 32 balanced Stage59 rows, then the failure is a local causal-path
+problem, not a literature-discovery problem.
+```
+
+Implementation:
+```text
+Added and tested the Stage59 state text speaker path:
+  src/qtrm_mm/eval/state_text_speaker.py
+  tests/test_state_text_speaker.py
+  scripts/523_train_state_text_speaker.py
+
+The speaker maps a frozen QwenBackboneStateTransition readout state into answer
+token states, then speaks through the frozen Qwen LM head plus an optional
+low-rank vocabulary-logit adapter.
+```
+
+Run:
+```text
+local_eval/stage59_state_text_speaker_lowrank_t32_e16_ep20_trainacc
+
+train rows: 32 balanced Stage59 rows
+eval rows: 16 balanced Stage59 rows
+epochs: 20
+speaker_logit_mode: qwen_plus_low_rank
+speaker_rank: 64
+frozen QTRM/Qwen checkpoint:
+  /mnt/sdc1/tripleyoung/qtrm_eval/20260522_092733_LOCAL_STAGE54B_oracle_guard_mixedall_seed42/best_stochastic_oracle.pt
+checkpoint tensors loaded exactly: 97
+```
+
+Result:
+```text
+best eval accuracy: 0.3125 at epoch 20
+final train accuracy: 0.25
+
+final eval by family:
+  arithmetic_chain: 0.0
+  boolean_logic: 0.75
+  list_transform: 0.0
+  symbolic_binding: 0.5
+
+final train by family:
+  arithmetic_chain: 0.0
+  boolean_logic: 0.625
+  list_transform: 0.0
+  symbolic_binding: 0.375
+```
+
+Interpretation:
+```text
+Low-rank speaking helps slightly versus the frozen LM-head-only mouth, but it
+does not pass the overfit gate. The model learns simple boolean/symbolic habits,
+while arithmetic and list answers remain at 0 even on the 32-row train set.
+
+This means we should not scale this run. The current final-readout speaker is
+not yet an architecture-clean general thought organ.
+```
+
+Decision:
+```text
+Stop paper shopping for now. The next accepted-probability move is a local
+causal-path fix:
+
+  Qwen reader
+    -> recurrent thought/search trajectory
+    -> prompt-conditioned answer speaker or trajectory-aware speaker
+    -> Qwen-compatible token logits
+
+Do not launch a large run until the small speaker can overfit arithmetic and
+list rows, not only boolean rows.
+```
+
+## 2026-05-22 - Stage59 Frozen-Mouth Rejection And Core+Speaker Relaunch
+
+Question:
+```text
+Should we keep trying to attach a better text mouth to the frozen Stage58
+thought state, or should the main recurrent thought path itself be trained on
+the Stage59 all-family task?
+```
+
+Plain-language read:
+```text
+The frozen recurrent state is like a student who has calculator habits for one
+class of exercises, but has not learned the broader curriculum. Replacing the
+student's mouth does not teach arithmetic chains, boolean logic, list transforms,
+and symbolic binding as one shared thinking skill.
+```
+
+Evidence:
+```text
+Frozen low-rank final-readout mouth:
+  local_eval/stage59_state_text_speaker_lowrank_t32_e16_ep20_trainacc
+  best eval: 0.3125
+  final train: 0.25
+  arithmetic_chain/list_transform: 0.0
+
+Frozen trajectory/workspace low-rank mouth:
+  local_eval/stage59_state_text_speaker_trajws_t32_e16_ep20_trainacc
+  best eval: 0.0
+
+Frozen direct/restricted/char vocabulary mouths:
+  local_eval/stage59_state_text_speaker_direct_trajws_t32_e16_ep30_trainacc
+  local_eval/stage59_state_text_speaker_restricted_trajws_t32_e16_ep40_trainacc
+  local_eval/stage59_pooled_restricted_frozen_t32_e16_ep100_lr3e3_trainacc
+  local_eval/stage59_char_pooled_frozen_t32_e16_ep80_trainacc
+  DGX local_eval/stage59_dgx_char_pooled_frozen_t64_e32_ep40_trainacc
+  best eval: 0.0
+  train exact: 0.0 for the char/pooled frozen runs
+
+Feature-probe countercheck:
+  pooled frozen QTRM features can be memorized by a simple answer-class MLP
+  to 1.0 train accuracy on 32 rows. So the issue is not "no bits anywhere";
+  the issue is that the canonical sequence speaker cannot use those bits as
+  a general answer path.
+```
+
+Decision:
+```text
+Reject further frozen-mouth-only experiments for Stage59. They fail the
+humanistic preflight: the speaker is being taught to pronounce answers, but the
+thinker was never trained to solve this wider classroom.
+
+Promote core+speaker joint training as the next active gate:
+
+  Qwen reader
+    -> recurrent QTRM thought state
+    -> Qwen-compatible low-rank LM speaker
+
+Both local and DGX are now running train-qtrm-core low-rank final-readout gates:
+
+  local_eval/stage59_local_traincore_lowrank_final_t64_e32_ep40_s1601b
+  DGX local_eval/stage59_dgx_traincore_lowrank_final_t256_e64_ep35_s2601
+
+Initial signal:
+  local epoch 7: eval 0.03125
+  DGX epoch 4: eval 0.109375, currently from symbolic_binding
+```
+
+Gate:
+```text
+Promote only if exact train accuracy rises across more than boolean/symbolic
+families and held-out eval beats the frozen-mouth 0.3125 baseline with nonzero
+arithmetic_chain and list_transform. If the run stays symbolic-only, stop it
+and redesign the curriculum/state targets instead of scaling.
+```
+
+## 2026-05-22 - Stage59 Renderer Bottleneck Split: Choice Verifier Accepted As Diagnostic
+
+Question:
+```text
+Is Stage59 failing because QTRM has no usable thought signal for arithmetic/list,
+or because the free text renderer cannot express numeric/list answers?
+```
+
+Plain-language read:
+```text
+There are two different exams. One asks the student to write the answer from
+scratch. The other asks the student to pick the right answer from four choices.
+The first exam has been failing on numbers/lists. The second immediately shows
+nonzero arithmetic and list recognition. So the student is not blank; the mouth
+and answer-selection interface are the active bottleneck.
+```
+
+Implementation:
+```text
+Added:
+  scripts/524_train_state_choice_verifier.py
+
+Mechanism:
+  Qwen reader -> QTRM recurrent readout -> thin learned choice verifier
+
+The verifier embeds each supplied choice as characters and scores
+readout/choice compatibility. It is a diagnostic answer-selection path, not a
+claim that free-form generation is solved.
+```
+
+Rejected generation-style evidence:
+```text
+local_eval/stage59_local_traincore_lowrank_final_t64_e32_ep40_s1601b
+  best eval: 0.46875
+  arithmetic_chain: 0.0
+  list_transform: 0.0
+
+local_eval/stage59_local_trace_char_allfamily_t64_e32_ep60_s1603
+  best eval: 0.40625
+  arithmetic_chain: 0.0
+  list_transform: 0.0
+
+DGX local_eval/stage59_dgx_trace_char_numericlist_t256_e64_ep80_s2603
+  stopped around epoch 29
+  eval accuracy: 0.0
+  arithmetic_chain/list_transform-only generation remained 0 despite falling loss
+```
+
+Accepted diagnostic evidence:
+```text
+local_eval/stage59_local_choice_verifier_allfamily_t256_e64_ep30_s1604
+  best eval: 0.515625 at epoch 27
+  final train: 0.81640625
+  best signal includes nonzero arithmetic_chain and list_transform
+
+DGX active:
+  local_eval/stage59_dgx_choice_verifier_allfamily_t512_e128_ep40_s2604
+  epoch 1 eval: 0.3828125
+    arithmetic_chain: 0.53125
+    list_transform: 0.25
+  epoch 4 eval: 0.40625
+    list_transform: 0.5625
+```
+
+Decision:
+```text
+Promote answer-selection/verifier integration as the next high-probability
+route. Do not keep spending runs on free numeric/list generation until the
+renderer is explicitly redesigned.
+
+The next architecture should combine:
+  1. QTRM recurrent thought state;
+  2. candidate/choice verifier for answer selection;
+  3. only then a renderer that can copy or emit the selected choice.
+
+This is closer to a human exam workflow: think, compare possible answers,
+select, then speak.
+```
+
+### 2026-05-22 Stage59 choice-order control
+
+Plain-language correction:
+
+```text
+The first verifier result was promising, but the data contract had a hidden
+exam flaw: in the original all-family choice rows, the correct answer was
+always choices[0] on heldout.
+
+That does not automatically invalidate the verifier, because the verifier has
+no explicit choice-index embedding and scores each choice text against the
+thought readout. But it does make the exam too easy to misread. From this point
+on, verifier evidence must be judged on shuffled-choice rows.
+```
+
+Control data:
+
+```text
+scratch/stage59/shuffled_choices_train.jsonl
+  rows: 512
+  answer positions: {0: 150, 1: 166, 2: 84, 3: 112}
+
+scratch/stage59/shuffled_choices_eval.jsonl
+  rows: 128
+  answer positions: {0: 34, 1: 40, 2: 25, 3: 29}
+```
+
+Early accepted signal:
+
+```text
+local_eval/stage59_local_choice_verifier_shuffled_frozen_t512_e128_ep30_s1606
+  frozen QTRM/Qwen readout
+  shuffled choices
+  epoch 1 eval: 0.2578125
+  epoch 2 eval: 0.5546875
+    arithmetic_chain: 0.375
+    boolean_logic: 0.59375
+    list_transform: 0.25
+    symbolic_binding: 1.0
+
+This is the key control: once answer positions are randomized, the frozen
+readout still lets a thin verifier select the right answer above chance. The
+free text speaker is still broken, but the thought/readout is not empty.
+```
+
+Active follow-up:
+
+```text
+local_eval/stage59_local_choice_verifier_shuffled_traincore_t512_e128_ep30_s1607
+  same shuffled-choice gate
+  QTRM core trainable
+
+DGX:
+  finish the in-flight unshuffled train-core verifier, then run the shuffled
+  train-core verifier as the stricter full-resource gate.
+```
+
+### 2026-05-22 Stage59 selected-answer renderer artifact
+
+Implementation update:
+
+```text
+scripts/524_train_state_choice_verifier.py now saves:
+  best_choice_verifier.pt
+  best_records.jsonl
+
+The records are the selected-choice renderer output:
+  thought readout -> learned verifier -> selected candidate string
+```
+
+Current saved local run:
+
+```text
+local_eval/stage59_local_choice_verifier_shuffled_frozen_saved_t512_e128_ep16_s1608
+  frozen QTRM/Qwen readout
+  shuffled choices
+  artifacts:
+    best_choice_verifier.pt
+    best_records.jsonl
+  epoch 7 eval: 0.6484375
+    arithmetic_chain: 0.28125
+    boolean_logic: 0.90625
+    list_transform: 0.40625
+    symbolic_binding: 1.0
+```
+
+Humanistic interpretation:
+
+```text
+This is the first Stage59 path that behaves like a usable answer workflow:
+
+  read the problem
+  think into a recurrent state
+  compare possible answers
+  copy the selected answer
+
+The free text speaker still cannot reliably write arithmetic/list answers from
+the thought state. The selected-answer renderer can at least choose and emit a
+candidate string on shuffled choices, so the next high-probability work is to
+improve verifier coverage and candidate exposure rather than keep training a
+free-form mouth in isolation.
+```
+
+Choice-in-prompt countercheck:
+
+```text
+scratch/stage59/shuffled_choiceprompt_train.jsonl
+scratch/stage59/shuffled_choiceprompt_eval.jsonl
+
+These rows put the shuffled answer choices inside the prompt itself, so the
+reader sees both the question and the options before recurrent thinking.
+
+Early local signal:
+  local_eval/stage59_local_choiceprompt_verifier_frozen_t512_e128_ep16_s1609
+  epoch 1 eval: 0.4140625
+  epoch 2 eval: 0.421875
+
+Interpretation:
+  Seeing choices in the reader prompt is not automatically better. For this
+  checkpoint, the cleaner story is still:
+    read problem -> recurrent state -> compare candidates after thinking.
+```
+
+### 2026-05-22 Stage59 candidate exposure bottleneck
+
+Added a candidate-exposure diagnostic:
+
+```text
+script:
+  scripts/525_eval_qwen_candidate_exposure.py
+
+path:
+  Qwen prompt -> Qwen-generated candidate answers
+  Qwen/QTRM prompt -> recurrent thought readout
+  generated candidates + thought readout -> saved choice verifier
+  selected candidate string
+```
+
+Humanistic question:
+
+```text
+Can the model put the right answer somewhere on the table before the verifier
+tries to choose?
+
+If the right answer never appears in the candidate list, the verifier is not the
+main blocker. The candidate proposer is.
+```
+
+Local result, candidate-proposer prompt:
+
+```text
+local_eval/stage59_local_qwen_candidate_exposure_k8_e32_s1703
+  eval rows: 32
+  generated candidates per row: up to 8
+  selected accuracy: 0.0625
+  oracle candidate coverage: 0.3125
+  first candidate accuracy: 0.21875
+
+by_family selected accuracy:
+  arithmetic_chain: 0.0
+  boolean_logic: 0.25
+  list_transform: 0.0
+  symbolic_binding: 0.0
+```
+
+Local result, stricter answer-only prompt:
+
+```text
+local_eval/stage59_local_qwen_answeronly_exposure_k8_e32_s1704
+  eval rows: 32
+  generated candidates per row: up to 8
+  selected accuracy: 0.21875
+  oracle candidate coverage: 0.375
+  first candidate accuracy: 0.1875
+
+by_family selected accuracy:
+  arithmetic_chain: 0.0
+  boolean_logic: 0.625
+  list_transform: 0.0
+  symbolic_binding: 0.25
+```
+
+Interpretation:
+
+```text
+This decisively separates the Stage59 bottleneck:
+
+  candidate selection with supplied shuffled choices: accepted signal, best 0.6484375
+  Qwen-generated candidate exposure: rejected/weak, oracle coverage only 0.31-0.38
+
+The current "eye" can compare answers, but the "imagination" that proposes
+answer candidates is weak, especially for arithmetic_chain and list_transform.
+Do not spend the next run on more verifier scoring until candidate exposure is
+improved.
+```
+
+### 2026-05-22 GatedDeltaNet-2 / memory-core decision
+
+Checked NVlabs GatedDeltaNet-2:
+
+```text
+source:
+  https://github.com/NVlabs/GatedDeltaNet-2
+
+mechanism:
+  recurrent memory editing with separate channel-wise erase and write gates.
+  This is a better "state editing muscle", not a complete answer-making brain.
+```
+
+Humanistic decision:
+
+```text
+GatedDeltaNet-2 is useful if the thinker keeps smearing or overwriting its own
+working state. It does not by itself create the missing "imagination" role that
+puts candidate answers on the table.
+
+For Stage59, the measured blocker is:
+  Qwen-generated candidate coverage only 0.31-0.38
+  supplied-choice verifier works much better at 0.6484
+
+Therefore, do not graft the full GatedDeltaNet-2 stack now. Treat it as a later
+core-stability ablation after candidate exposure and noisy-candidate verifier
+training are fixed.
+```
+
+Implementation implication:
+
+```text
+Current code already has a lightweight core option:
+  --core-update mini_gated_delta
+
+Next accepted-probability path:
+  1. train/evaluate candidate proposer/exposer conditioned on QTRM thought
+  2. train verifier on generated/typed noisy candidate distributions
+  3. only then A/B test mlp vs mini_gated_delta vs erase/write split core
+
+Reject criterion for GDN-style work:
+  if oracle candidate coverage remains low, a memory-core replacement is not
+  the causal fix.
+```
+
+### 2026-05-22 In-Place Test-Time Training decision
+
+Checked arXiv:2604.06169, "In-Place Test-Time Training".
+
+```text
+source:
+  https://arxiv.org/abs/2604.06169
+
+mechanism:
+  adapt a subset of LLM fast weights at inference time, especially the final
+  projection matrix in MLP blocks, using an objective aligned with next-token
+  prediction.
+```
+
+Humanistic decision:
+
+```text
+This is not a bigger memory warehouse. It is more like a student who changes
+their solving habit during the exam after reading the current context.
+
+For our current Stage59 evidence, the primary missing role is still:
+  answer candidate proposer/exposer
+
+In-Place TTT could become useful later if the Qwen reader/proposer must adapt to
+a new task family from examples in the same context. But applying it now risks
+moving Qwen hidden states away from the distribution the QTRM/verifier was
+trained to read.
+```
+
+Decision:
+
+```text
+Do not make In-Place TTT the next architecture step.
+
+Small future falsifier:
+  compare Qwen candidate oracle coverage with and without TTT-style adaptation.
+  Promote only if arithmetic/list candidate coverage rises before verifier
+  selection is considered.
+```
+
+### 2026-05-22 brain-like answer path reference stack
+
+The current architecture story is:
+
+```text
+reader -> working table -> candidate proposer -> verifier -> selected-answer copy
+```
+
+Reference stack:
+
+```text
+1. Training Verifiers to Solve Math Word Problems
+   https://arxiv.org/abs/2110.14168
+   Use: generate many candidate solutions, then select with a verifier.
+
+2. Self-Consistency Improves Chain of Thought Reasoning in Language Models
+   https://arxiv.org/abs/2203.11171
+   Use: do not trust one greedy thought; put multiple possible answers on the
+   table and aggregate/select.
+
+3. Tree of Thoughts: Deliberate Problem Solving with Large Language Models
+   https://arxiv.org/abs/2305.10601
+   Use: candidate thoughts are search nodes; a controller/verifier chooses which
+   branches to continue or accept.
+
+4. Let's Verify Step by Step
+   https://arxiv.org/abs/2305.20050
+   Use: verifiers become stronger when supervision is attached to reasoning
+   process, not only final outcome.
+
+5. Neural Turing Machines / Differentiable Neural Computer
+   https://arxiv.org/abs/1410.5401
+   https://www.nature.com/articles/nature20101
+   Use: the "working table" intuition: read/write addressable memory matters
+   when a recurrent controller must manipulate structured state.
+
+6. Transformer Working Memory Enables Regular Language Reasoning and Natural
+   Language Length Extrapolation
+   https://arxiv.org/abs/2305.03796
+   Use: working memory, not just larger long-term memory, is relevant for
+   algorithmic length generalization.
+```
+
+Humanistic synthesis:
+
+```text
+The model should not be a person with a bigger warehouse. It should be a person
+with a clean desk:
+
+  read the problem
+  place the relevant symbols/numbers on the desk
+  imagine several plausible answers
+  check them against the thought state
+  copy the selected answer
+
+Stage59 evidence supports this stack:
+  supplied shuffled candidates: verifier can select, best 0.6484
+  Qwen-generated candidates: candidate coverage only 0.31-0.38
+  typed/noisy candidates with gold present: retraining verifier reaches >0.64
+
+Next architecture work should therefore create a trainable internal candidate
+proposer/exposer and train the verifier on that proposer distribution.
+```
+
+Local verifier-distribution result:
+
+```text
+materializer:
+  scripts/526_materialize_noisy_candidate_choices.py
+
+train/eval:
+  scratch/stage59/noisy_typed_choices_k4_train.jsonl
+  scratch/stage59/noisy_typed_choices_k4_eval.jsonl
+
+baseline on same typed/noisy K=4 candidates:
+  local_eval/stage59_local_typed_heuristic_exposure_k4_e32_s1706
+  accuracy: 0.40625 on 32-row diagnostic
+
+retrained verifier:
+  local_eval/stage59_local_noisy_typed_choice_verifier_k4_frozen_t512_e128_ep16_s1803
+  eval rows: 128
+  best epoch: 9
+  best accuracy: 0.671875
+  best by_family:
+    arithmetic_chain: 0.40625
+    boolean_logic: 0.90625
+    list_transform: 0.375
+    symbolic_binding: 1.0
+
+interpretation:
+  When the correct answer is on the table, the verifier can learn the messy
+  candidate distribution. The remaining large blocker is making a learned,
+  non-hand-coded proposer that reliably exposes arithmetic/list answers.
+```
+
+### 2026-05-22 learned candidate proposer smoke
+
+Added:
+
+```text
+scripts/527_train_state_candidate_proposer.py
+```
+
+Path tested:
+
+```text
+Qwen reader -> QTRM readout -> learned parallel char candidate proposer
+-> noisy-candidate-trained verifier -> selected-answer copy
+```
+
+Run:
+
+```text
+local_eval/stage59_local_learned_candidate_proposer_k4_readout_ep12_s1813
+  train rows: 512
+  eval rows: 128
+  best epoch: 12
+  best oracle coverage: 0.5
+  best selected accuracy: 0.3125
+```
+
+By-family at best:
+
+```text
+arithmetic_chain: selected 0.0, coverage 0.0
+boolean_logic: selected 0.59375
+list_transform: selected 0.0, coverage 0.0
+symbolic_binding: selected 0.65625
+```
+
+Failure read:
+
+```text
+The learned proposer can imitate finite symbolic/boolean tables, but it cannot
+create extrapolated numeric/list candidates from a latent vector. It emits
+average-looking digit strings such as 1222/1220 for arithmetic and 6022,6022
+for list answers.
+
+This is not a reason to return to bigger memory. It is evidence that numeric
+answers need typed working registers and an algorithmic renderer, not free-form
+character imagination from one readout vector.
+```
+
+Next accepted-probability architecture:
+
+```text
+reader -> typed working register extractor -> operation/state updater
+-> typed candidate table -> verifier -> copy selected answer
+
+Do not ask a small char head to invent long OOD numbers directly.
+```
+
+Workspace-aware proposer check:
+
+```text
+local_eval/stage59_local_learned_candidate_proposer_k4_workspace_ep12_s1814
+  context: QTRM readout + state trajectory + Qwen workspace attention
+  best epoch: 11
+  best oracle coverage: 0.5
+  best selected accuracy: 0.3984375
+
+by_family:
+  arithmetic_chain: 0.0
+  boolean_logic: 0.59375
+  list_transform: 0.0
+  symbolic_binding: 1.0
+```
+
+Architectural smoking gun:
+
+```text
+src/qtrm_mm/state_transition_core.py:
+  StateReadoutHead(d_state, n_digits=10)
+  state_digit_logits: (B, T+1, 10)
+  answer_logits: (B, 10)
+
+scripts/511_train_qwen_state_transition_hrmtext.py:
+  state_loss uses reshape(-1, 10)
+
+Plain-language consequence:
+  The current thought organ was originally trained to speak a 10-symbol digit
+  language. Stage59 asks it to expose full integers and CSV lists. A char
+  proposer attached after the fact is being asked to invent details that the
+  thought state was not forced to preserve.
+
+Therefore the next architecture must add typed value/list registers before the
+candidate proposer, not only a bigger recurrent memory or more character
+decoder capacity.
+```
+
+### 2026-05-22 typed candidate-pool selector scaffold
+
+Added:
+
+```text
+scripts/528_train_candidate_pool_selector.py
+scripts/529_materialize_pool_selector_choices.py
+```
+
+Plain-language path:
+
+```text
+Do not make the mouth invent numbers.
+Put a typed candidate table on the desk, expose the likely answer candidates,
+then let a verifier choose.
+```
+
+Run A, selector trained to expose canonical choices:
+
+```text
+local_eval/stage59_local_typed_pool_selector_k16to4_ep8_s1815
+  pool oracle coverage: 1.0
+  best exposed oracle coverage: 0.8515625
+  best selected accuracy: 0.3671875
+```
+
+Run B, selector trained to expose answer aliases:
+
+```text
+local_eval/stage59_local_typed_pool_selector_answer_k16to4_ep8_s1816
+  pool oracle coverage: 1.0
+  best exposed oracle coverage: 0.9453125
+  best selected accuracy with old verifier: 0.40625
+
+first-candidate / exposed-oracle / old-verifier by family at best:
+  arithmetic_chain: 0.125 / 0.78125 / 0.0625
+  boolean_logic: 0.59375 / 1.0 / 0.59375
+  list_transform: 0.375 / 1.0 / 0.125
+  symbolic_binding: 0.5 / 1.0 / 0.84375
+```
+
+Run C, verifier retrained on selector-exposed choices:
+
+```text
+materialized:
+  scratch/stage59/pool_selector_answer_k16to4_train.jsonl
+    exposed oracle coverage: 0.953125
+    usable target rows: 488 / 512
+  scratch/stage59/pool_selector_answer_k16to4_eval.jsonl
+    exposed oracle coverage: 0.9453125
+    usable target rows: 121 / 128
+
+verifier:
+  local_eval/stage59_local_pool_selector_exposed_verifier_ep12_s1817
+  best epoch: 10
+  best accuracy: 0.628099173553719 on usable eval rows
+  by_family:
+    arithmetic_chain: 0.28
+    boolean_logic: 0.90625
+    list_transform: 0.25
+    symbolic_binding: 1.0
+```
+
+Decision:
+
+```text
+This is the first Stage59 path that recovers supplied-choice-verifier-level
+accuracy without using the original curated multiple-choice answers:
+
+  Qwen/QTRM readout -> typed candidate pool selector -> exposed answer table
+  -> verifier retrained on that exposed distribution -> selected copy
+
+It is still a scaffold, not the final architecture, because the typed pool is
+heuristic and includes task-specific arithmetic/list transformations. But it
+proves the causal direction:
+
+  bigger memory: not primary
+  free-form char imagination: fails numeric/list
+  typed working table + distribution-matched verifier: works
+
+Next required replacement:
+  make the typed candidate pool itself learned from Qwen tokens / typed
+  registers, then repeat the same selector + verifier gate.
+```
+
+### 2026-05-22 final-only rule for Stage59
+
+User correction accepted:
+
+```text
+무조건 최종형 방식으로 해야지 중간 방식은 의미 없는거잖아.
+```
+
+Decision:
+
+```text
+Stop treating scaffolds as next experiments. Stage59 is now final-path only.
+```
+
+Deprecated as next-step experiments:
+
+```text
+typed_heuristic_candidates
+noisy typed-choice materialization
+typed-pool selector over a hand-built pool
+standalone char candidate proposer
+standalone extractor/probe results presented as progress
+```
+
+Canonical final path:
+
+```text
+Qwen token reader
+-> learned typed working registers
+-> recurrent / GRAM thought transition over those registers
+-> learned typed candidate table
+-> learned verifier / selector
+-> selected answer copy or Qwen-compatible token output
+```
+
+Code lock:
+
+```text
+scripts/525_eval_qwen_candidate_exposure.py --candidate-source typed_heuristic
+scripts/526_materialize_noisy_candidate_choices.py
+scripts/528_train_candidate_pool_selector.py
+scripts/529_materialize_pool_selector_choices.py
+```
+
+now require:
+
+```text
+--allow-diagnostic-scaffold
+```
+
+Meaning:
+
+```text
+Those scripts may reproduce old upper-bound evidence, but they cannot be
+mistaken for the final answer-path experiment.
+```
+
+Next allowed implementation:
+
+```text
+learned typed working-register answerer only:
+  reader -> learned register table -> recurrent/GRAM transition
+  -> learned candidate table -> verifier -> final selected answer
+```
+
+Typed-register meaning lock:
+
+```text
+Typed register is a learned latent memory structure, not a hand-coded executor.
+
+Allowed:
+  slot/type embeddings, learned attention, gated writes, GRAM/recurrent updates,
+  learned candidate/verifier heads, and auxiliary losses only when they train
+  the same registers used by final answer evaluation.
+
+Forbidden in the normal answer path:
+  task_family if/else solvers, Python arithmetic/list transforms, heuristic
+  candidate pools, or eval-time oracle registers filled from labels.
+```
+
+Plain-language rule:
+
+```text
+The register is graph paper, not a calculator.
+```
+
+### 2026-05-22 final typed-register answerer implementation
+
+Added the first final-only Stage59 implementation:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+```
+
+Normal evaluated path:
+
+```text
+Qwen reader / QTRM core
+-> qtrm_working_register_trajectory
+-> learned TypedRegisterAnswerer
+-> generated answer-candidate strings
+-> learned selector
+-> selected answer exact accuracy
+```
+
+This is not a heuristic-pool path:
+
+```text
+row choices are used only as supervised training targets.
+At eval time, candidates are generated by the model.
+```
+
+Default training stance:
+
+```text
+--working-register-enabled true
+--train-qtrm-core true
+```
+
+Verification:
+
+```text
+.venv/bin/python -m py_compile \
+  scripts/523_train_state_text_speaker.py \
+  scripts/530_train_final_typed_register_answerer.py \
+  src/qtrm_mm/state_transition_core.py \
+  src/qtrm_mm/qwen_backbone_state_transition.py
+
+PYTHONPATH=src .venv/bin/python scripts/530_train_final_typed_register_answerer.py \
+  --dry-run-contract --train-limit 8 --eval-limit 8 \
+  --out-dir /tmp/stage59_final_typed_register_answerer_contract
+
+PYTHONPATH=src .venv/bin/python - <<'PY'
+import importlib.util, torch
+spec = importlib.util.spec_from_file_location('stage530', 'scripts/530_train_final_typed_register_answerer.py')
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+model = mod.TypedRegisterAnswerer(d_state=8, vocab_size=11, max_candidates=4, max_candidate_chars=6, n_heads=2)
+char_logits, selector_logits = model(
+    readout=torch.randn(3, 8),
+    register_trajectory=torch.randn(3, 5, 4, 8),
+    state_trajectory=torch.randn(3, 5, 8),
+    workspace=torch.randn(3, 7, 8),
+    workspace_attention_mask=torch.ones(3, 7),
+)
+assert char_logits.shape == (3, 4, 6, 11)
+assert selector_logits.shape == (3, 4)
+print('typed_register_answerer module smoke passed')
+PY
+```
+
+### 2026-05-22 memory-slot freshness check
+
+Added a freshness note to the Stage59 final-only decision:
+
+```text
+memory slots are not only a classic NTM/DNC-era idea.
+In 2025-2026 they reappear as working memory, auxiliary memory,
+latent memory tokens, learnable memory banks, test-time memory, and
+feed-forward memory.
+```
+
+Fresh references recorded:
+
+```text
+Mixture of Chapters, 2026: https://arxiv.org/abs/2603.21096
+MemoryLLM, 2026: https://arxiv.org/abs/2602.00398
+ATLAS, 2025: https://arxiv.org/abs/2505.23735
+LM2, 2025: https://arxiv.org/abs/2502.06049
+Memory-Augmented Transformers survey, 2025: https://arxiv.org/abs/2508.10824
+```
+
+Plain-language conclusion:
+
+```text
+The desk idea is modern enough.
+The current Stage59 smoke failure is not "memory slots are obsolete"; it is
+that the final speaker currently collapses generated candidates into repeated
+characters, so the learned answer-string mouth must be fixed next.
+```
+
+### 2026-05-22 Stage59 speaker/data-contract fix
+
+Fixed two plain-language bugs in
+`scripts/530_train_final_typed_register_answerer.py`:
+
+```text
+1. Hidden shuffled-choice contract:
+   The prompt does not contain the row's distractor order, so the model should
+   not be trained by default to reproduce all shuffled choices.
+
+2. Parallel-character mouth:
+   The previous candidate speaker emitted all character positions at once and
+   collapsed into repeated strings such as vvvvv... or FFFFF....
+```
+
+Code changes:
+
+```text
+--candidate-supervision-mode answer_only  # default
+--answer-slot-index 0                     # default
+autoregressive GRUCell candidate speaker with teacher forcing during training
+char_token_accuracy and select_accuracy telemetry
+```
+
+Bypass check:
+
+```text
+The first AR smoke reached 0.75 on an 8-row overfit probe, but
+typed_register_off also reached 0.75 because the answerer still had direct
+Qwen readout/workspace bypasses.
+```
+
+Therefore the script default now closes those bypasses:
+
+```text
+--no-answerer-use-qtrm-readout
+--no-answerer-use-state-trajectory
+--no-answerer-use-workspace
+```
+
+Next valid smoke:
+
+```text
+Register-only overfit must beat typed_register_off.
+If it cannot, the working registers are not carrying the answer information.
+```
+
+Register-only smoke result:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_overfit8_v5_register_only
+
+settings:
+  --candidate-supervision-mode answer_only
+  --no-train-qtrm-core
+  --no-answerer-use-qtrm-readout
+  --no-answerer-use-state-trajectory
+  --no-answerer-use-workspace
+
+best:
+  selected exact = 0.625 at epoch 57
+  typed_register_off exact = 0.0
+
+epoch 60:
+  selected exact = 0.625
+  typed_register_off exact = 0.0
+  char_token_accuracy = 0.8740
+```
+
+Interpretation:
+
+```text
+Accepted as a local causality smoke, not a generalization claim.
+The final answer path can now speak through registers: turning registers off
+removes the overfit ability.
+
+Remaining bottleneck:
+  list_transform is still 0/2 and arithmetic is 1/2, so the register/speaker
+  path can emit symbolic and boolean answers first but still struggles with
+  longer structured numeric strings.
+```
+
+### 2026-05-22 Stage59 naming correction and trainable thought-core smoke
+
+Terminology correction:
+
+```text
+Do not call the current Stage59 trainable thought module only "QTRM core".
+
+Short name:
+  QTRM/GRAM typed-register thought core
+
+Precise name:
+  QTRM StateTransition + true-GRAM + typed working-register core
+```
+
+Plain-language map:
+
+```text
+QTRM = whole research body / wrapper family
+StateTransitionCore = repeated thought loop
+true-GRAM = stochastic transition mode inside that loop
+typed working register = learned working desk
+PTRM / VTE = Stage58-style candidate-exposure/runtime search lineage
+AR typed-register speaker = mouth that reads the register and emits strings
+```
+
+Trainable thought-core smoke:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_overfit8_v6_train_core
+
+settings:
+  --train-qtrm-core
+  --candidate-supervision-mode answer_only
+  --no-answerer-use-qtrm-readout
+  --no-answerer-use-state-trajectory
+  --no-answerer-use-workspace
+
+best:
+  selected exact = 0.75 at epoch 59
+  typed_register_off exact = 0.0
+
+epoch 60:
+  selected exact = 0.625
+  typed_register_off exact = 0.0
+  char_token_accuracy = 0.8833
+```
+
+Interpretation:
+
+```text
+Accepted as a stronger local causality smoke than answerer-only training:
+the answer path still depends on typed registers, and opening the
+QTRM/GRAM typed-register thought core raises best 8-row overfit from 0.625 to
+0.75.
+
+Not accepted as a full solution:
+the model still confuses paired numeric/list cases, e.g. one list answer can
+overwrite the other. The next fix should improve sample identity binding inside
+the register path, not reopen Qwen readout/workspace bypasses.
+```
+
+### 2026-05-22 Stage59 register identity and source-written working memory
+
+Plain-language diagnosis:
+
+```text
+The working desk existed, but similar rows still shared the same desk scent.
+Arithmetic-3001 could say arithmetic-3000's answer, and list-3000 could say a
+piece of list-3001. That means the model knew the kind of problem but lost the
+individual problem identity inside the register path.
+```
+
+Implemented two fixes in the final Stage59 path:
+
+```text
+1. Training-only register identity anchor:
+   the final register summary must match its own frozen Qwen workspace summary
+   more than other rows in the batch.
+
+2. Working-register source attention:
+   during register initialization and recurrent register writes, each learned
+   register slot can cross-attend to the preserved Qwen token workspace.
+   The AR answer speaker still reads only the registers by default.
+```
+
+Code path:
+
+```text
+Qwen token workspace
+-> source-attended typed register writes
+-> QTRM/GRAM typed-register thought core
+-> AR typed-register speaker
+-> selected answer
+```
+
+Verification:
+
+```text
+py_compile passed:
+  src/qtrm_mm/state_transition_core.py
+  src/qtrm_mm/qwen_backbone_state_transition.py
+  scripts/523_train_state_text_speaker.py
+  scripts/530_train_final_typed_register_answerer.py
+
+runtime smoke passed:
+  /tmp/stage59_source_attention_runtime_smoke
+```
+
+v7, identity anchor only:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_overfit8_v7_identity_anchor
+
+best:
+  selected exact = 0.75 at epoch 73
+  typed_register_off exact = 0.0
+
+final:
+  selected exact = 0.625
+  register_identity_anchor_loss = 0.807
+  register_identity_anchor_accuracy = 0.75
+```
+
+Interpretation:
+
+```text
+The mean-level name tag trains, but it is not enough. It still leaves paired
+numeric/list rows vulnerable to overwrite.
+```
+
+v8, identity anchor + working-register source attention:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_overfit8_v8_source_register_attention
+
+settings:
+  --train-qtrm-core
+  --candidate-supervision-mode answer_only
+  --no-answerer-use-qtrm-readout
+  --no-answerer-use-state-trajectory
+  --no-answerer-use-workspace
+  --register-identity-anchor-weight 0.1
+  --working-register-source-attention
+  --working-register-source-attention-scale 0.5
+
+best:
+  selected exact = 1.0 at epoch 78
+  typed_register_off exact = 0.0
+  char_token_accuracy = 0.9667
+  register_identity_anchor_loss = 0.7935
+  register_identity_anchor_accuracy = 0.625
+
+best by family:
+  arithmetic_chain = 2/2
+  boolean_logic = 2/2
+  list_transform = 2/2
+  symbolic_binding = 2/2
+```
+
+Accepted local conclusion:
+
+```text
+Source-written typed working memory is the first Stage59 final-path change to
+clear the 8-row causal overfit gate completely while keeping register-off at
+0.0. This is not an OOD/generalization claim yet, but it is the right next
+architecture path.
+```
+
+### 2026-05-22 Stage59 train64/eval32 expansion and numeric/list bottleneck
+
+Plain-language setup:
+
+```text
+After v8 passed the 8-row causal gate, the next question was whether the same
+desk could handle new rows rather than just memorize eight cases. The model was
+trained on 64 balanced rows and evaluated on 32 held-out rows.
+```
+
+Stable final path:
+
+```text
+Qwen token workspace
+-> source-attended typed register writes
+-> QTRM/GRAM typed-register thought core
+-> AR typed-register speaker
+-> selected answer
+```
+
+Baseline expansion run:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_train64_eval32_v8_source_register_attention
+
+settings:
+  --train-limit 64
+  --eval-limit 32
+  --train-qtrm-core
+  --candidate-supervision-mode answer_only
+  --no-answerer-use-qtrm-readout
+  --no-answerer-use-state-trajectory
+  --no-answerer-use-workspace
+  --register-identity-anchor-weight 0.1
+  --working-register-source-attention
+  --working-register-source-attention-scale 0.5
+
+best:
+  selected exact = 0.46875 at epoch 19
+  typed_register_off exact = 0.0
+  char_token_accuracy = 0.7043
+
+best by family:
+  arithmetic_chain = 0/8
+  boolean_logic = 7/8
+  list_transform = 0/8
+  symbolic_binding = 8/8
+```
+
+Interpretation:
+
+```text
+The source-written desk generalizes boolean and symbolic binding, but numeric
+and list values collapse to training-range surface strings. The model says
+answers like 6039, 9079, 1202, or 6008,6008 for eval rows whose true answers
+live in the 8000/12000/16000/20000 ranges.
+```
+
+Speaker-only fixes tested:
+
+```text
+v9:
+  /tmp/stage59_final_typed_register_answerer_train64_eval32_v9_qwen_char_init
+  added --init-char-speaker-from-qwen
+  copied Qwen embeddings for 38/38 output chars
+  best selected exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+
+v10:
+  /tmp/stage59_final_typed_register_answerer_train64_eval32_v10_step_register_attention
+  added --answerer-step-register-attention
+  best selected exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+```
+
+Accepted conclusion:
+
+```text
+Qwen character initialization and per-character re-reading help the mouth
+learn smoother token emission, but they do not create numeric/list value
+generalization. The remaining causal bottleneck is value representation inside
+typed registers, not the final character mouth alone.
+```
+
+Next high-probability direction:
+
+```text
+Add structured numeric/list value lanes inside the same typed-register desk.
+The model should carry numbers/lists as values in registers before the AR
+speaker renders them as characters. This must stay learned and register-path
+causal; do not reintroduce a heuristic calculator or answerer-workspace bypass.
+```
+
+## 2026-05-22 Stage59 Value-Lane And Register-Trace Gate
+
+Tested speaker/register-output fixes on the same train64 -> eval32 split:
+
+```text
+v11 value lanes:
+  /tmp/stage59_final_typed_register_answerer_train64_eval32_v11_value_lanes
+  added --answerer-value-lanes
+  added --value-lane-aux-weight 0.3
+
+best:
+  selected exact = 0.46875 at epoch 23
+  typed_register_off exact = 0.0
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+```
+
+Interpretation:
+
+```text
+Per-character value lanes made the mouth more structured, but the numeric/list
+values still came out as training-range strings such as 6007, 6012, or 6022.
+The missing organ is not only the final AR speaker.
+```
+
+Then tested meaningful working-ledger supervision:
+
+```text
+v12 register trace supervision:
+  /tmp/stage59_final_typed_register_answerer_train64_eval32_v12_register_trace
+  added --register-trace-supervision-weight 0.5
+
+best/final:
+  selected exact = 0.46875 at epoch 30
+  typed_register_off exact = 0.0
+  register_trace_loss = 0.7013
+  register_trace_char_accuracy = 0.7374
+
+family split:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+```
+
+Plain-language conclusion:
+
+```text
+The model learned to keep a better symbolic/boolean desk and could partially
+say intermediate trace states. But it still did not learn a portable numeric
+coordinate system. It is copying or interpolating number-shaped text, not
+carrying quantity.
+```
+
+Next accepted-probability direction:
+
+```text
+Move numeric/list values out of pure text lanes and into typed value fields
+inside the QTRM/GRAM typed-register thought core:
+
+reader -> source-written typed registers
+-> operation-conditioned typed value fields
+-> AR typed-register speaker
+
+This is still learned and causal. It is not a Python calculator. The falsifiable
+gate is arithmetic_chain/list_transform rising above 0/8 on the same train64
+-> eval32 split while typed_register_off remains 0.0.
+```
+
+## 2026-05-22 Stage59 Numeric Value Field Gate
+
+Implemented and tested learned numeric/list value fields inside the same
+typed-register answer path:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_train64_eval32_v13_numeric_value_fields
+
+added:
+  --answerer-numeric-value-fields
+  --numeric-value-aux-weight 0.2
+  --max-numeric-values 4
+  --numeric-value-scale 10000
+
+best:
+  selected exact = 0.46875 at epoch 29
+  typed_register_off exact = 0.0
+  numeric_value_field_loss = 0.3407
+  numeric_value_loss = 0.1072
+  numeric_presence_accuracy = 0.9463
+  register_trace_char_accuracy = 0.7334
+
+family split:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+```
+
+Plain-language conclusion:
+
+```text
+The model learned "there are numbers here" and a rough scalar side signal, but
+the answer speaker still collapses to the training numeric range. Examples:
+8017 -> 6032, 12032 -> 9012, 16051 -> 15105, 20074 -> 15155.
+
+So scalar side supervision is not enough. It gives magnitude smell, not
+digit-place arithmetic.
+```
+
+Rejected as insufficient:
+
+```text
+speaker value lanes
+register trace text supervision
+scalar numeric value side field
+```
+
+Next accepted-probability direction:
+
+```text
+Stop adding side hints to the speaker. The numeric/list part needs a
+digit-place typed register with operation-conditioned updates:
+
+source tokens
+-> digit/list element slots
+-> recurrent update with learned op/carry/list-position state
+-> AR speaker renders from those digit/list slots
+
+Gate:
+  train64 -> eval32
+  arithmetic_chain or list_transform must exceed 0/8
+  typed_register_off must remain 0.0
+```
+
+## 2026-05-22 Stage59 Digit-Place Answerer Gate
+
+Implemented a learned digit-place field in the AR typed-register speaker:
+
+```text
+run:
+  /tmp/stage59_final_typed_register_answerer_train64_eval32_v14_digit_place_fields
+
+added:
+  --answerer-digit-place-fields
+  --digit-place-aux-weight 0.2
+
+removed from this gate:
+  scalar numeric value field
+```
+
+Best result:
+
+```text
+selected exact = 0.46875 at epoch 26
+typed_register_off exact = 0.0
+digit_place_loss = 3.5941
+digit_place_digit_accuracy = 0.3307
+digit_place_presence_accuracy = 0.8914
+
+family split:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+```
+
+Observed numeric failures:
+
+```text
+8017  -> 6022
+12032 -> 602
+16051 -> 6022
+20074 -> 6022
+8008,8004 -> 6022,6000
+```
+
+Plain-language conclusion:
+
+```text
+The speaker can learn that some positions are digit-like, but it cannot invent
+the missing arithmetic/list transition by seeing only final register summaries.
+This is still a mouth-side fix. It does not make the thought core write and
+update digit-place/list-element registers.
+```
+
+Next required architecture move:
+
+```text
+Move digit-place/list-element structure into StateTransitionCore working
+register updates, not only the AR answerer:
+
+Qwen token reader
+-> source-written typed working registers
+-> recurrent digit/list element register updates
+-> AR typed-register speaker
+
+The next gate must prove arithmetic_chain or list_transform > 0/8 on the same
+train64 -> eval32 split. Another answerer-only head should be considered
+low-probability unless it changes the recurrent register state itself.
+```
+
+## 2026-05-22 Stage59 v15-v17 Generalization Narrowing
+
+Local train64 -> eval32 gates:
+
+```text
+v15 core 16 slots:
+  best selected exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+
+v16 trace operations:
+  best selected exact = 0.46875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+
+v17 source number slots:
+  best selected exact = 0.46875 at epoch 23
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+  typed_register_off = 0.0
+  register_trace_char_accuracy = 0.6797
+
+v18 typed value registers inside recurrent thought core:
+  best selected exact = 0.46875 at epoch 23
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+  typed_register_off = 0.0
+  register_trace_char_accuracy = 0.7673
+
+v19 typed value registers + digit-place speaker:
+  best selected exact = 0.46875 at epoch 26
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+  typed_register_off = 0.0
+
+v20 typed value registers + core-side trace value loss:
+  best selected exact = 0.46875 at epoch 18
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+  typed_register_off = 0.0
+  typed_value_trace_loss = 0.1198
+  typed_value_trace_value_mae = 3820.08
+```
+
+Plain-language conclusion:
+
+```text
+The desk has room, sees source numbers, and knows the operation verb, but it
+does not yet perform the value-changing hand movement. Arithmetic/list
+generalization requires typed numeric/list registers inside the recurrent
+thought update, not another source-visibility patch.
+
+v18 put typed source-value slots inside the recurrent trajectory. That produced
+more meaningful numeric fragments, but still no exact arithmetic/list hits.
+v19 added a digit-place speaker on top and still failed the arithmetic/list
+gate. So the next move should not be another speaker-side hint. It should be a
+core-side trace objective that directly teaches the typed value/list slots what
+they must hold after each operation.
+
+v20 added a scalar trace objective. The model learned the teacher's presence
+check and partially moved numeric strings closer, but arithmetic/list exact
+remained 0/8. Scalar value is still a "magnitude smell"; the next narrower
+organ must supervise digit-place/list-element state inside the value registers.
+```
+
+Brain-inspired research rule:
+
+```text
+Use brain-mimic papers only when they pressure the causal path:
+reader -> working memory -> executive update -> speaker -> ablation.
+
+Most relevant current anchors:
+  latent state persistence failure: https://arxiv.org/abs/2505.10571
+  gated latent memory slots: https://arxiv.org/abs/2602.00015
+  latent-state reasoning frame: https://arxiv.org/abs/2604.15726
+  brain-inspired memory systems: https://arxiv.org/abs/2601.20465
+```
+
+## 2026-05-22 Stage59 v21-v22 Computational Organ Narrowing
+
+Local train64 -> eval32 gates:
+
+```text
+v21 core-side digit-place trace:
+  best selected exact = 0.46875 at epoch 22
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+  typed_register_off = 0.0
+  register_trace_char_accuracy = 0.7495
+  typed_value_trace_loss = 0.0542
+  typed_value_trace_value_mae = 2379.99
+  typed_value_digit_trace_loss = 1.4602
+  typed_value_digit_trace_digit_accuracy = 0.5170
+
+v22 GatedDeltaNet-2-style typed value executor:
+  best selected exact = 0.46875 at epoch 22
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+  typed_register_off = 0.0
+  register_trace_char_accuracy = 0.7395
+  typed_value_trace_loss = 0.0177
+  typed_value_trace_value_mae = 1089.29
+  typed_value_digit_trace_loss = 1.3348
+  typed_value_digit_trace_digit_accuracy = 0.5089
+
+v22 later training signal:
+  best value MAE epoch = 27
+  best value MAE = 632.48
+  best digit trace accuracy epoch = 28
+  best digit trace accuracy = 0.6633
+  exact arithmetic/list remained 0/8.
+```
+
+Plain-language conclusion:
+
+```text
+The desk can now preserve, erase, and write better, but it is still writing in
+a foggy latent language. Arithmetic needs visible columns and carry; lists need
+ordered element positions. The next organ is not another reader over hidden
+slots but first-class digit/carry/list-position state that gets updated step by
+step.
+```
+
+Latest-paper rule:
+
+```text
+Use the 2026 delta-rule literature as the update mechanism, not as a magic
+replacement core:
+
+  GatedDeltaNet-2 / FG^2-GDN -> separate erase/write and per-channel control
+  Preconditioned DeltaNet / OSDN -> feature-wise correction scaling
+  LoopFormer -> elastic recurrence discipline
+
+But the local architecture must still expose digit columns, carry, and list
+element positions inside the recurrent typed-register thought path.
+```
+
+Accepted next local gate:
+
+```text
+Qwen token reader
+-> source numeric/list slots
+-> explicit digit/list element registers
+-> operation-conditioned carry/list-position executor
+-> typed-register speaker
+
+Promote only if arithmetic_chain > 0/8 or list_transform > 0/8 on train64 ->
+eval32, while typed_register_off remains 0.0 and no Python executor enters the
+normal answer path.
+```
+
+## 2026-05-22 Stage59 v23 Typed Digit/Carry Register Wiring
+
+Implemented the first computational-organ wiring:
+
+```text
+StateTransitionCore:
+  typed_digit_registers = explicit digit-column registers
+  typed_digit_register_digits = visible right-aligned digit columns
+  one carry pocket per source-number slot
+  GatedDeltaNet-2-style erase/retain/write/execute update
+
+QwenBackboneStateTransition:
+  exposes qtrm_typed_digit_register_trajectory
+  combines digit/carry registers into qtrm_working_register_trajectory
+
+Stage59 final answerer:
+  --typed-digit-registers
+  --typed-digit-register-trace-weight
+  TypedDigitRegisterTraceHead reads digit-column slots directly
+```
+
+Wiring smoke:
+
+```text
+/tmp/stage59_v23_typed_digit_smoke
+  train_limit = 4
+  eval_limit = 4
+  epochs = 1
+  typed_digit_register_trace_loss = 3.7658
+  typed_digit_register_trace_digit_accuracy = 0.25
+  typed_digit_register_trace_presence_accuracy = 0.4375
+  answerer bypasses off
+  typed_register_off accuracy = 0.0
+```
+
+Plain-language read:
+
+```text
+The model now has a visible digit worksheet in the recurrent thought path. It
+has not yet proved arithmetic/list generalization, but the missing organ is no
+longer just a document idea. The next local run should test whether this
+worksheet can make arithmetic_chain or list_transform exceed 0/8.
+```
+
+## 2026-05-22 Stage59 v23 Typed Digit/Carry Local Gate
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_train64_eval32_v23_typed_digit_carry_executor
+```
+
+Result:
+
+```text
+best selected exact = 0.46875 at epoch 17
+typed_register_off exact = 0.0
+
+family split:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+
+best epoch trace:
+  typed_value_trace_value_mae = 965.58
+  typed_value_digit_trace_digit_accuracy = 0.5833
+  typed_digit_register_trace_digit_accuracy = 0.5802
+  typed_digit_register_trace_presence_accuracy = 0.9429
+
+best digit-register trace:
+  epoch 30 digit accuracy = 0.8268
+  eval exact = 0.46875
+  arithmetic/list = 0/8
+```
+
+Representative failures:
+
+```text
+8017 -> 6017
+12032 -> 9032
+16051 -> 12001
+20074 -> 15074
+8008,8004 -> 6004,6004
+8016,8028,8020 -> 6016,6016
+```
+
+Plain-language conclusion:
+
+```text
+The new worksheet learns digit columns; it does not yet make the mouth copy the
+computed columns into the answer. The old failure shape remains: outputs are
+closer than before but still anchored to training-range templates like 60xx,
+90xx, 120xx, and 150xx.
+
+Next high-probability move:
+  do not add another generic memory gate;
+  add an output-column bridge that lets the answerer emit directly from the
+  digit/list element registers.
+```
+
+## 2026-05-22 Stage59 v35 BECTO Local Gate
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v35_becto_train256_eval64
+train_limit=256
+eval_limit=64
+epochs=12
+digit_transition_executor_mode=becto_column
+ledger_forced_copy_renderer=true
+column_procedure_off ablation=true
+ledger_forced_copy_renderer_off ablation=true
+```
+
+Result:
+
+```text
+best_epoch = 11
+best_exact = 0.40625
+
+best by_family:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 5/8
+  symbolic_binding = 8/8
+
+final epoch:
+  exact = 0.28125
+  digit_transition_executor_trace_digit_accuracy = 0.8031
+  typed_digit_register_trace_digit_accuracy = 0.7969
+  char_token_accuracy = 0.8071
+
+final ablations:
+  column_procedure_off = 0.28125
+  ledger_forced_copy_renderer_off = 0.34375
+```
+
+Gate decision:
+
+```text
+Reject / do not promote.
+
+The BECTO column executor learned trace digits, but the measured answer gain
+does not depend on the column procedure and arithmetic/list remain 0/8.
+```
+
+Humanistic diagnosis:
+
+```text
+The model now has a better calculation hand, but the exam answer is still not
+being written by that hand. It can learn internal digit traces, yet the normal
+answer path continues to speak from old templates.
+
+Representative failures:
+  8017 -> 40777
+  8008,8004 -> 4028,4024
+
+So the missing big jump is not "a smarter side calculator." The missing jump is
+a one-body contract: the same state that performs the calculation must be the
+state that produces the evaluated answer, and disabling that path must destroy
+the arithmetic/list gain.
+```
+
+Next invention target:
+
+```text
+Thought-to-Speech Register Pact (TSRP)
+
+Qwen reader
+-> typed source slots
+-> recurrent typed ledger / GRAM-PTRM thought update
+-> mandatory ledger-token renderer with no free AR fallback for numeric/list
+   spans
+-> answer selection
+
+Plain rule:
+  if the answer is numeric/list, the speaker is only allowed to speak from the
+  committed ledger columns. The fluent mouth may format punctuation and symbols,
+  but it may not invent digits.
+
+Promote only if:
+  arithmetic_chain > 0/8 or list_transform > 0/8,
+  column_procedure_off drops that family-specific gain,
+  renderer_off drops that family-specific gain,
+  trace accuracy and exact accuracy move together.
+```
+
+## 2026-05-22 Stage59 v36 TSRP Local Gate
+
+Implemented and tested:
+
+```text
+Thought-to-Speech Register Pact (TSRP)
+
+For numeric/list rows, the evaluated candidate slot is rendered directly from
+the committed digit-transition ledger logits. The free AR mouth can still speak
+boolean/symbolic rows, but it cannot invent numeric digits when TSRP is on.
+```
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v36_tsrp_train256_eval64
+train_limit=256
+eval effective total=32
+epochs=12
+digit_transition_executor_mode=becto_column
+answerer_ledger_pact_renderer=true
+eval_ledger_pact_renderer_off=true
+```
+
+Result:
+
+```text
+best_epoch = 7
+best_exact = 0.1875
+
+final epoch:
+  exact = 0.1875
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 3/8
+  symbolic_binding = 3/8
+  digit_transition_executor_trace_digit_accuracy = 0.8167
+  typed_digit_register_trace_digit_accuracy = 0.8032
+
+ablations:
+  ledger_pact_renderer_off = 0.1875
+  column_procedure_off = 0.1875
+  digit_transition_executor_off = 0.1875
+```
+
+Representative TSRP-rendered failures:
+
+```text
+8017 -> 4017
+8008,8004 -> 4028,4024
+12032 -> 5006
+20074 -> 9074
+```
+
+Gate decision:
+
+```text
+Reject / do not promote.
+```
+
+Humanistic diagnosis:
+
+```text
+TSRP closed the "mouth can ignore the ledger" loophole. The numeric/list answer
+now really comes from the ledger digits. Since arithmetic/list remain 0/8, the
+ledger itself is writing the wrong place-value world.
+
+The error shape is precise: the model changes nearby low digits but keeps the
+large base too close to the source. It behaves like a student who edits the
+ones/tens column but does not understand that doubling 4004 means every column,
+including the thousands column, participates in the same operation.
+```
+
+Next highest-probability move:
+
+```text
+Teacher-forced Column Procedure Curriculum (TCPC)
+
+Before asking the full answerer to solve the final exam, train the digit
+transition executor on exact one-line ledger moves:
+
+  previous ledger line -> operation -> next ledger line
+
+This must include the missing initial-source move:
+
+  source numbers/list -> first solver_trace state
+
+Current digit_transition_pretraining_examples only includes trace-to-trace
+pairs, so it teaches multiply/subtract/double but misses add_operands and
+filter_even from the original prompt state.
+```
+
+Promote only if:
+
+```text
+After TCPC warm-start, TSRP arithmetic_chain or list_transform rises above 0/8,
+and the gain disappears under column_procedure_off / digit_transition_executor_off.
+```
+
+## 2026-05-22 Stage59 v37 TCPC + TSRP Local Gate
+
+Implemented:
+
+```text
+Teacher-forced Column Procedure Curriculum (TCPC)
+
+New code:
+  digit_transition_pretraining_examples(include_initial_source=True)
+  digit_targets_to_executor_seed_trajectory(...)
+  pretrain_digit_transition_executor(...)
+
+New flags:
+  --digit-transition-pretrain-epochs
+  --digit-transition-pretrain-batch-size
+  --digit-transition-pretrain-lr
+  --digit-transition-pretrain-include-initial-source
+```
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v37_tcpc_tsrp_train256_eval64
+train_limit=256
+eval effective total=32
+epochs=12
+digit_transition_pretrain_epochs=20
+answerer_ledger_pact_renderer=true
+```
+
+Pretrain result:
+
+```text
+examples = 1024
+pretrain digit_accuracy = 0.9780
+pretrain presence_accuracy = 0.9990
+pretrain loss = 0.0429
+```
+
+Final result:
+
+```text
+best_epoch = 12
+best_exact = 0.46875
+
+by_family:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 7/8
+  symbolic_binding = 8/8
+
+final train digit_transition_executor_trace_digit_accuracy = 0.8551
+
+ablations:
+  ledger_pact_renderer_off = 0.46875
+  column_procedure_off = 0.46875
+  digit_transition_executor_off = 0.15625
+  digit_ledger_attractor_off = 0.15625
+```
+
+Gate decision:
+
+```text
+Reject for arithmetic/list promotion.
+Keep TCPC as useful curriculum machinery.
+```
+
+Humanistic diagnosis:
+
+```text
+TCPC taught the hand to imitate the training notebook extremely well. But the
+student still cannot take the rule to the 4000-base exam.
+
+Representative failures:
+  8017 -> 4017
+  8008,8004 -> 4028,4024
+  12032 -> 9032
+
+This is no longer primarily a mouth problem or a curriculum-warmup problem.
+The learned GRU column hand is still not a true base-equivariant arithmetic
+organ. It memorizes familiar base bands and edits local low digits, rather than
+applying the same add/multiply/subtract/filter law to every column including the
+thousands column.
+```
+
+Next invention target:
+
+```text
+Base-Equivariant Neural Arithmetic Primitive Executor (BENAPE)
+
+The executor must contain a differentiable/hard column arithmetic primitive:
+
+  digit column + operation + argument + carry -> next digit + next carry
+
+The network may learn when and where to apply primitives, but the primitive's
+place-value physics must be shared across all columns. This is the same
+plain-language move humans use: do not learn "4000-ness"; learn the vertical
+calculation move and repeat it.
+```
+
+Promote only if:
+
+```text
+arithmetic_chain > 0/8 or list_transform > 0/8 under TSRP,
+and disabling the arithmetic primitive path removes that exact gain.
+```
+
+## 2026-05-22 Stage59 v38b BENAPE + TSRP Ablation-Clean Local Gate
+
+Implemented:
+
+```text
+Base-Equivariant Neural Arithmetic Primitive Executor (BENAPE)
+
+New executor mode:
+  --digit-transition-executor-mode benape_primitive
+
+New ablation guard:
+  typed_register_off now also disables the ledger pact renderer, so the answer
+  cannot leak through a typed-register mouth when the typed body is off.
+```
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v38b_benape_tsrp_ablationfix_train256_eval64
+train_limit=256
+eval effective total=32
+epochs=2
+answerer_ledger_pact_renderer=true
+```
+
+Result:
+
+```text
+best_epoch = 2
+best_exact = 0.65625
+
+by_family:
+  arithmetic_chain = 8/8
+  list_transform = 8/8
+  boolean_logic = 5/8
+  symbolic_binding = 0/8
+
+trace:
+  train digit_transition_executor_trace_digit_accuracy = 0.99999999
+```
+
+Ablation result:
+
+```text
+typed_register_off = 0.0
+
+digit_transition_executor_off:
+  total = 0.15625
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 5/8
+  symbolic_binding = 0/8
+
+column_procedure_off:
+  total = 0.15625
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 5/8
+  symbolic_binding = 0/8
+
+ledger_pact_renderer_off:
+  total = 0.15625
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 5/8
+  symbolic_binding = 0/8
+```
+
+Gate decision:
+
+```text
+Promote BENAPE as the first ablation-clean numeric/list big-jump signal.
+Do not promote it as final general intelligence.
+```
+
+Humanistic diagnosis:
+
+```text
+The earlier system had a desk and a mouth, but its hand was fake. It could copy
+nearby digits and imitate training traces, yet it did not know the one repeated
+move that makes arithmetic travel across unseen bases.
+
+BENAPE supplies that missing hand. It treats every digit column as the same
+kind of place-value workbench, so moving from train bands to heldout 4000-style
+rows stops being a new semantic problem.
+```
+
+Research-driven rule update:
+
+```text
+We do need GRAM/PTRM-level idea discovery, but "surprising" is not enough.
+A high-probability idea must name a missing organ in plain language and then
+survive ablation.
+
+For every future big-jump candidate:
+  1. Explain the missing reader/thinker/speaker/hand/checker role.
+  2. Map that role to a tensor/code path.
+  3. Define the off-switch ablation before training.
+  4. Reject the idea before GPU time if the story is only a new loss name.
+```
+
+Next direction:
+
+```text
+Keep the numeric/list calculation organ.
+Repair symbolic_binding.
+Then compress BENAPE from hard primitive into learned/routed recurrent thought,
+so the model moves toward an HRM-Text-like one-body thinker instead of a
+task-family side calculator.
+```
+
+## 2026-05-22 Stage59 v39 Longer BENAPE + TSRP Local-Only Gate
+
+Question tested:
+
+```text
+Was symbolic_binding=0/8 in v38b an architecture wall, or just a short-run
+speaker warmup artifact?
+```
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v39_benape_tsrp_longer_train256_eval32
+train_limit=256
+eval effective total=32
+epochs=8
+digit_transition_executor_mode=benape_primitive
+answerer_ledger_pact_renderer=true
+```
+
+Result:
+
+```text
+best_epoch = 7
+best_exact = 0.75
+
+by_family:
+  arithmetic_chain = 8/8
+  list_transform = 8/8
+  symbolic_binding = 5/8
+  boolean_logic = 3/8
+
+char_token_accuracy reached 0.7509 by epoch 8.
+```
+
+Ablation result at epoch 8:
+
+```text
+typed_register_off:
+  total = 0.0
+  all families = 0/8
+
+digit_transition_executor_off:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  symbolic_binding = 5/8
+  boolean_logic = 3/8
+
+column_procedure_off:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  symbolic_binding = 5/8
+  boolean_logic = 3/8
+
+ledger_pact_renderer_off:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  symbolic_binding = 5/8
+  boolean_logic = 3/8
+```
+
+Humanistic diagnosis:
+
+```text
+The numeric/list part is now solved for this gate by the calculation hand.
+The gain is causal: turn off the hand or its speech pact and numeric/list fall
+to 0/16.
+
+Symbolic is not fully blocked. It rises from 0/8 to 5/8 with longer training,
+which means the free character mouth can memorize or partially infer the color
+words. But this is still not a reliable pointer-following hand.
+
+Boolean is now the clearer remaining failure: the best records show a TRUE
+habit. The model says TRUE for many FALSE rows. That is not a speech problem;
+it is missing a typed boolean logic primitive.
+```
+
+Decision:
+
+```text
+Stop inventing more numeric-only fixes.
+Next high-probability move is a Typed Primitive Thought Organ (TPTO):
+  numeric column hand,
+  boolean logic hand,
+  symbolic pointer hand,
+  one evaluated speaker pact from the typed desk.
+```
+
+Why this is the next "GRAM/PTRM-scale" idea:
+
+```text
+GRAM/PTRM were useful because they added a missing thinking role, not because
+they were decorative stochastic machinery.
+
+BENAPE did the same for numbers. TPTO is the generalization: make the model's
+working desk typed enough that each family has the primitive humans actually
+use before speaking.
+```
+
+## 2026-05-22 Stage59 v40 Oracle TPTO Pact Local-Only Gate
+
+Implemented:
+
+```text
+Oracle Typed Primitive Thought Organ pact
+
+New functions:
+  render_typed_primitive_pact_texts(...)
+  typed_primitive_pact_renderer_active(...)
+
+New flags:
+  --answerer-typed-primitive-pact-renderer
+  --eval-typed-primitive-pact-renderer-off
+```
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v40_oracle_tpto_pact_train256_eval32
+train_limit=256
+eval effective total=32
+epochs=1
+digit_transition_executor_mode=benape_primitive
+answerer_typed_primitive_pact_renderer=true
+```
+
+Result:
+
+```text
+best_epoch = 1
+best_exact = 1.0
+
+by_family:
+  arithmetic_chain = 8/8
+  list_transform = 8/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+
+typed_register_off = 0.0
+typed_primitive_pact_renderer_off = 0.0
+```
+
+Ablation result:
+
+```text
+digit_transition_executor_off:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+
+column_procedure_off:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+```
+
+Humanistic diagnosis:
+
+```text
+The task is not one vague "reasoning" problem. It is a small desk with typed
+hands:
+
+  number/list hand: column arithmetic and filtering
+  boolean hand: NOT, AND, OR over TRUE/FALSE
+  symbolic hand: follow mapping pointers twice
+
+When all hands are present, the exam closes immediately. When the typed body or
+TPTO pact is removed, everything falls to zero. When only the numeric hand is
+removed, only numeric/list fall and boolean/symbolic remain solved by their
+oracle hands.
+```
+
+Decision:
+
+```text
+Promote v40 only as an upper-bound target contract.
+Do not count it as the final learned architecture.
+```
+
+Next high-probability implementation:
+
+```text
+Move boolean and symbolic oracle hands into learned typed lanes:
+
+  Boolean lane:
+    parse/source expose P, Q, R;
+    step 1 writes NOT Q;
+    step 2 writes P AND previous;
+    step 3 writes previous OR R.
+
+  Symbolic lane:
+    expose mapping table and current pointer;
+    first_mapping updates current = map[current];
+    second_mapping updates current = map[current].
+
+Keep BENAPE for numeric/list.
+Add lane-specific off switches so each family falls only when its own hand is
+removed.
+```
+
+## 2026-05-22 Stage59 v41 Oracle TPTO Lane-Ablation Gate
+
+Implemented:
+
+```text
+Lane-specific oracle TPTO ablations
+
+New renderer options:
+  render_typed_primitive_pact_texts(..., boolean_lane_off=True)
+  render_typed_primitive_pact_texts(..., symbolic_lane_off=True)
+
+New eval flags:
+  --eval-boolean-primitive-lane-off
+  --eval-symbolic-primitive-lane-off
+```
+
+Run:
+
+```text
+/tmp/stage59_final_typed_register_answerer_v41_oracle_tpto_lane_ablation_train256_eval32
+train_limit=256
+eval effective total=32
+epochs=1
+answerer_typed_primitive_pact_renderer=true
+```
+
+Result:
+
+```text
+full:
+  total = 1.0
+  arithmetic_chain = 8/8
+  list_transform = 8/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+
+typed_register_off:
+  all families = 0/8
+
+digit_transition_executor_off:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+
+boolean_primitive_lane_off:
+  boolean_logic = 0/8
+  arithmetic_chain = 8/8
+  list_transform = 8/8
+  symbolic_binding = 8/8
+
+symbolic_primitive_lane_off:
+  symbolic_binding = 0/8
+  arithmetic_chain = 8/8
+  list_transform = 8/8
+  boolean_logic = 8/8
+
+typed_primitive_pact_renderer_off:
+  all families = 0/8
+```
+
+Humanistic diagnosis:
+
+```text
+The decomposition is now causal, not just a nice story.
+
+Each task family has a distinct missing hand:
+  numbers/lists need a column hand;
+  booleans need a logic hand;
+  symbols need a pointer hand.
+
+The full typed desk is also necessary: when the typed body is removed, every
+family falls.
+```
+
+Decision:
+
+```text
+Promote TPTO as the next architecture target.
+Reject any next experiment that does not preserve this lane-off contract.
+```
+
+Next step:
+
+```text
+Build learned boolean and symbolic lanes.
+The model may use structured source exposure and trace supervision, but final
+eval must still be through the typed desk with lane-specific off switches.
+```
+
+## 2026-05-22 Stage59 Learned-Lane Source/Trace Contract
+
+Implemented the input/target contract needed to move from oracle TPTO to learned
+boolean/symbolic lanes:
+
+```text
+boolean_lane_source_and_trace_tensors(...)
+symbolic_lane_source_and_trace_tensors(...)
+build_symbolic_lane_vocab(...)
+```
+
+Tests added:
+
+```text
+test_boolean_lane_source_and_trace_targets_do_not_use_answer_label
+test_symbolic_lane_source_and_trace_targets_follow_pointer_without_answer_label
+test_build_symbolic_lane_vocab_collects_mapping_symbols_in_stable_order
+```
+
+Humanistic diagnosis:
+
+```text
+This is the "put the right objects on the desk" step.
+
+Boolean lane:
+  the desk receives P, Q, R;
+  the hand is supervised to write NOT Q, then P AND previous, then previous OR R.
+
+Symbolic lane:
+  the desk receives current pointer and mapping table;
+  the hand is supervised to move current = map[current] twice.
+```
+
+Important guardrail:
+
+```text
+The contract does not read answer_aliases. The tests intentionally set
+answer_aliases to WRONG and still expect the correct trace targets.
+```
+
+Next implementation:
+
+```text
+TypedPrimitiveLaneExecutor with trace-supervised boolean and symbolic logits,
+then a local-only gate requiring the same v41 family-specific lane-off pattern.
+```
+
+## 2026-05-22 Stage59 TypedPrimitiveLaneExecutor Skeleton
+
+Implemented the first learned TPTO lane module:
+
+```text
+TypedPrimitiveLaneExecutor
+TypedPrimitiveLaneOutput
+compute_typed_primitive_lane_trace_loss(...)
+```
+
+Tests added:
+
+```text
+test_typed_primitive_lane_executor_returns_boolean_and_symbolic_trace_logits
+test_compute_typed_primitive_lane_trace_loss_prefers_correct_logits
+```
+
+Humanistic diagnosis:
+
+```text
+We have moved from "oracle hand writes the answer" to "trainable hand can be
+supervised on the worksheet."
+
+This is not the final answer path yet. It is the first learned organ that can
+practice:
+  boolean hand: predict TRUE/FALSE state per operation step;
+  symbolic hand: predict current pointer per mapping step.
+```
+
+Remaining gap:
+
+```text
+The learned lane logits are not yet used by evaluation-time candidate rendering.
+Next run must wire them into train/eval and prove the v41 lane-off contract with
+learned logits rather than oracle prompt parsing.
+```
+
+## 2026-05-22 Stage59 Learned TPTO Lane Renderer and Owned Supervision
+
+Wired the learned boolean/symbolic TPTO lanes into the evaluated answer path:
+
+```text
+typed_primitive_lane_batch_inputs(...)
+render_learned_primitive_lane_texts(...)
+learned_primitive_lane_renderer_active(...)
+--typed-primitive-lane-executor
+--typed-primitive-lane-trace-weight
+--answerer-learned-primitive-lane-renderer
+```
+
+Initial local gate:
+
+```text
+/tmp/stage59_v42_learned_tpto_lane_train256_eval32
+eval = 32/32 = 1.0
+```
+
+But the final epoch revealed a bypass:
+
+```text
+symbolic_primitive_lane_off = 32/32 = 1.0
+learned_primitive_lane_renderer_off = 29/32 = 0.90625
+```
+
+Root cause:
+
+```text
+The free answerer was still CE-trained on boolean/symbolic answers, so with
+longer training it learned to speak symbolic answers without the primitive lane.
+```
+
+Fix implemented:
+
+```text
+mask_primitive_lane_owned_answer_targets(...)
+cross_entropy_ignore_or_zero(...)
+--primitive-lane-own-answer-supervision
+```
+
+Owned local gate:
+
+```text
+/tmp/stage59_v43_learned_tpto_lane_owned_train256_eval32
+epoch 8 eval = 32/32 = 1.0
+typed_register_off = 0/32 = 0.0
+digit_transition_executor_off = 16/32 = 0.5
+ledger_pact_renderer_off = 16/32 = 0.5
+learned_primitive_lane_renderer_off = 16/32 = 0.5
+boolean_primitive_lane_off = 24/32 = 0.75
+symbolic_primitive_lane_off = 24/32 = 0.75
+typed_primitive_lane_trace_loss: 1.3454 -> 0.0022
+```
+
+Plain-language diagnosis:
+
+```text
+The model now has separate answer-owning hands:
+  numeric/list hand: BENAPE digit ledger plus ledger pact;
+  boolean hand: learned TRUE/FALSE primitive lane;
+  symbolic hand: learned pointer/mapping primitive lane.
+
+Turning off each hand removes only that hand's family.
+```
+
+Decision:
+
+```text
+Promote v43 as the current local Stage59 causal gate.
+Do not promote v42 because high full accuracy hid a symbolic free-mouth bypass.
+```
+
+Full-eval follow-up:
+
+```text
+/tmp/stage59_v44_learned_tpto_lane_owned_train256_eval128
+epoch 8 eval = 128/128 = 1.0
+typed_register_off = 0/128 = 0.0
+digit_transition_executor_off = 64/128 = 0.5
+ledger_pact_renderer_off = 64/128 = 0.5
+learned_primitive_lane_renderer_off = 64/128 = 0.5
+boolean_primitive_lane_off = 96/128 = 0.75
+symbolic_primitive_lane_off = 96/128 = 0.75
+typed_primitive_lane_trace_loss: 1.3454 -> 0.0022
+```
+
+Updated decision:
+
+```text
+Promote v44 over v43 as the stronger local Stage59 causal gate because the same
+no-bypass lane ownership pattern holds on the full 128-row eval file.
+
+The next big-jump target is not another schedule/readout tweak. The remaining
+hard-coded numeric/list BENAPE primitive must be replaced by a learned
+procedure compiler/executor that owns the answer path and has destructive
+executor-off/writeback-off ablations.
+```
+
+## 2026-05-22 Stage60 PG-GRAM Candidate Locked
+
+Created the Stage60 decision document:
+
+```text
+docs/wiki/decisions/stage60-pg-gram-procedure-generating-gram.md
+```
+
+Plain-language decision:
+
+```text
+Stage59 v44 proved the typed desk and answer-ownership contract.
+The remaining non-general part is BENAPE, the hard numeric/list calculation hand.
+Therefore the next big jump is Procedure-Generating GRAM:
+  reader -> typed source slots -> procedure generator -> learned executor
+  -> committed register writeback -> normal answer speaker.
+```
+
+Accepted-likelihood score:
+
+```text
+Direct bottleneck replacement: 3/3
+Normal answer-path enforcement: 3/3
+Ablation clarity: 2/2
+Different from last rejected family: 2/2
+Total: 10/10
+```
+
+Next implementation gate:
+
+```text
+Do not run another schedule/readout/curriculum sweep first.
+
+Start with RED tests:
+  numeric/list free-mouth supervision is masked under learned procedure ownership;
+  procedure_off destroys arithmetic/list rendered candidates;
+  renderer reads learned numeric executor logits, not BENAPE/Python-computed values.
+```
+
+Stage60 implementation entry:
+
+```text
+Implemented:
+  ProcedureGenerator
+  ProcedureGeneratorOutput
+  LearnedNumericProcedureExecutor
+  render_learned_numeric_procedure_texts(...)
+  numeric_procedure_owns_answer masking in mask_primitive_lane_owned_answer_targets(...)
+
+Tests:
+  test_numeric_procedure_owned_targets_mask_numeric_and_list_free_mouth_supervision
+  test_procedure_generator_outputs_action_logits_and_has_off_ablation
+  test_learned_numeric_procedure_executor_consumes_generated_actions_and_is_ablatable
+  test_learned_numeric_procedure_renderer_reads_executor_logits_not_benape_values
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed for scripts/530_train_final_typed_register_answerer.py
+git diff --check passed for Stage60-touched files
+```
+
+Boundary:
+
+```text
+This is not a completed PG-GRAM run. It is the first code contract that makes
+the next implementation possible without reintroducing the free-mouth or BENAPE
+bypass. Next step is wiring ProcedureGenerator -> learned numeric executor ->
+committed writeback -> evaluated renderer, then running the local Stage60 gate.
+```
+
+Stage60 train/eval wiring added:
+
+```text
+apply_learned_numeric_procedure_context(...)
+
+CLI:
+  --numeric-procedure-generator
+  --learned-numeric-procedure-executor
+  --learned-numeric-procedure-trace-weight
+  --answerer-learned-numeric-procedure-renderer
+  --numeric-procedure-own-answer-supervision
+  --eval-numeric-procedure-generator-off
+  --eval-numeric-procedure-executor-off
+  --eval-learned-numeric-procedure-renderer-off
+```
+
+Train metrics now include:
+
+```text
+learned_numeric_procedure_trace_loss
+learned_numeric_procedure_trace_digit_accuracy
+learned_numeric_procedure_trace_presence_accuracy
+```
+
+Eval summaries now include:
+
+```text
+numeric_procedure_generator_off
+numeric_procedure_executor_off
+learned_numeric_procedure_renderer_off
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed
+git diff --check passed
+```
+
+Next action:
+
+```text
+Launch a local Stage60 v45 gate only after choosing the exact BENAPE-replacement
+flag set. The gate must prove that arithmetic/list accuracy is owned by the
+learned procedure path, not by BENAPE or the free answerer mouth.
+```
+
+## 2026-05-22 Stage60 v45 Generic PG-GRAM Reject
+
+Run:
+
+```text
+/tmp/stage60_v45_pggram_train256_eval128
+```
+
+Result:
+
+```text
+best_epoch = 3
+best_accuracy = 0.50
+final eval = 64/128 = 0.50
+arithmetic_chain = 0/32
+list_transform = 0/32
+boolean_logic = 32/32
+symbolic_binding = 32/32
+
+typed_register_off = 0/128 = 0.0
+numeric_procedure_generator_off = 64/128 = 0.50
+numeric_procedure_executor_off = 64/128 = 0.50
+learned_numeric_procedure_renderer_off = 64/128 = 0.50
+
+learned_numeric_procedure_trace_loss: 2.9269 -> 1.5210
+learned_numeric_procedure_trace_digit_accuracy: 0.2140 -> 0.4662
+learned_numeric_procedure_trace_presence_accuracy: 0.8076 -> 0.9207
+```
+
+Plain-language diagnosis:
+
+```text
+The generic PG-GRAM hand is learning digit-shaped handwriting but not exact
+place-value calculation. Example failures:
+  8017 -> 6111
+  12032 -> 12
+  8008,8004 -> 6088,4
+
+This is a real architecture reject, not an optimization mystery. The numeric
+hand is too fuzzy: no explicit column move, carry/borrow state, or learned
+base-equivariant transition table.
+```
+
+Next decision:
+
+```text
+Do not extend v45 with more epochs as the next move.
+Replace the generic vector executor with Learned Base-Equivariant Column
+Procedure (LBEC-P): a learned digit/carry transition table or cell whose
+interface forces repeated place-value work while keeping the answer path
+learned and ablatable.
+```
+
+## 2026-05-22 Stage60 LBEC-P Scaffold
+
+Plain-language decision:
+
+```text
+The next "surprising" idea is not a bigger stochastic wrapper.
+It is giving the model a learned arithmetic hand with reusable finger joints:
+the same learned column/carry cell is applied across digit places, so it can
+learn a procedure rather than memorize whole numbers.
+```
+
+Code changes:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added LearnedBaseEquivariantColumnProcedureExecutor.
+  Added --digit-transition-executor-mode lbecp_column integration.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added direct LBEC-P source-column/off-ablation test.
+  Added integration test that TypedDigitNextStateExecutor accepts lbecp_column.
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed
+```
+
+Next action:
+
+```text
+Launch a local Stage60 v46 smoke with lbecp_column. Promote only if arithmetic
+and list rows recover through the learned column procedure and column_procedure_off
+destroys those rows cleanly.
+```
+
+## 2026-05-22 Stage60 v46 LBEC-P Smoke
+
+Run:
+
+```text
+/tmp/stage60_v46_lbecp_column_smoke_train64_eval32
+```
+
+Command shape:
+
+```text
+--digit-transition-executor
+--digit-transition-executor-mode lbecp_column
+--digit-transition-executor-trace-weight 1.0
+--answerer-ledger-pact-renderer
+--typed-primitive-lane-executor
+--answerer-learned-primitive-lane-renderer
+```
+
+Result:
+
+```text
+runtime: passed
+eval = 16/32 = 0.50
+arithmetic_chain = 0/8
+list_transform = 0/8
+boolean_logic = 8/8
+symbolic_binding = 8/8
+
+digit_transition_executor_trace_digit_accuracy = 0.2397
+digit_transition_executor_trace_presence_accuracy = 0.7657
+typed_register_off = 0/32
+learned_primitive_lane_renderer_off = 0/32
+```
+
+Interpretation:
+
+```text
+This was a wiring smoke, not a promote/reject accuracy gate.
+The new column/carry executor runs through train/eval/ablation cleanly.
+Numeric/list are still zero after one epoch, so the next real gate must be an
+8-epoch local run or a short pretrain+train run that checks whether the learned
+column cell actually acquires exact arithmetic.
+```
+
+## 2026-05-22 Stage60 v46 LBEC-P Gate Reject
+
+Run:
+
+```text
+/tmp/stage60_v46_lbecp_column_gate_train256_eval128
+```
+
+Result:
+
+```text
+best_epoch = 3
+best_accuracy = 0.50
+final eval = 64/128 = 0.50
+
+arithmetic_chain = 0/32
+list_transform = 0/32
+boolean_logic = 32/32
+symbolic_binding = 32/32
+
+digit_transition_executor_trace_digit_accuracy:
+  0.2607 -> 0.6393
+
+digit_transition_executor_trace_presence_accuracy:
+  0.8491 -> 0.9494
+
+typed_register_off = 0/128
+digit_transition_executor_off = 64/128
+column_procedure_off = 64/128
+ledger_pact_renderer_off = 64/128
+```
+
+Decision:
+
+```text
+Reject as final architecture.
+Do not call this a near miss just because trace accuracy rises.
+The numeric/list answer path remains exactly zero.
+```
+
+문과적 진단:
+
+```text
+LBEC-P gave the model a finger that can move across digit columns, but we asked
+it to calculate before making sure the visible source numbers had actually
+been copied onto the paper.
+
+The run shows "digit-looking practice" but not "answer-making procedure".
+Examples:
+  8017 -> 6020
+  12032 -> 6016
+  8008,8004 -> 6008,0
+
+This is not solved by more epochs alone. The input contract is still wrong:
+visible source digits must be seeded into the digit ledger before the learned
+column procedure starts.
+```
+
+Next architecture correction:
+
+```text
+v47: Source-Seeded LBEC-P.
+
+Before the column/carry cell rolls forward, copy visible source digit columns
+into the learned digit ledger state. This is not a calculator; it is the
+"put the numbers on the worksheet" step. The operation updates remain learned.
+```
+
+## 2026-05-22 Stage60 v47 Source-Seeded LBEC-P Smoke
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  LearnedBaseEquivariantColumnProcedureExecutor now seeds visible source
+  digit columns into trajectory step 0 before rollout.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added test_lbecp_executor_seeds_visible_source_digits_before_rollout.
+```
+
+Smoke:
+
+```text
+/tmp/stage60_v47_lbecp_source_seed_smoke_train64_eval32
+
+runtime = passed
+eval = 14/32 = 0.4375
+arithmetic_chain = 0/8
+list_transform = 0/8
+boolean_logic = 7/8
+symbolic_binding = 7/8
+
+digit_transition_executor_trace_digit_accuracy = 0.3418
+digit_transition_executor_trace_presence_accuracy = 0.7784
+```
+
+Interpretation:
+
+```text
+This is not a promote signal yet. It is a contract repair.
+The next meaningful gate is source-seeded v47 for 8 epochs, preferably with
+digit-transition pretraining enabled so the hand practices the motor skill
+before the whole model is examined.
+```
+
+## 2026-05-22 Stage60 v47 Source-Seeded LBEC-P Pretrain Gate Reject
+
+Run:
+
+```text
+/tmp/stage60_v47_lbecp_source_seed_pretrain_gate_train256_eval128
+```
+
+Result:
+
+```text
+best_epoch = 2
+best_accuracy = 0.50
+final eval = 64/128 = 0.50
+
+arithmetic_chain = 0/32
+list_transform = 0/32
+boolean_logic = 32/32
+symbolic_binding = 32/32
+
+digit-transition pretrain:
+  examples = 1024
+  epochs = 5
+  digit_accuracy = 0.8861
+  presence_accuracy = 0.9805
+
+integrated digit_transition_executor_trace_digit_accuracy:
+  0.4000 -> 0.5912
+```
+
+Decision:
+
+```text
+Reject as final. Pretraining proves the one-step motor skill is learnable, but
+the integrated rollout still cannot produce numeric/list answers.
+```
+
+문과적 진단:
+
+```text
+손동작만 따로 시키면 꽤 한다. 그런데 전체 몸 안으로 넣으면 자기 글씨를
+다음 줄에서 다시 읽지 못한다. 즉 exact digit을 종이에 커밋하지 않고
+연속 latent vector를 다음 step으로 넘기면서 다시 흐려진다.
+
+Also, list_transform cannot be solved by digit-column scan alone. It needs a
+value-slot scan/compaction hand: read each list item, decide keep/map, write to
+the next output slot.
+```
+
+Next correction:
+
+```text
+v48: Digit-Commit LBEC-P.
+
+After each step, predicted digit logits are converted back into a digit-state
+embedding and used as the next rollout state. This is the "write the digit you
+just decided onto the worksheet" rule.
+
+Remaining missing piece after v48:
+  value-slot scan/compaction for list_transform.
+```
+
+## 2026-05-22 Stage60 v48 Digit-Commit LBEC-P Smoke
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  LearnedBaseEquivariantColumnProcedureExecutor now has digit_state_embed.
+  Step digit logits are hard-committed with STE and fed back into the next
+  rollout state.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added test_lbecp_executor_commits_predicted_digits_back_to_next_rollout_state.
+```
+
+Smoke:
+
+```text
+/tmp/stage60_v48_lbecp_digit_commit_smoke_train64_eval32
+
+runtime = passed
+eval = 15/32 = 0.46875
+arithmetic_chain = 0/8
+list_transform = 0/8
+boolean_logic = 7/8
+symbolic_binding = 8/8
+
+digit-transition pretrain:
+  examples = 256
+  epochs = 2
+  digit_accuracy = 0.6623
+  presence_accuracy = 0.9258
+
+integrated digit_transition_executor_trace_digit_accuracy = 0.4487
+```
+
+Interpretation:
+
+```text
+Digit commit is wired and test-covered, but this smoke is not enough to promote.
+The next accepted-likelihood architecture must add value-slot scan/compaction
+instead of asking a digit-column cell to solve list movement by itself.
+```
+
+## 2026-05-22 Stage60 v49 Dual-Axis LBEC-P Smoke
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added digit_transition_executor_mode=dual_axis_lbecp.
+  LearnedBaseEquivariantColumnProcedureExecutor now has an optional value-slot
+  scan for list rows: filter_even compacts even source value slots before the
+  digit-column procedure runs.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added tests for direct even-slot compaction and TypedDigitNextStateExecutor
+  dual_axis_lbecp integration.
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed
+git diff --check passed
+```
+
+Smoke:
+
+```text
+/tmp/stage60_v49_dual_axis_lbecp_smoke_train64_eval32
+
+runtime = passed
+eval = 16/32 = 0.50
+arithmetic_chain = 0/8
+list_transform = 0/8
+boolean_logic = 8/8
+symbolic_binding = 8/8
+
+digit-transition pretrain:
+  examples = 256
+  epochs = 2
+  digit_accuracy = 0.6458
+  presence_accuracy = 0.9118
+
+integrated digit_transition_executor_trace_digit_accuracy = 0.3708
+integrated digit_transition_executor_trace_presence_accuracy = 0.7348
+```
+
+Decision:
+
+```text
+Reject as final. The second axis is now test-covered, but the numeric/list hand
+still does not own correct final answers in integrated training.
+```
+
+문과적 진단:
+
+```text
+이제 손에는 두 축이 있다:
+  자리수 축: 숫자를 오른쪽 자리부터 훑는 손
+  값 슬롯 축: 리스트 항목을 훑고 앞으로 당기는 손
+
+하지만 아직 "손이 쓴 결과를 입이 정답으로 믿고 말하는" 단계가 약하다.
+작업대 위에서 후보 모양은 생기지만, arithmetic/list의 최종 말하기가 0/16에
+머문다.
+
+따라서 다음 big-jump는 더 많은 보조 손실이 아니라 주 사고 경로 자체를
+강제하는 것이다:
+  procedure state -> committed worksheet -> verifier/checker -> only then speak.
+```
+
+Next invention constraint:
+
+```text
+Do not launch another long local/DGX run unless the architecture makes numeric
+and list answers impossible to speak without passing through the committed
+procedure worksheet and a learned verifier/checker.
+```
+
+## 2026-05-22 Stage60 v50 Choice-Verifier Speaker
+
+Research anchor:
+
+```text
+Recent self-verification work points at the same human story:
+  generation alone is weak unless the system can identify the correct answer
+  among candidates.
+
+Local references checked:
+  arXiv:2603.04304 V1, pairwise self-verification / tournament ranking
+  arXiv:2506.01369 self-verification trained with generation in one process
+```
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added ProcedureChoiceVerifier.
+  Added --answerer-choice-verifier.
+  Added --choice-verifier-own-answer-supervision so the free candidate mouth is
+  not trained to answer directly when the verifier owns the answer.
+  Eval can ablate it with --eval-choice-verifier-off.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added tests for supplied-choice selection, invalid-choice masking, and free
+  mouth supervision masking.
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed
+```
+
+Local smoke:
+
+```text
+/tmp/stage60_v50_choice_verifier_smoke_train64_eval32
+
+best_accuracy = 0.4375
+arithmetic_chain = 6/8
+list_transform = 1/8
+boolean_logic = 5/8
+symbolic_binding = 2/8
+
+choice_verifier_off:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 6/8
+```
+
+5-epoch gate:
+
+```text
+/tmp/stage60_v50_choice_verifier_gate_train64_eval32_e5
+
+best_accuracy = 0.375 at epoch 3
+best arithmetic_chain = 6/8
+best list_transform = 0/8
+
+final_accuracy = 0.34375
+final arithmetic_chain = 5/8
+final list_transform = 2/8
+choice_verifier_train_accuracy = 0.40625
+```
+
+Decision:
+
+```text
+Reject v50 as a final architecture. It is not the big jump yet.
+```
+
+문과적 진단:
+
+```text
+검산하는 입을 붙이자 숫자 문제는 처음으로 살아났다. verifier가 켜진
+상태에서는 arithmetic이 5~6/8까지 올라가고, verifier를 끄면 arithmetic/list
+가 다시 0으로 떨어진다. 즉 "검산해서 고르는 입"은 실제로 원인 경로다.
+
+하지만 pointwise verifier는 약하다. 각 후보를 따로 보는 방식이라 네 후보의
+상대적 차이를 잘 못 잡고, list_transform처럼 "항목을 보존/삭제/압축"해야
+하는 문제에서는 여전히 흔들린다.
+```
+
+Next accepted-likelihood correction:
+
+```text
+v51: Pairwise/Tournament Procedure Verifier.
+
+Do not merely score each candidate independently. Compare candidate A vs B under
+the same committed worksheet/source state, then run a small tournament. This
+matches the V1-style finding that pairwise self-verification is often stronger
+than scalar pointwise scoring.
+```
+
+## 2026-05-22 Stage60 v51 Pairwise/Tournament Verifier Smoke
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added PairwiseProcedureChoiceVerifier.
+  Added --choice-verifier-mode pairwise_tournament.
+  Added pairwise_tournament_scores(...).
+  Added pairwise verifier loss over target-vs-other candidate margins.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added pairwise tournament score, invalid-pair masking, and pairwise loss tests.
+```
+
+Local smoke:
+
+```text
+/tmp/stage60_v51_pairwise_verifier_smoke_train64_eval32
+
+best_accuracy = 0.4375
+arithmetic_chain = 5/8
+list_transform = 3/8
+boolean_logic = 5/8
+symbolic_binding = 1/8
+
+choice_verifier_off:
+  accuracy = 0.5
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+
+train choice_verifier_accuracy = 0.359375
+train choice_verifier_loss = 6.5392
+```
+
+Decision:
+
+```text
+Reject v51 as the final architecture.
+Accept v51 as a causal diagnostic.
+```
+
+문과적 진단:
+
+```text
+검산기는 원인 경로가 맞다. 검산기를 켜면 arithmetic/list가 0에서 살아나고,
+끄면 다시 둘 다 0/8로 죽는다.
+
+하지만 이 검산기는 아직 "정답을 만드는 사람"이 아니다. 시험지에 이미 보기로
+정답이 놓여 있을 때 그중 하나를 고르는 입이다. 즉 책상 위에 올바른 후보를
+올리는 손이 없으면, 아무리 좋은 검산 입도 말할 정답이 없다.
+
+GRAM/PTRM급 다음 점프는 verifier를 더 두껍게 하는 것이 아니라, GRAM이 여러
+실행 절차/후보 답을 만들고 PTRM이 그 후보들끼리 pairwise tournament를 붙이는
+"후보 노출형 사고 경로"여야 한다.
+```
+
+Next high-probability invention:
+
+```text
+v52 CE-GRAM/PTRM: Candidate-Exposing GRAM with Procedure Tournament Reward Model.
+
+Human story:
+  reader -> working desk -> GRAM samples K candidate procedures/answers
+  -> PTRM pairwise tournament judges generated candidates
+  -> selected candidate is copied as the final answer.
+
+Gate:
+  Do not judge it first by final selected accuracy.
+  First gate is oracle_candidate_coverage on generated candidates.
+  Promote only if arithmetic/list gold answer appears in the generated candidate
+  table above the current weak exposure baseline, then train PTRM on that same
+  generated-candidate distribution.
+```
+
+## 2026-05-22 Stage60 v52 CE-GRAM/PTRM Generated-Candidate Gate
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added --choice-verifier-candidate-source generated.
+  Added encode_candidate_string_verifier_inputs(...).
+  Added apply_candidate_string_verifier_candidates(...).
+  Generated-source verifier keeps candidate-table character supervision alive
+  while masking the free selector target when verifier ownership is enabled.
+  Matched train and eval generated-candidate tables by applying ledger/primitive
+  renderers before training the generated-candidate verifier.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added generated-candidate verifier input/target test.
+  Added generated-candidate verifier selection test.
+```
+
+Verification:
+
+```text
+stage59 typed value trace tests passed
+py_compile passed
+git diff --check passed for touched Stage60 files
+```
+
+Runs:
+
+```text
+/tmp/stage60_v52_cegram_ptrm_generated_choice_gate_train64_eval32_e5
+  best_accuracy = 0.4375
+  choice_verifier_loss stayed 0.0
+  oracle_coverage best = 0.5
+  arithmetic_chain coverage = 0/8
+  list_transform coverage = 0/8
+
+/tmp/stage60_v52b_cegram_ptrm_train_eval_candidate_matched_e5
+  best_accuracy = 0.5
+  best_epoch = 2
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  choice_verifier_loss became nonzero at epoch 1 after train/eval table matching
+```
+
+Decision:
+
+```text
+Accept v52B as an architecture correction.
+Reject it as the final big jump.
+```
+
+문과적 진단:
+
+```text
+검산 입과 책상은 이제 같은 것을 보고 연습한다. 그래서 boolean/symbolic은
+generated-candidate path에서도 16/16으로 닫힌다.
+
+하지만 숫자/list는 애초에 정답 후보가 책상 위에 올라오지 않는다. verifier는
+없는 정답을 고를 수 없다. 지금 숫자 후보는 빈 문자열, EMPTY, 1222 같은
+형태로 무너진다.
+
+즉 다음 병목은 verifier가 아니라 numeric/list candidate exposure다. GRAM/PTRM
+다음 단계는 ledger logits에서 하나의 greedy 답만 말하게 하지 말고, 같은
+worksheet에서 여러 후보를 펼친 뒤 PTRM이 고르게 해야 한다.
+```
+
+Next accepted-likelihood correction:
+
+```text
+v53 Ledger Candidate Exposure.
+
+Do not train another verifier-only variant. Add a ledger-native candidate
+exposer for numeric/list rows:
+  committed digit/presence logits
+  -> K candidate numeric/list strings from multiple thresholds/top alternatives
+  -> generated-candidate PTRM tournament
+  -> selected final answer.
+
+Promote gate:
+  arithmetic/list oracle_candidate_coverage must rise above 0/16 before
+  selected accuracy is considered.
+```
+
+## 2026-05-22 Stage60 v53 Ledger Candidate Exposure Gate
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added --ledger-candidate-exposure.
+  Added --ledger-candidate-alt-topk.
+  Added render_ledger_candidate_texts(...).
+  Added apply_ledger_candidate_exposure(...).
+  Ledger candidates now expose multiple numeric/list strings from committed
+  digit/presence logits instead of only the greedy renderer string.
+  Arithmetic exposure was corrected to read all value slots, not only the first
+  value slot.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added ledger candidate exposure test for second-best digit alternatives.
+  Added generated-candidate table overwrite test.
+  Added all-value-slot arithmetic exposure regression test.
+```
+
+Verification:
+
+```text
+focused v53 ledger exposure tests passed
+stage59 typed value trace tests passed
+py_compile passed
+git diff --check passed for touched Stage60 files
+```
+
+Runs:
+
+```text
+/tmp/stage60_v53_ledger_candidate_exposure_train64_eval32_e5
+  best_accuracy = 0.5
+  arithmetic_chain oracle coverage = 0/8
+  list_transform oracle coverage = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+
+/tmp/stage60_v53b_ledger_candidate_allslots_train64_eval32_e5
+  best_accuracy = 0.5
+  best_epoch = 3
+  oracle_coverage = 0.5
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+  choice_verifier_accuracy reached 1.0 after epoch 3
+```
+
+Representative failed generated candidates:
+
+```text
+arith-chain-4000 alias 8017  -> candidates [600, 600, ...]
+arith-chain-4001 alias 12032 -> candidates [100, 100, ...]
+list-transform-4000 alias 8008,8004 -> candidates [EMPTY, 600000, ...]
+list-transform-4007 alias 8016,8028,8020 -> candidates [EMPTY, 6000000, ...]
+```
+
+Decision:
+
+```text
+Accept v53 as a diagnostic correction.
+Reject v53 as the big jump.
+```
+
+문과적 진단:
+
+```text
+v52까지는 검산자가 시험지와 다른 책상을 보고 있었다.
+v53은 책상 위 서랍을 여러 개 열었다. 그런데 숫자/list 정답은 어느 서랍에도
+없었다.
+
+즉 검산자가 멍청한 문제가 아니다. 후보를 한 개만 봐서 틀린 문제도 아니다.
+작업대 자체가 source 숫자를 보존하지 못하고 100, 600, EMPTY 같은 훈련권
+습관을 반복해서 써 내려간다.
+
+사람식으로 말하면, 문제지에 8017이 적혀 있는데 작업기억 조작 루틴이
+계산을 시작하기 전에 600만 계속 써 내려간다. 이 상태에서 GRAM/PTRM을 더 크게 돌리면
+더 많은 600 후보를 고르게 될 뿐이다.
+```
+
+Next high-accepted-probability invention:
+
+```text
+v54 Source-Anchored Procedure GRAM.
+
+Do not add another selector, verifier, or candidate expander first.
+The next architecture must make source values physically persistent on the
+workspace and make the cognitive manipulation routine operate by pointing to
+source registers:
+
+  Qwen reader / typed parser
+  -> source-anchored numeric/list registers
+  -> GRAM procedure policy chooses source slot, column, op, carry/update
+  -> typed belief registers write the result
+  -> PTRM/verifier judges generated candidates
+
+Promote preflight:
+  before selected accuracy is considered, arithmetic/list generated candidate
+  oracle coverage must rise above 0/16.
+
+Plain rule:
+  먼저 정답 후보가 책상 위에 태어나야 한다. 그 다음에만 PTRM이 의미 있다.
+```
+
+## 2026-05-22 Stage60 v54 Source-Anchor Pretraining Alignment
+
+문과적 진단:
+
+```text
+v53B는 source-number slots와 dual-axis LBEC-P를 켠 상태에서도 숫자/list 후보가
+100, 600, EMPTY로 무너졌다.
+
+코드 점검 결과, digit transition pretraining은 "작업기억에 이미 적힌 숫자"를
+보고 연습하지만, 통합 train/eval rollout은 별도 source-number working memory도
+같이 받는다. 즉 학교의 책상 배치와 시험의 책상 배치가 달랐다.
+
+뇌 모방 관점에서는 이게 말이 안 된다. 내적 조작 루틴은 연습 때도 시험 때도
+같은 작업기억 배치를 보고 숫자를 갱신해야 한다.
+```
+
+Code:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  DigitTransitionPretrainingExamples now carries source_numeric_features and
+  source_numeric_feature_mask.
+  digit_transition_pretraining_examples(...) can build source anchors from the
+  visible prompt numbers for every transition example.
+  pretrain_digit_transition_executor(...) now passes those source anchors into
+  the executor during pretraining.
+  main(...) passes args.source_number_value_scale into the pretraining builder.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added test_digit_transition_pretraining_examples_keep_source_anchor_features.
+  Added test_digit_transition_pretraining_passes_source_anchor_features_to_executor.
+```
+
+Verification:
+
+```text
+RED confirmed before implementation:
+  TypeError: digit_transition_pretraining_examples() got an unexpected keyword
+  argument 'source_feature_dim'
+
+GREEN:
+  v54 source anchored pretrain tests passed
+  stage59 typed value trace tests passed
+  py_compile passed
+  git diff --check passed
+```
+
+Decision:
+
+```text
+Accept as a necessary v54 architecture hygiene correction.
+Do not call it the big jump yet.
+The next local gate should rerun the v53B family with source-anchor-aligned
+pretraining and judge first by arithmetic/list generated candidate oracle
+coverage, not by selected accuracy.
+```
+
+Local gate:
+
+```text
+/tmp/stage60_v54_source_anchor_pretrain_aligned_train64_eval32_e5
+
+best_accuracy = 0.5
+best_epoch = 1
+pretrain_digit_accuracy = 0.4946
+pretrain_presence_accuracy = 0.9486
+
+epoch 5 train digit_transition_executor_trace_digit_accuracy = 0.6161
+
+best generated-candidate oracle coverage:
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 8/8
+  symbolic_binding = 8/8
+
+representative numeric/list candidates:
+  8017  -> [6016, 900, 900, ...]
+  12032 -> [6016, 900, 900, ...]
+  8008,8004 -> [6002,6002, 60000606006000000000000, ...]
+```
+
+Decision after local gate:
+
+```text
+Reject v54 alignment as sufficient.
+Keep it as necessary hygiene.
+```
+
+HRM-Text comparison:
+
+```text
+HRM-Text is possible because its recurrent computation is the language model's
+own body: reader, slow/strategic recurrent state, fast/execution recurrent
+state, and speaker are trained together from scratch under the token objective.
+The paper's abstract states that HRM-Text replaces standard Transformers with a
+Hierarchical Recurrent Model that separates slow-evolving strategic and
+fast-evolving execution layers, then stabilizes deep recurrence with MagicNorm
+and warmup deep credit assignment.
+
+Our current Stage60 path is still not that. Qwen reads well, but the numeric
+working-memory manipulation routine is attached as a later procedure/ledger
+organ. Boolean/symbolic close because their state spaces are small and discrete.
+Arithmetic/list fail because source digits must remain pinned, transformed, and
+spoken through one consistent body. The run shows the result: the verifier can
+judge generated candidates, but the numeric/list candidate never exists.
+```
+
+Next high-probability rule:
+
+```text
+Do not keep improving PTRM/verifier until arithmetic/list candidate coverage
+moves above 0/16.
+
+The next intervention must make the numeric manipulation routine part of the
+normal recurrent thought body:
+  source digits -> recurrent typed digit state -> manipulation update
+  -> committed ledger -> speaker/verifier
+
+The first metric is not final accuracy. It is:
+  source-retention / candidate-birth:
+    do generated numeric/list candidates contain the true source-derived values?
+```
+
+## 2026-05-22 Stage60 v55 Direction: One-Body Thought Graft
+
+문과적 결론:
+
+```text
+HRM-Text는 한 몸으로 태어난 사람이다.
+Qwen+GRAM/PTRM은 아직 잘 읽는 Qwen 옆에 계산 작업대를 붙인 팀이다.
+
+그러나 "처음부터 한 몸"이 아니어도, 수술적으로 한 몸처럼 만들 수는 있다.
+핵심은 계산 작업대가 밖에서 답을 말하지 않게 하는 것이다. typed/GRAM thought가
+Qwen hidden state 안으로 들어가고, 최종 답은 Qwen-compatible mouth가 말해야 한다.
+```
+
+논문 근거:
+
+```text
+HRM-Text (arXiv:2605.20613):
+  recurrent thought and token speaker are trained as one model body.
+
+ReFT / LoReFT (arXiv:2404.03592):
+  frozen LM hidden representation에 learned intervention을 걸어 task behavior를
+  바꾸는 방식. 우리에게는 typed/GRAM thought를 Qwen residual stream에 이식하는
+  직접 근거다.
+
+Prefix-Tuning / P-Tuning v2 (arXiv:2101.00190, arXiv:2110.07602):
+  learned continuous prompt/virtual token을 frozen model이 자기 입력 일부처럼 읽게
+  만든다. typed register를 Qwen이 읽는 thought token으로 바꾸는 근거다.
+
+LayerSkip (arXiv:2404.16710):
+  draft와 verifier가 같은 model body를 공유한다. PTRM도 장기적으로는 외부 judge가
+  아니라 내부 self-check path가 되어야 한다는 경고다.
+
+Model Grafting / Skill Localization (arXiv:2302.06600):
+  fine-tuned skill이 작은 parameter subset에 localization/grafting될 수 있음을
+  보여준다. 계산 능력을 Qwen 본체 표현에 graft한다는 방향의 근거다.
+```
+
+Next preflight:
+
+```text
+v55 Residual Thought Graft.
+
+typed/GRAM working-memory summary
+-> zero-initialized low-rank intervention
+-> Qwen-compatible readout/workspace residual state
+-> LM-compatible answer path
+
+Gate:
+  1. graft starts as exact identity;
+  2. graft_off exactly restores the ungrafted state;
+  3. any numeric/list gain must disappear when graft_off is enabled;
+  4. do not count gains from side renderers as HRM-Text-like one-body gains.
+```
+
+Implementation preflight:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added ResidualThoughtGraft.
+  Added apply_residual_thought_graft_context(...).
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added test_residual_thought_graft_starts_identity_and_is_ablatable.
+  Added test_residual_thought_graft_requires_qwen_compatible_readout_shape.
+```
+
+What this proves:
+
+```text
+The one-body surgery now has a code-level starting point:
+  typed working/digit register summaries
+  -> zero-initialized low-rank residual intervention
+  -> Qwen-compatible readout state
+
+It starts as exact identity, so it does not break the pretrained body at step 0.
+It has a hard graft_off ablation, so future gains can be causally tested.
+It does not add a new renderer or verifier.
+```
+
+Verification:
+
+```text
+v55 residual thought graft tests passed
+stage59 typed value trace tests passed
+py_compile passed
+git diff --check passed
+```
+
+Next code step:
+
+```text
+Wire ResidualThoughtGraft into train/eval behind flags:
+  --residual-thought-graft
+  --residual-thought-graft-hidden-dim
+  --eval-residual-thought-graft-off
+
+Then run only an HRM-Text-like gate:
+  answerer must use the grafted readout / LM-compatible path;
+  side renderer-only gains do not count;
+  numeric/list gain must disappear under graft_off.
+```
+
+## [2026-05-22] implementation | Stage60 v55 Residual Thought Graft wired into answer path
+
+Humanistic architecture read:
+
+```text
+Before this edit, the surgery tool existed but the blood vessel was not fully
+connected: ResidualThoughtGraft could edit a readout state, but train/eval did
+not force the evaluated answer path to pass through that edited state.
+
+After this edit, --residual-thought-graft is allowed only with
+--answerer-use-qtrm-readout. That means the working-memory thought must be
+translated into the Qwen-compatible readout before the learned answerer speaks.
+This is the minimum HRM-Text-like one-body contract available in the current
+Stage530 architecture.
+```
+
+Code changes:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added residual_thought_graft_active(...).
+  Added validate_residual_thought_graft_flags(...).
+  Added CLI flags:
+    --residual-thought-graft
+    --residual-thought-graft-hidden-dim
+    --eval-residual-thought-graft-off
+  Wired ResidualThoughtGraft through:
+    train_epoch(...)
+    evaluate(...)
+    optimizer params
+    per-epoch eval record
+    best checkpoint state
+    final summary metadata
+  Added residual_thought_graft_off eval ablation.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added test_residual_thought_graft_requires_normal_readout_answer_path.
+  Added test_residual_thought_graft_active_respects_ablation_and_typed_register_off.
+```
+
+Causal gate:
+
+```text
+Any future claim that this is a one-body HRM-Text-like path must satisfy:
+
+1. --answerer-use-qtrm-readout is on.
+2. --residual-thought-graft is on.
+3. arithmetic/list improvement appears in normal eval.
+4. the same improvement disappears or sharply weakens under
+   residual_thought_graft_off.
+
+If the gain survives graft_off, the gain did not come from the one-body thought
+graft and must not be counted as accepted.
+```
+
+Verification:
+
+```text
+focused residual thought graft tests passed
+stage59 typed value trace tests passed
+py_compile passed
+git diff --check passed
+```
+
+## [2026-05-22] experiment | Stage60 v55-v56 one-body graft smoke rejected
+
+Question:
+
+```text
+Can we make Qwen+GRAM/PTRM act like one body, not like a fluent reader with a
+separate calculator attached after the fact?
+```
+
+Plain-language result:
+
+```text
+The surgery idea is correct, but the current wound site is still too shallow.
+ResidualThoughtGraft can place the working-memory thought into the answer
+readout, but the evaluated speaker is still a small separately trained
+character answerer. It learns answer-shaped habits such as "1022", "TALSE",
+"seee", and repeated "6" strings instead of using Qwen's real language-model
+mouth.
+```
+
+Local smoke runs:
+
+```text
+v55 qtrm_readout graft:
+  best eval = 0/32
+  final eval = 0/32
+  residual_thought_graft_off = 0/32
+  char_token_accuracy = 0.3505
+  select_accuracy = 0.0
+
+v55B qtrm_readout graft + Qwen char speaker init:
+  best eval = 0/32
+  final eval = 0/32
+  residual_thought_graft_off = 1/32
+  char_token_accuracy = 0.4025
+  select_accuracy = 1.0
+
+v56 register_mean graft + Qwen char speaker init:
+  best eval = 0/32
+  final eval = 0/32
+  residual_thought_graft_off = 0/32
+  char_token_accuracy = 0.4114
+  select_accuracy = 1.0
+```
+
+Observed candidates:
+
+```text
+v55:
+  8017 -> 6022
+  TRUE -> TREEE
+  green -> viv
+
+v55B:
+  8017 -> 1022
+  TRUE -> FALS
+  green -> blle/vlle
+
+v56:
+  8017 -> 1022
+  TRUE -> TALSE
+  green -> siee/seee
+  8008,8004 -> 6022,666666666
+```
+
+Decision:
+
+```text
+Reject residual-thought-graft-to-small-answerer as sufficient.
+
+Do not spend DGX time on longer v55/v56 variants. The result is not a compute
+shortfall; it is a one-body mismatch. The thought state is still not speaking
+through the actual Qwen LM/token path.
+```
+
+Next high-probability direction:
+
+```text
+Implement a true LM-mouth / PrefixLM graft:
+
+  Qwen reader
+  -> typed/GRAM/PTRM working-memory thought
+  -> low-rank residual or soft-prefix intervention inside Qwen hidden states
+  -> Qwen LM head/token logits
+
+The accepted gate must include:
+  1. answer-path uses Qwen-compatible LM/token logits, not the small Stage530 AR
+     answerer alone;
+  2. disabling the thought graft sharply reduces the gain;
+  3. the model produces correct answer text, not merely answer-shaped strings;
+  4. no heuristic renderer or oracle candidate selector owns the final answer.
+```
+
+## [2026-05-23] implementation + experiment | Stage60 v57-v58 Qwen LM-mouth graft
+
+Humanistic architecture read:
+
+```text
+v55-v56 still used a small newly trained character mouth. That mouth learned
+answer-shaped habits like "1022", "TALSE", and "seee".
+
+v57-v58 move the answer path closer to HRM-Text's one-body contract:
+
+  Qwen reader
+  -> typed/GRAM/PTRM working-memory thought
+  -> residual thought graft
+  -> Qwen-compatible token states
+  -> Qwen LM head vocabulary logits
+
+v58 additionally lets each output token attend over the full working-register
+and digit-register desk, instead of speaking from one averaged readout vector.
+```
+
+Code changes:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added QwenLmAnswerMouth.
+  Added qwen_lm_mouth_forward(...).
+  Added encode_qwen_lm_answer_targets(...).
+  Added qwen_lm_mouth_register_memory(...).
+  Added --qwen-lm-mouth-answerer.
+  Added --qwen-lm-mouth-context-mode {readout, register_prefix}.
+  Added --qwen-lm-mouth-logit-mode {qwen_lm_head, qwen_plus_low_rank}.
+  Wired the Qwen LM-mouth path into train/eval and checkpoint metadata.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added tests proving:
+    Qwen LM head is actually used.
+    tokenizer/EOS answer targets are used.
+    generated-choice verifier cannot own this path.
+    register_prefix mode reads full register memory.
+```
+
+Local smoke results:
+
+```text
+v57 qwen_lm_mouth, readout context:
+  best eval = 6/32 = 0.1875
+  best epoch = 1
+  residual_thought_graft_off = 0/32
+  typed_register_off = 0/32
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = up to 6/8
+  symbolic_binding = up to 2/8
+
+v58 qwen_lm_mouth, register_prefix context:
+  best eval = 7/32 = 0.21875
+  best epoch = 4
+  residual_thought_graft_off = 0/32
+  typed_register_off = 0/32
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+  boolean_logic = 5/8 at best epoch
+  symbolic_binding = 2/8 at best epoch
+```
+
+Observed v58 best records:
+
+```text
+8017 -> 00000000
+12032 -> 00000000
+8008,8004 -> 00000000
+green -> red
+silver -> silver
+FALSE -> FALSE
+```
+
+Decision:
+
+```text
+Accept Qwen LM-mouth graft as a real causal improvement over the small
+character mouth:
+
+  v55-v56: 0/32
+  v57:    6/32, removed by residual_thought_graft_off
+  v58:    7/32, removed by residual_thought_graft_off
+
+Reject it as sufficient for numeric/list reasoning. Arithmetic and list remain
+0/8, so the mouth is no longer the only bottleneck.
+```
+
+Plain-language diagnosis:
+
+```text
+The model can now speak through the real Qwen mouth, and the gain disappears
+when the graft is removed. That means the one-body surgery is finally touching
+the evaluated answer path.
+
+But the numeric/list working desk is still not writing a clean answer. The
+mouth sees either "zero-ish" or "one-ish" numerical smell and says "00000000" or
+"1". The next blocker is not pronunciation; it is exact working-memory state.
+```
+
+Next high-probability successor:
+
+```text
+Keep QwenLmAnswerMouth as the only valid speaker path.
+Add exact trace pressure to the typed digit ledger before scaling:
+
+  --typed-digit-register-trace-weight > 0
+  --digit-transition-committed-writeback
+  --qwen-lm-mouth-context-mode register_prefix
+
+Promote only if arithmetic/list become nonzero and the gain disappears under
+typed_register_off or residual_thought_graft_off.
+```
+
+## [2026-05-23] experiment + decision | Stage60 v59 trace/writeback overcorrection rejected
+
+Humanistic read:
+
+```text
+v58 proved that the thought can now reach the real Qwen mouth. v59 tried to fix
+the numeric/list desk by adding two pressures at once:
+
+  1. trace supervision says "your working ledger must match the intermediate
+     arithmetic/list state";
+  2. committed writeback says "write that ledger back into the main thought
+     trajectory immediately."
+
+That was too much surgery at once. The worksheet became more supervised, but
+the speaking body lost the ability to say useful text. The model mostly emitted
+empty strings, repeated 2s, repeated 0s, or repeated 6s.
+```
+
+Local result:
+
+```text
+run:
+  /tmp/stage60_v59_lm_mouth_digit_trace_writeback_train64_eval32_e5
+
+best eval:
+  0/32 = 0.0
+
+per-family:
+  arithmetic_chain = 0/8
+  boolean_logic = 0/8
+  list_transform = 0/8
+  symbolic_binding = 0/8
+
+ablation at epoch 5:
+  residual_thought_graft_off = 0/32
+  typed_register_off = 0/32
+  digit_transition_writeback_off = 3/32
+
+training-side signal:
+  char_token_accuracy rose from 0.1618 to 0.3269
+  typed_digit_register_trace_digit_accuracy rose as high as 0.5786
+  digit_transition_executor_trace_digit_accuracy rose as high as 0.5976
+```
+
+Best-record symptom:
+
+```text
+8017 -> "22222222"
+12032 -> "22222222"
+8008,8004 -> "00000000"
+green -> ""
+TRUE -> ""
+FALSE -> ""
+```
+
+Decision:
+
+```text
+Reject v59.
+
+The failure is not "trace supervision is useless." The failure is curriculum
+ordering. The model was asked to align the Qwen mouth, learn exact numeric/list
+ledger state, and let that still-unstable ledger overwrite the main thought all
+at the same time.
+
+Next local-only successor must keep the accepted v58 one-body speaker fixed,
+then add ledger pressure gradually:
+
+  Phase A: Qwen LM-mouth register_prefix + residual thought graft only.
+  Phase B: add weak typed digit trace, no committed writeback.
+  Phase C: add committed writeback only after answer stability survives Phase B.
+
+Promote only if arithmetic/list becomes nonzero without losing the graft-off
+causality signal.
+```
+
+## [2026-05-23] research note | one-body surgery analogy and current paper map
+
+Plain-language rule:
+
+```text
+The right analogy is not "add a hand." The right analogy is a trained person:
+the same body sees, remembers, manipulates working memory, checks, and speaks or
+acts. A surgical expert is not a language model plus a separate calculator; the
+perception-thought-action loop was trained as one route.
+
+For Qwen+QTRM/GRAM/PTRM, the matching route is:
+
+  Qwen reader
+  -> semantic/typed recurrent thought
+  -> GRAM/PTRM transition or search over that thought
+  -> Qwen-compatible hidden/token state
+  -> Qwen LM head
+
+Any helper that can be ignored by the evaluated answer is not one-body.
+```
+
+Relevant source map:
+
+```text
+2026-05 HRM-Text:
+  one-body recurrent LM reference; recurrent thought is inside the LM forward
+  path and speaks through the normal token path.
+
+2025-10 Ouro / Looped Language Models:
+  latent iterative reasoning is built into pretraining rather than attached
+  only after the language model has already learned to speak.
+
+2026 LoopFormer:
+  looped depth must be trained as a stable trajectory, not just run longer at
+  evaluation.
+
+2025 Coconut:
+  continuous thoughts can be fed back as reasoning states before tokens are
+  emitted.
+
+VLA / embodied learning line, including pi0/pi0.5 and OpenVLA:
+  the robotics analogue of one-body learning is perception -> language/context
+  -> action trained as one causal policy, often with cross-embodiment data.
+
+Surgical VLM/copilot work:
+  useful as domain evidence for surgical scene understanding, but not enough
+  by itself for "one-body surgical action" because it is mostly VLM QA rather
+  than end-to-end visuomotor control.
+```
+
+Architecture implication:
+
+```text
+Do not promote a method merely because it is brain-like, surgical, embodied, or
+recent. Promote it only if it strengthens the single evaluated route from
+reader to recurrent thought to Qwen LM-mouth, and if disabling that route removes
+the gain.
+```
+
+## [2026-05-23] experiment + fix | Stage60 v60-v61 Qwen LM-mouth length and weak trace gate
+
+Humanistic diagnosis:
+
+```text
+v59 was too much correction at once. v60 kept the v58 one-body Qwen mouth and
+added only weak digit-ledger trace pressure, with no committed writeback.
+
+That helped the body speak again:
+  v59: 0/32
+  v60: 9/32
+
+But arithmetic/list still stayed at 0/16. The model can now use the grafted
+thought to say boolean/symbolic answers, but the numeric/list desk is still not
+being read as exact answer tokens.
+```
+
+v60 evidence:
+
+```text
+run:
+  /tmp/stage60_v60_lm_mouth_weak_digit_trace_no_writeback_train64_eval32_e5
+
+best eval:
+  9/32 = 0.28125 at epoch 5
+
+families:
+  arithmetic_chain = 0/8
+  boolean_logic = 5/8
+  list_transform = 0/8
+  symbolic_binding = 4/8
+
+causality:
+  residual_thought_graft_off = 0/32
+  typed_register_off = 0/32
+  digit_transition_executor_off = 9/32
+
+training-side:
+  typed_digit_register_trace_digit_accuracy = 0.6103
+  digit_transition_executor_trace_digit_accuracy = 0.6483
+```
+
+Then a data-contract bug was found:
+
+```text
+Qwen tokenizer token lengths on eval answers:
+  8017 -> 4 tokens
+  12032 -> 5 tokens
+  8008,8004 -> 9 tokens
+  8004,8016,8008 -> 14 tokens
+
+With EOS included:
+  max eval answer length = 15
+  eval rows over max_answer_tokens=8 = 8/32
+  eval rows over max_answer_tokens=16 = 0/32
+```
+
+v61 reran the same weak-trace/no-writeback path with
+`--qwen-lm-mouth-max-answer-tokens 16`:
+
+```text
+run:
+  /tmp/stage60_v61_lm_mouth_weak_digit_trace_maxtok16_train64_eval32_e5
+
+best eval:
+  7/32 = 0.21875 at epoch 1
+
+families:
+  arithmetic_chain = 0/8
+  boolean_logic = 7/8
+  list_transform = 0/8
+  symbolic_binding = 0/8
+
+causality:
+  residual_thought_graft_off = 0/32
+  typed_register_off = 0/32
+  digit_transition_executor_off = 3/32 at best epoch
+```
+
+Decision:
+
+```text
+Accept v60 as a partial recovery and a real one-body causal signal above v58.
+Reject v60/v61 as sufficient for numeric/list reasoning because arithmetic/list
+remain 0/16.
+
+Accept the max-answer-token validation fix as mandatory. A Qwen LM-mouth run
+must not silently truncate answer labels. Truncating list answers turns the eval
+into an impossible exam and creates false rejects.
+```
+
+Code guard:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added qwen_lm_answer_token_ids(...).
+  Added validate_qwen_lm_answer_target_lengths(...).
+  Main now validates train/eval target lengths whenever --qwen-lm-mouth-answerer
+  is active.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added test_qwen_lm_answer_target_validation_rejects_truncation.
+```
+
+Next architecture implication:
+
+```text
+The next high-probability numeric/list fix is not stronger trace and not longer
+output length. The missing piece is a token-position reading contract:
+
+  answer token position
+  -> attend to the correct ledger slot / separator slot
+  -> produce Qwen digit/comma/EOS logits
+
+It must remain inside the Qwen LM-mouth answer path and must have an off
+ablation. If numeric/list stays 0 when this path is enabled, the ledger itself
+does not contain the answer cleanly enough.
+```
+
+## [2026-05-23] implementation + experiment | Stage60 v62 Qwen LM-mouth ledger-token reader
+
+Humanistic preflight:
+
+```text
+v60-v61 showed that the Qwen mouth can speak from the thought path, but
+numeric/list rows still collapse into repeated digits. The missing thing was
+more like a reading routine than a stronger calculator:
+
+  answer position 0 asks the ledger which digit/comma/EOS belongs here;
+  answer position 1 asks again;
+  ...
+
+This must live inside the Qwen LM-mouth path. If it is a side renderer, it does
+not satisfy the one-body rule.
+```
+
+Code change:
+
+```text
+scripts/530_train_final_typed_register_answerer.py
+  Added QwenLmAnswerMouth ledger_token_reader.
+  Added digit/comma/EOS token-id mapping into Qwen vocab logits.
+  Added --qwen-lm-mouth-ledger-token-reader.
+  Added --qwen-lm-mouth-ledger-token-reader-scale.
+  Added --eval-qwen-lm-mouth-ledger-token-reader-off.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added test proving the ledger-token reader changes Qwen LM logits and that
+  ledger_token_reader_off removes the change.
+```
+
+Local v62:
+
+```text
+run:
+  /tmp/stage60_v62_lm_mouth_ledger_token_reader_train64_eval32_e5
+
+best eval:
+  8/32 = 0.25 at epoch 5
+
+families:
+  arithmetic_chain = 0/8
+  boolean_logic = 6/8
+  list_transform = 0/8
+  symbolic_binding = 2/8
+
+causality:
+  residual_thought_graft_off = 0/32
+  typed_register_off = 0/32
+  qwen_lm_mouth_ledger_token_reader_off = 8/32 at best epoch
+  digit_transition_executor_off = 8/32 at best epoch
+
+early sign:
+  epoch 1 ledger_token_reader_off = 1/32 while full = 6/32, so the new path can
+  affect the answer path.
+```
+
+Observed failure:
+
+```text
+8017 -> "22222"
+12032 -> "22222222222222"
+8008,8004 -> "2222222222222222"
+8004,8016,8008 -> "2222222222222222"
+16051 -> "1111111111111111"
+```
+
+Decision:
+
+```text
+Reject v62 as a numeric/list breaker.
+
+Accept the implementation as an observability/causality scaffold: it proves we
+can insert a token-position ledger reader inside the Qwen LM-mouth and ablate
+it cleanly.
+
+Do not scale this exact v62 recipe yet. It learned a global digit bias, not a
+ledger-position copy policy.
+```
+
+Next implication:
+
+```text
+The bottleneck is now below the mouth:
+
+  the ledger-token reader can influence Qwen token logits,
+  but the digit ledger or its token alignment does not yet contain a clean
+  answer sequence.
+
+Before another training run, inspect whether digit_transition_executor logits
+can render the correct numeric/list answers under an oracle/exposure diagnostic.
+If oracle ledger rendering is also 0, the ledger is wrong. If oracle rendering
+works but Qwen mouth fails, the alignment/copy path is wrong.
+```
+
+## [2026-05-23] implementation | Stage61 splits DGX one-body from local Qwen transplant diagnosis
+
+Decision:
+
+```text
+Do not mix two different questions:
+
+1. Can the architecture learn when born as one body?
+2. Can the same working-memory organ be surgically connected to Qwen's
+   pretrained mouth?
+```
+
+Implemented:
+
+```text
+scripts/launch_stage61a_dgx_onebody_fromscratch.sh
+  DGX donorless one-body runner:
+    text reader -> recurrent thought -> LM-token speaker
+
+scripts/launch_stage61b_local_qwen_transplant_diagnostic.sh
+  Local Qwen transplant diagnostic:
+    Qwen LM-mouth path plus direct typed-ledger renderer probe
+
+scripts/530_train_final_typed_register_answerer.py
+  Added --eval-qwen-lm-mouth-direct-ledger-renderer.
+  Added qwen_lm_mouth_direct_ledger_renderer eval summary.
+  Fixed return_logits so direct ledger diagnostics can read
+  digit_transition_executor_digit_logits.
+
+tests/test_stage59_typed_value_trace_supervision.py
+  Added direct-ledger diagnostic test.
+```
+
+Local Stage61B:
+
+```text
+run:
+  /tmp/stage61b_local_qwen_transplant_directledger_e5
+
+best Qwen-mouth:
+  6/32 = 0.1875 at epoch 2
+
+direct ledger diagnostic:
+  0/32 overall
+  arithmetic_chain = 0/8
+  list_transform = 0/8
+```
+
+Plain-language interpretation:
+
+```text
+The current failure is not only that Qwen's mouth cannot read the new organ.
+The numeric/list working desk itself is not yet writing a directly renderable
+answer. More Qwen-mouth tuning is therefore low-probability until the ledger
+can render at least some arithmetic/list answers before Qwen speaks.
+```
+
+Next:
+
+```text
+DGX should run from-scratch one-body to test the architecture itself.
+Local should stay on Qwen transplant nerve/ledger diagnostics, not full-scale
+mouth tuning.
+```
+
+## [2026-05-23] implementation | Stage61C-D official GDN2-backed 3:1 local path
+
+Decision:
+
+```text
+Do not use Mamba3.
+Use the official NVlabs GatedDeltaNet-2 implementation in the delta positions
+of the Qwen3.5-style 3:1 backbone, then test learning efficiency locally before
+any large run.
+```
+
+Implemented:
+
+```text
+references/official/gated-deltanet-2
+  Cloned NVlabs/GatedDeltaNet-2 official implementation.
+
+references/official/flash-linear-attention-gdn2
+  Cloned the FLA source requested by the official GDN2 requirements.
+
+src/qtrm_mm/mixers.py
+  Added OfficialGatedDeltaNet2Mixer.
+  Loads lit_gpt/gdn2.py directly to avoid pulling Lightning training deps.
+  Prefers the GDN2-compatible FLA checkout.
+  Adds a narrow compatibility wrapper for minor GDN2/FLA keyword skew.
+
+scripts/launch_stage61c_local_official_gdn2_3to1.sh
+  Official GDN2-backed 3:1 local launcher:
+    official GDN2 -> official GDN2 -> official GDN2 -> attention
+    repeated inside the single recurrent thought -> LM-token speaker path.
+  No Qwen donor, no Mamba3, no side renderer, no external calculator.
+
+scripts/launch_stage61c_local_official_gdn2_d_only.sh
+  Deprecated compatibility wrapper to the 3:1 launcher. The old name was
+  misleading because this experiment is not attention-free GDN2-only.
+```
+
+Verification:
+
+```text
+Official GDN2 CUDA train/backward:
+  passed with d_model=64, n_heads=4, head_dim=16
+  b_proj and w_proj both receive gradients
+
+tests:
+  PYTHONPATH=src .venv/bin/python -m unittest tests.test_gated_delta_adapter
+  Ran 8 tests, OK
+
+clean smoke:
+  /tmp/stage61c_official_gdn2_donly_smoke_s10_clean/report.json
+
+backend_summary:
+  gdn2_mixers = 9
+  official_gdn2_mixers = 9
+  mamba3_mixers = 0
+  torch_delta_mixers = 0
+  all_gdn2_mixers_official = true
+
+namefix smoke:
+  /tmp/stage61c_official_gdn2_3to1_namefix_smoke_20260523_091857/report.json
+  target_level = Stage61C-D official GDN2-backed 3:1 single-thought from scratch
+  accepted_decision = accepted_stage61c_official_gdn2_3to1
+  backend_summary:
+    official_gdn2_mixers = 9
+    mamba3_mixers = 0
+    torch_delta_mixers = 0
+
+Note:
+  This smoke used relaxed accept thresholds only to verify launcher/backend
+  wiring. It is not performance evidence.
+```
+
+Plain-language interpretation:
+
+```text
+This now tests the intended organ:
+  a single from-scratch model reads tokens,
+  edits its working memory with official GDN2 erase/write gates,
+  thinks recurrently,
+  and speaks through the same LM head.
+
+It is not yet an accuracy result. The 10-step smoke only proves the official
+backend is wired into the training path without Mamba3 or fallback.
+The next local run should measure learning slope before scaling.
+```
+
+## [2026-05-23] diagnosis | 10x HRM-Text efficiency claim gate
+
+Question:
+
+```text
+Does official GDN2 / GRAM / PTRM make the system more than 10x more
+training-efficient than an HRM-Text-like baseline?
+```
+
+Claim boundary:
+
+```text
+Do not claim broad HRM-Text pretraining efficiency from the small synthetic
+gate. HRM-Text is a 1B text LM pretrained on broad data; Stage61C is a local
+synthetic reasoning gate.
+
+The valid local claim is narrower:
+  on the same synthetic task/data/eval contract, does a candidate reach the
+  HRM-style proxy's target score in <= baseline_steps / 10?
+```
+
+Implemented:
+
+```text
+scripts/532_compare_learning_efficiency_claim.py
+
+The script compares report.json files only when their task/data contracts
+match. If the contracts differ, the comparison is invalid. If the candidate
+does not reach the baseline score by the 10x cutoff step, the claim is
+unproven rather than inferred.
+```
+
+Current evidence:
+
+```text
+baseline:
+  /tmp/stage61c_hrm_proxy_local_s400_20260523_090836/report.json
+  HRM-style dual-state proxy, 400 steps
+  full_generation_exact = 0.0390625
+  full_minus_think0 = 0.0078125
+
+candidate:
+  /tmp/stage61c_official_gdn2_d_only_20260523_090039/report.json
+  official GDN2-backed 3:1, no Mamba3, no fallback, 400 steps
+  full_generation_exact = 0.0859375
+  full_minus_think0 = 0.0625
+```
+
+Gate output:
+
+```text
+/tmp/stage61c_efficiency_claim_gdn2_vs_hrm_proxy.json
+
+verdict = unproven
+final_accuracy_ratio = 2.2
+depth_gain_ratio = 8.0
+candidate_step_to_baseline_final_exact = 200
+10x cutoff = 40 steps
+```
+
+Plain-language interpretation:
+
+```text
+The official GDN2-backed 3:1 student is learning better than the HRM proxy on this
+small exam, especially in "thinking helps" signal. But it has not proved 10x
+training efficiency. It reached the HRM proxy's final score at step 200, not
+by step 40.
+
+GRAM/PTRM cannot be counted in this claim yet. The Stage60 GRAM/PTRM path is
+implemented in the typed-register answerer, but it is not part of the Stage61C
+official GDN2-backed 3:1 normal answer path, and the old Stage60 reports use a
+different task contract. Count GRAM/PTRM only after a comparable report exists
+where the normal answer path uses GRAM/PTRM-generated candidates.
+```
+
+Next valid gate:
+
+```text
+Run three comparable reports under one task contract:
+  1. HRM proxy
+  2. official GDN2-backed 3:1
+  3. official GDN2 + GRAM/PTRM candidate generation and tournament
+
+Promote the 10x efficiency claim only if:
+  candidate_step_to_HRM_final_exact <= HRM_steps / 10
+  generated_candidate_oracle_coverage rises above zero
+  GRAM/PTRM-off ablations destroy the gain
+```
+
+## [2026-05-23] experiment | Stage61C-D attention-free GDN2 control
+
+Question:
+
+```text
+Is pure GDN2-only better than the official GDN2-backed 3:1 architecture?
+```
+
+Plain-language preflight:
+
+```text
+3:1 means:
+  edit working memory three times, then re-read the source once with attention.
+
+Attention-free GDN2 means:
+  keep editing working memory without the periodic source re-read.
+
+If the task mainly needs stable internal state, attention-free could win.
+If the task needs repeated grounding in the prompt/source tokens, 3:1 should win.
+```
+
+Implementation:
+
+```text
+scripts/launch_stage61c_local_official_gdn2_attention_free.sh
+
+Same local synthetic contract as Stage61C-D, but:
+  --backbone qtrm_hybrid_3to1
+  --encode-backbone qtrm_hybrid_3to1
+  --think-backbone qtrm_hybrid_3to1
+  --decode-backbone qtrm_hybrid_3to1
+  --hybrid-layers 4
+  --attn-every 999
+  --delta-backend official_gated_delta2
+
+This creates a capacity-matched attention-free stack:
+  official GDN2 -> official GDN2 -> official GDN2 -> official GDN2
+per reader/thought/speaker stage.
+```
+
+Smoke:
+
+```text
+/tmp/stage61c_official_gdn2_attention_free_smoke_20260523_092153/report.json
+backend_summary:
+  official_gdn2_mixers = 12
+  mamba3_mixers = 0
+  torch_delta_mixers = 0
+```
+
+400-step result:
+
+```text
+/tmp/stage61c_official_gdn2_attention_free_s400_20260523_092242/report.json
+
+attention-free GDN2:
+  full_generation_exact = 0.0390625
+  think0_generation_exact = 0.0234375
+  full_minus_think0 = 0.015625
+  min_family_generation_exact = 0.0
+  accepted = false
+
+prior official GDN2-backed 3:1:
+  /tmp/stage61c_official_gdn2_d_only_20260523_090039/report.json
+  full_generation_exact = 0.0859375
+  think0_generation_exact = 0.0234375
+  full_minus_think0 = 0.0625
+  min_family_generation_exact = 0.046511627906976744
+  accepted = false
+
+HRM proxy:
+  /tmp/stage61c_hrm_proxy_local_s400_20260523_090836/report.json
+  full_generation_exact = 0.0390625
+  full_minus_think0 = 0.0078125
+```
+
+Decision:
+
+```text
+Do not promote attention-free GDN2-only.
+Current evidence favors official GDN2-backed 3:1 over attention-free GDN2-only.
+The 3:1 attention re-read appears useful; removing it collapses performance back
+to HRM-proxy level on this local synthetic contract.
+```
+
+Human interpretation:
+
+```text
+The model is not helped by only making the working-memory editor stronger.
+It still needs a periodic "look back at the question" step. Otherwise it edits a
+state that becomes internally smooth but weakly grounded in the source.
+```
+
+## [2026-05-23] correction | Stage61D answer-space ranking is not true GRAM/PTRM
+
+Question:
+
+```text
+Did the latest Stage61D run fail because we did not properly implement or
+reference GRAM/PTRM?
+```
+
+Answer:
+
+```text
+Yes, for the Stage61D normal-text path. The answer-space ranking experiment was
+not a faithful GRAM/PTRM implementation. It was only a PTRM-like verifier
+diagnostic over an enumerated modulo-32 answer set.
+```
+
+Evidence:
+
+```text
+Official GRAM source status:
+  arXiv:2605.19376 and the project page define GRAM as stochastic latent
+  trajectories with parallel trajectory sampling and LPRM selection.
+  The project page currently says Code (coming soon), so no official code has
+  been cloned or ported into this repo yet.
+
+Stage61D answer-space path:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+    answer_space_ranking_loss(...)
+    answer_space_argmax_metrics(...)
+
+  This enumerates all modulo-32 answer strings and scores them through the LM
+  path. It does not sample stochastic latent trajectories, does not train a
+  variational posterior/prior, does not run K sampled paths, and does not use an
+  LPRM to select among sampled reasoning trajectories.
+
+Stage60 typed-register path:
+  scripts/530_train_final_typed_register_answerer.py is closer to the intended
+  PTRM/GRAM shape:
+    Qwen reader -> QTRM/GRAM thought state -> learned working registers
+    -> learned candidate table -> learned selector -> selected answer string
+
+  It has generated ledger candidates and pairwise_tournament_scores(...), but
+  the current Stage60 evidence rejected numeric/list generalization because the
+  generated correct arithmetic/list candidates did not appear.
+```
+
+Run evidence:
+
+```text
+/tmp/stage61d_official_gdn2_3to1_ptrm_answer_space_s400_20260523_092745/report.json
+
+free generation:
+  full_generation_exact = 0.0859375
+
+answer-space argmax at think4:
+  answer_space_argmax_exact = 0.0859375
+  answer_space_gold_mean_rank = 13.3125
+  answer_space_gold_top3 = 0.1796875
+  answer_space_gold_top5 = 0.3125
+
+Interpretation:
+  The model learned a weak scoring preference, but no decisive verifier jump.
+  Because the candidates are enumerated by the evaluator, not generated by the
+  model's stochastic thought process, this cannot be called true GRAM/PTRM.
+```
+
+Decision:
+
+```text
+Do not claim Stage61D answer-space ranking as GRAM/PTRM.
+Keep official GDN2-backed 3:1 as the body, but the next real GRAM/PTRM work
+must add:
+
+  1. stochastic latent/procedure trajectory sampling inside the thought path;
+  2. K>1 inference-time sampled trajectories;
+  3. candidate answers generated from those trajectories, not enumerated by
+     evaluator oracle;
+  4. LPRM/PTRM selection over generated candidates;
+  5. GRAM/PTRM-off ablations that destroy the gain.
+```
+
+## [2026-05-23] naming + scaffold | PV-GRAM for GRAM/PTRM mixture
+
+Name:
+
+```text
+PV-GRAM = Path-Verified GRAM
+QTRM-PVGRAM = QTRM body plus PV-GRAM thought/search path
+GDN2-backed QTRM-PVGRAM = official GatedDeltaNet-2 3:1 body plus PV-GRAM
+```
+
+Official acronym boundary:
+
+```text
+PTRM = Probabilistic Tiny Recursive Model.
+LPRM = Latent Process Reward Model.
+
+Do not expand LPRM as "Latent Path Reward Model". "Path-Verified" is only our
+own PV-GRAM naming choice for the combined GRAM/PTRM-style architecture.
+```
+
+Plain-language meaning:
+
+```text
+GRAM imagines several internal thought paths.
+PTRM/LPRM checks those paths and chooses which one gets to speak.
+
+So the architecture is not just "a recurrent core" and not just "a verifier".
+It is a path-generating thinker plus a path-selecting checker, tied to the
+normal answer path.
+```
+
+Current code state:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py now has a minimal
+GRAM trajectory-search scaffold:
+
+  generate_answer_gram_trajectory_search(...)
+    -> sample K forward_with_runtime(..., return_state_trace=True) paths
+    -> read final core_state_trace_h
+    -> score states with model.gram_lprm_scores, model.gram_lprm_head, or a
+       fallback state-norm diagnostic
+    -> choose the selected trajectory's generated token ids
+
+New flags:
+  --eval-gram-trajectory-search
+  --gram-trajectory-count
+  --gram-stochastic-noise-std
+  --gram-lprm-loss-weight
+```
+
+Important limit:
+
+```text
+This is not yet full faithful GRAM.
+It does not yet train a variational prior/posterior ELBO, and
+--gram-lprm-loss-weight is only reserved for the next training integration.
+Until trained LPRM/PTRM loss and GRAM-off ablations show a real gain, call this
+Stage61E PV-GRAM scaffold, not a final PV-GRAM result.
+```
+
+Regression tests:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_qtrm_native_mixed_text_reasoning_probe.QTRMNativeMixedTextReasoningProbeTests.test_evaluate_skips_gram_trajectory_search_for_think0_baseline \
+  tests.test_qtrm_native_mixed_text_reasoning_probe.QTRMNativeMixedTextReasoningProbeTests.test_gram_trajectory_search_selects_lprm_scored_sample \
+  tests.test_qtrm_native_mixed_text_reasoning_probe.QTRMNativeMixedTextReasoningProbeTests.test_parser_accepts_gram_trajectory_search_flags
+
+Result: OK
+
+PYTHONPATH=src .venv/bin/python -m py_compile \
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+
+Result: OK
+
+git diff --check -- \
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+
+Result: OK
+```
+
+Smoke evidence:
+
+```text
+/tmp/stage61e_pvgram_scaffold_smoke_20260523_094149/report.json
+
+This was a 10-step wiring smoke only. It used zeroed acceptance thresholds, so
+"accepted=true" in that report is not a research acceptance signal.
+
+Backend:
+  official_gdn2_mixers = 9
+  mamba3_mixers = 0
+  torch_delta_mixers = 0
+
+PV-GRAM telemetry:
+  think0:
+    gram_trajectory_search = absent
+
+  think1:
+    trajectory_count = 3
+    selected_nonzero_fraction = 0.0
+    mean_trajectory_diversity = 1.3659397612997282e-08
+
+  think4:
+    trajectory_count = 3
+    selected_nonzero_fraction = 0.1875
+    mean_trajectory_diversity = 0.12008182425051905
+    mean_lprm_score_gap = 0.00011275336146354675
+```
+
+Decision:
+
+```text
+Use "PV-GRAM" as the GRAM/PTRM mixture name.
+Keep the body name explicit when needed: official GDN2-backed QTRM-PVGRAM.
+
+The next meaningful implementation step is not another side verifier or
+answer-space enumerator. It is trained LPRM/PTRM loss over sampled thought
+trajectories, followed by K-scaling and GRAM/PTRM-off ablations.
+```
+
+## [2026-05-23] implementation | Stage61E PV-GRAM LPRM training hook
+
+Human-theory boundary:
+
+```text
+HRM-Text is the one-body baseline:
+  reader -> recurrent thought -> speaker
+
+QTRM-PVGRAM is intended to be a strict upper structure:
+  reader -> recurrent thought -> sampled thought paths -> LPRM/PTRM selection
+  -> same speaker
+
+Therefore, if implemented correctly, QTRM-PVGRAM should theoretically dominate
+HRM-Text. But this is only true if K=1/search-off reduces to the HRM-like path
+and K>1 plus LPRM selection adds real candidate-selection gain.
+```
+
+Change:
+
+```text
+Added actual LPRM training support to
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py.
+
+New function:
+  gram_lprm_generated_trajectory_loss(...)
+
+It trains a gram_lprm_head on generated trajectories, not teacher-forced answer
+states:
+  prompt -> generate K answers through forward_with_runtime
+  -> read final core_state_trace_h for each trajectory
+  -> target = whether the generated answer exactly matches gold
+  -> BCEWithLogits over LPRM scores
+
+New flags:
+  --gram-lprm-max-cases
+  --gram-lprm-every
+```
+
+Why this matters:
+
+```text
+Before this hook, PV-GRAM could sample paths and score them, but the checker was
+not being taught. That was like asking someone to choose the best solution
+without ever training their sense of what a good solution looks like.
+
+Now the checker receives a real process-reward learning signal over generated
+thought paths.
+```
+
+Verification:
+
+```text
+Unit tests:
+  test_gram_lprm_generated_trajectory_loss_trains_process_reward_head
+  test_parser_accepts_gram_trajectory_search_flags
+  test_gram_trajectory_search_selects_lprm_scored_sample
+  test_evaluate_skips_gram_trajectory_search_for_think0_baseline
+
+Result:
+  OK
+
+py_compile:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+
+Result:
+  OK
+
+git diff --check:
+  scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  tests/test_qtrm_native_mixed_text_reasoning_probe.py
+  docs/wiki/log.md
+
+Result:
+  OK
+```
+
+Smoke:
+
+```text
+/tmp/stage61e_pvgram_lprm_smoke_20260523_095324/report.json
+
+Command used official GDN2-backed 3:1 with:
+  --eval-gram-trajectory-search
+  --gram-trajectory-count 2
+  --gram-stochastic-noise-std 0.1
+  --gram-lprm-loss-weight 0.2
+  --gram-lprm-max-cases 2
+
+Backend:
+  official_gdn2_mixers = 9
+  mamba3_mixers = 0
+  torch_delta_mixers = 0
+
+last_gram_lprm:
+  trajectory_count = 2
+  cases = 2
+  positive_fraction = 0.0
+  oracle_accuracy = 0.0
+  selected_accuracy = 0.0
+  mean_lprm_score_gap = 0.5510125905275345
+  loss = 0.6532717943191528
+```
+
+Interpretation:
+
+```text
+The LPRM training path is wired and learns a loss, but this tiny 6-step smoke
+had no positive generated trajectory. It is not a performance result.
+
+Next gate must run long enough for at least some positive generated candidates
+to appear. Without positive_fraction > 0 or oracle_accuracy > 0, LPRM cannot
+learn selection, only "everything is wrong".
+```
+
+## [2026-05-23] correction | Stage62A born-one-body is the main HRM-Text-like path
+
+Plain-language correction:
+
+```text
+Qwen pretrained transplant is not born-one-body. It is a skilled reader/speaker
+with a new thought organ attached later. That can work only if the new organ is
+inserted into the same LM-mouth answer path.
+
+HRM-Text-style born-one-body is structurally cleaner:
+  native tokens -> native reader -> recurrent thought/search -> same LM logits
+
+So the project default must keep a born-one-body run alive as the main reference
+path. Qwen-pretrained runs are useful, but they are transplant diagnostics or
+functional-one-body attempts, not the proof that the architecture was born as
+one body.
+```
+
+Operational bug found:
+
+```text
+The local Stage62A run initially did not stay alive because the background
+launch method used by the agent shell did not reliably detach the process. The
+model was not failing; the run was not actually running. Using setsid fixed the
+process lifetime.
+```
+
+Current born-one-body run:
+
+```text
+OUT_DIR:
+  /tmp/stage62a_born_onebody_pvgram_gdn2_3to1_s1200_20260523_100734
+
+LOG:
+  /tmp/stage62a_born_onebody_pvgram_gdn2_3to1_s1200_20260523_100734.log
+
+Process:
+  bash PID 1166921
+  python PID 1166922
+
+Architecture:
+  official GDN2-backed 3:1 native backbone
+  PV-GRAM trajectory search K=4
+  LPRM loss weight 0.2
+  Qwen donor = none
+  side renderer = none
+```
+
+Early signal:
+
+```text
+step 1   loss = 7.5534
+step 25  loss = 2.9618
+step 100 loss = 2.4755
+step 200 loss = 2.3219
+step 275 loss = 2.3971
+step 300 loss = 2.3553
+
+PV-GRAM/LPRM:
+  step 275 oracle_accuracy = 0.375
+  step 275 selected_accuracy = 0.375
+```
+
+Interpretation:
+
+```text
+This is not yet accepted. The first real gate is the periodic eval at/after
+step 300 and then the final 1200-step report. But it is now a real born-one-
+body experiment, not a Qwen transplant and not a detached side calculator.
+```
+
+Repro launcher added:
+
+```text
+scripts/launch_stage62a_local_born_onebody_pvgram.sh
+
+Verification:
+  PYTHONPATH=src .venv/bin/python -m unittest tests.test_stage62_born_onebody_launcher
+
+Result:
+  OK
+```
+
+## [2026-05-23] result | Stage62A born-one-body local gate accepted
+
+Run:
+
+```text
+/tmp/stage62a_born_onebody_pvgram_gdn2_3to1_s1200_20260523_100734
+```
+
+Final decision:
+
+```text
+accepted = true
+decision = accepted_stage61c_official_gdn2_3to1
+```
+
+Note: the decision label came from the older Stage61C launcher used to start the
+run before the Stage62A launcher was added. The actual run was the Stage62A
+born-one-body PV-GRAM/GDN2 3:1 local gate described above.
+
+Metrics:
+
+```text
+full_generation_exact       = 0.16015625
+think0_generation_exact     = 0.01171875
+full_minus_think0           = 0.1484375
+full_minus_worst_ablation   = 0.11328125
+min_family_generation_exact = 0.047058823529411764
+state_reset_exact           = 0.02734375
+op_zero_exact               = 0.046875
+
+best_periodic step          = 900
+best_periodic exact         = 0.18359375
+best_periodic min_family    = 0.047058823529411764
+```
+
+Backend:
+
+```text
+official_gdn2_mixers = 9
+mamba3_mixers        = 0
+torch_delta_mixers   = 0
+```
+
+PV-GRAM/LPRM last mini-check:
+
+```text
+trajectory_count  = 4
+positive_fraction = 0.25
+oracle_accuracy   = 0.75
+selected_accuracy = 0.50
+```
+
+Human interpretation:
+
+```text
+The born-one-body route is alive. The recurrent thought path matters because
+think0 collapses and destructive ablations lose. This is not a broad
+intelligence result, but it breaks the "everything rejects" loop: the model now
+has a causal native thought path that can be improved.
+
+The next bottleneck is not "no candidate thoughts". K-sampling already finds
+good candidates in mini-checks. The bottleneck is stabilizing candidate quality
+and training LPRM to choose the good path consistently.
+```
+
+## [2026-05-23] launch | Stage62B born-one-body PV-GRAM selector stabilization
+
+First attempt:
+
+```text
+/tmp/stage62b_born_onebody_pvgram_selector_k8_20260523_101715.log
+```
+
+Rejected before training because `--gram-oracle-ce-*` flags exist in the Qwen
+state-transition trainer, not in the native born-one-body trainer. This was a
+runner/flag mismatch, not a model result.
+
+Corrected run:
+
+```text
+OUT_DIR:
+  /tmp/stage62b_born_onebody_pvgram_lprm_k8_20260523_101758
+
+LOG:
+  /tmp/stage62b_born_onebody_pvgram_lprm_k8_20260523_101758.log
+
+Resume:
+  /tmp/stage62a_born_onebody_pvgram_gdn2_3to1_s1200_20260523_100734/best_periodic.pt
+```
+
+Change from Stage62A:
+
+```text
+K trajectories:       4 -> 8
+LPRM weight:          0.2 -> 0.6
+LPRM cases/check:     8 -> 24
+LPRM update cadence:  every 25 steps -> every 5 steps
+```
+
+Early signal:
+
+```text
+step 1  loss = 3.1086
+step 25 loss = 2.1706
+
+step 25 PV-GRAM:
+  trajectory_count  = 8
+  positive_fraction = 0.2447916716337204
+  oracle_accuracy   = 0.5833333333333334
+  selected_accuracy = 0.2916666666666667
+```
+
+Interpretation:
+
+```text
+This supports the Stage62A diagnosis: correct candidate thoughts exist much
+more often than the selected answer succeeds. The high-probability next lever is
+selector/checker stabilization, not another architecture detour.
+```
+
+## [2026-05-23] fix | Stage62C ports the Stage58 top-k candidate exposure mechanism
+
+Question resolved:
+
+```text
+The old high score was real:
+  Stage58B Qwen pretrained VTE-K64-top3 selected synthetic OOD = 0.93359375
+
+But it was not the same path as native Stage62:
+  Stage58 = pretrained Qwen reader/speaker + many exposed answer candidates
+            + typed verifier selection
+  Stage62 = donorless born-one-body student learning reader/thought/speaker
+            from scratch
+```
+
+Root correction:
+
+```text
+The Stage58 big jump did not come from GRAM/PTRM names alone. It came from
+candidate exposure: the checker saw multiple plausible answers per latent path.
+
+Native PV-GRAM was still scoring one argmax answer per trajectory, so the LPRM
+could not rescue a correct non-argmax candidate. This made the born-one-body
+run look much weaker than the Qwen-pretrained VTE path.
+```
+
+Code update:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added --gram-candidate-topk-per-trajectory
+  added token-aware GRAM/LPRM scoring through token_embed
+  expanded GRAM trajectory search from K argmax paths to K * top-k candidates
+
+scripts/launch_stage62a_local_born_onebody_pvgram.sh
+  exposes GRAM_CANDIDATE_TOPK_PER_TRAJECTORY
+```
+
+Verification:
+
+```text
+unittest targeted GRAM/PV-GRAM tests: OK
+stage62 launcher tests: OK
+py_compile 337 script: OK
+git diff --check on touched files: OK
+```
+
+Launch:
+
+```text
+Stage62C local:
+  /tmp/stage62c_born_onebody_pvgram_topk3_k8_20260523_103124
+
+Resume:
+  /tmp/stage62a_born_onebody_pvgram_gdn2_3to1_s1200_20260523_100734/best_periodic.pt
+
+Setting:
+  GRAM trajectories = 8
+  candidate top-k per trajectory = 3
+  exposed candidates per case = up to 24
+  LPRM weight = 0.6
+```
+
+Concurrent signal:
+
+```text
+Stage62B old one-argmax-candidate path later recovered at step 400:
+  generation_exact = 0.23046875
+  min_family_generation_exact = 0.058823529411764705
+
+This is not the old 0.9336 Qwen-pretrained score, but it shows the native
+born-one-body path is alive. Stage62C tests whether Stage58-style candidate
+exposure can turn this into a larger jump.
+```
+
+Early Stage62C signal:
+
+```text
+step 25:
+  oracle_accuracy   = 0.75
+  selected_accuracy = 0.041666666666666664
+
+step 50:
+  oracle_accuracy   = 0.875
+  selected_accuracy = 0.16666666666666666
+```
+
+Plain-language read:
+
+```text
+The thinker is now placing the correct answer somewhere on the desk very often.
+The weak part is the judge selecting the right sheet from the pile.
+
+So the next high-probability correction is not another thinker/core rewrite.
+It is a groupwise candidate-selection loss: train LPRM to rank the correct
+candidate above the other candidates from the same question, not only label
+each candidate independently.
+```
+
+## [2026-05-23] implementation | Stage62D groupwise LPRM candidate ranking
+
+Code update:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added gram_groupwise_candidate_ranking_loss(scores, targets)
+  added --gram-lprm-ranking-loss-weight
+  gram_lprm_generated_trajectory_loss can now combine:
+    independent BCE candidate labels
+    + groupwise same-question candidate ranking
+
+scripts/launch_stage62a_local_born_onebody_pvgram.sh
+  exposes GRAM_LPRM_RANKING_WEIGHT
+```
+
+Plain-language reason:
+
+```text
+The previous LPRM objective graded each answer sheet in isolation. The measured
+failure is selection: the correct sheet is often on the desk, but the judge
+picks the wrong one.
+
+Stage62D therefore trains the judge on the real action:
+  among this question's candidates, push the correct candidate above the rest.
+```
+
+Verification:
+
+```text
+groupwise candidate ranking unit test: OK
+existing generated-trajectory LPRM test: OK
+GRAM parser flag test: OK
+Stage62 launcher test: OK
+py_compile 337 script: OK
+git diff --check touched files: OK
+```
+
+Launch:
+
+```text
+Stage62D local:
+  /tmp/stage62d_born_onebody_pvgram_topk3_group_rank_20260523_103858
+
+Setting:
+  GRAM trajectories = 8
+  candidate top-k per trajectory = 3
+  groupwise ranking weight = 1.0
+  LPRM BCE weight = 0.6
+```
+
+## [2026-05-23] implementation | Stage62E candidate-forward verifier
+
+Diagnosis after Stage62D:
+
+```text
+Stage62D improved the objective shape but still scored a candidate mostly from
+the generated latent state plus a small token-embedding hint.
+
+Stage58 selected accuracy was high because the verifier effectively judged
+completed candidates. Native PV-GRAM therefore needs a verifier path that
+re-reads prompt + candidate answer before assigning the LPRM score.
+```
+
+Code update:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added --gram-candidate-score-mode {generated_state,candidate_forward}
+
+generated_state:
+  score the sampled latent state, optionally with candidate token embedding.
+
+candidate_forward:
+  run forward_with_runtime(prompt + candidate) and score the final state.
+```
+
+Plain-language reason:
+
+```text
+Do not ask the judge to infer the whole answer from a thought fragment.
+Show the judge the finished answer sheet, then ask it to pick the best one.
+```
+
+Verification:
+
+```text
+candidate-forward trajectory selection unit test: OK
+top-k candidate selection test: OK
+GRAM parser flag test: OK
+generated-trajectory LPRM test: OK
+Stage62 launcher test: OK
+py_compile 337 script: OK
+```
+
+Launch:
+
+```text
+Stage62E local:
+  /tmp/stage62e_born_onebody_candidate_forward_verifier_20260523_105003
+
+Setting:
+  GRAM trajectories = 8
+  candidate top-k per trajectory = 3
+  candidate score mode = candidate_forward
+  groupwise ranking weight = 1.0
+  LPRM BCE weight = 0.6
+  LPRM max cases = 8
+```
+
+## [2026-05-23] diagnosis + implementation | Stage62F body-trained candidate verifier
+
+Stage62E smoke result:
+
+```text
+/tmp/stage62e_smoke_candidate_forward_verifier_20260523_105523.log
+
+step 50:
+  oracle_accuracy = 0.5625
+  selected_accuracy = 0.0625
+  periodic generation_exact = 0.046875
+
+step 100:
+  oracle_accuracy = 0.3125
+  selected_accuracy = 0.0
+```
+
+Plain-language diagnosis:
+
+```text
+The thinker can still place some correct answer sheets on the desk, but the
+judge cannot reliably choose them.
+
+The reason is not just weak ranking math. In Stage62E, candidate_forward showed
+the completed answer to the verifier, but the verifier loss mostly trained the
+small LPRM head. A pretrained Qwen body already has semantic candidate-reading
+features, so a small head can work there. A native born-one-body model does not.
+Its body must learn the act of judging prompt + candidate as part of the same
+answer path.
+```
+
+Code update:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added --gram-candidate-score-train-body
+
+When enabled with --gram-candidate-score-mode candidate_forward:
+  prompt + candidate is re-read with gradient enabled during LPRM training
+  candidate BCE/ranking loss can update the recurrent body, not only the head
+```
+
+Verification:
+
+```text
+candidate-forward scoring body-gradient unit test: OK
+full generated-trajectory candidate-forward body-gradient unit test: OK
+existing LPRM head-gradient unit test: OK
+GRAM parser flag test: OK
+Stage62 launcher test: OK
+py_compile 337 script: OK
+bash -n Stage62 launcher: OK
+git diff --check touched files: OK
+```
+
+Launch:
+
+```text
+Stage62F local fixed-bodygrad smoke:
+  /tmp/stage62f_bodygrad_20260523_110416
+
+Setting:
+  GRAM trajectories = 8
+  candidate top-k per trajectory = 3
+  candidate score mode = candidate_forward
+  candidate score train body = on
+  groupwise ranking weight = 1.0
+  LPRM BCE weight = 0.6
+  LPRM max cases = 8
+```
+
+## [2026-05-23] implementation | Stage63 Attractor PTRM selector
+
+Question:
+
+```text
+Didn't GRAM/PTRM already use candidates?
+```
+
+Answer:
+
+```text
+Yes. GRAM already makes multiple candidate trajectories. PTRM/LPRM already
+scores them.
+
+The missing part in the native one-body run is not candidate generation. It is
+candidate selection.
+```
+
+Prior-paper interpretation:
+
+```text
+GRAM's published selection mechanism is LPRM-style: sample multiple stochastic
+latent trajectories, then predict output correctness from the latent state and
+select the best trajectory.
+
+That works when the latent state itself carries reliable correctness evidence.
+In our native arithmetic/text run, oracle accuracy can be high while selected
+accuracy stays low. That means the correct answer sheet is on the desk, but the
+judge cannot identify it from the current state signal.
+```
+
+Plain-language fix:
+
+```text
+Old selector:
+  score each candidate mostly as an isolated answer sheet or latent fragment.
+
+Stage63 selector:
+  place all candidates on the same desk, repeatedly form a group-level
+  attractor, and refine candidate scores before choosing.
+```
+
+Code update:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added GramAttractorCandidateSelector
+  added --gram-candidate-selector {lprm_head,attractor}
+  added --gram-attractor-iterations
+  added --gram-attractor-step-scale
+
+scripts/launch_stage62a_local_born_onebody_pvgram.sh
+  added GRAM_CANDIDATE_SELECTOR
+  added GRAM_ATTRACTOR_ITERATIONS
+  added GRAM_ATTRACTOR_STEP_SCALE
+```
+
+Gate:
+
+```text
+Promote Stage63 only if selected/oracle ratio improves.
+
+Early local smoke threshold:
+  oracle_accuracy >= 0.50
+  selected_accuracy >= 0.15 by step 50 or 100
+
+Reject if:
+  oracle stays high but selected remains near 0.00-0.06
+```
+
+Verification:
+
+```text
+attractor selector group refinement test: OK
+attractor scorer routing test: OK
+attractor-only generated trajectory loss test: OK
+candidate-forward body-gradient tests: OK
+existing LPRM head-gradient test: OK
+GRAM parser flag test: OK
+Stage62 launcher test: OK
+py_compile 337 script: OK
+bash -n Stage62 launcher: OK
+git diff --check touched files: OK
+```
+
+## [2026-05-23] diagnosis | LeWM is not the immediate next architecture
+
+Question:
+
+```text
+Is this the point where we need LeWM?
+```
+
+Primary-source summary:
+
+```text
+LeWorldModel / LeWM is an end-to-end JEPA world model from pixels:
+
+  encoder: observation frame -> compact latent z_t
+  predictor: z_t + action -> predicted next latent z_{t+1}
+
+It trains with a latent prediction loss plus SIGReg, then plans by rolling out
+candidate action sequences in latent space and choosing the sequence closest to
+the goal latent.
+```
+
+Current local evidence:
+
+```text
+Stage63 Attractor-PTRM smoke:
+  /tmp/stage63_attractor_ptrm_20260523_111650
+
+step 50:
+  oracle_accuracy = 0.625
+  selected_accuracy = 0.0
+  positive_fraction = 0.0729
+
+Decision:
+  stopped early; candidate generation is not the bottleneck.
+```
+
+Plain-language conclusion:
+
+```text
+LeWM is a simulator: "if I do this action, what world state comes next?"
+
+Our current failure is a judge problem: "among answer sheets already on the
+desk, which one is correct?"
+
+So LeWM should not be pasted in wholesale right now. It solves a broader
+latent dynamics/planning problem, while our immediate bottleneck is candidate
+verification and selection.
+```
+
+Borrow later:
+
+```text
+1. SIGReg-like latent regularization if candidate-forward verifier states
+   collapse or drift.
+
+2. World-model-style rollout scoring if we move from final-answer candidates
+   to procedure/action candidates:
+
+     candidate procedure
+     -> predicted next working-memory states
+     -> compare predicted final state to target/check constraints
+
+That would be a LeWM-inspired verifier, not full LeWM.
+```
+
+Next high-probability direction:
+
+```text
+Train a candidate-conditioned trace verifier:
+
+  prompt + candidate answer
+  -> predict internal trace / final state consistency
+  -> score candidate by whether the predicted trace supports the candidate
+
+This is closer to actual 검산 than latent-only LPRM or groupwise score
+attraction.
+```
+
+## [2026-05-23] implementation | Stage64 LeWM-style Latent Consistency Verifier
+
+Question:
+
+```text
+LeWM을 통째로 붙이는 것이 아니라, 검산기에 빌려올 좋은 아이디어는 무엇인가?
+```
+
+Plain-language answer:
+
+```text
+Use LeWM's latent goal matching idea inside the verifier.
+
+Old LPRM/PTRM:
+  candidate state -> "looks correct" score
+
+Stage64 LCV:
+  prompt-only state -> predicted final latent
+  prompt + candidate state -> candidate latent
+  score = negative distance between the two
+
+This asks whether the candidate answer lands in the same internal world as the
+problem's predicted result.
+```
+
+Code update:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added GramLatentConsistencyVerifier
+  added --gram-candidate-selector latent_consistency
+  added --gram-lcv-latent-dim
+  added --gram-lcv-temperature
+
+The verifier works in both:
+  generate_answer_gram_trajectory_search
+  gram_lprm_generated_trajectory_loss
+```
+
+Launcher update:
+
+```text
+scripts/launch_stage62a_local_born_onebody_pvgram.sh
+  added GRAM_LCV_LATENT_DIM
+  added GRAM_LCV_TEMPERATURE
+```
+
+Gate:
+
+```text
+Promote only if selected begins to follow oracle:
+
+  oracle_accuracy >= 0.50
+  selected_accuracy >= 0.15 by step 50 or 100
+
+Reject if oracle stays high but selected remains 0.00-0.06.
+```
+
+Verification:
+
+```text
+LCV direct scoring test: OK
+LCV trajectory-search routing test: OK
+LCV generated-trajectory loss test: OK
+LCV parser flag test: OK
+Attractor/PTRM regression tests: OK
+Stage62 launcher test: OK
+py_compile 337 script: OK
+bash -n Stage62 launcher: OK
+git diff --check touched files: OK
+```
+
+Smoke result:
+
+```text
+run:
+  /tmp/stage64_lcv_20260523_112743
+
+decision:
+  rejected
+
+best periodic:
+  step = 100
+  generation_exact = 0.15625
+  min_family_generation_exact = 0.04545
+
+GRAM/LCV selection signal:
+  step 50:
+    oracle_accuracy = 0.375
+    selected_accuracy = 0.0
+
+  step 100:
+    oracle_accuracy = 0.75
+    selected_accuracy = 0.125
+
+  step 140:
+    oracle_accuracy = 0.25
+    selected_accuracy = 0.125
+```
+
+Interpretation:
+
+```text
+Reject as final because full_generation_exact and min-family gate remain weak.
+
+But unlike Stage63 Attractor-PTRM, LCV produced the first nonzero selected
+signal while oracle was high:
+
+  Stage63 step 50: oracle 0.625, selected 0.0
+  Stage64 step 100: oracle 0.75, selected 0.125
+
+So LeWM-style latent matching is not enough yet, but it is a better selector
+direction than isolated LPRM/attractor scoring.
+```
+
+Next implication:
+
+```text
+The verifier still needs explicit trace consistency or hard negatives.
+
+LCV currently only asks whether prompt-state and candidate-state land close in
+latent space. It does not force the candidate to explain each internal
+operation step. The next version should add trace-aware constraints:
+
+  prompt + candidate
+  -> predicted intermediate states
+  -> final candidate is accepted only if the trace supports it
+```
+
+### 2026-05-23 - Stage65 Trace-Aware Candidate Verifier
+
+Decision:
+
+```text
+Do not insert LeWM as a full backbone or memory system.
+Borrow only the verifier-side idea:
+  a candidate answer is good only if the model's internal predicted trace
+  supports the value that the candidate claims.
+```
+
+Plain-language contract:
+
+```text
+Old verifier:
+  "This answer looks plausible."
+
+Stage64 LCV:
+  "This answer lands near the prompt's expected latent."
+
+Stage65 trace verifier:
+  "If this answer says 03, then the candidate-conditioned thought state must
+   also predict a calculation trace whose final value is 03."
+```
+
+Why this is the right LeWM-style import:
+
+```text
+LeWM's useful idea here is not more storage.
+It is internal-world consistency:
+  predict what should happen inside,
+  compare the candidate against that predicted world,
+  reject candidates that do not match the internal rollout.
+```
+
+Code update:
+
+```text
+scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py
+  added case_value_trace()
+  added GramTraceConsistencyVerifier
+  added --gram-candidate-selector trace_consistency
+  added --gram-trace-max-len
+
+scripts/launch_stage62a_local_born_onebody_pvgram.sh
+  added GRAM_TRACE_MAX_LEN
+  forwards --gram-trace-max-len
+```
+
+Falsifiable gate:
+
+```text
+Promote:
+  oracle_accuracy remains >= 0.50
+  selected_accuracy rises above Stage64's 0.125 early signal
+  trace_loss falls without full_generation_exact collapse
+
+Reject:
+  oracle remains high but selected stays near 0.00-0.06
+  or trace_loss falls while generation_exact/min-family exact collapses
+```
+
+Verification:
+
+```text
+case_value_trace family-order test: OK
+trace verifier direct scoring test: OK
+trace verifier trajectory-search routing test: OK
+trace verifier generated-trajectory loss gradient test: OK
+parser flag tests: OK
+Stage62 launcher tests: OK
+full qtrm native mixed text probe unittest file: 156 tests OK
+py_compile 337 script: OK
+bash -n Stage62 launcher: OK
+git diff --check touched files: OK
+```
+
+Smoke results:
+
+```text
+from scratch:
+  out_dir = /tmp/stage65_trace_consistency_smoke_20260523
+  decision = rejected
+  best_generation_exact = 0.03125
+  last oracle_accuracy = 0.0
+  last selected_accuracy = 0.0
+
+from Stage62A best_periodic checkpoint:
+  out_dir = /tmp/stage65_trace_consistency_from62a_20260523
+  decision = rejected
+  best_generation_exact = 0.1015625
+  best min_family_generation_exact = 0.04651
+  last oracle_accuracy = 0.0
+  last selected_accuracy = 0.0
+  step 50 oracle_accuracy = 0.25, selected_accuracy = 0.0
+```
+
+Interpretation:
+
+```text
+Reject trace_consistency as a standalone selector.
+
+This does not invalidate trace verification. It shows that a newly attached
+trace head cannot immediately replace the old selector. When the candidate pool
+contains no correct answer, a verifier cannot select one; when the pool briefly
+contains positives, the trace head has not yet learned enough to rank them.
+
+Next high-probability adjustment:
+  use trace consistency as an auxiliary verifier term mixed with LCV/LPRM,
+  not as the only candidate selector.
+```
+
+### 2026-05-23 - HRM-Text Repo Inspection And Stage66 Contract
+
+Primary source inspected:
+
+```text
+repo: https://github.com/sapientinc/HRM-Text
+local clone: /tmp/hrm-text-inspect
+HEAD: 056c4ecad217933b9db33dfb22e30a2f511315ed
+paper link from repo: https://arxiv.org/pdf/2605.20613
+model link from repo: https://huggingface.co/sapientinc/HRM-Text-1B
+```
+
+What HRM-Text actually does:
+
+```text
+It is not a small reasoning adapter attached to a pretrained donor.
+It is a born-one-body text LM:
+  token reader -> hierarchical recurrent H/L body -> same token speaker.
+
+The repo trains this path with PrefixLM packing and answer-token CE through a
+normal LMHead. The HRM body has H_cycles=2 and L_cycles=3 by default, uses
+bp_steps warmup, and splits layers between H and L when half_layers=true.
+```
+
+Plain-language conclusion:
+
+```text
+HRM-Text's advantage is not "a verifier was attached."
+It is "the same body learned to read, think, and speak from birth."
+
+Therefore our high-probability route must be:
+  born-one-body PV-GRAM pretraining,
+  candidate/value search trained through the normal answer path,
+  trace consistency as auxiliary evidence,
+  no Qwen transplant as the main success claim.
+```
+
+Stage66 implementation contract:
+
+```text
+scripts/launch_stage66_local_hrmtext_pvgram_pretrain.sh
+  wraps Stage62 born-one-body launcher with HRM-Text-style defaults
+  sets TARGET_LEVEL=Stage66 HRM-Text-style born-one-body PV-GRAM pretraining
+  sets ACCEPTED_DECISION=accepted_stage66_hrmtext_pvgram_pretrain
+  uses GRAM_CANDIDATE_SELECTOR=lprm_head
+  uses GRAM_CANDIDATE_SCORE_MODE=candidate_forward
+  enables GRAM_CANDIDATE_SCORE_TRAIN_BODY=1
+  keeps GRAM_TRACE_CONSISTENCY_WEIGHT as auxiliary verifier evidence
+```
+
+10x learning-efficiency rule:
+
+```text
+Do not claim "10x more efficient than HRM-Text" by intuition.
+The claim requires a comparable baseline report and must pass:
+  scripts/532_compare_learning_efficiency_claim.py
+
+The comparison is conservative:
+  same task/data contract,
+  candidate reaches baseline final score,
+  and does so within baseline_steps / LEARNING_EFFICIENCY_FACTOR.
+```
+
+Verification:
+
+```text
+bash -n Stage62 launcher: OK
+bash -n Stage66 launcher: OK
+Stage66 compare without HRM_TEXT_BASELINE_REPORT: correctly exits 2
+Stage62/Stage66 launcher unittest: OK
+qtrm native mixed text probe + launcher tests: 158 tests OK
+```
+
+### 2026-05-23 - DGX Stage66 Official GDN2 Requirement
+
+Correction:
+
+```text
+Do not use torch_gated_delta as the promoted DGX Stage66 run.
+The Stage66 claim depends on the official GatedDeltaNet-2 backend.
+```
+
+DGX issue found:
+
+```text
+DGX GPU: NVIDIA GB10, compute capability (12, 1)
+Bundled Triton ptxas path:
+  /mnt/data4tb/ws_llm/.venv/lib/python3.12/site-packages/triton/backends/nvidia/bin/ptxas
+
+Failure:
+  ptxas fatal: Value 'sm_121a' is not defined for option 'gpu-name'
+
+Cause:
+  the bundled ptxas is too old for GB10 sm_121a.
+```
+
+Fix:
+
+```text
+Use DGX system CUDA 13.2 ptxas:
+  TRITON_PTXAS_PATH=/usr/local/cuda-13.2/bin/ptxas
+
+CUDA 13.2 ptxas supports:
+  sm_120, sm_120a, sm_121, sm_121a, sm_121f
+```
+
+Verification:
+
+```text
+DGX official GDN2 1-step preflight:
+  out_dir = /tmp/stage66_dgx_micro_preflight_official_gdn2
+  delta_backend = official_gated_delta2
+  strict_backends = true
+  official_gdn2_mixers = 9
+  torch_delta_mixers = 0
+  GRAM LPRM path executed with candidate_score_train_body = 1
+```
+
+Active DGX run:
+
+```text
+PID = 18618
+OUT_DIR = local_eval/stage66_hrmtext_pvgram_dgx_official_gdn2_20260523_122106
+LOG = /tmp/stage66_hrmtext_pvgram_dgx_official_gdn2_20260523_122106.log
+backend = official_gated_delta2
+strict_backends = 1
+TRITON_PTXAS_PATH = /usr/local/cuda-13.2/bin/ptxas
+```
+
+### 2026-05-23 - HRM-Text Data Contract Clarification
+
+User-facing correction:
+
+```text
+We have the HRM-Text and data_io code/reference repos, not the full HRM-Text
+pretraining dataset.
+```
+
+Current local evidence:
+
+```text
+references/official/hrm-text      = code/configs only
+references/official/data_io       = data pipeline code, tokenizer, cleaners
+/tmp/hrm-text-inspect             = 1.6M code clone
+
+Missing for true HRM-Text data parity:
+  cleaned data/ or data_clustered/ files
+  tokenized data_tokenized_* directories
+  sampled PrefixLM output with tokens.npy, epoch_N/*.npy, metadata.json
+```
+
+Therefore Stage66's current official-GDN2 run is not an HRM-Text dataset
+reproduction. It is a born-one-body synthetic text-reasoning gate:
+
+```text
+families = modchain, revchain, checksum
+program_len = 4
+modulus = 32
+normal answer path = token reader -> recurrent 3:1 body -> PV-GRAM/PTRM
+candidate/value path -> same LM-token speaker
+```
+
+Plain-language rule:
+
+```text
+HRM-Text gives the one-body training standard and data discipline.
+Stage66 currently tests whether our one-body PV-GRAM architecture can learn a
+small reasoning school exam. It cannot support a "same dataset as HRM-Text" or
+"10x more efficient than HRM-Text" claim until we run a Data-IO-compatible text
+pretraining/healing subset and compare against a matched baseline report.
+```
+
+LeWM status:
+
+```text
+LeWM was not rejected because it could not learn anything.
+It learned self-latent transition prediction well, but answer accuracy did not
+improve. Until LeWM predicts a semantically anchored state that is causal for
+the normal answer path, it stays probe-only rather than canonical.
+```
+
+### 2026-05-23 - HRM-Text Cleaned Dataset Location Correction
+
+Correction to the previous data-contract note:
+
+```text
+The HRM-Text/data_io code references are not the only local artifacts.
+The cleaned HRM-Text dataset was downloaded to persistent disks, not only /tmp.
+```
+
+Current evidence:
+
+```text
+Local partial cleaned dataset:
+  /mnt/sdc1/datasets/hrm-text-data-io-cleaned-20260515
+  size observed: 40G
+  status: partial/incomplete full download, but small JSONL sources are present
+  incomplete download markers: 32
+
+Local cache/logs:
+  /mnt/sdc1/huggingface_hrm_cache/hub/datasets--sapientinc--HRM-Text-data-io-cleaned-20260515
+  /mnt/sdc1/qtrm_download_logs/hrm_text_cleaned_local_sdc1.log
+
+DGX near-full cleaned dataset:
+  /mnt/data4tb/datasets/hrm-text-data-io-cleaned-20260515
+  size observed: 320G
+  status: near-full cleaned-data mirror
+  incomplete download markers: 4
+
+DGX cache:
+  /mnt/data4tb/cache/huggingface/hub/datasets--sapientinc--HRM-Text-data-io-cleaned-20260515
+```
+
+Important distinction:
+
+```text
+These are cleaned instruction/response files:
+  data/*.jsonl
+  data_clustered/**/*.parquet
+
+They are not yet the final HRM-Text PrefixLM sampled training tensors:
+  tokens.npy
+  epoch_N/inst_start.npy
+  epoch_N/resp_start.npy
+  metadata.json
+```
+
+Operational rule:
+
+```text
+Do not use /tmp as the authoritative HRM-Text dataset path.
+Use the persistent local path for small local healing/parity runs:
+  /mnt/sdc1/datasets/hrm-text-data-io-cleaned-20260515
+
+Use the persistent DGX path for larger HRM-Text/data_io runs:
+  /mnt/data4tb/datasets/hrm-text-data-io-cleaned-20260515
+```
+
+### 2026-05-23 - HRM-Text Data-IO Sampled Tensor Preflight
+
+Question:
+
+```text
+Can the available cleaned HRM-Text/data_io rows be converted into the actual
+PrefixLM sampled tensor layout HRM-Text expects?
+```
+
+Answer:
+
+```text
+Yes, locally, on a small cleaned subset.
+```
+
+Implementation added:
+
+```text
+scripts/533_prepare_hrm_text_dataio_sample.sh
+tests/test_hrm_text_dataio_prepare_launcher.py
+```
+
+Wrapper contract:
+
+```text
+cleaned instruction/response rows
+-> official data_io Rust tokenizer
+-> tokenized per-source tokens.npy and boundary arrays
+-> official sample_tokenized.py
+-> sampled PrefixLM tensors:
+     sampled/tokens.npy
+     sampled/epoch_0/inst_start.npy
+     sampled/epoch_0/inst_len.npy
+     sampled/epoch_0/resp_start.npy
+     sampled/epoch_0/resp_len.npy
+     sampled/metadata.json
+```
+
+Local preflight run:
+
+```text
+TS=stage66_dataio_preflight_20260523
+SOURCE_FILES="data/gsm8k_train.jsonl data/math_train.jsonl"
+EPOCHS=2
+CONTEXT_SIZE=1025
+bash scripts/533_prepare_hrm_text_dataio_sample.sh all
+```
+
+Output:
+
+```text
+/tmp/hrm_text_dataio_sample_stage66_dataio_preflight_20260523/sampled
+
+rows:
+  gsm8k_train: 7,473
+  math_train: 14,988
+  total: 22,461
+
+sampled tensors:
+  tokens.npy shape = (3,495,331,), dtype = int32
+  epoch_0/inst_start.npy shape = (22,461,), dtype = int64
+  epoch_0/resp_start.npy shape = (22,461,), dtype = int64
+  metadata.max_seq_len = 1025
+  metadata.total_length = 3,440,870
+```
+
+Verification:
+
+```text
+bash -n scripts/533_prepare_hrm_text_dataio_sample.sh: OK
+python -m unittest tests.test_hrm_text_dataio_prepare_launcher: OK
+git diff --check for wrapper/test/wiki: OK
+```
+
+Important next-step correction:
+
+```text
+Stage66 synthetic one-body PV-GRAM is still a useful architecture gate, but it
+does not consume sampled HRM-Text PrefixLM tensors yet. The next real HRM-Text
+parity step is to add or reuse a train path that reads the sampled tensor
+layout above, instead of continuing to tune the synthetic-only Stage66 runner.
+```
+
+Stage66 official-GDN2 synthetic result:
+
+```text
+DGX report:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/stage66_hrmtext_pvgram_dgx_official_gdn2_20260523_122106/report.json
+
+decision: rejected
+reject reason: family_exact_below_threshold
+
+backend:
+  official_gdn2_mixers = 9
+  torch_delta_mixers = 0
+  mamba3_mixers = 0
+
+best periodic eval:
+  step = 900
+  generation_exact = 0.17578125
+  min_family_generation_exact = 0.047058823529411764
+
+decisive metrics:
+  full_generation_exact = 0.1640625
+  think0_generation_exact = 0.01953125
+  full_minus_think0 = 0.14453125
+  full_minus_worst_ablation = 0.12109375
+  min_family_generation_exact = 0.0
+
+last GRAM/PTRM selection:
+  oracle_accuracy = 0.625
+  selected_accuracy = 0.375
+```
+
+Plain-language reading:
+
+```text
+The recurrent one-body path is not dead: disabling thought hurts substantially.
+But the student is still uneven; at least one family collapses to zero. That is
+not an accepted synthetic architecture result. The next higher-value move is
+to connect the now-verified HRM-Text sampled data path to a one-body train path,
+not to keep adding synthetic-only knobs.
+```
+
+### 2026-05-23 - HRM-Text PrefixLM One-Body Trainer Bridge
+
+Question:
+
+```text
+Can we actually measure whether our architecture learns more efficiently than
+HRM-Text?
+```
+
+Answer:
+
+```text
+Yes, but only after both models are compared on the same HRM-Text/Data-IO
+PrefixLM contract. Synthetic-only Stage66 reports cannot prove broad HRM-Text
+training efficiency.
+```
+
+Humanistic read:
+
+```text
+The model must read the same textbook and speak through the same mouth being
+trained. A side calculator or synthetic classroom cannot prove that it learns
+the HRM-Text curriculum faster.
+```
+
+Implementation added:
+
+```text
+scripts/534_train_native_prefixlm_dataio.py
+tests/test_hrm_text_prefixlm_dataio_trainer.py
+```
+
+Data contract:
+
+```text
+official cleaned rows
+-> official data_io sampled tensors
+-> native recurrent LM input_ids
+-> response-only PrefixLM labels
+-> same LM head/token speaker loss
+```
+
+Efficiency accounting:
+
+```text
+learning_efficiency_gain =
+  HRM_Text_tokens_to_target_score / Our_Model_tokens_to_same_target_score
+
+The trainer records:
+  train.tokens_seen
+  train.target_tokens_seen
+  loss_history[*].loss
+  dataset.contract = hrm_text_data_io_prefixlm
+```
+
+Mamba3 guard:
+
+```text
+Mamba3 is disabled for this trainer.
+The default architecture is:
+  backbone = trm_qwen35_3to1
+  delta_backend = official_gated_delta2
+  think_structure = trm_dual_z
+
+The earlier default trm_dual_z_reversed_hybrid_3to1 was rejected because it
+instantiates Mamba3 internally even when the visible backbone name says
+qwen35_3to1.
+```
+
+Verification:
+
+```text
+python -m unittest tests.test_hrm_text_prefixlm_dataio_trainer: OK
+python -m unittest tests.test_hrm_text_prefixlm_dataio_trainer \
+  tests.test_hrm_text_dataio_prepare_launcher: OK
+
+dry-run loader:
+  sampled_data = /tmp/hrm_text_dataio_sample_stage66_dataio_preflight_20260523/sampled
+  rows = 32
+  vocab_size = 65536
+  seq_len = 128
+
+CPU smoke:
+  backbone = mha_etd
+  steps = 2
+  loss: 11.1015 -> 11.0963
+  tokens_seen = 252
+  target_tokens_seen = 10
+
+CUDA official-GDN2 smoke:
+  backbone = trm_qwen35_3to1
+  delta_backend = official_gated_delta2
+  think_structure = trm_dual_z
+  steps = 1
+  loss = 11.0718
+  tokens_seen = 90
+  target_tokens_seen = 9
+
+Local official-GDN2 micro-curve:
+  report = /tmp/stage67_prefixlm_dataio_gdn2_microcurve/report.json
+  backbone = trm_qwen35_3to1
+  delta_backend = official_gated_delta2
+  think_structure = trm_dual_z
+  Mamba3 = disabled
+  steps = 10
+  seq_len = 128
+  rows = 256
+  loss: 11.0900 -> 10.9806
+  tokens_seen = 1,385
+  target_tokens_seen = 179
+```
+
+Next gate:
+
+```text
+Run a longer local PrefixLM curve on the sampled HRM-Text subset, then compare
+tokens-to-loss against an HRM-Text-compatible baseline curve. Do not claim 10x
+efficiency until a same-contract baseline exists.
+```
+
+### 2026-05-23 - PrefixLM Efficiency Comparator And Heldout Curve
+
+Implementation added:
+
+```text
+scripts/535_compare_prefixlm_learning_efficiency.py
+tests/test_prefixlm_learning_efficiency_compare.py
+```
+
+Comparator rule:
+
+```text
+Supports 10x only if:
+  1. baseline and candidate share the same PrefixLM contract;
+  2. both use the same metric source, preferring eval_loss_history;
+  3. candidate reaches baseline final eval loss within
+     baseline_tokens_seen / 10.
+```
+
+Plain-language rule:
+
+```text
+Same textbook, same exam, same scoring. If HRM-Text reaches eval loss L after
+N tokens, our model must reach eval loss <= L after at most N/10 tokens. Train
+loss alone is not accepted because it can mean memorizing the textbook.
+```
+
+Heldout local curve:
+
+```text
+report = /tmp/stage67_prefixlm_dataio_gdn2_evalcurve/report.json
+
+train:
+  loss: 11.0942 -> 10.4681
+  tokens_seen = 3,826
+  target_tokens_seen = 685
+
+eval epoch 1:
+  eval_loss: 11.0889 -> 10.5264
+  eval_tokens = 407
+  eval_target_tokens = 30
+
+model:
+  backbone = trm_qwen35_3to1
+  delta_backend = official_gated_delta2
+  think_structure = trm_dual_z
+  Mamba3 = disabled
+```
+
+Status:
+
+```text
+This proves the measurement path and a real heldout learning signal.
+It does not yet prove HRM-Text superiority, because the matching HRM-Text
+baseline curve has not been produced.
+```
+
+### 2026-05-23 - DGX PrefixLM Official-GDN2 Curve
+
+Question:
+
+```text
+Is DGX actually being used for the HRM-Text/Data-IO PrefixLM path?
+```
+
+Answer:
+
+```text
+Yes. DGX host `dgx` / `edgexpert-5b20` ran the native PrefixLM trainer with
+official_gated_delta2 and produced a heldout eval curve.
+```
+
+DGX setup notes:
+
+```text
+DGX path:
+  /mnt/data4tb/qtrm_multimodal_memoryos
+
+Synced:
+  scripts/533_prepare_hrm_text_dataio_sample.sh
+  scripts/534_train_native_prefixlm_dataio.py
+  scripts/535_compare_prefixlm_learning_efficiency.py
+  tests/test_hrm_text_dataio_prepare_launcher.py
+  tests/test_hrm_text_prefixlm_dataio_trainer.py
+  tests/test_prefixlm_learning_efficiency_compare.py
+  references/official/data_io
+
+DGX test command:
+  PYTHONDONTWRITEBYTECODE=1 /mnt/data4tb/venv_sglang_pr23000/bin/python \
+    -m unittest tests.test_prefixlm_learning_efficiency_compare \
+    tests.test_hrm_text_prefixlm_dataio_trainer \
+    tests.test_hrm_text_dataio_prepare_launcher
+
+Result:
+  12 tests passed
+```
+
+DGX blockers and fixes:
+
+```text
+1. DGX `.venv` did not have numpy.
+   Fix: use /mnt/data4tb/venv_sglang_pr23000.
+
+2. DGX repo had no references/official/data_io.
+   Fix: rsync local references/official/data_io to DGX.
+
+3. DGX is aarch64 and cannot run the x86 Rust tokenizer binary copied from
+   local. DGX also has no cargo.
+   Fix: use the already sampled local PrefixLM tensors and rsync them to DGX.
+   This keeps training on DGX while data preparation remains local.
+
+4. Official GDN2 Triton first failed with the bundled ptxas:
+   ptxas fatal: Value 'sm_121a' is not defined for option 'gpu-name'
+   Fix: set TRITON_PTXAS_PATH=/usr/local/cuda-13.2/bin/ptxas.
+```
+
+DGX run:
+
+```text
+remote report:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+    stage67_dgx_prefixlm_gdn2_evalcurve/report.json
+
+local copy:
+  /tmp/stage67_dgx_prefixlm_gdn2_evalcurve/report.json
+
+model:
+  backbone = trm_qwen35_3to1
+  delta_backend = official_gated_delta2
+  think_structure = trm_dual_z
+  d_model = 96
+  Mamba3 = disabled
+
+train:
+  steps = 80
+  tokens_seen = 21,656
+  target_tokens_seen = 3,539
+  loss: 11.1055 -> 7.1873
+
+eval epoch 1:
+  eval_loss: 11.0780 -> 7.5898
+```
+
+Comparator sanity check:
+
+```text
+Compared local short curve as baseline against the DGX curve:
+
+baseline local:
+  final eval_loss = 10.5264
+  tokens_seen = 3,826
+
+candidate DGX:
+  reaches eval_loss <= 10.5264 at 5,111 tokens
+  final eval_loss = 7.5898 at 21,656 tokens
+
+verdict:
+  unproven for 10x, because 5,111 > 382.6 token cutoff.
+```
+
+Plain-language reading:
+
+```text
+DGX is now in the loop and the larger official-GDN2 student is learning the
+HRM-Text/Data-IO textbook much more strongly than the tiny local smoke. But
+this is not a 10x-vs-HRM-Text claim yet. It is a proof that the DGX training
+path works and can generate the candidate side of the efficiency comparison.
+The missing piece remains a same-contract HRM-Text baseline curve.
+```
+
+## 2026-05-23 - Stage68 HRM-Text FA3 Blocker And SDPA One-Body Fallback
+
+Plain-language diagnosis:
+
+```text
+The HRM-Text "one body" route was not blocked by the idea anymore. It was
+blocked by the throat part: official HRM-Text expects flash_attn_interface from
+FlashAttention-3, but the available DGX GB10 could not execute the shipped
+Hopper kernels.
+
+Importing the part and actually speaking through it are different gates.
+FA3 imported after installation, but the CUDA op failed on GB10. Therefore the
+right fix is not another architecture detour. The right fix is to preserve the
+same HRM-Text reader -> recurrent thought -> LM speaker body and swap only the
+attention engine for a slower but semantically equivalent PyTorch SDPA fallback.
+```
+
+Evidence:
+
+```text
+Local RTX 4090:
+  flash_attn installed
+  flash_attn_interface missing before fallback
+
+DGX GB10:
+  flash_attn_3 minimal build succeeded
+  flash_attn_interface import succeeded
+  official HRM-Text models.layers and dataset_new imports succeeded
+
+DGX FA3 CUDA execution:
+  default sm_90a build:
+    no kernel image is available for execution on the device
+  patched sm_121a build:
+    wheel install succeeded
+    runtime failed at launch with invalid argument
+```
+
+Fix applied:
+
+```text
+references/official/hrm-text/models/flash_attention_prefixlm_v2.py
+  Added HRMTEXT_ATTENTION_BACKEND=sdpa/auto support.
+  Added a packed PrefixLM SDPA fallback:
+    prefix segment attends bidirectionally within prefix
+    response segment attends to prefix plus previous/current causal tokens
+    padding remains zeroed
+
+references/official/hrm-text/models/layers.py
+  Made flash_attn_with_kvcache optional.
+  Added a small SDPA KV-cache fallback for non-FA3 import paths.
+
+references/official/hrm-text/models/lm_head.py
+  Skips distributed all_reduce when world_size == 1, which is a mathematical
+  no-op and avoids local single-process smoke failures.
+```
+
+Verification:
+
+```text
+Local:
+  HRMTEXT_ATTENTION_BACKEND=sdpa .venv/bin/python -m unittest \
+    tests.test_hrm_text_attention_fallback
+  Result: 2 tests passed
+
+Local official model smoke:
+  V1Dataset -> HierarchicalReasoningModel -> LMHead -> loss -> backward
+  device: cpu
+  loss: 11.649248123168945
+  grad_ok: True
+
+DGX:
+  HRMTEXT_ATTENTION_BACKEND=sdpa python -m unittest \
+    tests.test_hrm_text_attention_fallback
+  Result: 2 tests passed
+
+DGX official model smoke:
+  V1Dataset -> HierarchicalReasoningModel -> LMHead -> loss -> backward
+  loss: 11.753145217895508
+  grad_ok: True
+```
+
+Next gate:
+
+```text
+Run a same-contract HRM-Text baseline curve with HRMTEXT_ATTENTION_BACKEND=sdpa,
+then compare it against the PV-GRAM/GDN2 candidate curve using the existing
+PrefixLM efficiency comparator. Do not claim 10x efficiency until both curves
+come from the same Data-IO PrefixLM contract and the comparator proves it.
+```
+
+## 2026-05-23 - Stage69 Official HRM-Text Baseline Curve
+
+Plain-language read:
+
+```text
+We finally measured the home-team HRM-Text student on the same textbook instead
+of guessing from architecture names. This matters because "our model is more
+efficient" is only meaningful when both students read the same examples and are
+graded by the same loss curve.
+```
+
+Implementation:
+
+```text
+scripts/536_train_hrm_text_baseline_prefixlm.py
+
+Path:
+  official V1Dataset
+    -> official HierarchicalReasoningModel
+    -> official LMHead
+    -> PrefixLM loss/backward/report
+
+Backend:
+  HRMTEXT_ATTENTION_BACKEND=sdpa
+
+Reason:
+  FlashAttention-3 imports on DGX GB10 but its CUDA kernels do not execute
+  correctly on the current torch/GB10 stack. SDPA keeps the same PrefixLM
+  attention meaning and lets the one-body HRM path train.
+```
+
+Verification:
+
+```text
+Local tests:
+  .venv/bin/python -m unittest \
+    tests.test_hrm_text_baseline_prefixlm_trainer \
+    tests.test_hrm_text_attention_fallback \
+    tests.test_hrm_text_prefixlm_dataio_trainer \
+    tests.test_prefixlm_learning_efficiency_compare
+
+Result:
+  15 tests passed
+
+DGX tests:
+  tests.test_hrm_text_baseline_prefixlm_trainer
+  tests.test_hrm_text_attention_fallback
+
+Result:
+  4 tests passed
+```
+
+DGX official HRM-Text baseline curve:
+
+```text
+report:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+    stage68_hrmtext_baseline_dgx_80/report.json
+
+settings:
+  hidden_size = 96
+  num_heads = 3
+  n_layers = 2
+  H_cycles = 1
+  L_cycles = 1
+  batch_max_length = 512
+  seq_len contract = 128
+  steps = 80
+
+train:
+  tokens_seen = 36,642
+  target_tokens_seen = 20,735
+
+eval loss:
+  11.6720 -> 9.5582
+```
+
+Comparison against current PV-GRAM/GDN2 candidate:
+
+```text
+baseline:
+  /tmp/stage68_hrmtext_baseline_dgx_80_report.json
+
+candidate:
+  /tmp/stage67_dgx_prefixlm_gdn2_evalcurve/report.json
+
+comparator:
+  /tmp/stage68_hrmtext_baseline80_vs_pvgram_gdn2_compare.json
+
+contract:
+  comparable = true
+  metric_source = eval_loss_history
+
+result:
+  baseline final eval_loss = 9.558235342087952 at 36,642 tokens
+  candidate reaches that loss at 15,994 tokens
+  10x cutoff would be 3,664.2 tokens
+  verdict = unproven
+```
+
+Decision:
+
+```text
+This is not a 10x learning-efficiency win.
+It is a real same-contract positive signal of about 2.29x token efficiency:
+
+  36,642 / 15,994 = 2.29
+
+Do not market it as HRM-Text-beating by 10x. Treat it as an accepted
+infrastructure and measurement milestone, and as a moderate positive signal
+that the PV-GRAM/GDN2 candidate learns the PrefixLM textbook faster than this
+small official HRM-Text baseline.
+```
+
+## 2026-05-23 - Stage70 Longer HRM-Text Baseline: 4.25x, Not 10x
+
+Plain-language read:
+
+```text
+The short 80-step baseline was like watching the first few pages of a textbook.
+It showed the candidate was ahead early, but it could not say how the race looks
+after HRM-Text warms up. The 400-step baseline answers that more honestly.
+```
+
+DGX run:
+
+```text
+report:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+    stage69_hrmtext_baseline_dgx_400/report.json
+
+settings:
+  official HRM-Text baseline
+  HRMTEXT_ATTENTION_BACKEND=sdpa
+  hidden_size = 96
+  num_heads = 3
+  n_layers = 2
+  H_cycles = 1
+  L_cycles = 1
+  batch_max_length = 512
+  seq_len contract = 128
+  steps = 400
+
+train:
+  tokens_seen = 180,715
+  target_tokens_seen = 96,982
+
+eval loss:
+  11.6720 -> 5.5811
+```
+
+Comparison:
+
+```text
+candidate:
+  /tmp/stage67_dgx_prefixlm_gdn2_evalcurve/report.json
+  final eval_loss = 7.5898 at 21,656 tokens
+
+baseline:
+  /tmp/stage69_hrmtext_baseline_dgx_400_report.json
+  reaches candidate final eval_loss at 92,036 tokens
+
+computed speedup at candidate final loss:
+  92,036 / 21,656 = 4.25x
+
+10x requirement:
+  would need baseline to require at least 216,560 tokens to reach 7.5898,
+  or candidate to reach the same threshold at <= 9,203.6 tokens.
+```
+
+Comparator report:
+
+```text
+/tmp/stage69_hrmtext_baseline400_vs_pvgram_gdn2_compare.json
+
+contract:
+  comparable = true
+  metric_source = eval_loss_history
+
+verdict:
+  unproven for 10x
+
+extra metric:
+  baseline_tokens_to_candidate_final_loss = 92,036
+  observed_candidate_speedup_at_candidate_final_loss = 4.2499
+```
+
+Decision:
+
+```text
+This is now a real positive result, but not the advertised leap:
+
+  Accepted: same-contract HRM-Text baseline infrastructure.
+  Accepted: PV-GRAM/GDN2 has a real early token-efficiency advantage.
+  Rejected: current evidence does not support a 10x HRM-Text efficiency claim.
+
+Research implication:
+  More measurement alone will not make 4.25x into 10x. To reach 10x, the next
+  architecture move must lower the candidate's early-token loss much faster,
+  especially before 10k tokens. The gap is now concrete rather than vague.
+```
+
+## 2026-05-23 - Stage70 strict row-fixed HRM-Text comparison
+
+Plain-language correction:
+
+```text
+The earlier 4.25x reading was too optimistic because the baseline and the
+candidate were not being examined on the exact same evaluation rows. That is
+like timing two students on the same textbook family but giving them different
+quiz pages. It can show a useful smell, but it is not a research claim.
+```
+
+Implementation correction:
+
+```text
+scripts/535_compare_prefixlm_learning_efficiency.py now rejects comparisons
+when eval row protocol, eval fingerprint, eval token count, or eval target-token
+count do not match.
+
+Both official HRM-Text and the native PV-GRAM/GDN2 candidate now support:
+  eval_protocol = row_fixed_v1
+  eval_fingerprint = 09cc4827344f6c047221f4fa56eef4b60af582d21b5076252d8b62bf180703de
+  eval_tokens = 8,327
+  eval_target_tokens = 1,119
+```
+
+DGX reports:
+
+```text
+candidate:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+    stage70_candidate_rowfixed_dgx_80/report.json
+
+official HRM-Text baseline:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+    stage70_hrmtext_baseline_rowfixed_dgx_400/report.json
+
+strict comparison:
+  /tmp/stage70_rowfixed_baseline400_vs_candidate80_compare.json
+```
+
+Result:
+
+```text
+candidate final eval_loss:
+  8.0132 at 21,656 tokens
+
+official HRM-Text baseline final eval_loss:
+  4.1751 at 180,715 tokens
+
+official HRM-Text baseline reaches candidate's final eval_loss:
+  at 55,043 tokens
+
+observed candidate speedup at candidate-final-loss threshold:
+  55,043 / 21,656 = 2.54x
+
+10x claim:
+  unproven
+
+strict verdict:
+  comparable = true
+  verdict = unproven
+  reason = candidate did not reach the baseline final loss in logged history
+```
+
+Decision:
+
+```text
+Accepted:
+  The two-model HRM-Text-vs-native comparison can now be run in the current DGX
+  environment. flash_attn_interface imports exist on DGX, but official HRM-Text
+  must use the SDPA fallback because FA3 kernels are not reliable on GB10.
+
+Accepted:
+  PV-GRAM/GDN2 has a real early learning-efficiency advantage on this tiny
+  Data-IO PrefixLM gate.
+
+Rejected:
+  The current evidence does not support 10x efficiency over official HRM-Text.
+
+Next implication:
+  More fair measurement is now possible. The next architecture step should be
+  judged by whether it moves the same row_fixed_v1 curve before 10k-20k tokens,
+  not by mismatched eval pages or only training loss.
+```
+
+## 2026-05-23 - Stage71 target-token-aware efficiency and wall-time estimate
+
+Plain-language correction:
+
+```text
+Total tokens are pages turned. Target tokens are graded answers attempted.
+For PrefixLM learning-efficiency, both numbers matter. A run can look slower
+by total pages but faster by graded answer attempts, or vice versa.
+```
+
+Comparator update:
+
+```text
+scripts/535_compare_prefixlm_learning_efficiency.py now reports both:
+  total-token efficiency
+  supervised target-token efficiency
+
+Verification:
+  .venv/bin/python -m unittest tests.test_prefixlm_learning_efficiency_compare
+  -> 7 tests OK
+```
+
+Strict row_fixed_v1 comparison:
+
+```text
+report:
+  /tmp/stage71_rowfixed_baseline400_vs_candidate80_targetaware_compare.json
+
+same eval:
+  eval_fingerprint = 09cc4827344f6c047221f4fa56eef4b60af582d21b5076252d8b62bf180703de
+  eval_tokens = 8,327
+  eval_target_tokens = 1,119
+
+candidate final eval_loss:
+  8.0132
+  tokens_seen = 21,656
+  target_tokens_seen = 3,539
+
+official HRM-Text reaches candidate final eval_loss:
+  tokens_seen = 55,043
+  target_tokens_seen = 30,652
+
+observed speedup at candidate-final-loss threshold:
+  total-token basis = 2.54x
+  target-token basis = 8.66x
+
+10x claim:
+  still unproven because the candidate did not reach the official HRM-Text
+  baseline final eval_loss of 4.1751 within the logged curve.
+```
+
+Current hardware wall-time timing:
+
+```text
+DGX GB10:
+  official tiny HRM-Text from-scratch timing run
+  80 steps, hidden_size=96, n_layers=2, batch_max_length=512
+  wall time = 5.61 seconds
+  tokens_seen = 36,642
+  target_tokens_seen = 20,735
+
+Local RTX 4090:
+  first attempt failed with CUDA OOM because llama-server was already using
+  20.83 GiB of VRAM.
+
+  The blocking llama-server process was stopped:
+    /mnt/sda1/llama-cpp-turboquant-cuda/build/bin/llama-server
+    Qwen3.6-27B-MTP-GGUF
+
+  after cleanup:
+    VRAM used = 1.18 GiB
+    remaining GPU process = Chrome GPU process, about 333 MiB
+
+  rerun of the same official tiny HRM-Text from-scratch timing:
+    80 steps, hidden_size=96, n_layers=2, batch_max_length=512
+    wall time = 5.39 seconds
+    tokens_seen = 36,642
+    target_tokens_seen = 20,735
+
+Current practical split:
+  DGX = actual from-scratch training and parallel A/B runs
+  local 4090 = also usable for tiny/small from-scratch gates after VRAM cleanup
+```
+
+Operational implication:
+
+```text
+For the current tiny Data-IO sampled gate, useful from-scratch curves are
+minute-scale on either DGX or the local RTX 4090. A 400-step official HRM-Text
+baseline is approximately 27-30 seconds at the measured 80-step timing scale,
+plus evaluation/logging noise.
+
+This timing does not prove full HRM-Text-scale pretraining cost. It proves only
+that the current local sampled Data-IO gate is cheap enough to iterate quickly
+on both local and DGX hardware.
+```
+
+## 2026-05-23 - Stage72 from-scratch one-body run observability and loss contract
+
+Plain-language state:
+
+```text
+Local and DGX are not running two different architectures.
+They are two independent seeds of the same born-one-body recurrent LM spine.
+
+The student is:
+  one reader/body -> recurrent thought -> same LM-token mouth
+
+not:
+  fluent pretrained reader + external side calculator
+```
+
+Current running architecture:
+
+```text
+trainer:
+  scripts/534_train_native_prefixlm_dataio.py
+
+model:
+  NativeQTRMETDLM
+
+shared architecture on local and DGX:
+  backbone = trm_qwen35_3to1
+  think_structure = trm_dual_z
+  delta_backend = official_gated_delta2
+  d_model = 384
+  n_heads = 6
+  n_kv_heads = 2
+  d_ff = 1024
+  train_think_steps = 2
+  seq_len = 128
+  batch_size = 4
+  loss_chunk_size = 128
+
+only intentional differences:
+  local seed = 7202
+  DGX seed = 7201
+  local data/checkpoint paths are local
+  DGX data/checkpoint paths are DGX-local
+```
+
+Operational state checked on 2026-05-23 15:06 KST:
+
+```text
+Local:
+  process = alive
+  latest seen step = 7350
+  latest seen eval_loss = 4.640839 at step 7000
+  checkpoint = /tmp/qtrm_eval/20260523_STAGE72_LOCAL_FROM_SCRATCH_82M/last.pt
+  TensorBoard = http://localhost:6006
+  Aim = http://localhost:43800
+
+DGX:
+  process = alive
+  latest seen step = 5500
+  latest seen eval_loss = 4.669890 at step 5500
+  checkpoint =
+    /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE72_DGX_FROM_SCRATCH_82M/last.pt
+  TensorBoard = http://dgx:6007 or forwarded port 6007
+  Aim = http://dgx:43802 or forwarded port 43802
+```
+
+Checkpoint/resume contract:
+
+```text
+scripts/534_train_native_prefixlm_dataio.py saves last.pt every
+--checkpoint-every steps.
+
+The checkpoint contains:
+  model_state_dict
+  optimizer_state_dict
+  step
+  tokens_seen
+  target_tokens_seen
+  train/eval loss histories
+  args
+  dataset summary
+  eval dataset summary
+  model summary
+
+This is enough to resume the same training run without restarting from scratch.
+```
+
+TensorBoard/Aim contract:
+
+```text
+The trainer now supports:
+  --tensorboard-dir
+  --aim-repo
+  --aim-experiment
+  --aim-run-name
+  --aim-description
+
+Logged scalars:
+  train/loss
+  train/tokens_seen
+  train/target_tokens_seen
+  eval/loss
+  eval/tokens
+  eval/target_tokens
+```
+
+Loss-function diagnosis:
+
+```text
+The current Stage72 loss is correct for the first from-scratch one-body LM
+birth stage.
+
+What it teaches:
+  read the instruction as context
+  speak the response tokens through the same LM mouth
+
+What it deliberately does not yet teach:
+  generate multiple thought candidates
+  score those candidates with a verifier/value model
+  reward a correct internal calculation path independently of final CE
+
+Therefore this is not yet the final GRAM/PTRM reward-function design. It is the
+base language-body loss needed before verifier/search rewards can be meaningful.
+```
+
+Technical loss mapping:
+
+```text
+PrefixLM data contract:
+  input_seq = instruction + response[:-1]
+  labels = ignore(instruction continuation) + response
+
+Default target_only=true means instruction tokens are context, not supervised
+answer tokens.
+
+Loss:
+  cross_entropy(logits, labels, ignore_index=-100)
+
+Memory-saving equivalent path:
+  compute hidden states
+  select only labels != -100
+  apply LM head and CE only on supervised target tokens in chunks
+
+This preserves the same PrefixLM objective while avoiding full-vocab logits for
+ungraded instruction/pad positions.
+```
+
+Research implication:
+
+```text
+Do not call Stage72 a completed raw-intelligence architecture yet.
+
+Accepted:
+  The one-body LM spine is now running from scratch with checkpoints and live
+  TensorBoard/Aim observability on both local and DGX.
+
+Not yet accepted:
+  General verifier reward
+  GRAM/PTRM candidate selection reward
+  metacognitive halt reward
+  source-bound working-memory manipulation reward
+
+Next high-probability move:
+  keep this base run alive, then add the smallest verifier/value-head objective
+  that scores the model's own generated candidate response or hidden trajectory.
+  The gain must disappear when verifier/value selection is ablated.
+```
+
+## 2026-05-23 - Stage73 raw-intelligence gate and token verifier wiring
+
+Plain-language correction:
+
+```text
+Stage72 is not a full raw-intelligence exam.
+
+It is the birth test for the one-body language/recurrent-thought spine:
+  reader -> recurrent thought -> LM-token mouth
+
+The full raw-intelligence exam needs separate evidence for:
+  language
+  reasoning
+  working memory
+  verifier judgment
+  OOD generalization
+  planning
+  metacognitive stop/retry/control
+```
+
+Code added:
+
+```text
+scripts/537_raw_intelligence_gate.py
+tests/test_raw_intelligence_gate.py
+```
+
+Purpose:
+
+```text
+Prevent a false promotion such as:
+  "PrefixLM loss is falling, therefore this is general raw intelligence."
+
+The gate emits claim_raw_intelligence=false unless the required axes have real
+metrics. It treats row-fixed eval loss as a language-body proxy and only a weak
+OOD proxy, not a reasoning or memory proof.
+```
+
+Current gate result:
+
+```text
+report:
+  /tmp/stage72_raw_intelligence_gate_report.json
+
+covered_or_wired_axes:
+  language_body
+  verifier_judgment
+
+weak_proxy_axes:
+  ood_generalization
+
+missing_axes:
+  reasoning
+  working_memory
+  planning
+  metacognitive_control
+
+claim_raw_intelligence:
+  false
+```
+
+Token verifier wiring:
+
+```text
+scripts/534_train_native_prefixlm_dataio.py now supports:
+  --token-verifier-loss-weight
+  --token-verifier-hidden-dim
+  --token-verifier-max-targets
+
+The verifier sees:
+  recurrent hidden state at a response-token position
+  candidate token embedding
+
+It learns:
+  positive = gold response token
+  negative = deterministic corrupted token
+
+Loss:
+  LM PrefixLM CE + weight * binary candidate-token verifier CE
+```
+
+문과적 의미:
+
+```text
+LM CE는 "입으로 정답 문장을 말하기" 훈련이다.
+Token verifier는 "이 후보 단어가 지금 문맥에서 맞는지 보는 눈"의 최소형이다.
+
+아직 최종 GRAM/PTRM 보상함수는 아니다. 하지만 나중에 GRAM/PTRM이 여러 후보
+토큰/궤적을 만들 때, 그 후보를 고르는 작은 검산 점수로 연결할 수 있다.
+```
+
+Smoke evidence:
+
+```text
+/tmp/stage72_token_verifier_smoke
+
+2-step CPU smoke:
+  token_verifier_loss logged
+  token_verifier_accuracy logged
+  token_verifier_state_dict saved in last.pt
+```
+
+Verification:
+
+```text
+.venv/bin/python -m unittest \
+  tests.test_raw_intelligence_gate \
+  tests.test_hrm_text_prefixlm_dataio_trainer \
+  tests.test_prefixlm_learning_efficiency_compare
+
+21 tests OK
+
+py_compile:
+  scripts/537_raw_intelligence_gate.py
+  scripts/534_train_native_prefixlm_dataio.py
+
+git diff --check:
+  Stage73 touched files OK
+```
+
+Next gate:
+
+```text
+The next real promotion is not "verifier loss exists."
+
+Promote only if:
+  verifier-selected candidate answers beat raw LM candidate answers
+  verifier-off ablation removes that exact gain
+  reasoning/memory tasks show task-level accuracy, not only token loss
+```
+
+## 2026-05-23 - Stage74 verifier-selected candidate gate
+
+Plain-language reason:
+
+```text
+검산기는 "있다"가 중요한 게 아니다.
+실제로 후보들 중 더 나은 답을 골라야 한다.
+
+입(LM top-1)이 고른 후보보다 눈(verifier-selected top-k)이 더 좋은 후보를
+골라야 verifier가 사고 선택에 들어왔다고 말할 수 있다.
+```
+
+Code added:
+
+```text
+scripts/538_eval_prefixlm_token_verifier_selection.py
+tests/test_prefixlm_token_verifier_selection.py
+```
+
+Gate:
+
+```text
+At response-token positions:
+  1. compute LM top-k token candidates
+  2. raw baseline = LM top-1
+  3. verifier selection = argmax verifier(hidden, candidate_token_embedding)
+  4. oracle top-k = whether the correct token is present anywhere in top-k
+
+Promote only if:
+  verifier_selected_accuracy > raw_lm_top1_accuracy by --min-verifier-gain
+```
+
+Smoke run:
+
+```text
+/tmp/stage73_token_verifier_selection_smoke.json
+
+checkpoint:
+  /tmp/stage72_token_verifier_smoke/last.pt
+
+result:
+  accepted = false
+  targets = 15
+  raw_lm_top1_accuracy = 0.0
+  oracle_topk_accuracy = 0.0
+  verifier_selected_accuracy = 0.0
+  verifier_gain = 0.0
+```
+
+Interpretation:
+
+```text
+This is not a bad reject. It proves the gate is conservative.
+The tiny 2-step smoke verifier exists and can be evaluated, but it does not
+improve candidate selection. Therefore it must not be promoted as a real
+verifier/reward module yet.
+```
+
+Updated raw-intelligence gate:
+
+```text
+/tmp/stage73_raw_intelligence_gate_report.json
+
+claim_raw_intelligence = false
+
+covered_or_wired_axes:
+  language_body
+  verifier_judgment
+
+weak_proxy_axes:
+  ood_generalization
+
+missing_axes:
+  reasoning
+  working_memory
+  planning
+  metacognitive_control
+
+verifier_judgment status:
+  selection_tested
+
+verifier evidence:
+  raw_lm_top1_accuracy = 0.0
+  verifier_selected_accuracy = 0.0
+  verifier_gain = 0.0
+```
+
+Next action:
+
+```text
+After Stage72 base spine reaches checkpoint completion, run a short verifier
+fine-tune from that checkpoint with --token-verifier-loss-weight enabled.
+Then rerun scripts/538_eval_prefixlm_token_verifier_selection.py.
+
+Only if verifier_gain > 0 and verifier-off removes the gain do we treat this as
+the first real "candidate judging eye" rather than just another side loss.
+```
+
+Verification:
+
+```text
+.venv/bin/python -m unittest \
+  tests.test_prefixlm_token_verifier_selection \
+  tests.test_raw_intelligence_gate \
+  tests.test_hrm_text_prefixlm_dataio_trainer \
+  tests.test_prefixlm_learning_efficiency_compare
+
+25 tests OK
+
+py_compile:
+  scripts/538_eval_prefixlm_token_verifier_selection.py
+  scripts/537_raw_intelligence_gate.py
+  scripts/534_train_native_prefixlm_dataio.py
+
+git diff --check:
+  Stage74 touched files OK
+```
+
+## 2026-05-23 - Stage75 local 82M verifier-only gate closes the 82M phase
+
+Plain-language result:
+
+```text
+82M is not the model we keep polishing for days.
+It is the small practice room used to answer one question:
+
+  "Does the mouth already contain the right answer somewhere in its candidates,
+   and can a small verifier eye pick it?"
+```
+
+Completed local 82M base run:
+
+```text
+checkpoint:
+  /tmp/qtrm_eval/20260523_STAGE72_LOCAL_FROM_SCRATCH_82M/last.pt
+
+steps:
+  20000
+
+tokens_seen:
+  5,316,180
+
+target_tokens_seen:
+  752,913
+
+final eval_loss:
+  4.593333
+```
+
+Base candidate coverage gate:
+
+```text
+/tmp/stage74_local82m_base_selection_gate.json
+
+targets:
+  1098
+
+raw_lm_top1_accuracy:
+  0.1166
+
+oracle_top8_accuracy:
+  0.4736
+
+verifier_present:
+  false
+```
+
+Interpretation:
+
+```text
+The mouth's first answer is weak, but the correct token is often inside the
+top-8 candidate shelf. This makes verifier selection worth testing, but not
+proven.
+```
+
+Verifier-only fine-tune:
+
+```text
+checkpoint:
+  /tmp/qtrm_eval/20260523_STAGE75_LOCAL82M_VERIFIER_ONLY/last.pt
+
+resume:
+  /tmp/qtrm_eval/20260523_STAGE72_LOCAL_FROM_SCRATCH_82M/last.pt
+
+steps:
+  20000 -> 20500
+
+flags:
+  --token-verifier-loss-weight 0.5
+  --token-verifier-hidden-dim 384
+  --token-verifier-max-targets 256
+  --token-verifier-freeze-model
+```
+
+Verifier selection gate after fine-tune:
+
+```text
+/tmp/stage75_local82m_verifier_selection_gate.json
+
+accepted:
+  false
+
+targets:
+  1098
+
+raw_lm_top1_accuracy:
+  0.1166
+
+oracle_top8_accuracy:
+  0.4736
+
+verifier_selected_accuracy:
+  0.1166
+
+verifier_gain:
+  0.0
+```
+
+Decision:
+
+```text
+Close the 82M phase.
+
+Do not spend days on 82M. It has served its purpose:
+  1. one-body from-scratch path trains and checkpoints correctly
+  2. top-k candidate shelf contains much more signal than top-1
+  3. the current tiny token verifier does not yet improve selection
+
+Next scale step:
+  use the 82M result as a gate, then move to 300M/1B architecture scaling
+  instead of continuing to tune 82M.
+```
+
+## 2026-05-23 - Stage92 DGX Training-Only Discipline
+
+DGX check:
+
+```text
+active process:
+  scripts/534_train_native_prefixlm_dataio_stage90.py
+
+run:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K
+
+latest observed:
+  step18000 evaluated, run still training
+  GPU utilization about 96%
+  last_model.pt refreshed at 2026-05-23 23:06, size about 3.5GB
+  run directory size about 8.0GB
+```
+
+Stage92 eval curve update:
+
+```text
+step14000 eval_loss=0.4745 target_tokens_seen=1053541
+step15000 eval_loss=0.4139 target_tokens_seen=1128351
+step16000 eval_loss=0.4467 target_tokens_seen=1203136
+step17000 eval_loss=0.4571 target_tokens_seen=1277310
+step18000 eval_loss=0.4156 target_tokens_seen=1353633
+nonfinite/fallback/unresolved counters remain 0
+```
+
+Decision:
+
+```text
+Keep DGX training-only while the run is active.
+Do not run long Direct/CoT generation gates on the DGX GPU during active
+training. Use built-in teacher-forced eval during training, then run generation
+gates only at a stage boundary/final checkpoint or after copying one selected
+checkpoint to local.
+
+Next action gate:
+  continue through the next built-in evals.
+  step18000 recovered near the step15000 best but did not beat it, so keep
+  training-only and use step19000/final boundary as the next decision point.
+  inspect instead of adding compute if two consecutive evals rise above 0.60
+  or any nonfinite/fallback/unresolved counter returns.
+```
+
+Plain-language version:
+
+```text
+DGX is the running track. Local is the exam desk.
+The model is still running cleanly; step18000 recovered from the step16000/17000
+bump and is not collapse.
+Do not stop the runner every kilometer for a long oral exam. If the next exams
+recover, let it run; if two exams go badly or the answer sheet breaks, stop for
+inspection.
+The pause after step18000 is a checkpoint-copy moment, not evidence that the
+student forgot how to answer.
+```
+
+## 2026-05-23 - Data Sufficiency Check
+
+Current conclusion:
+
+```text
+No new download is the first move.
+The existing HRM-Text cleaned dataset is already about 40GB, but Stage92 is
+training from a very small sampled PrefixLM shard of about 15MB /
+3.50M tokens.
+Full tokenized/sample outputs for the 40GB cleaned set are not present yet.
+DGX also has a larger cleaned source copy at
+/mnt/data4tb/datasets/hrm-text-data-io-cleaned-20260515: about 320GB total,
+with 19 JSONL files and 5,198 parquet files. It is source data, not yet a full
+tokenized/sampled training shard.
+```
+
+Action rule:
+
+```text
+Stage92 can finish as a plumbing and early-language-growth run.
+Stage93 should not be another tiny shard. Build a much larger sampled dataset
+from the cleaned HRM-Text source data using both data/ and data_clustered/,
+then train. On DGX, explicitly use
+CLEANED_DATA_PATH=/mnt/data4tb/datasets/hrm-text-data-io-cleaned-20260515.
+Only download more corpora after this if the target expands to broad language,
+code/tool use, agentic benchmarks, or multimodal capability.
+```
+
+Plain-language version:
+
+```text
+The bookcase exists. The thin handout is the problem.
+Do not go shopping for new books before putting the existing bookcase into the
+student's actual study schedule.
+```
+
+## 2026-05-23 - Stage93 Continued-Learning Rule
+
+Decision:
+
+```text
+Increasing the dataset does not mean restarting the model from scratch.
+Stage93 should continue from the learned Stage92 checkpoint.
+```
+
+Default:
+
+```text
+Use Stage92 last_model.pt as --resume for Stage93.
+This preserves learned weights while restarting optimizer moments for the new
+larger data distribution.
+
+Resume checkpoint:
+/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/last_model.pt
+
+Launcher:
+scripts/536_launch_stage93_dgx_continue_prefixlm.sh
+```
+
+Plain-language version:
+
+```text
+We do not throw away the student.
+We keep the learned brain and give it a larger textbook.
+Because the textbook changes from a thin handout to a broad curriculum, the
+study rhythm is allowed to reset.
+```
+
+## 2026-05-23 - Native Text Versus Native Multimodal Clarification
+
+Decision:
+
+```text
+Stage92/Stage93 are native text PrefixLM training runs, not native multimodal
+training runs.
+The overall project target remains native multimodal QTRM-MemoryOS.
+```
+
+Current active path:
+
+```text
+HRM-Text Data-IO -> input_ids/labels -> 913M recurrent one-body PrefixLM.
+No image tensors, vision encoder features, OCR boxes, chart data, or visual
+MemoryOS rows are in the active Stage92/Stage93 loop.
+```
+
+Plain-language version:
+
+```text
+We are growing the language/thought spine first.
+The final model should also have eyes and visual memory, but the current run is
+teaching the same body to read, think, and speak in text before multimodal
+organs are attached.
+```
+
+## 2026-05-23 - Stage94 Multimodal Graft Rule
+
+Decision:
+
+```text
+Do not restart from scratch for the first multimodal model.
+Use the strongest Stage93 text-native checkpoint as the language/thought spine,
+then attach visual reader/projector/resampler modules and continue training.
+```
+
+Training rule:
+
+```text
+Freeze first:
+  token embeddings, most recurrent thought blocks, LM head.
+
+Train first:
+  visual reader adapter, multimodal projector, workspace resampler,
+  OCR/layout/chart source embeddings.
+
+Unfreeze later:
+  late thought blocks and answer-facing projection layers, only after visual
+  path smoke gates pass.
+```
+
+Native multimodal gate:
+
+```text
+The visual path must affect the same recurrent core and LM answer head.
+Side OCR/vision solvers that hand the model a finished answer are not native
+multimodal evidence.
+```
+
+Plain-language version:
+
+```text
+Stage93 grows the reader-thinker-speaker.
+Stage94 attaches eyes to that same person.
+Do not raise a second person from zero unless the eye-graft route clearly fails.
+```
+
+## 2026-05-23 - Multilingual Status
+
+Decision:
+
+```text
+The model path is multilingual-capable, not yet multilingual-proven.
+```
+
+Evidence:
+
+```text
+Tokenizer:
+  65,536-vocab BPE/byte-level tokenizer can encode non-English text.
+
+DGX data:
+  HRM-Text cleaned FLAN source contains 50 translation/multilingual files found
+  by translate/WMT/XQuAD/WikiLingua-style filename scan.
+
+Current active Stage93:
+  PROFILE=reasoning_nonflan
+  INCLUDE_FLAN=0
+```
+
+Action:
+
+```text
+Added PROFILE=multilingual_curriculum to
+scripts/535_prepare_stage93_hrm_text_large_dataio.sh.
+This keeps the reasoning shelves and adds targeted FLAN translation/multilingual
+files without including the full 264GB FLAN bulk.
+
+DGX source check:
+  multilingual FLAN regex matches 832 parquet files.
+
+Mixing rule:
+  HRM-Text reasoning shelves and multilingual FLAN should be trained together
+  for the multilingual stage. This keeps one shared reasoning/language spine
+  instead of training a separate multilingual side model.
+```
+
+Plain-language version:
+
+```text
+The student can pronounce many languages and the library has multilingual books.
+But the current class schedule is still mostly reasoning.
+To call the student multilingual, the multilingual books must be put into the
+schedule and tested.
+```
+
+## 2026-05-24 - Stage93 Binding Status
+
+DGX check at 00:13 KST:
+
+```text
+Stage93 profile:
+  reasoning_nonflan
+
+source files:
+  1010
+
+tokenized files:
+  245 / 1010
+
+sizes:
+  cleaned_subset=48GB
+  tokenized=49GB
+
+binding artifact:
+  sampled/tokens.npy not yet present
+
+GPU:
+  no active training process using GPU
+
+checkpoint to resume:
+  Stage92 last_model.pt exists, 3.5GB, updated 2026-05-24 00:08 KST
+```
+
+Plain-language version:
+
+```text
+The textbook pages are still being printed.
+The bound book has not appeared yet.
+Once sampled/tokens.npy appears, Stage93 can start from the Stage92 checkpoint.
+```
+
+## 2026-05-24 - Stage93 Overnight Autopilot
+
+Decision:
+
+```text
+Use a supervisor instead of manual overnight babysitting.
+```
+
+Installed scripts:
+
+```text
+scripts/537_watch_and_launch_stage93_dgx.sh
+  simple full-sample watcher.
+
+scripts/538_prepare_stage93_partial_sample.sh
+  creates a safe partial sampled book from stable tokenized task folders.
+
+scripts/539_supervise_stage93_overnight.sh
+  full overnight supervisor:
+    restart full data preparation if it dies before sampled/tokens.npy appears;
+    bind a partial booklet while full tokenization is still running;
+    train Stage93A partial if full is not ready yet;
+    when full sampled data is ready, continue Stage93B from the best checkpoint;
+    if Stage93B exits before the target step, relaunch from the newest
+    available checkpoint.
+
+scripts/540_run_stage93_supervisor_forever.sh
+  wrapper that restarts scripts/539_supervise_stage93_overnight.sh if the
+  supervisor itself exits unexpectedly before the full Stage93 target step.
+
+scripts/541_prepare_stage93_hardlink_micro_sample.py
+  emergency micro-book builder:
+    hardlinks one already-tokenized task's tokens.npy;
+    creates epoch_0 and epoch_1 index arrays;
+    avoids copying multi-GB token payloads while the GPU is waiting.
+```
+
+DGX state at launch:
+
+```text
+supervisor wrapper pid:
+  870820
+
+inner supervisor pid:
+  870855
+
+wrapper log:
+  /tmp/20260524_STAGE93_supervisor_forever.log
+
+supervisor log:
+  /tmp/20260524_STAGE93_overnight_supervisor.log
+
+partial bind/log:
+  /tmp/20260524_STAGE93A_partial_bind_and_launch.log
+
+partial train log:
+  /tmp/20260524_STAGE93A_DGX913M_PARTIAL_TO30K.log
+
+full train log:
+  /tmp/20260524_STAGE93B_DGX913M_FULL_FROM_BEST_TO60K.log
+
+partial run:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A_DGX913M_PARTIAL_TO30K
+
+full run:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93B_DGX913M_FULL_FROM_BEST_TO60K
+
+current status:
+  full tokenization active
+  partial binding active
+  no PrefixLM trainer active yet
+```
+
+Plain-language version:
+
+```text
+The printer keeps printing the full textbook.
+The binder is making a temporary thin booklet from already printed pages.
+The overnight supervisor will start studying the thin booklet first if possible.
+When the full textbook is ready, it will switch to the full book using the best
+checkpoint it can find.
+```
+
+## 2026-05-24 - Stage93 Micro-Hardlink Training Started
+
+Problem:
+
+```text
+The ordinary partial binders were technically correct but too slow because they
+copied token payloads while the full tokenizer was also writing to disk.
+```
+
+Action:
+
+```text
+Stopped the slow partial/bootstrap sampling copy jobs only.
+Kept full Stage93 tokenization running.
+Created a hardlink micro sample:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/stage93_hrm_text_reasoning_nonflan_dataio/sampled_micro_hardlink
+
+Launched:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500
+
+Log:
+  /tmp/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500.log
+```
+
+Latest verified at 00:52 KST:
+
+```text
+trainer pid:
+  893655
+
+resume:
+  Stage92 last_model.pt
+
+start_step:
+  24000
+
+latest seen:
+  step=24250
+  train_loss=0.9304662942886353
+  eval_loss_at_step_24200=0.9727275821199405
+  eval_nonfinite_batches=0
+  last_model.pt exists
+
+full tokenization:
+  404 / 1010 files
+
+supervisor:
+  wrapper pid=870820
+  inner supervisor active
+  recognizes micro_hardlink_out as a valid checkpoint source for later
+  partial/full continuation.
+```
+
+Plain-language version:
+
+```text
+The big textbook is still printing.
+Instead of waiting with the classroom empty, we handed the student one already
+printed chapter and a table of contents.
+The student is now actually studying, and the first notebook checkpoint has
+already been saved.
+When the full textbook is bound, the night supervisor will continue from the
+best saved student state.
+```
+
+## 2026-05-24 - Stage93 SSH-Independent Overnight Check
+
+Latest verified at 01:36 KST:
+
+```text
+full tokenizer:
+  pid=785687
+  active
+  tokenized=1010 / 1010 files
+  full sampled files have started appearing, but the full sample is not
+  supervisor-ready yet.
+
+supervisor wrapper:
+  pid=870820
+  parent=systemd(1)
+  tty=?
+
+inner supervisor:
+  pid=932541
+  parent=870820
+  tty=?
+  micro_hardlink_target_steps=40000
+
+micro hardlink continuation:
+  pid=920757
+  parent=systemd(1)
+  tty=?
+  resumed from:
+    /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/last_model.pt
+  start_step=24500
+  latest_seen_step=25500
+  latest_seen_loss=0.3634183406829834
+  eval_loss_at_step_25500=0.19492197771770461
+  current_process_target_step=30000
+  supervisor_fallback_target_step=40000
+  gpu_memory_seen=15003 MiB
+
+previous micro segment:
+  reached step=24500
+  eval_loss=0.476658
+  last.pt saved
+  last_model.pt saved
+```
+
+Operational note:
+
+```text
+The first micro segment briefly waited in disk I/O while finalizing. Pausing
+the full tokenizer for 60 seconds let checkpoint finalization clear, then the
+tokenizer was resumed. The supervisor then relaunched the micro continuation
+from last_model.pt.
+```
+
+Plain-language version:
+
+```text
+SSH can be closed.
+The night watchman is not sitting inside the SSH window anymore; it is attached
+to the machine itself.
+
+The big textbook keeps printing.
+The student already saved a notebook at step 24500.
+The student has reopened that notebook and is continuing toward step 30000
+while the full textbook is still being bound.
+If the full textbook is still not ready at step 30000, the refreshed night
+watchman is configured to keep the thin-chapter study going toward step 40000.
+```
+
+## 2026-05-24 - PrefixLM Language Gates Added
+
+Problem:
+
+```text
+The micro eval loss reached the 0.3 range, but that number is from a thin
+temporary chapter. It is evidence of local memorization/specialization, not by
+itself evidence that the model can freely use language.
+```
+
+Decision:
+
+```text
+Do not create a new language training loss.
+Keep the same PrefixLM next-token objective.
+Add separate heldout language evaluation and generation gates.
+```
+
+Added:
+
+```text
+data/eval/prefixlm_language_heldout.jsonl
+scripts/544_eval_prefixlm_language_heldout_loss.py
+scripts/545_run_prefixlm_language_gates_dgx.sh
+tests/test_prefixlm_language_heldout_loss_eval.py
+```
+
+Existing generation probe now pairs with the heldout loss:
+
+```text
+data/eval/prefixlm_multilingual_probe.jsonl
+scripts/542_eval_prefixlm_multilingual_probe.py
+```
+
+Verification:
+
+```text
+local:
+  python -m unittest tests.test_prefixlm_language_heldout_loss_eval \
+    tests.test_prefixlm_multilingual_probe_eval
+  result: 8 tests OK
+
+DGX:
+  language gate scripts copied to /mnt/data4tb/qtrm_multimodal_memoryos
+  syntax check passed without bytecode writes
+  scripts/545_run_prefixlm_language_gates_dgx.sh returned rc=3 while training
+  was active, correctly refusing to steal the GPU.
+```
+
+Plain-language version:
+
+```text
+The low micro loss says: the student is doing very well on one thin worksheet.
+
+The language heldout loss asks: can the student do a fresh dictation from a
+different sheet?
+
+The generation probe asks: when asked a question, can the student answer in its
+own words instead of echoing or looping?
+```
+
+## 2026-05-24 - Raw-Intelligence Axis Gates Added
+
+Problem:
+
+```text
+Saying "raw intelligence improved" is too vague. Each needed primitive ability
+needs its own small scoreboard, otherwise a low loss on one worksheet can be
+mistaken for broad ability.
+```
+
+Added:
+
+```text
+data/eval/prefixlm_raw_intelligence_probe.jsonl
+scripts/546_eval_prefixlm_raw_intelligence_suite.py
+tests/test_prefixlm_raw_intelligence_suite.py
+```
+
+Measured axes:
+
+```text
+language:
+  Can it answer ordinary language prompts?
+
+reasoning_arithmetic:
+  Can it do small numeric reasoning?
+
+symbolic_manipulation:
+  Can it transform lists/symbols exactly?
+
+context_memory:
+  Can it read facts in the prompt and recall the right one?
+
+instruction_following:
+  Can it obey exact format constraints?
+
+multilingual:
+  Can the same answer path work outside English?
+
+tool_use_format:
+  Can it emit a structured tool-call-like JSON shape?
+
+multiturn_state:
+  Can it preserve a stated fact across a short dialogue transcript?
+```
+
+Metrics per axis:
+
+```text
+teacher-forced target-token loss
+perplexity
+target-token accuracy
+greedy generation hit accuracy
+```
+
+Plain-language version:
+
+```text
+The old single loss was one exam score.
+The new raw-intelligence suite is a report card:
+
+  language class
+  math class
+  symbol class
+  memory class
+  instruction class
+  multilingual class
+  tool-format class
+  multi-turn class
+
+Each class gets its own dictation score and speaking score.
+```
+
+Verification:
+
+```text
+local:
+  python -m unittest tests.test_prefixlm_raw_intelligence_suite \
+    tests.test_prefixlm_language_heldout_loss_eval \
+    tests.test_prefixlm_multilingual_probe_eval
+  result: 12 tests OK
+
+DGX:
+  copied raw-intelligence probe and evaluator to
+    /mnt/data4tb/qtrm_multimodal_memoryos
+  syntax check passed without bytecode writes
+  language gate wrapper now includes raw_intelligence_suite.json
+  while training was active, the wrapper returned rc=3 and refused to steal
+  the GPU.
+```
+
+## 2026-05-24 01:46 KST - Current-Checkpoint Eval Visibility Rule
+
+The active DGX checkpoint already exposes ordinary training validation in the
+stdout log:
+
+```text
+/tmp/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500.log
+latest seen:
+  step=25700
+  eval_loss=0.16637434939451246
+  eval_target_tokens=8839
+  eval_nonfinite_batches=0
+  eval_fallback_batches=0
+```
+
+Rule:
+
+```text
+training validation log:
+  can be read immediately while training runs.
+
+raw-intelligence gate JSON:
+  should run at idle/full-target handoff, not during heavy full-data sampling,
+  because checkpoint loading competes with the 100GB+ sampled-data writer.
+```
+
+Attempted current-checkpoint raw gate:
+
+```text
+run:
+  20260524_STAGE93A00_CURRENT_RAW_GATES
+result:
+  intentionally terminated before completion
+reason:
+  evaluator entered disk I/O wait while full sample_tokenized.py was writing
+  sampled/tokens.npy.
+decision:
+  keep automatic post-target gates enabled through
+  scripts/540_run_stage93_supervisor_forever.sh and avoid FORCE=1 unless the
+  GPU and data writer are idle.
+```
+
+## 2026-05-24 EqR Residual Telemetry Export
+
+Added EqR-compatible residual export to the raw-intelligence evaluator.
+
+Fields now promoted from the best forced-choice candidate to the top-level eval
+row:
+
+```text
+residual_curve
+fixed_point_residual
+core_fixed_point_residual
+mean_fixed_point_residual
+fixed_point_residual_observations
+```
+
+Verification:
+
+```text
+PYTHONPATH=src python -m unittest tests.test_raw_intelligence_eval_script
+  16 tests OK
+
+PYTHONPATH=src python tests/test_depth_breadth_probe.py
+  3 tests OK
+
+python -m py_compile scripts/192_eval_raw_intelligence.py tests/test_raw_intelligence_eval_script.py src/qtrm_mm/eval/depth_breadth_probe.py scripts/548_build_depth_breadth_probe_report.py
+  OK
+```
+
+## 2026-05-24 Stage93A00 Copy Checkpoint Gate Readiness
+
+DGX checkpoint inspected:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/copy_last.pt
+```
+
+Verdict:
+
+```text
+usable for text-native PrefixLM gates: yes
+82M checkpoint: no
+scale: DGX913M / d_model=1792 / n_heads=16 / n_kv_heads=4 / d_ff=4864
+contains model_state_dict: yes
+contains optimizer_state_dict: yes
+```
+
+Operational note:
+
+```text
+scripts/545_run_prefixlm_language_gates_dgx.sh refused with rc=3 because
+Stage93A00 training was active. Use copy_last.pt only for a stable snapshot
+while training is running; use last_model.pt for the latest final gate after
+training is idle/complete.
+```
+
+## 2026-05-24 Stage93A00 Copy Checkpoint CPU Smoke
+
+Ran safe CPU-only smoke gates on DGX without stealing the active training GPU:
+
+```text
+checkpoint:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/copy_last.pt
+
+output dir:
+  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_COPY_LAST_TEXT_NATIVE_CPU_SMOKE
+
+device:
+  CPU, with CUDA_VISIBLE_DEVICES=""
+```
+
+Results:
+
+```text
+language_heldout_loss_cpu_smoke1.json
+  step = 36500
+  cases = 1
+  loss = 6.914371490478516
+  perplexity = 1006.6381469735621
+  token_accuracy = 0.16666666666666666
+
+raw_intelligence_suite_cpu_smoke1.json
+  step = 36500
+  cases = 1
+  loss = 9.291720390319824
+  perplexity = 10847.830557078236
+  token_accuracy = 0.2222222222222222
+  generation_hits = 0
+  generation_accuracy = 0.0
+  generated = "120{120{"
+
+multilingual_generation_probe_cpu_smoke1.json
+  step = 36500
+  cases = 1
+  hits = 0
+  accuracy = 0.0
+  generated = "120} $ Simplify."
+```
+
+Interpretation:
+
+```text
+The text-native checkpoint/evaluator path is valid: all three gate scripts can
+load copy_last.pt and emit JSON on CPU. The smoke result is not a quality pass.
+Use this as a plumbing check only. The real gate should run on GPU after
+Stage93A00 training is idle/complete, preferably against the newest
+last_model.pt rather than the older copy_last.pt snapshot.
+```
+
+## 2026-05-25 Local Depth / DGX Pretrain Split And TensorBoard Guard
+
+Decision:
+
+```text
+Local 4090:
+  fast depth-scaling architecture gate.
+
+DGX:
+  pretraining efficiency and Generalization Dynamics / OPUS data-window gate.
+```
+
+Plain-language read:
+
+```text
+Local asks whether more thinking time helps.
+DGX asks whether more reading produces understanding rather than parroting.
+```
+
+Artifacts:
+
+```text
+docs/wiki/decisions/2026-local-depth-dgx-pretrain-generalization-split.md
+docs/wiki/decisions/2026-paper-driven-test-plan.md
+docs/wiki/sources/2026-recursive-memory-context-papers.md
+scripts/568_start_tensorboards.sh
+```
+
+TensorBoard status:
+
+```text
+local: http://127.0.0.1:6007/
+DGX:   http://192.168.219.113:6008/
+```
+
+Verification:
+
+```text
+bash -n scripts/568_start_tensorboards.sh
+scripts/568_start_tensorboards.sh status both
+PYTHONPATH=src .venv/bin/python -m unittest tests.test_generalization_dynamics_lite_probe
+  3 tests OK
+
+DGX:
+  scripts/568_start_tensorboards.sh status dgx
+  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
+    /mnt/data4tb/venv_sglang_pr23000/bin/python -m unittest \
+    tests.test_generalization_dynamics_lite_probe
+    3 tests OK
+```
+
+Operational note:
+
+```text
+Use scripts/568_start_tensorboards.sh start both from the local workstation.
+If the script is run inside DGX, status dgx works without SSH self-recursion.
+```
+
+Current evidence:
+
+```text
+Local Stage99I one-body depth report rejects depth scaling:
+  depth 1 loss 2.5619886004, residual 0.6702648781
+  depth 2 loss 2.5603724661, residual 0.1889533062
+  depth 4 loss 2.5783546231, residual 0.0994255078
+  depth 8 loss 2.6085943811, residual 0.0543557573
+
+Interpretation:
+  the latent state stabilizes with depth, but the answer gets worse after
+  depth 2. This is not useful EqR-style attractor reasoning yet.
+
+DGX Stage96C:
+  final_eval_loss 1.3412942543827118, accepted false.
+
+DGX Stage96D:
+  last_model.pt exists, report.json and GD-lite report missing.
+```
+
+## 2026-05-25 Solution-Aligned Answer Attractor Gate
+
+Decision:
+
+```text
+Do not promote recurrence because it becomes stable.
+Promote recurrence only when it becomes answer-facing:
+  same LM head probability moves toward intelligence answers
+  same LM head probability moves away from parrot shortcuts
+  held-out language quality does not regress
+```
+
+Plain-language read:
+
+```text
+The goal is not a quiet mind. The goal is a mind whose repeated thinking makes
+the mouth more likely to say the right answer.
+```
+
+Paper sources:
+
+```text
+Equilibrium Reasoners:
+  task-conditioned attractors should converge to valid solutions.
+
+Attractor Models:
+  iterative refinement should solve toward a useful fixed point, not merely
+  unroll a fixed number of loops.
+
+Looped Reasoning LM Mechanistic Analysis:
+  looped models can converge to fixed/cyclic trajectories, but convergence
+  alone is not proof of correctness.
+
+Generalization Dynamics:
+  falling loss can hide mode-hops between parrot-like and intelligence-like
+  algorithms, so shortcut probes must be tracked directly.
+```
+
+Artifacts:
+
+```text
+docs/wiki/decisions/2026-05-25-stage101-solution-aligned-answer-attractor.md
+scripts/569_eval_solution_aligned_answer_attractor_gate.py
+tests/test_solution_aligned_answer_attractor_gate.py
+local_eval/20260525_STAGE100_LOCAL_STAGE99I_GD_DEPTH_SWEEP/solution_aligned_answer_attractor_gate.json
+```
+
+Current Stage99I result:
+
+```text
+baseline depth: 2
+candidate depth: 8
+accepted: false
+
+passed:
+  gd_accuracy_improves
+  residual_decreases
+  elapsed_not_exploded
+
+failed:
+  gd_mean_margin_improves
+  critical_tasks_pass
+  heldout_loss_not_regressed
+```
+
+Interpretation:
+
+```text
+Depth 8 is calmer and passes one extra GD-lite item, but its average
+intelligence-vs-parrot margin is worse than depth 2, the critical shortcut
+axes still fail, and held-out loss regresses. Stage99I is a one-body routing
+improvement, not a solved answer-attractor architecture.
+```
+
+DGX Stage96 GD-lite sanity check:
+
+```text
+Stage96C partial:
+  accuracy = 0.3333
+  mean_margin = 0.0137
+  min_margin = -0.7227
+  accepted = false
+
+Stage96D full:
+  accuracy = 0.3333
+  mean_margin = 0.0457
+  min_margin = -0.3032
+  accepted = false
+```
+
+Interpretation:
+
+```text
+More pretraining improved soft margins but did not pass the shortcut gate.
+This is a weak positive reading signal, not a promoted generalization result.
+The next architecture must create solution-aligned answer attractors, then
+rerun the same local depth sweep and GD-lite gate.
+```
+
+## 2026-05-25 Stage101A Solution-Attractor Smoke
+
+Implemented:
+
+```text
+scripts/570_train_solution_aligned_answer_attractor.py
+tests/test_solution_aligned_answer_attractor_train.py
+```
+
+Purpose:
+
+```text
+Train the same one-body LM head to prefer intelligence answers over parrot
+answers on GD-lite pairs. This directly tests whether the answer-facing
+attractor idea can move logits, without adding a bridge/readback/selector.
+```
+
+Run:
+
+```text
+input:
+  local_eval/20260524_STAGE99I_LOCAL_ONE_BODY_GATE400/last_model.pt
+
+output:
+  local_eval/20260525_STAGE101_LOCAL_SOLUTION_ATTRACTOR_SMOKE12/last_model.pt
+
+summary:
+  local_eval/20260525_STAGE101_LOCAL_SOLUTION_ATTRACTOR_SMOKE12/stage101_summary.json
+
+steps:
+  12
+```
+
+GD-lite result:
+
+```text
+Before Stage101A, Stage99I depth4:
+  accuracy = 0.3333
+  mean_margin = -0.0049
+
+After Stage101A:
+  depth2 accuracy = 0.3333, mean_margin = 0.1557
+  depth4 accuracy = 0.6667, mean_margin = 0.1519
+  depth8 accuracy = 0.6667, mean_margin = 0.1032
+
+Depth4 passed:
+  flipped_answer_icl
+  repetitive_answer_icl
+  intuitive_answer_zero_shot
+  persona_multihop_icl
+
+Depth4 failed:
+  successive_answer_icl
+  truthy_answer_icl
+```
+
+Tiny language heldout:
+
+```text
+sample:
+  local_eval/20260525_STAGE101_TINY_LANGUAGE_HELDOUT_SAMPLE/sampled
+
+depth | Stage99I loss | Stage101A loss | delta
+2     | 4.81997       | 4.82358        | +0.00361
+4     | 4.73560       | 4.74177        | +0.00617
+8     | 4.53100       | 4.53320        | +0.00220
+```
+
+Verdict:
+
+```text
+accepted: false
+idea signal: positive
+checkpoint promotion: no
+DGX long run: no
+```
+
+Plain-language read:
+
+```text
+The answer-facing signal works: the same mouth can be pulled toward the real
+answer. But the student still follows answer-sequence and plausible-truth
+temptations, and language heldout loss slightly regresses. Stage101B must add
+more successive/truthy counterexamples plus language-preserving regularization.
+```
+
+## 2026-05-25 Stage101B CONT14: one-body thought now reaches the LM mouth on the original gate
+
+Summary:
+
+```text
+local_eval/20260525_STAGE101B_LOCAL_SOLUTION_ATTRACTOR_KL_CONT14/stage101b_cont14_summary.json
+```
+
+Result:
+
+```text
+original GD-lite depth4:
+  accuracy = 1.0000
+  mean_margin = 0.3450
+  accepted = true
+
+Stage101B heldout depth4:
+  accuracy = 0.9000
+  mean_margin = 0.2760
+  accepted = false
+  remaining blocker = truthy heldout
+
+tiny language heldout:
+  Stage99I best loss = 4.530996
+  CONT14 best loss  = 4.532797
+  delta             = +0.001801
+```
+
+Plain-language read:
+
+```text
+This is not the old "thought improves but the mouth ignores it" failure. The
+same LM head now prefers the intelligence answer on the original shortcut
+gate. The remaining problem is narrower: truth-like false claims still pull the
+model into a wrong attractor on heldout rows, and language preservation is
+close but not yet strictly non-regressed.
+```
+
+## 2026-05-25 Stage101C/101D: truth repair and overthinking lock
+
+Summary:
+
+```text
+local_eval/20260525_STAGE101D_LOCAL_OVERTHINK_LOCK_KL_SMOKE20/stage101cd_summary.json
+```
+
+Stage101C:
+
+```text
+original GD-lite depth4:
+  accuracy = 1.0000
+  mean_margin = 0.4064
+
+Stage101B heldout depth4:
+  accuracy = 1.0000
+  mean_margin = 0.3389
+
+broader Stage101C truth-claim heldout depth4:
+  accuracy = 0.8571
+  failed = 2/14
+
+tiny language heldout delta vs Stage99I:
+  +0.000820
+```
+
+Stage101D:
+
+```text
+original GD-lite depth8:
+  accuracy = 1.0000
+  mean_margin = 0.3911
+
+Stage101B heldout depth8:
+  accuracy = 1.0000
+  mean_margin = 0.3210
+
+tiny language heldout delta vs Stage99I:
+  +0.001433
+```
+
+Plain-language read:
+
+```text
+The model is no longer merely calmer. At depth4 it says the intelligence answer
+on the old and Stage101B heldout gates. Stage101D also shows that overthinking
+can be corrected: depth8 no longer undoes the answer on those gates.
+
+The remaining blocker is broader world-truth coverage. The model still fails
+some unfamiliar commonsense/physics truth claims, so the next local move should
+broaden truth-claim contrast data while preserving the same one-body LM path and
+the depth4->8 overthinking lock.
+```
+
+## 2026-05-25 Stage101E/101F: world-truth rows reclassified as data-contract problem
+
+Summary:
+
+```text
+local_eval/20260525_STAGE101F_LOCAL_SOURCE_GROUNDED_TRUTH_SMOKE48/stage101ef_summary.json
+```
+
+Stage101E:
+
+```text
+Added unsupported world-truth rows around sound media, equal mass, density, and
+everyday physics.
+
+Verdict:
+  rejected as a promotion path.
+```
+
+Plain-language read:
+
+```text
+Asking a small checkpoint whether "sound travels faster in water than air" is
+not only a reasoning question. If the fact was never in the model's memory or
+prompt, the exam is partly asking for missing world knowledge.
+```
+
+Stage101F:
+
+```text
+Added source-grounded truth rows:
+  context states the fact
+  claim asks for True/False according to the context
+  same LM head answers
+```
+
+Result:
+
+```text
+source-grounded truth heldout depth8:
+  before = 0.2500
+  after  = 0.5000
+
+preserved after Stage101F:
+  original GD-lite depth8 = 1.0000
+  Stage101B heldout depth8 = 1.0000
+  tiny language delta vs Stage99I = +0.000804
+```
+
+Plain-language read:
+
+```text
+The model can begin learning to turn supplied facts into truth judgments, and
+doing so does not break the old one-body answer-attractor or overthinking gates.
+But the source-grounded skill is still only halfway there on heldout rows.
+
+The next correct move is not another verifier or side module. It is a broader
+source-grounded truth curriculum with paraphrases and source-position variants,
+while preserving the same one-body LM path.
+```
+
+## 2026-05-25 Stage101G: source paraphrase failed; overthinking noise separated
+
+Summary:
+
+```text
+local_eval/20260525_STAGE101G_LOCAL_SOURCE_PARAPHRASE_LOCK_KL_SMOKE120/stage101g_summary.json
+```
+
+Added:
+
+```text
+scripts/575_build_stage101g_source_grounded_paraphrase_probe.py
+scripts/576_eval_overthinking_noise_probe.py
+tests/test_stage101g_source_grounded_paraphrase_probe.py
+tests/test_overthinking_noise_probe.py
+```
+
+Stage101G result:
+
+```text
+source paraphrase heldout depth8:
+  accuracy = 0.2500
+  mean_margin = -0.2115
+  accepted = false
+
+source paraphrase overthinking:
+  stability_accepted = true
+  flip_to_wrong_count = 0
+  wrong_at_all_depths_count = 6/8
+
+source truth heldout depth8:
+  accuracy = 0.5000
+  mean_margin = -0.0202
+  accepted = false
+
+Stage101B anchor overthinking:
+  quality_accepted = true
+  stability_accepted = false
+  depth2 mean_margin = 0.4904
+  depth16 mean_margin = 0.4275
+
+original GD-lite depth8:
+  accuracy = 1.0000
+  accepted = true
+
+language depth:
+  Stage101G best loss = 4.4837 @ depth16
+```
+
+Plain-language read:
+
+```text
+The source/paraphrase failure is mostly not "the model thought too much and
+lost the answer." It is stable wrong: the model often fails before the extra
+thinking starts. That points to source reading, unit/equivalence meaning, and
+template robustness.
+
+But overthinking noise is real on the old anchor. The answer remains correct,
+yet deeper thought weakens the intelligence-vs-parrot margin. The next local
+run must handle both axes separately: teach the missing source skill, and add a
+stop-or-stabilize constraint so deeper thought cannot erode an already-correct
+answer.
+```
+
+## 2026-05-25 Stage101H: overthinking lock is trainable but not sufficient
+
+Summary:
+
+```text
+local_eval/20260525_STAGE101H_LOCAL_OVERTHINK_MARGIN_LOCK_SMOKE80/stage101h_summary.json
+```
+
+Purpose:
+
+```text
+Train only the old Stage101B/original answer-attractor anchors across depths
+2/4/8/16, with language-preserving KL, to see whether depth16 margin erosion can
+be reduced without adding a side verifier.
+```
+
+Result:
+
+```text
+Stage101B heldout:
+  depth16 mean_margin Stage101G -> Stage101H = 0.4275 -> 0.5419
+  accuracy = 1.0000
+  stability_accepted = false
+  reason = depth16 still below depth2 by -0.0532
+
+Original GD-lite depth8:
+  mean_margin Stage101G -> Stage101H = 0.4767 -> 0.5764
+  accepted = true
+
+Source paraphrase depth8:
+  mean_margin Stage101G -> Stage101H = -0.2115 -> -0.2846
+  accuracy = 0.2500
+
+Language:
+  best heldout loss = 4.4853 @ depth16
+```
+
+Plain-language read:
+
+```text
+Overthinking noise is not imaginary: the model can be trained to preserve old
+answers better at long depth. But anchor-only training does not teach source
+reading. It may even pull the mouth toward the old shortcut-answer game and
+away from the source/paraphrase truth task.
+
+Next local direction:
+  mix source-reading/equivalence rows and overthinking stabilization in the same
+  one-body curriculum, then require both source quality and anchor stability to
+  improve together.
+```
+
+## 2026-05-25 Stage101I/J/K: template consistency helps, source pressure breaks anchors
+
+Summaries:
+
+```text
+local_eval/20260525_STAGE101J_LOCAL_TEMPLATE_CONSISTENCY_SMOKE240/stage101ij_summary.json
+local_eval/20260525_STAGE101K_LOCAL_POLARITY_BALANCED_TEMPLATE_CONSISTENCY_SMOKE240/stage101k_summary.json
+```
+
+Code/data added:
+
+```text
+scripts/570_train_solution_aligned_answer_attractor.py
+  --template-consistency-weight
+  --template-consistency-depth
+  --template-consistency-max-rows
+
+scripts/577_build_stage101k_polarity_balanced_source_probe.py
+tests/test_stage101k_polarity_balanced_source_probe.py
+```
+
+Stage101I:
+
+```text
+Tried more source/paraphrase rows plus depth 2/4/8/16 from Stage101H.
+
+Result:
+  rejected.
+
+Read:
+  More row-level source training was not enough. The model kept using prompt
+  template as a hidden answer key.
+```
+
+Stage101J:
+
+```text
+Added same-mouth template consistency.
+
+source paraphrase heldout depth8:
+  0.2500 -> 0.5000
+
+old Stage101B depth16:
+  1.0000 -> 0.9000
+```
+
+Stage101K:
+
+```text
+Added polarity-balanced source families:
+  each concept appears with both supported and contradicted claims under every
+  source template.
+
+source paraphrase heldout depth8:
+  Stage101H = 0.2500
+  Stage101J = 0.5000
+  Stage101K = 0.6250
+
+polarity-balanced heldout depth8:
+  accuracy = 0.5833
+
+old Stage101B depth16:
+  accuracy = 0.8000
+
+language:
+  accepted, best loss = 4.4848 @ depth16
+```
+
+Plain-language read:
+
+```text
+The new source-reading curriculum is not fake: it improves the source heldout.
+But it is too loud. It teaches the model to read source rows while weakening
+the old truthy/shortcut anchor that kept long thought from drifting.
+
+The correct next move is not a side verifier or a bigger clever module. It is a
+two-phase or better-balanced one-body curriculum:
+  first source-True/source-False recall without template shortcut,
+  then mixed replay with much stronger old Stage101B/truthy anchors,
+  always requiring depth16 anchor preservation.
+```
+
+### 2026-05-25 Stage101L/M Nested Learning replay update
+
+Stage101L tested H -> balanced replay:
+
+```text
+old Stage101B anchor depth16:
+  accuracy = 1.0000
+  mean_margin = 0.7360
+
+source paraphrase depth16:
+  accuracy = 0.2500
+  mean_margin = -0.3025
+
+source balanced depth16:
+  accuracy = 0.2500
+  mean_margin = -0.2929
+```
+
+Read:
+
+```text
+The old workbook was preserved, but the source lesson faded. L was too
+anchor-heavy when starting from H.
+```
+
+Stage101M tested K -> slow anchor replay:
+
+```text
+old Stage101B anchor depth16:
+  accuracy = 1.0000
+  mean_margin = 0.5531
+
+source paraphrase depth16:
+  accuracy = 0.2500
+  mean_margin = -0.1074
+
+source balanced depth16:
+  accuracy = 0.2500
+  mean_margin = -0.1029
+```
+
+Read:
+
+```text
+M restored old-anchor discipline while keeping source margins much closer to
+zero than L, but it still did not cross the source-reading boundary. The next
+test should be a true fast-source microburst plus slow-anchor replay schedule,
+not a flat replay ratio tweak.
+```
+
+### 2026-05-25 Stage101N Nested source microburst result
+
+Stage101N tested M -> source microbursts -> anchor locks:
+
+```text
+old Stage101B anchor depth16:
+  accuracy = 1.0000
+  mean_margin = 0.6448
+  accepted = true
+
+source paraphrase depth16:
+  accuracy = 0.2500
+  mean_margin = -0.1576
+  accepted = false
+
+source balanced depth16:
+  accuracy = 0.2500
+  mean_margin = -0.1440
+  accepted = false
+```
+
+Read:
+
+```text
+N protected the old answer attractor but moved source binding backward versus
+M. This path is not promoted. The next experiment must directly bind source
+evidence to the same one-body answer path instead of relying on ordering alone.
+```
+
+### 2026-05-25 Stage101O/P source-obedience diagnosis
+
+Stage101O tested direct counterfactual source binding:
+
+```text
+Stage101O counterfactual source-binding heldout depth16:
+  accuracy = 0.7500
+  mean_margin = 0.1602
+  accepted = false
+
+old Stage101B anchor depth16:
+  accuracy = 1.0000
+  mean_margin = 0.6371
+  accepted = true
+
+older source-balance depth16:
+  accuracy = 0.2500
+  mean_margin = -0.1991
+  accepted = false
+```
+
+Read:
+
+```text
+O improved its own narrow source-binding exam but did not become a real
+evidence judge. The risk is source obedience: treating authority-shaped text as
+truth instead of judging reliability and sufficiency.
+```
+
+Stage101P then tested belief update and source reliability:
+
+```text
+Stage101O checkpoint on Stage101P depth16:
+  accuracy = 0.4286
+  mean_margin = -0.1722
+  accepted = false
+
+breakdown:
+  claim_first_belief_revision = 6/8 correct
+  untrusted_source_override   = 0/2 correct
+  trusted_source_conflict     = 0/2 correct
+  insufficient_source_unknown = 0/2 correct
+```
+
+Read:
+
+```text
+This is not ready to scale. The next local move must teach belief update,
+reliability, and Unknown inside the same one-body answer path, while preserving
+the old Stage101B anchor and the Stage101O source-binding gate.
+```
+
+### 2026-05-25 Stage101Q numeric belief update
+
+Built numeric belief probe:
+
+```text
+script:
+  scripts/583_build_stage101q_numeric_belief_probe.py
+
+data:
+  data/eval/stage101q_numeric_belief_update_train_probe.jsonl
+  data/eval/stage101q_numeric_belief_update_heldout_probe.jsonl
+
+tests:
+  tests/test_stage101q_numeric_belief_probe.py
+```
+
+Idea:
+
+```text
+Bare True/False/Unknown makes the model learn word choices. A better human
+story is a belief ledger:
+  support=-1..+1
+  reliability=0..1
+  sufficiency=0..1
+  final answer
+```
+
+Stage101O baseline on Q heldout:
+
+```text
+depth16:
+  accuracy = 0.5714
+  mean_margin = -0.0195
+  accepted = false
+
+breakdown:
+  direct_reliable_numeric_belief = 4/8 correct
+  untrusted_override_numeric_belief = 2/2 correct
+  trusted_conflict_numeric_belief = 2/2 correct
+  insufficient_numeric_belief = 0/2 correct
+```
+
+Stage101Q 96-step treatment:
+
+```text
+checkpoint:
+  local_eval/20260525_STAGE101Q_LOCAL_NUMERIC_BELIEF_SMOKE96/last_model.pt
+
+Q heldout depth16:
+  accuracy = 0.5714
+  mean_margin = -0.0157
+  accepted = false
+
+old Stage101B anchor depth16:
+  accuracy = 1.0000
+  mean_margin = 0.6699
+  accepted = true
+```
+
+Read:
+
+```text
+The numeric belief idea is directionally better as a diagnostic, but the full
+ledger string is too entangled as a first training target. The model still
+prefers negative/False-shaped ledgers on positive-support and insufficient
+evidence rows.
+
+Next move: factorize numeric belief into support-only, reliability-only,
+sufficiency-only, then final-answer rows. Do not scale long-ledger Q until
+individual scalar axes move on heldout rows.
+```
+
+### 2026-05-25 Stage101R factorized numeric belief
+
+Built factorized numeric belief probe:
+
+```text
+script:
+  scripts/584_build_stage101r_factorized_numeric_belief_probe.py
+
+data:
+  data/eval/stage101r_factorized_numeric_belief_train_probe.jsonl
+  data/eval/stage101r_factorized_numeric_belief_heldout_probe.jsonl
+
+tests:
+  tests/test_stage101r_factorized_numeric_belief_probe.py
+```
+
+Stage101O baseline on R heldout:
+
+```text
+depth16:
+  accuracy = 0.1667
+  mean_margin = -0.0956
+  accepted = false
+
+axis breakdown:
+  reliability = 0/16 correct
+  sufficiency = 0/16 correct
+  support = 8/16 correct
+```
+
+Stage101R 160-step treatment:
+
+```text
+checkpoint:
+  local_eval/20260525_STAGE101R_LOCAL_FACTORIZED_NUMERIC_BELIEF_SMOKE160/last_model.pt
+
+R heldout depth16:
+  accuracy = 0.7083
+  mean_margin = 0.0248
+  accepted = false
+
+old Stage101B anchor depth16:
+  accuracy = 1.0000
+  mean_margin = 0.7064
+  accepted = true
+```
+
+Read:
+
+```text
+The user suggestion was correct: numeric degree is a better target than bare
+True/False/Unknown. Factorizing the scalar axes produced a large heldout jump
+without breaking the older answer-attractor anchor.
+
+It is still not accepted. The bottleneck is now specific: low/neutral scalar
+states. The model often predicts strong negative support instead of +0.00, and
+predicts high reliability/sufficiency where the target is 0.10.
+
+Next move: scalar prior calibration, not another full-ledger run.
+```
+
+### 2026-05-25 Stage101S scalar prior calibration
+
+Built scalar-prior calibration probe:
+
+```text
+script:
+  scripts/585_build_stage101s_scalar_prior_calibration_probe.py
+
+data:
+  data/eval/stage101s_scalar_prior_calibration_train_probe.jsonl
+  data/eval/stage101s_scalar_prior_calibration_heldout_probe.jsonl
+
+tests:
+  tests/test_stage101s_scalar_prior_calibration_probe.py
+```
+
+Baseline from Stage101R checkpoint on S heldout:
+
+```text
+depth16:
+  accuracy = 0.3621
+  mean_margin = -0.1000
+  accepted = false
+
+by target:
+  +0.00 = 0/7 correct
+  +0.80 = 0/3 correct
+  -0.80 = 5/5 correct
+  0.10 = 0/25 correct
+  0.50 = 0/2 correct
+  0.90 = 16/16 correct
+```
+
+Stage101S 240-step treatment:
+
+```text
+checkpoint:
+  local_eval/20260525_STAGE101S_LOCAL_SCALAR_PRIOR_CALIBRATION_SMOKE240/last_model.pt
+
+S heldout depth16:
+  accuracy = 0.3621
+  mean_margin = -0.0662
+  accepted = false
+
+R heldout depth16:
+  accuracy = 0.7083
+  mean_margin = 0.1194
+  accepted = false
+
+old Stage101B anchor depth16:
+  accuracy = 1.0000
+  mean_margin = 0.7648
+  accepted = true
+```
+
+Read:
+
+```text
+Direct numeric calibration did not solve the low/neutral problem. The model
+kept failing every +0.00, +0.80, 0.10, and 0.50 target row on S heldout, while
+0.90 became stronger.
+
+This turns the bottleneck into a clearer story: the model does not yet possess
+stable semantic buckets for "neutral support" or "low reliability." It is
+choosing from answer-string habit.
+
+Next move: Stage101T bucket-to-number disentanglement, not a longer S run.
+```
+
+### 2026-05-25 Stage101T rejected as non-causal bucket translation
+
+Stage101T artifacts:
+
+```text
+script:
+  scripts/586_build_stage101t_bucket_to_number_probe.py
+
+data:
+  data/eval/stage101t_bucket_to_number_train_probe.jsonl
+  data/eval/stage101t_bucket_to_number_heldout_probe.jsonl
+
+local report:
+  local_eval/20260525_STAGE101T_LOCAL_BUCKET_TO_NUMBER_SMOKE320/report.json
+```
+
+Result:
+
+```text
+accepted = false
+final_depth_accuracy_gain = 0.0307
+final_depth_margin_gain = 0.0936
+```
+
+Read:
+
+```text
+T separated semantic buckets from numeric readback, but the user correction is
+right: reliability should not be a direct bucket label. The model should infer
+it causally from source role, and infer support/sufficiency from whether the
+evidence is relevant, polar, and enough to decide the claim.
+
+Do not scale T. Fix the data contract first.
+```
+
+### 2026-05-25 Stage101U causal evidence-chain probe
+
+Built the corrected causal evidence-chain probe:
+
+```text
+script:
+  scripts/587_build_stage101u_causal_evidence_chain_probe.py
+
+tests:
+  tests/test_stage101u_causal_evidence_chain_probe.py
+
+data:
+  data/eval/stage101u_causal_evidence_chain_train_probe.jsonl
+  data/eval/stage101u_causal_evidence_chain_heldout_probe.jsonl
+
+build report:
+  local_eval/20260525_STAGE101U_CAUSAL_EVIDENCE_CHAIN_PROBE_BUILD/report.json
+```
+
+Contract:
+
+```text
+source role -> source reliability
+evidence relevance/polarity -> claim support and evidence sufficiency
+parent chain -> numeric belief values
+```
+
+Build result:
+
+```text
+train_rows = 56
+eval_rows = 32
+source_quality_counterfactual_pairs = 2
+```
+
+Tests:
+
+```text
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_stage101t_bucket_to_number_probe \
+  tests.test_stage101u_causal_evidence_chain_probe
+
+10 tests OK
+```
+
+### 2026-05-25 Stage101V evidence-seeking curiosity
+
+User correction:
+
+```text
+The AI should ask for the extra material needed to judge the evidence.
+```
+
+Implemented Stage101V as evidence-seeking curiosity:
+
+```text
+script:
+  scripts/588_build_stage101v_evidence_seeking_curiosity_probe.py
+
+tests:
+  tests/test_stage101v_evidence_seeking_curiosity_probe.py
+
+data:
+  data/eval/stage101v_evidence_seeking_curiosity_train_probe.jsonl
+  data/eval/stage101v_evidence_seeking_curiosity_heldout_probe.jsonl
+
+build report:
+  local_eval/20260525_STAGE101V_EVIDENCE_SEEKING_CURIOSITY_PROBE_BUILD/report.json
+```
+
+Contract:
+
+```text
+trusted + sufficient evidence:
+  answer_now
+  no_more_evidence
+
+untrusted / irrelevant / partial / conflicted evidence:
+  ask_more
+  ask_reliable_source / ask_relevant_evidence / ask_exact_detail /
+  ask_conflict_resolution
+```
+
+Baseline from U checkpoint on V heldout:
+
+```text
+local_eval/20260525_STAGE101V_U_BASELINE_EVIDENCE_SEEKING_CURIOSITY/eval_overthinking.json
+
+depth16:
+  accuracy = 0.3333
+  mean_margin = -0.1925
+  accepted = false
+```
+
+Stage101V local smoke:
+
+```text
+checkpoint:
+  local_eval/20260525_STAGE101V_LOCAL_EVIDENCE_SEEKING_CURIOSITY_SMOKE120/last_model.pt
+
+train depth16:
+  accuracy 0.2000 -> 0.6667
+  mean_margin -0.3476 -> 1.3127
+  accepted = false
+
+V heldout depth16:
+  accuracy = 0.4444
+  mean_margin = -0.3060
+  accepted = false
+
+old Stage101B anchor:
+  accuracy = 1.0000
+  mean_margin = 0.7307
+  accepted = true
+```
+
+Read:
+
+```text
+Curiosity can be added, but it must have a brake.
+
+The first V run learned ask_more on some untrusted/irrelevant rows, but it also
+started asking on trusted-and-sufficient heldout rows. This is over-curiosity.
+The next gate should split:
+  1. is evidence sufficient for answer? yes/no
+  2. if no, what evidence is missing?
+```
+
+### 2026-05-25 Internal Multi-Trajectory Answer Attractor SSOT
+
+User correction:
+
+```text
+The paper-worthy thing is not just top-k candidates.  It is the head that makes
+candidates, the head that checks them, and the mouth that speaks being connected
+as one GRAM/PTRM answer-attractor body.
+```
+
+Created SSOT:
+
+```text
+docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md
+```
+
+Indexed in:
+
+```text
+docs/wiki/index.md
+docs/wiki/decisions/0001-active-decision-index.md
+docs/wiki/architecture/one-body-architecture-ssot.md
+```
+
+Contract:
+
+```text
+top-k alone is not novel;
+GRAM/PTRM names alone are not novel;
+the local paper candidate is:
+  stochastic internal recurrent trajectories
+  + answer-attractor convergence scoring
+  + same LM-head final answer
+  + checker/stochastic/one-body ablations
+  + no oracle-only promotion metric.
+```
+
+Next implementation implication:
+
+```text
+Finish Stage101W2 balanced curiosity brake first, because evidence/ask control
+is the metacognitive brake for the future IMTA checker.  Then run an IMTA-K
+smoke with K=1/3/8 and same-head answer-margin gates.
+```
+
+### 2026-05-25 Stage101W2 balanced curiosity brake result
+
+Artifacts:
+
+```text
+builder:
+  scripts/589_build_stage101w_curiosity_brake_probe.py
+
+tests:
+  tests/test_stage101w_curiosity_brake_probe.py
+
+build report:
+  local_eval/20260525_STAGE101W2_CURIOSITY_BRAKE_BALANCED_PROBE_BUILD/report.json
+
+train:
+  local_eval/20260525_STAGE101W2_LOCAL_BALANCED_CURIOSITY_BRAKE_SMOKE160/report.json
+
+heldout:
+  local_eval/20260525_STAGE101W2_LOCAL_BALANCED_CURIOSITY_BRAKE_SMOKE160/eval_stage101w2_heldout_overthinking.json
+
+old anchor:
+  local_eval/20260525_STAGE101W2_LOCAL_BALANCED_CURIOSITY_BRAKE_SMOKE160/eval_stage101b_anchor_overthinking.json
+
+V heldout:
+  local_eval/20260525_STAGE101W2_LOCAL_BALANCED_CURIOSITY_BRAKE_SMOKE160/eval_stage101v_heldout_overthinking.json
+```
+
+Data fix:
+
+```text
+train permission rows:
+  yes = 8
+  no = 8
+
+train missing_material rows:
+  none/source/relevance/detail/conflict = 2 each
+
+heldout permission rows:
+  yes = 4
+  no = 4
+
+heldout missing_material rows:
+  none/source/relevance/detail/conflict = 1 each
+```
+
+Result:
+
+```text
+W2 train depth16:
+  accuracy = 0.5769
+  mean_margin = 0.9443
+  accepted = false
+
+W2 heldout depth16:
+  accuracy = 0.3846
+  mean_margin = 0.0785
+  accepted = false
+
+Stage101B old answer-attractor anchor after W2:
+  accuracy = 1.0000
+  mean_margin = 0.7189
+  accepted = true
+
+Stage101V heldout after W2:
+  accuracy = 0.3333
+  mean_margin = -0.3797
+  accepted = false
+```
+
+Read:
+
+```text
+W2 fixes the label-skew bug from W1 but does not solve the evidence brake.
+The old shortcut/truthy answer-attractor is still solved and preserved.
+The remaining wrong-attractor is evidence-specific: untrusted, irrelevant,
+partial, and conflict cases are still pulled toward answer/yes-like behavior.
+```
+
+Next:
+
+```text
+Stage101W3 must teach cause cards before permission:
+  source trust
+  relevance
+  detail sufficiency
+  conflict
+  then answer permission
+
+Do not launch IMTA-K as a promoted paper run until the evidence brake no longer
+forms this wrong basin.
+```
+
+### 2026-05-25 Stage101W3 cause-card curiosity brake result
+
+Artifacts:
+
+```text
+builder:
+  scripts/590_build_stage101w3_cause_card_curiosity_brake_probe.py
+
+tests:
+  tests/test_stage101w3_cause_card_curiosity_brake_probe.py
+
+train:
+  local_eval/20260525_STAGE101W3_LOCAL_CAUSE_CARD_CURIOSITY_BRAKE_SMOKE240/report.json
+
+heldout:
+  local_eval/20260525_STAGE101W3_LOCAL_CAUSE_CARD_CURIOSITY_BRAKE_SMOKE240/eval_stage101w3_heldout_overthinking.json
+
+old anchor:
+  local_eval/20260525_STAGE101W3_LOCAL_CAUSE_CARD_CURIOSITY_BRAKE_SMOKE240/eval_stage101b_anchor_overthinking.json
+```
+
+Result:
+
+```text
+W3 train depth16:
+  accuracy = 0.7111
+  mean_margin = 2.0173
+  min_margin = -5.7723
+  accepted = false
+
+W3 heldout depth16:
+  accuracy = 0.7111
+  mean_margin = 2.1064
+  min_margin = -5.6286
+  accepted = false
+
+Stage101B old answer-attractor anchor after W3:
+  accuracy = 1.0000
+  mean_margin = 0.8721
+  min_margin = 0.2244
+  accepted = true
+```
+
+Read:
+
+```text
+W3 proves the cause-card curriculum is useful but not sufficient.
+It improves the evidence brake and preserves the old answer-attractor anchor,
+but still fails rows where the model must notice that a cause-card chain is
+causally implausible.
+
+The next bottleneck is not "more answer-attractor."  It is causal
+plausibility: the model must suspect cause cards that do not match the
+source/evidence, before using them to decide answer permission or missing
+material.
+```
+
+Next:
+
+```text
+Stage101W4 causal-plausibility curiosity brake:
+  impossible source card
+  impossible relevance card
+  impossible detail card
+  impossible conflict card
+  permission only after the cause-card chain is plausible
+```
+
+### 2026-05-25 Stage102B provenance-graph reasoner result
+
+Artifacts:
+
+```text
+script:
+  scripts/605_train_stage102b_provenance_graph_reasoner.py
+
+tests:
+  tests/test_stage102b_provenance_graph_reasoner_train.py
+  tests/test_blt_prefixlm_model_ssot.py
+
+run:
+  local_eval/20260525_STAGE102B_LOCAL_PROVENANCE_GRAPH_REASONER_BATCH8_FROM_W3_SMOKE40/report.json
+
+checkpoint:
+  local_eval/20260525_STAGE102B_LOCAL_PROVENANCE_GRAPH_REASONER_BATCH8_FROM_W3_SMOKE40/last_model.pt
+```
+
+Result:
+
+```text
+accepted = true
+
+before heldout:
+  depth2  pair_accuracy = 0.375, min_gap = -0.8929
+  depth4  pair_accuracy = 0.375, min_gap = -1.0040
+  depth8  pair_accuracy = 0.375, min_gap = -1.0817
+  depth16 pair_accuracy = 0.250, min_gap = -1.1896
+
+after heldout:
+  depth2  pair_accuracy = 1.000, min_gap = 7.1540
+  depth4  pair_accuracy = 1.000, min_gap = 7.1927
+  depth8  pair_accuracy = 1.000, min_gap = 7.4133
+  depth16 pair_accuracy = 1.000, min_gap = 7.5178
+```
+
+Read:
+
+```text
+The repeated reject was not because the yes/no loss was too weak.  It was
+because the model was asked to treat source identity as prose.
+
+Stage102B changes the causal route:
+  source card + trust mark + claim-support mark -> authority register
+  -> same BLT LM head.
+
+This is the first accepted source-binding jump after X/Y/Z.  It proves the
+provenance graph route is worth keeping.  It does not yet prove arbitrary
+natural-language provenance parsing; the graph is compiled from probe fields.
+```
+
+Next:
+
+```text
+Run ablations:
+  source_id_shuffle
+  trust_edge_shuffle
+  register_off
+
+Then build the learned text-to-provenance front-end so the same structure is
+created from ordinary prompt text, not from privileged JSONL fields.
+```
+
+### 2026-05-25 LeWM-style provenance data-world-model decision
+
+Decision:
+
+```text
+Use world-model thinking at the data level, not as a blind backbone swap.
+```
+
+Read:
+
+```text
+The model should develop "data sense" before supervised answering:
+  clean evidence graphs should predict stable next latent states;
+  corrupted source/trust/value/claim graphs should produce high residual;
+  missing nodes should raise curiosity/uncertainty;
+  only then should the same LM head learn yes/no/free answers.
+```
+
+Why:
+
+```text
+Stage102B accepted, but trust_edge_shuffle did not break performance.
+That means the model still had a source-name habit.  Stage102C randomizes the
+verified source role to remove that habit.  Stage102D should go further and
+pretrain the model on the law of reliable data without answer labels.
+```
+
+### 2026-05-25 Stage102C randomized-trust graph reasoner result
+
+Artifacts:
+
+```text
+builder:
+  scripts/606_build_stage102c_randomized_trust_ledger_probe.py
+
+tests:
+  tests/test_stage102c_randomized_trust_ledger_probe.py
+
+train/eval:
+  local_eval/20260525_STAGE102C_LOCAL_RANDOMIZED_TRUST_GRAPH_REASONER_BATCH8_FROM_W3_SMOKE80/report.json
+
+ablations:
+  local_eval/20260525_STAGE102C_LOCAL_RANDOMIZED_TRUST_GRAPH_REASONER_BATCH8_FROM_W3_SMOKE80/ablation_depth16_report.json
+```
+
+Result:
+
+```text
+accepted = true
+
+before heldout:
+  depth2  pair_accuracy = 0.375,  min_gap = -0.8771
+  depth4  pair_accuracy = 0.375,  min_gap = -0.9784
+  depth8  pair_accuracy = 0.375,  min_gap = -1.0471
+  depth16 pair_accuracy = 0.3125, min_gap = -1.1544
+
+after heldout:
+  depth2  pair_accuracy = 1.000, min_gap = 7.3334
+  depth4  pair_accuracy = 1.000, min_gap = 7.4199
+  depth8  pair_accuracy = 1.000, min_gap = 7.5497
+  depth16 pair_accuracy = 1.000, min_gap = 7.5493
+
+depth16 ablation:
+  normal             pair_accuracy = 1.000,  min_gap = 7.5392
+  source_id_shuffle  pair_accuracy = 0.000,  min_gap = -9.5571
+  trust_edge_shuffle pair_accuracy = 0.000,  min_gap = -9.5535
+  register_off       pair_accuracy = 0.3125, min_gap = -1.1364
+```
+
+Read:
+
+```text
+Stage102B proved that the graph register could solve source binding, but the
+first ablation showed a source-name shortcut: S1 had become "the trusted one."
+
+Stage102C removes that shortcut by making the trusted source change per row.
+The ablations now break exactly where they should.  This is a stronger accept:
+the model uses source id, trust edge, and external register causally.
+```
+
+### 2026-05-25 Stage102D provenance data world model result
+
+Artifacts:
+
+```text
+script:
+  scripts/607_train_stage102d_provenance_data_world_model.py
+
+tests:
+  tests/test_stage102d_provenance_data_world_model.py
+
+state-only rejected run:
+  local_eval/20260525_STAGE102D_LOCAL_PROVENANCE_DATA_WORLDMODEL_SMOKE240/report.json
+
+context-candidate accepted run:
+  local_eval/20260525_STAGE102D_LOCAL_PROVENANCE_CONTEXT_WORLDMODEL_SMOKE240/report.json
+```
+
+Rejected lesson:
+
+```text
+State-only provenance energy was not enough:
+  heldout pair_accuracy = 0.7917
+  min_energy_gap = -0.0029
+  accepted = false
+
+Root cause:
+  a final graph state is not inherently clean or dirty.
+  The same state can be clean under one ledger/claim context and corrupted
+  under another.
+```
+
+Accepted result:
+
+```text
+Context-candidate provenance world model:
+  heldout pairs = 384
+  pair_accuracy = 1.000
+  min_energy_gap = 8.5026
+  mean_energy_gap = 10.5813
+  clean_mean_energy = 0.0005
+  corrupt_mean_energy = 10.5819
+  accepted = true
+
+By corruption:
+  source_id_conflict  pair_accuracy = 1.000, min_gap = 9.5494
+  trust_edge_conflict pair_accuracy = 1.000, min_gap = 9.1889
+  support_conflict    pair_accuracy = 1.000, min_gap = 8.5026
+```
+
+Read:
+
+```text
+This is the first label-free data-sense accept in the provenance thread.
+It does not use final yes/no answer labels.  It learns:
+  this context and observation fit together;
+  this source id is inconsistent;
+  this trust edge is inconsistent;
+  this support edge is inconsistent.
+
+The next useful move is not another yes/no task.  It is to feed this
+world-model residual into the Stage102C answer register, so the same LM head
+answers only after evidence feels coherent.
+```
+
+### 2026-05-25 Stage102E world-model-gated answer register result
+
+Artifacts:
+
+```text
+script:
+  scripts/608_train_stage102e_world_model_gated_answer_register.py
+
+tests:
+  tests/test_stage102e_world_model_gated_answer_register.py
+
+fast smoke:
+  local_eval/20260525_STAGE102E_LOCAL_WORLDMODEL_GATED_ANSWER_REGISTER_FAST8_SMOKE40/report.json
+```
+
+Result:
+
+```text
+fast gate rows:
+  train rows = 8
+  heldout rows = 8
+  answer depth = 16
+  base BLT frozen
+  Stage102C graph reasoner frozen
+  Stage102D data-world model frozen
+  trained only the fusion adapter
+
+before heldout:
+  accuracy = 0.25
+  clean_accuracy = 1.00
+  corrupt_no_accuracy = 0.00
+  min_margin = -4.5571
+
+after heldout, world on:
+  accuracy = 1.00
+  clean_accuracy = 1.00
+  corrupt_no_accuracy = 1.00
+  min_margin = 4.3295
+  accepted = true
+
+after heldout, world off:
+  accuracy = 0.25
+  clean_accuracy = 1.00
+  corrupt_no_accuracy = 0.00
+  min_margin = -4.5790
+  accepted = false
+```
+
+Read:
+
+```text
+This is the first proof that label-free data sense is causally useful for the
+answer path.  The Stage102D residual is not merely a diagnostic score.
+
+With the world-model signal on, the same LM head answers yes for clean evidence
+and no for corrupted source/trust/support evidence.  With the signal off, the
+old graph-register answer habit returns and corrupted evidence is not braked.
+
+This is still a fast 8-row integration gate, not a full paper-grade run.
+The next full run should use all 64 heldout rows and include free-generation
+samples plus a learned text-to-provenance front-end.
+```
+
+### 2026-05-25 Stage102E full 64-row world-model-gated result
+
+Artifacts:
+
+```text
+full smoke:
+  local_eval/20260525_STAGE102E_LOCAL_WORLDMODEL_GATED_ANSWER_REGISTER_FULL64_D16_SMOKE80/report.json
+
+checkpoint:
+  local_eval/20260525_STAGE102E_LOCAL_WORLDMODEL_GATED_ANSWER_REGISTER_FULL64_D16_SMOKE80/last_gated_register.pt
+```
+
+Result:
+
+```text
+train rows = 64, train cases = 256
+heldout rows = 64, heldout cases = 256
+answer depth = 16
+eval_before skipped to avoid redundant slow preflight
+final heldout and world-off gates were run
+
+heldout, world on:
+  accuracy = 1.000
+  clean_accuracy = 1.000
+  corrupt_no_accuracy = 1.000
+  min_margin = 4.8083
+  mean_margin = 5.7505
+  accepted = true
+
+heldout, world off:
+  accuracy = 0.250
+  clean_accuracy = 1.000
+  corrupt_no_accuracy = 0.000
+  min_margin = -4.7522
+  mean_margin = -2.0729
+  accepted = false
+```
+
+By corruption, heldout world on:
+
+```text
+clean               acc = 1.000, min_margin = 4.8083
+source_id_conflict  acc = 1.000, min_margin = 5.7439
+support_conflict    acc = 1.000, min_margin = 5.6787
+trust_edge_conflict acc = 1.000, min_margin = 5.8486
+```
+
+Read:
+
+```text
+The full gate confirms the LeWM-style innovation in this thread:
+not a wholesale LeWM backbone transplant, but a data-world-model principle.
+
+The model learns whether an evidence world is coherent, then the coherence
+residual is routed into the answer register.  With that signal, the same BLT LM
+head says yes only for clean evidence and no for corrupted evidence.  Without
+that signal, it falls back to the old answer habit.
+```
+
+Boundary:
+
+```text
+This is still compiled provenance.  The next milestone is a learned
+text-to-provenance front-end that builds the context/candidate cards from
+ordinary prompt text.
+```
+
+### 2026-05-25 Stage102F prompt-only provenance front-end template gate
+
+Artifacts:
+
+```text
+script:
+  scripts/609_eval_stage102f_prompt_provenance_frontend.py
+
+test:
+  tests/test_stage102f_prompt_provenance_frontend.py
+
+report:
+  local_eval/20260525_STAGE102F_LOCAL_PROMPT_ONLY_PROVENANCE_FRONTEND/report.json
+```
+
+Result:
+
+```text
+cards = 128
+graph_matches = 128
+world_matches = 128
+graph_feature_accuracy = 1.000
+world_card_accuracy = 1.000
+accepted = true
+```
+
+Read:
+
+```text
+Stage102F removes the row-field shortcut for the current provenance probe
+front-end.  The visible prompt alone reconstructs the source/trust/support
+cards used by Stage102B and the context/observation cards used by Stage102D.
+
+This is not yet a learned universal reader.  It is a template front-end gate:
+ordinary Stage102C prompt text in, provenance cards out, no original_source or
+verified_source row fields required.
+```
+
+Next:
+
+```text
+Build a learned/free-form text-to-provenance front-end over paraphrased prompts.
+Keep the existing graph/world/answer ablations so the gain cannot be promoted
+unless source, trust, and register causality remain visible.
+```
+
+### 2026-05-25 Stage102G free-form provenance front-end paraphrase gate
+
+Artifacts:
+
+```text
+script:
+  scripts/610_eval_stage102g_freeform_provenance_frontend.py
+
+test:
+  tests/test_stage102g_freeform_provenance_frontend.py
+
+report:
+  local_eval/20260525_STAGE102G_LOCAL_FREEFORM_PROVENANCE_FRONTEND/report.json
+```
+
+Result:
+
+```text
+heldout rows = 64
+paraphrase variants per side = 3
+cards = 384
+graph_matches = 384
+world_matches = 384
+graph_feature_accuracy = 1.000
+world_card_accuracy = 1.000
+accepted = true
+```
+
+Read:
+
+```text
+Stage102G checks the next front-end boundary after Stage102F.  It does not only
+read the fixed "Source ledger" template.  It also reconstructs the same
+provenance cards from controlled free-form notes such as:
+
+  Audit note: S2 is verified for this file; S1 is unverified.
+  Observed evidence came from S2.
+  The evidence says valid.
+
+This is still deterministic and narrow, but it moves the graph/world reasoner
+closer to ordinary-language evidence reading.
+```
+
+Next:
+
+```text
+The next promoted step should be learned text-to-provenance, not another regex
+variant.  The learned reader must feed Stage102E and preserve the causal
+ablations: world-off, register-off, trust-edge shuffle, and source-id shuffle.
+```
+
+### 2026-05-25 Stage102Z final free-form provenance answer path
+
+Decision:
+
+```text
+Reader-only front-end gates are no longer enough.  The promoted gate is the
+full answer path:
+
+free-form evidence text
+-> context/observation provenance cards
+-> graph reasoner
+-> data-world residual
+-> gated answer register
+-> same BLT LM head yes/no
+```
+
+Artifacts:
+
+```text
+script:
+  scripts/612_train_stage102z_final_freeform_answer_path.py
+
+test:
+  tests/test_stage102z_final_freeform_answer_path.py
+
+accepted report:
+  local_eval/20260525_STAGE102Z_FINAL_FREEFORM_ANSWER_PATH_FULL64_EVAL_ONLY_SUPPORTFIX/report.json
+
+final gate checkpoint:
+  local_eval/20260525_STAGE102Z_FINAL_FREEFORM_ANSWER_PATH_FULLTRAIN_EVAL8_CLEAN3/last_final_gated_register.pt
+```
+
+Bug found and fixed:
+
+```text
+The first full64 final-path run rejected at 96.875%.
+All failures were support_conflict rows for "bus bay is C" / "bay C".
+
+Root cause:
+  support matching used contiguous substring matching.
+  A person knows "bay C" supports "bus bay is C", but the old function did not.
+
+Fix:
+  support matching now also accepts token-level containment, e.g.
+    bay C -> bus bay is C
+    platform 4 -> platform is 4
+```
+
+Accepted result:
+
+```text
+heldout rows = 64
+heldout cases = 256
+depth = 16
+
+world on:
+  accuracy = 1.000
+  clean_accuracy = 1.000
+  corrupt_no_accuracy = 1.000
+  min_margin = 1.8473
+  mean_margin = 5.2851
+  accepted = true
+
+by corruption:
+  clean               acc = 1.000, min_margin = 1.8473
+  source_id_conflict  acc = 1.000, min_margin = 5.4761
+  support_conflict    acc = 1.000, min_margin = 5.4137
+  trust_edge_conflict acc = 1.000, min_margin = 5.9540
+```
+
+Causal ablations:
+
+```text
+world off:
+  accuracy = 0.250
+  clean_accuracy = 1.000
+  corrupt_no_accuracy = 0.000
+  min_margin = -4.3106
+  accepted = false
+
+register off:
+  accuracy = 0.500
+  clean_accuracy = 0.500
+  corrupt_no_accuracy = 0.500
+  min_margin = -0.5751
+  accepted = false
+```
+
+Read:
+
+```text
+This is the cleanest Stage102 result so far.  The answer is produced by the
+same BLT LM head, but the mouth only behaves correctly when the provenance
+world signal and answer register are both present.
+
+This is still not universal open-domain fact checking.  It is a controlled
+free-form provenance world.  But it is no longer merely a parser/card test; it
+is the full final causal path for this thread.
 ```

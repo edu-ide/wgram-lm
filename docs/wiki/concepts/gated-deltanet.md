@@ -18,4 +18,7 @@ QTRM implication:
 - `src/qtrm_mm/mixers.py::TorchGatedDeltaMixer` is not official Gated DeltaNet.
 - Production path should prefer FLA `GatedDeltaNet` or a faithful adapter to the
   NVLabs/FLA interface.
-- Any fallback must be labelled debug/smoke only.
+- `official_gated_delta2` must not fall back to `TorchGatedDeltaMixer`.
+  Missing official code, missing kernels, or missing pinned ptxas is a launch
+  failure, not a reason to change backend silently.
+- Any non-official mixer must be labelled debug/smoke only.
