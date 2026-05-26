@@ -257,6 +257,51 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
         self.assertEqual(record["canonical_answer"], "00000000")
         self.assertFalse(record["hit"])
 
+    def test_core_depth_states_export_fixed_point_residual(self) -> None:
+        import torch
+
+        module = _load_eval_module()
+        telemetry: dict[str, object] = {}
+        outputs = {
+            "core_depth_states": torch.tensor(
+                [[[0.0, 0.0], [3.0, 4.0], [6.0, 8.0]]]
+            )
+        }
+
+        module._record_core_residual_telemetry(telemetry, outputs)
+        summary = module._finalize_choice_telemetry(telemetry)
+
+        self.assertEqual(summary["residual_curve"], [5.0, 5.0])
+        self.assertEqual(summary["fixed_point_residual"], 5.0)
+        self.assertEqual(summary["mean_fixed_point_residual"], 5.0)
+        self.assertEqual(summary["fixed_point_residual_observations"], 1)
+
+    def test_best_choice_residual_is_promoted_to_eval_record(self) -> None:
+        module = _load_eval_module()
+        record: dict[str, object] = {}
+
+        module._promote_best_choice_telemetry(
+            record,
+            [
+                {
+                    "choice": "A",
+                    "core_steps_actual_mean": 8.0,
+                    "core_steps_actual_observations": 1,
+                    "residual_curve": [1.5, 0.5],
+                    "fixed_point_residual": 0.5,
+                    "core_fixed_point_residual": 0.5,
+                    "mean_fixed_point_residual": 1.0,
+                    "fixed_point_residual_observations": 1,
+                }
+            ],
+        )
+
+        self.assertEqual(record["core_steps_actual_mean"], 8.0)
+        self.assertEqual(record["residual_curve"], [1.5, 0.5])
+        self.assertEqual(record["fixed_point_residual"], 0.5)
+        self.assertEqual(record["core_fixed_point_residual"], 0.5)
+        self.assertEqual(record["mean_fixed_point_residual"], 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()

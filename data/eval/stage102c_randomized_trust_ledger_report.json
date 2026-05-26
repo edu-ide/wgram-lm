@@ -1,0 +1,59 @@
+{
+  "decision": "built_stage102c_randomized_trust_ledger_probe",
+  "train_out": "data/eval/stage102c_randomized_trust_ledger_train_probe.jsonl",
+  "eval_out": "data/eval/stage102c_randomized_trust_ledger_heldout_probe.jsonl",
+  "train_contract": {
+    "rows": 64,
+    "pair_feature_counts": {
+      "dynamic_source_reliability": 64
+    },
+    "verified_source_counts": {
+      "S1": 32,
+      "S2": 32
+    },
+    "original_source_counts": {
+      "S1": 32,
+      "S2": 32
+    },
+    "counterfactual_source_counts": {
+      "S2": 32,
+      "S1": 32
+    },
+    "original_answer_counts": {
+      " yes": 32,
+      " no": 32
+    },
+    "counterfactual_answer_counts": {
+      " no": 32,
+      " yes": 32
+    },
+    "plain_language_read": "The source name and the verified role are no longer equivalent. A trust-edge ablation should now matter."
+  },
+  "heldout_contract": {
+    "rows": 64,
+    "pair_feature_counts": {
+      "dynamic_source_reliability": 64
+    },
+    "verified_source_counts": {
+      "S1": 32,
+      "S2": 32
+    },
+    "original_source_counts": {
+      "S1": 32,
+      "S2": 32
+    },
+    "counterfactual_source_counts": {
+      "S2": 32,
+      "S1": 32
+    },
+    "original_answer_counts": {
+      " yes": 32,
+      " no": 32
+    },
+    "counterfactual_answer_counts": {
+      " no": 32,
+      " yes": 32
+    },
+    "plain_language_read": "The source name and the verified role are no longer equivalent. A trust-edge ablation should now matter."
+  }
+}

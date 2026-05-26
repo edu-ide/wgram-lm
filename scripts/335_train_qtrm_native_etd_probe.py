@@ -24,6 +24,7 @@ from typing import Iterable
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 from qtrm_mm.blocks import QTRMBlockStack
 from qtrm_mm.config import QTRMConfig
@@ -909,6 +910,7 @@ class NativeQTRMETDLM(nn.Module):
         trm_recurrent_layerscale_mode: str = "none",
         trm_recurrent_layerscale_init: float = 1.0,
         tie_embeddings: bool = False,
+        activation_checkpointing: bool = False,
     ) -> None:
         super().__init__()
         self.vocab = int(vocab)
@@ -926,6 +928,7 @@ class NativeQTRMETDLM(nn.Module):
         self.trm_recurrent_layerscale_mode = str(trm_recurrent_layerscale_mode)
         self.trm_recurrent_layerscale_init = float(trm_recurrent_layerscale_init)
         self.tie_embeddings = bool(tie_embeddings)
+        self.activation_checkpointing = bool(activation_checkpointing)
         self.delta_backend = str(delta_backend)
         self.delta_head_dim = int(delta_head_dim) if delta_head_dim else None
         self.delta_num_v_heads = int(delta_num_v_heads) if delta_num_v_heads else None
@@ -1973,22 +1976,32 @@ class NativeQTRMETDLM(nn.Module):
         *,
         causal_mask: torch.Tensor,
     ) -> torch.Tensor:
-        if isinstance(
-            stage,
-            (
-                NativeETDBlock,
-                NativeMamba3Block,
-                NativeTRMOfficialBlock,
-                NativeTRMOfficialStack,
-                NativeTRMOfficialPreNormBlock,
-                NativeTRMOfficialPreNormStack,
-                NativeTRMGatedAttentionBlock,
-                NativeTRMQwenAttentionBlock,
-                NativeTRMMixerBlock,
-            ),
+        def run(inner_x: torch.Tensor) -> torch.Tensor:
+            if isinstance(
+                stage,
+                (
+                    NativeETDBlock,
+                    NativeMamba3Block,
+                    NativeTRMOfficialBlock,
+                    NativeTRMOfficialStack,
+                    NativeTRMOfficialPreNormBlock,
+                    NativeTRMOfficialPreNormStack,
+                    NativeTRMGatedAttentionBlock,
+                    NativeTRMQwenAttentionBlock,
+                    NativeTRMMixerBlock,
+                ),
+            ):
+                return stage(inner_x, causal_mask=causal_mask)
+            return stage(inner_x, attention_mask=None)
+
+        if (
+            self.activation_checkpointing
+            and self.training
+            and torch.is_grad_enabled()
+            and x.requires_grad
         ):
-            return stage(x, causal_mask=causal_mask)
-        return stage(x, attention_mask=None)
+            return checkpoint(run, x, use_reentrant=False)
+        return run(x)
 
     def _initial_trm_state(self, encoded: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         batch, seq_len, _ = encoded.shape
@@ -4377,6 +4390,7 @@ class NativeQTRMETDLM(nn.Module):
         op_order_off: bool = False,
         return_runtime: bool = False,
         return_state_trace: bool = False,
+        return_hidden: bool = False,
     ) -> torch.Tensor | dict[str, torch.Tensor]:
         if input_ids.ndim != 2:
             raise ValueError("input_ids must have shape [batch, seq]")
@@ -4400,6 +4414,7 @@ class NativeQTRMETDLM(nn.Module):
             halt_min_steps=int(halt_min_steps),
             return_runtime=bool(return_runtime),
             return_state_trace=bool(return_state_trace),
+            return_hidden=bool(return_hidden),
         )
 
     def _forward_embedded_impl(
@@ -4418,6 +4433,7 @@ class NativeQTRMETDLM(nn.Module):
         halt_min_steps: int = 1,
         return_runtime: bool = False,
         return_state_trace: bool = False,
+        return_hidden: bool = False,
     ) -> torch.Tensor | dict[str, torch.Tensor]:
         if x.ndim != 3:
             raise ValueError("embedded inputs must have shape [batch, seq, dim]")
@@ -4446,7 +4462,12 @@ class NativeQTRMETDLM(nn.Module):
         if bool(return_runtime):
             h, runtime = h
         h = self._run_stage(self.decode, h, causal_mask=mask)
-        logits = self._lm_logits(self.norm(h))
+        hidden = self.norm(h)
+        if bool(return_hidden):
+            if bool(return_runtime):
+                return {"hidden": hidden, **runtime}
+            return hidden
+        logits = self._lm_logits(hidden)
         if bool(return_runtime):
             return {"logits": logits, **runtime}
         return logits
@@ -4489,6 +4510,40 @@ class NativeQTRMETDLM(nn.Module):
             halt_threshold=float(halt_threshold),
             halt_min_steps=int(halt_min_steps),
             return_runtime=False,
+            return_hidden=False,
+        )
+
+    def forward_hidden(
+        self,
+        input_ids: torch.Tensor,
+        *,
+        think_steps: int,
+        state_reset_each_step: bool = False,
+        thinking_block_off: bool = False,
+        coupling_off: bool = False,
+        z_l_zero: bool = False,
+        z_h_zero: bool = False,
+        carrier_off: bool = False,
+        adaptive_halt: bool = False,
+        halt_threshold: float = 0.5,
+        halt_min_steps: int = 1,
+        op_order_off: bool = False,
+    ) -> torch.Tensor:
+        return self._forward_impl(
+            input_ids,
+            think_steps=int(think_steps),
+            state_reset_each_step=bool(state_reset_each_step),
+            thinking_block_off=bool(thinking_block_off),
+            coupling_off=bool(coupling_off),
+            z_l_zero=bool(z_l_zero),
+            z_h_zero=bool(z_h_zero),
+            carrier_off=bool(carrier_off),
+            adaptive_halt=bool(adaptive_halt),
+            halt_threshold=float(halt_threshold),
+            halt_min_steps=int(halt_min_steps),
+            op_order_off=bool(op_order_off),
+            return_runtime=False,
+            return_hidden=True,
         )
 
     def forward(

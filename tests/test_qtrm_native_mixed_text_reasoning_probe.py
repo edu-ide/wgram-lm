@@ -785,6 +785,83 @@ class QTRMNativeMixedTextReasoningProbeTests(unittest.TestCase):
         self.assertEqual(decoded[0], [f"{value:02d}\n" for value in mod_expected])
         self.assertEqual(decoded[1], [f"{value:02d}\n" for value in rev_expected])
 
+    def test_case_value_trace_follows_family_causal_order(self):
+        module = load_module()
+        op_ids = (1, 4, 2)
+        modchain = module.TextReasoningCase(
+            case_id="m",
+            start=1,
+            op_ids=op_ids,
+            answer=module.compute_answer(
+                start=1,
+                op_ids=op_ids,
+                family="modchain",
+                modulus=8,
+            ),
+            family="modchain",
+        )
+        revchain = module.TextReasoningCase(
+            case_id="r",
+            start=1,
+            op_ids=op_ids,
+            answer=module.compute_answer(
+                start=1,
+                op_ids=op_ids,
+                family="revchain",
+                modulus=8,
+            ),
+            family="revchain",
+        )
+        checksum = module.TextReasoningCase(
+            case_id="c",
+            start=1,
+            op_ids=op_ids,
+            answer=module.compute_answer(
+                start=1,
+                op_ids=op_ids,
+                family="checksum",
+                modulus=8,
+            ),
+            family="checksum",
+        )
+
+        self.assertEqual(
+            module.case_value_trace(modchain, modulus=8),
+            tuple(
+                module.compute_answer(
+                    start=1,
+                    op_ids=op_ids[:index],
+                    family="modchain",
+                    modulus=8,
+                )
+                for index in range(1, len(op_ids) + 1)
+            ),
+        )
+        self.assertEqual(
+            module.case_value_trace(revchain, modulus=8),
+            tuple(
+                module.compute_answer(
+                    start=1,
+                    op_ids=op_ids[-index:],
+                    family="revchain",
+                    modulus=8,
+                )
+                for index in range(1, len(op_ids) + 1)
+            ),
+        )
+        self.assertEqual(
+            module.case_value_trace(checksum, modulus=8),
+            tuple(
+                module.compute_answer(
+                    start=1,
+                    op_ids=op_ids[:index],
+                    family="checksum",
+                    modulus=8,
+                )
+                for index in range(1, len(op_ids) + 1)
+            ),
+        )
+
     def test_causal_prefix_len_follows_family_order(self):
         module = load_module()
         op_ids = (1, 4, 3)
@@ -4667,6 +4744,972 @@ class QTRMNativeMixedTextReasoningProbeTests(unittest.TestCase):
         args = module.build_arg_parser().parse_args(["--halt-pooling", "dedicated"])
 
         self.assertEqual(args.halt_pooling, "dedicated")
+
+    def test_gram_trajectory_search_selects_lprm_scored_sample(self):
+        module = load_module()
+
+        class ToyGramModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.vocab = 6
+                self.forward_calls = 0
+                self.lprm_calls = 0
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                self.forward_calls += 1
+                sample_id = self.forward_calls - 1
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], self.vocab),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, 2 + sample_id] = 20.0
+                trace = torch.full(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    float(sample_id),
+                    dtype=torch.float32,
+                )
+                return {"logits": logits, "core_state_trace_h": trace}
+
+            def gram_lprm_scores(self, state):
+                self.lprm_calls += 1
+                return state[:, 0]
+
+        model = ToyGramModel()
+        prompt_ids = torch.tensor([[1, 2]], dtype=torch.long)
+
+        result = module.generate_answer_gram_trajectory_search(
+            model,
+            prompt_ids,
+            answer_len=1,
+            think_steps=2,
+            trajectory_count=3,
+            stochastic_noise_std=0.0,
+        )
+
+        self.assertEqual(result["token_ids"], [4])
+        self.assertEqual(result["selected_trajectory"], 2)
+        self.assertEqual(len(result["trajectory_token_ids"]), 3)
+        self.assertGreater(result["trajectory_diversity"], 0.0)
+        self.assertEqual(model.forward_calls, 3)
+        self.assertEqual(model.lprm_calls, 1)
+
+    def test_gram_trajectory_search_can_select_non_argmax_topk_candidate(self):
+        module = load_module()
+
+        class ToyTopKGramModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.vocab = 6
+                self.forward_calls = 0
+                self.token_embed = torch.nn.Embedding(self.vocab, 4)
+                self.gram_lprm_head = torch.nn.Linear(4, 1, bias=False)
+                with torch.no_grad():
+                    self.token_embed.weight.zero_()
+                    self.token_embed.weight[2, 0] = -5.0
+                    self.token_embed.weight[3, 0] = 5.0
+                    self.gram_lprm_head.weight.zero_()
+                    self.gram_lprm_head.weight[0, 0] = 1.0
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                self.forward_calls += 1
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], self.vocab),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, 2] = 20.0
+                logits[:, -1, 3] = 19.0
+                trace = torch.zeros(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    dtype=torch.float32,
+                )
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        model = ToyTopKGramModel()
+        prompt_ids = torch.tensor([[1, 2]], dtype=torch.long)
+
+        greedy_result = module.generate_answer_gram_trajectory_search(
+            model,
+            prompt_ids,
+            answer_len=1,
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            candidate_topk_per_trajectory=1,
+        )
+        topk_result = module.generate_answer_gram_trajectory_search(
+            model,
+            prompt_ids,
+            answer_len=1,
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            candidate_topk_per_trajectory=2,
+        )
+
+        self.assertEqual(greedy_result["token_ids"], [2])
+        self.assertEqual(topk_result["token_ids"], [3])
+        self.assertEqual(topk_result["candidate_count"], 2)
+        self.assertEqual(topk_result["candidate_topk_per_trajectory"], 2)
+
+    def test_gram_trajectory_search_can_score_full_candidate_forward(self):
+        module = load_module()
+
+        class ToyCandidateForwardVerifier(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.vocab = 6
+                self.forward_calls = 0
+                self.gram_lprm_head = torch.nn.Linear(4, 1, bias=False)
+                with torch.no_grad():
+                    self.gram_lprm_head.weight.zero_()
+                    self.gram_lprm_head.weight[0, 0] = 1.0
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                self.forward_calls += 1
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], self.vocab),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, 2] = 20.0
+                logits[:, -1, 3] = 19.0
+                trace = torch.zeros(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    dtype=torch.float32,
+                )
+                if input_ids.shape[1] > 2:
+                    last_token = int(input_ids[0, -1])
+                    trace[:, -1, -1, 0] = 5.0 if last_token == 3 else -5.0
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        model = ToyCandidateForwardVerifier()
+        prompt_ids = torch.tensor([[1, 2]], dtype=torch.long)
+
+        result = module.generate_answer_gram_trajectory_search(
+            model,
+            prompt_ids,
+            answer_len=1,
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            candidate_topk_per_trajectory=2,
+            candidate_score_mode="candidate_forward",
+        )
+
+        self.assertEqual(result["token_ids"], [3])
+        self.assertEqual(result["candidate_score_mode"], "candidate_forward")
+        self.assertEqual(result["candidate_count"], 2)
+        self.assertGreaterEqual(model.forward_calls, 3)
+
+    def test_candidate_forward_scoring_can_train_model_body(self):
+        module = load_module()
+
+        class ToyTrainableCandidateVerifier(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.vocab = 6
+                self.token_embed = torch.nn.Embedding(self.vocab, 4)
+                self.gram_lprm_head = torch.nn.Linear(4, 1, bias=False)
+                with torch.no_grad():
+                    self.token_embed.weight.zero_()
+                    self.gram_lprm_head.weight.zero_()
+                    self.gram_lprm_head.weight[0, 0] = 1.0
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                logits = torch.zeros(
+                    input_ids.shape[0],
+                    input_ids.shape[1],
+                    self.vocab,
+                    dtype=torch.float32,
+                    device=input_ids.device,
+                )
+                embeddings = self.token_embed(input_ids)
+                final_context = embeddings.sum(dim=1, keepdim=True).expand_as(embeddings)
+                trace = final_context.unsqueeze(1)
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        model = ToyTrainableCandidateVerifier()
+        prompt_ids = torch.tensor([[1, 2]], dtype=torch.long)
+        generated_states = torch.zeros(2, 4)
+        candidate_token_ids = torch.tensor([[3], [4]], dtype=torch.long)
+
+        score_states, score_tokens = module._candidate_score_state_inputs(
+            model,
+            prompt_ids,
+            generated_states,
+            candidate_token_ids,
+            think_steps=2,
+            candidate_score_mode="candidate_forward",
+            candidate_score_train_body=True,
+        )
+        scores = module._score_gram_final_states(model, score_states, score_tokens)
+        targets = torch.tensor([0.0, 1.0])
+        loss = torch.nn.functional.binary_cross_entropy_with_logits(scores, targets)
+        loss.backward()
+
+        self.assertIsNotNone(model.token_embed.weight.grad)
+        self.assertGreater(float(model.token_embed.weight.grad.abs().sum()), 0.0)
+
+    def test_gram_lprm_generated_trajectory_loss_trains_process_reward_head(self):
+        module = load_module()
+        case = module.TextReasoningCase(
+            case_id="m",
+            start=1,
+            op_ids=(1,),
+            answer=2,
+            family="modchain",
+        )
+        tokenizer = module.CharTokenizer.from_texts([module.case_full_text(case)])
+        prompt_len = len(tokenizer.encode(module.case_prompt(case)))
+        answer_tokens = tokenizer.encode(module.case_answer(case))
+        wrong_tokens = list(answer_tokens)
+        wrong_tokens[0] = (wrong_tokens[0] + 1) % tokenizer.vocab_size
+
+        class ToyGramTrainModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.forward_calls = 0
+                self.prompt_len = int(prompt_len)
+                self.answer_len = len(answer_tokens)
+                self.paths = [wrong_tokens, answer_tokens]
+                self.gram_lprm_head = torch.nn.Linear(4, 1, bias=False)
+                torch.nn.init.zeros_(self.gram_lprm_head.weight)
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                call = self.forward_calls
+                self.forward_calls += 1
+                trajectory = min(call // self.answer_len, len(self.paths) - 1)
+                token_index = call % self.answer_len
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], tokenizer.vocab_size),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, self.paths[trajectory][token_index]] = 20.0
+                trace = torch.full(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    float(trajectory),
+                    dtype=torch.float32,
+                )
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        model = ToyGramTrainModel()
+        loss, metrics = module.gram_lprm_generated_trajectory_loss(
+            model,
+            [case],
+            tokenizer=tokenizer,
+            device=torch.device("cpu"),
+            include_family_tag=False,
+            state_anchor=False,
+            state_anchor_position="before_answer",
+            think_steps=2,
+            trajectory_count=2,
+            stochastic_noise_std=0.0,
+            max_cases=1,
+        )
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertEqual(metrics["trajectory_count"], 2)
+        self.assertEqual(metrics["positive_fraction"], 0.5)
+        self.assertEqual(metrics["oracle_accuracy"], 1.0)
+        self.assertEqual(metrics["selected_accuracy"], 0.0)
+        loss.backward()
+        grad = model.gram_lprm_head.weight.grad
+        self.assertIsNotNone(grad)
+        self.assertGreater(float(grad.detach().abs().sum()), 0.0)
+
+    def test_gram_lprm_candidate_forward_loss_can_train_model_body(self):
+        module = load_module()
+        case = module.TextReasoningCase(
+            case_id="m",
+            start=1,
+            op_ids=(1,),
+            answer=2,
+            family="modchain",
+        )
+        tokenizer = module.CharTokenizer.from_texts([module.case_full_text(case)])
+        answer_tokens = tokenizer.encode(module.case_answer(case))
+        wrong_tokens = list(answer_tokens)
+        wrong_tokens[0] = (wrong_tokens[0] + 1) % tokenizer.vocab_size
+
+        class ToyCandidateForwardTrainBodyModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.forward_calls = 0
+                self.paths = [wrong_tokens, answer_tokens]
+                self.token_embed = torch.nn.Embedding(tokenizer.vocab_size, 4)
+                self.gram_lprm_head = torch.nn.Linear(4, 1, bias=False)
+                with torch.no_grad():
+                    self.token_embed.weight.zero_()
+                    self.gram_lprm_head.weight.zero_()
+                    self.gram_lprm_head.weight[0, 0] = 1.0
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                call = self.forward_calls
+                self.forward_calls += 1
+                trajectory = min(call // len(answer_tokens), len(self.paths) - 1)
+                token_index = call % len(answer_tokens)
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], tokenizer.vocab_size),
+                    -20.0,
+                    dtype=torch.float32,
+                    device=input_ids.device,
+                )
+                logits[:, -1, self.paths[trajectory][token_index]] = 20.0
+                embeddings = self.token_embed(input_ids)
+                final_context = embeddings.sum(dim=1, keepdim=True).expand_as(embeddings)
+                trace = final_context.unsqueeze(1)
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        model = ToyCandidateForwardTrainBodyModel()
+        loss, metrics = module.gram_lprm_generated_trajectory_loss(
+            model,
+            [case],
+            tokenizer=tokenizer,
+            device=torch.device("cpu"),
+            include_family_tag=False,
+            state_anchor=False,
+            state_anchor_position="before_answer",
+            think_steps=2,
+            trajectory_count=2,
+            stochastic_noise_std=0.0,
+            max_cases=1,
+            candidate_score_mode="candidate_forward",
+            candidate_score_train_body=True,
+        )
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertEqual(metrics["candidate_score_train_body"], 1)
+        loss.backward()
+        self.assertIsNotNone(model.token_embed.weight.grad)
+        self.assertGreater(float(model.token_embed.weight.grad.abs().sum()), 0.0)
+
+    def test_groupwise_candidate_ranking_loss_prefers_positive_candidate(self):
+        module = load_module()
+        scores = torch.tensor([2.0, 1.0, -1.0], requires_grad=True)
+        targets = torch.tensor([0.0, 1.0, 0.0])
+
+        loss = module.gram_groupwise_candidate_ranking_loss(scores, targets)
+
+        self.assertTrue(torch.isfinite(loss))
+        loss.backward()
+        self.assertIsNotNone(scores.grad)
+        self.assertLess(float(scores.grad[1]), 0.0)
+        self.assertGreater(float(scores.grad[0]), 0.0)
+
+    def test_attractor_candidate_selector_refines_scores_groupwise(self):
+        module = load_module()
+        selector = module.GramAttractorCandidateSelector(
+            d_model=4,
+            iterations=3,
+            step_scale=1.0,
+        )
+        with torch.no_grad():
+            selector.score_head.weight.zero_()
+            selector.score_head.bias.zero_()
+            selector.score_head.weight[0, 0] = 1.0
+            selector.score_update.weight.zero_()
+            selector.score_update.bias.zero_()
+            selector.score_update.weight[0, 0] = 1.0
+            selector.update_norm.weight.fill_(1.0)
+            selector.update_norm.bias.zero_()
+
+        states = torch.tensor(
+            [
+                [0.1, 0.0, 0.0, 0.0],
+                [0.9, 0.0, 0.0, 0.0],
+                [0.2, 0.0, 0.0, 0.0],
+            ],
+            dtype=torch.float32,
+        )
+        initial_scores = selector.score_head(states).reshape(-1)
+        refined_scores = selector(states).reshape(-1)
+
+        self.assertGreater(float(refined_scores[1] - refined_scores[0]), 0.5)
+        self.assertGreater(
+            float(refined_scores[1] - refined_scores[0]),
+            float(initial_scores[1] - initial_scores[0]),
+        )
+
+    def test_score_gram_final_states_uses_attractor_selector(self):
+        module = load_module()
+
+        class ToyAttractorModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.gram_attractor_selector = module.GramAttractorCandidateSelector(
+                    d_model=4,
+                    iterations=0,
+                )
+                with torch.no_grad():
+                    self.gram_attractor_selector.score_head.weight.zero_()
+                    self.gram_attractor_selector.score_head.bias.zero_()
+                    self.gram_attractor_selector.score_head.weight[0, 1] = 1.0
+
+        model = ToyAttractorModel()
+        states = torch.tensor(
+            [
+                [9.0, 1.0, 0.0, 0.0],
+                [1.0, 5.0, 0.0, 0.0],
+            ],
+            dtype=torch.float32,
+        )
+
+        scores = module._score_gram_final_states(model, states)
+
+        self.assertEqual(scores.argmax().item(), 1)
+
+    def test_gram_lprm_loss_accepts_attractor_selector_without_head(self):
+        module = load_module()
+        case = module.TextReasoningCase(
+            case_id="m",
+            start=1,
+            op_ids=(1,),
+            answer=2,
+            family="modchain",
+        )
+        tokenizer = module.CharTokenizer.from_texts([module.case_full_text(case)])
+        answer_tokens = tokenizer.encode(module.case_answer(case))
+
+        class ToyAttractorOnlyModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.forward_calls = 0
+                self.gram_attractor_selector = module.GramAttractorCandidateSelector(
+                    d_model=4,
+                    iterations=0,
+                )
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                token_index = self.forward_calls % len(answer_tokens)
+                self.forward_calls += 1
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], tokenizer.vocab_size),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, answer_tokens[token_index]] = 20.0
+                trace = torch.ones(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    dtype=torch.float32,
+                )
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        loss, metrics = module.gram_lprm_generated_trajectory_loss(
+            ToyAttractorOnlyModel(),
+            [case],
+            tokenizer=tokenizer,
+            device=torch.device("cpu"),
+            include_family_tag=False,
+            state_anchor=False,
+            state_anchor_position="before_answer",
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            max_cases=1,
+        )
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertEqual(metrics["oracle_accuracy"], 1.0)
+
+    def test_gram_lprm_loss_accepts_latent_consistency_without_head(self):
+        module = load_module()
+        case = module.TextReasoningCase(
+            case_id="m",
+            start=1,
+            op_ids=(1,),
+            answer=2,
+            family="modchain",
+        )
+        tokenizer = module.CharTokenizer.from_texts([module.case_full_text(case)])
+        answer_tokens = tokenizer.encode(module.case_answer(case))
+
+        class ToyLatentConsistencyTrainModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.forward_calls = 0
+                self.gram_latent_consistency_verifier = (
+                    module.GramLatentConsistencyVerifier(d_model=4, latent_dim=4)
+                )
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                token_index = self.forward_calls % len(answer_tokens)
+                self.forward_calls += 1
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], tokenizer.vocab_size),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, answer_tokens[token_index]] = 20.0
+                trace = torch.ones(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    dtype=torch.float32,
+                )
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        loss, metrics = module.gram_lprm_generated_trajectory_loss(
+            ToyLatentConsistencyTrainModel(),
+            [case],
+            tokenizer=tokenizer,
+            device=torch.device("cpu"),
+            include_family_tag=False,
+            state_anchor=False,
+            state_anchor_position="before_answer",
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            max_cases=1,
+        )
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertEqual(metrics["oracle_accuracy"], 1.0)
+
+    def test_gram_lprm_loss_trains_trace_consistency_verifier(self):
+        module = load_module()
+        case = module.TextReasoningCase(
+            case_id="m",
+            start=1,
+            op_ids=(1,),
+            answer=module.compute_answer(
+                start=1,
+                op_ids=(1,),
+                family="modchain",
+                modulus=8,
+            ),
+            family="modchain",
+        )
+        tokenizer = module.CharTokenizer.from_texts([module.case_full_text(case)])
+        answer_tokens = tokenizer.encode(module.case_answer(case))
+
+        class ToyTraceConsistencyTrainModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.forward_calls = 0
+                self.gram_trace_consistency_verifier = (
+                    module.GramTraceConsistencyVerifier(
+                        d_model=4,
+                        num_values=8,
+                        max_trace_len=1,
+                    )
+                )
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                token_index = self.forward_calls % len(answer_tokens)
+                self.forward_calls += 1
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], tokenizer.vocab_size),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, answer_tokens[token_index]] = 20.0
+                trace = torch.ones(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    dtype=torch.float32,
+                )
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        model = ToyTraceConsistencyTrainModel()
+        loss, metrics = module.gram_lprm_generated_trajectory_loss(
+            model,
+            [case],
+            tokenizer=tokenizer,
+            device=torch.device("cpu"),
+            include_family_tag=False,
+            state_anchor=False,
+            state_anchor_position="before_answer",
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            max_cases=1,
+            modulus=8,
+        )
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertGreater(float(metrics["trace_loss"]), 0.0)
+        loss.backward()
+        grad = model.gram_trace_consistency_verifier.trace_head.weight.grad
+        self.assertIsNotNone(grad)
+        self.assertGreater(float(grad.detach().abs().sum()), 0.0)
+
+    def test_latent_consistency_verifier_prefers_matching_candidate_state(self):
+        module = load_module()
+
+        class ToyLatentConsistencyModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.gram_latent_consistency_verifier = (
+                    module.GramLatentConsistencyVerifier(d_model=4, latent_dim=4)
+                )
+                with torch.no_grad():
+                    self.gram_latent_consistency_verifier.prompt_proj.weight.copy_(
+                        torch.eye(4)
+                    )
+                    self.gram_latent_consistency_verifier.prompt_proj.bias.zero_()
+                    self.gram_latent_consistency_verifier.candidate_proj.weight.copy_(
+                        torch.eye(4)
+                    )
+                    self.gram_latent_consistency_verifier.candidate_proj.bias.zero_()
+
+        model = ToyLatentConsistencyModel()
+        prompt_state = torch.tensor([[1.0, 0.0, 0.0, 0.0]])
+        candidate_states = torch.tensor(
+            [
+                [0.9, 0.0, 0.0, 0.0],
+                [-1.0, 0.0, 0.0, 0.0],
+            ],
+            dtype=torch.float32,
+        )
+
+        scores = module._score_gram_final_states(
+            model,
+            candidate_states,
+            prompt_state=prompt_state,
+        )
+
+        self.assertEqual(int(scores.argmax().item()), 0)
+        self.assertGreater(float(scores[0]), float(scores[1]))
+
+    def test_trace_consistency_verifier_scores_candidate_value_from_state(self):
+        module = load_module()
+
+        class ToyTraceConsistencyModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.gram_trace_consistency_verifier = (
+                    module.GramTraceConsistencyVerifier(
+                        d_model=4,
+                        num_values=6,
+                        max_trace_len=1,
+                    )
+                )
+                with torch.no_grad():
+                    self.gram_trace_consistency_verifier.trace_head.weight.zero_()
+                    self.gram_trace_consistency_verifier.trace_head.bias.zero_()
+                    self.gram_trace_consistency_verifier.trace_head.weight[2, 0] = 5.0
+                    self.gram_trace_consistency_verifier.trace_head.weight[3, 0] = 5.0
+
+        model = ToyTraceConsistencyModel()
+        candidate_states = torch.tensor(
+            [
+                [-1.0, 0.0, 0.0, 0.0],
+                [0.9, 0.0, 0.0, 0.0],
+            ],
+            dtype=torch.float32,
+        )
+        candidate_values = torch.tensor([2, 3], dtype=torch.long)
+
+        scores = module._score_gram_final_states(
+            model,
+            candidate_states,
+            candidate_values=candidate_values,
+            trace_lengths=torch.tensor([1, 1], dtype=torch.long),
+        )
+
+        self.assertEqual(int(scores.argmax().item()), 1)
+        self.assertGreater(float(scores[1]), float(scores[0]))
+
+    def test_trace_consistency_can_be_auxiliary_to_lprm_scoring(self):
+        module = load_module()
+
+        class ToyLprmTraceModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.gram_trace_score_weight = 0.0
+                self.gram_lprm_head = torch.nn.Linear(4, 1, bias=False)
+                self.gram_trace_consistency_verifier = (
+                    module.GramTraceConsistencyVerifier(
+                        d_model=4,
+                        num_values=6,
+                        max_trace_len=1,
+                    )
+                )
+                with torch.no_grad():
+                    self.gram_lprm_head.weight.zero_()
+                    self.gram_lprm_head.weight[0, 1] = 5.0
+                    self.gram_trace_consistency_verifier.trace_head.weight.zero_()
+                    self.gram_trace_consistency_verifier.trace_head.bias.zero_()
+                    self.gram_trace_consistency_verifier.trace_head.weight[2, 0] = 5.0
+                    self.gram_trace_consistency_verifier.trace_head.weight[3, 0] = 5.0
+
+        model = ToyLprmTraceModel()
+        candidate_states = torch.tensor(
+            [
+                [-1.0, 1.0, 0.0, 0.0],
+                [0.9, 0.0, 0.0, 0.0],
+            ],
+            dtype=torch.float32,
+        )
+        candidate_values = torch.tensor([2, 3], dtype=torch.long)
+
+        lprm_only_scores = module._score_gram_final_states(
+            model,
+            candidate_states,
+            candidate_values=candidate_values,
+            trace_lengths=torch.tensor([1, 1], dtype=torch.long),
+        )
+        model.gram_trace_score_weight = 2.0
+        fused_scores = module._score_gram_final_states(
+            model,
+            candidate_states,
+            candidate_values=candidate_values,
+            trace_lengths=torch.tensor([1, 1], dtype=torch.long),
+        )
+
+        self.assertEqual(int(lprm_only_scores.argmax().item()), 0)
+        self.assertEqual(int(fused_scores.argmax().item()), 1)
+
+    def test_gram_trajectory_search_can_use_trace_consistency_verifier(self):
+        module = load_module()
+        tokenizer = module.CharTokenizer(
+            chars=("02\n", "03\n"),
+            char_to_id={"02\n": 0, "03\n": 1},
+        )
+
+        class ToyTraceConsistencySearchModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.vocab = 2
+                self.gram_trace_consistency_verifier = (
+                    module.GramTraceConsistencyVerifier(
+                        d_model=4,
+                        num_values=6,
+                        max_trace_len=1,
+                    )
+                )
+                with torch.no_grad():
+                    self.gram_trace_consistency_verifier.trace_head.weight.zero_()
+                    self.gram_trace_consistency_verifier.trace_head.bias.zero_()
+                    self.gram_trace_consistency_verifier.trace_head.weight[2, 0] = 5.0
+                    self.gram_trace_consistency_verifier.trace_head.weight[3, 0] = 5.0
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], self.vocab),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, 0] = 20.0
+                logits[:, -1, 1] = 19.0
+                trace = torch.zeros(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    dtype=torch.float32,
+                )
+                if int(input_ids[0, -1]) == 1:
+                    trace[:, -1, -1, 0] = 0.9
+                else:
+                    trace[:, -1, -1, 0] = -1.0
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        result = module.generate_answer_gram_trajectory_search(
+            ToyTraceConsistencySearchModel(),
+            torch.tensor([[0]], dtype=torch.long),
+            answer_len=1,
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            candidate_topk_per_trajectory=2,
+            candidate_score_mode="candidate_forward",
+            tokenizer=tokenizer,
+            trace_length=1,
+        )
+
+        self.assertEqual(result["token_ids"], [1])
+
+    def test_gram_trajectory_search_can_use_latent_consistency_verifier(self):
+        module = load_module()
+
+        class ToyLatentConsistencySearchModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.vocab = 6
+                self.forward_calls = 0
+                self.gram_latent_consistency_verifier = (
+                    module.GramLatentConsistencyVerifier(d_model=4, latent_dim=4)
+                )
+                with torch.no_grad():
+                    self.gram_latent_consistency_verifier.prompt_proj.weight.copy_(
+                        torch.eye(4)
+                    )
+                    self.gram_latent_consistency_verifier.prompt_proj.bias.zero_()
+                    self.gram_latent_consistency_verifier.candidate_proj.weight.copy_(
+                        torch.eye(4)
+                    )
+                    self.gram_latent_consistency_verifier.candidate_proj.bias.zero_()
+
+            def forward_with_runtime(self, input_ids, *, think_steps, return_state_trace):
+                self.forward_calls += 1
+                logits = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1], self.vocab),
+                    -20.0,
+                    dtype=torch.float32,
+                )
+                logits[:, -1, 2] = 20.0
+                logits[:, -1, 3] = 19.0
+                trace = torch.zeros(
+                    (input_ids.shape[0], 1, input_ids.shape[1], 4),
+                    dtype=torch.float32,
+                )
+                if input_ids.shape[1] == 2:
+                    trace[:, -1, -1, 0] = 1.0
+                elif int(input_ids[0, -1]) == 3:
+                    trace[:, -1, -1, 0] = 0.9
+                else:
+                    trace[:, -1, -1, 0] = -1.0
+                return {"logits": logits, "core_state_trace_h": trace}
+
+        result = module.generate_answer_gram_trajectory_search(
+            ToyLatentConsistencySearchModel(),
+            torch.tensor([[1, 2]], dtype=torch.long),
+            answer_len=1,
+            think_steps=2,
+            trajectory_count=1,
+            stochastic_noise_std=0.0,
+            candidate_topk_per_trajectory=2,
+            candidate_score_mode="candidate_forward",
+        )
+
+        self.assertEqual(result["token_ids"], [3])
+
+    def test_evaluate_skips_gram_trajectory_search_for_think0_baseline(self):
+        module = load_module()
+
+        class Think0Model(torch.nn.Module):
+            def __init__(self, vocab_size: int):
+                super().__init__()
+                self.vocab_size = int(vocab_size)
+
+            def forward(self, input_ids, **_kwargs):
+                return torch.zeros(
+                    input_ids.shape[0],
+                    input_ids.shape[1],
+                    self.vocab_size,
+                    dtype=torch.float32,
+                )
+
+            def forward_with_runtime(self, input_ids, **kwargs):
+                if kwargs.get("return_state_trace"):
+                    raise AssertionError("think0 baseline must not invoke GRAM search")
+                return {
+                    "logits": torch.zeros(
+                        input_ids.shape[0],
+                        input_ids.shape[1],
+                        self.vocab_size,
+                        dtype=torch.float32,
+                    )
+                }
+
+        case = module.TextReasoningCase(
+            case_id="m",
+            start=1,
+            op_ids=(1,),
+            answer=2,
+            family="modchain",
+        )
+        tokenizer = module.CharTokenizer.from_texts([module.case_full_text(case)])
+        args = module.build_arg_parser().parse_args(
+            [
+                "--device",
+                "cpu",
+                "--modulus",
+                "8",
+                "--program-len",
+                "1",
+                "--eval-gram-trajectory-search",
+                "--gram-trajectory-count",
+                "3",
+            ]
+        )
+
+        metrics = module.evaluate(
+            Think0Model(tokenizer.vocab_size),
+            [case],
+            args,
+            tokenizer=tokenizer,
+            think_steps=0,
+        )
+
+        self.assertNotIn("gram_trajectory_search", metrics)
+
+    def test_parser_accepts_gram_trajectory_search_flags(self):
+        module = load_module()
+        args = module.build_arg_parser().parse_args(
+            [
+                "--eval-gram-trajectory-search",
+                "--gram-trajectory-count",
+                "4",
+                "--gram-stochastic-noise-std",
+                "0.25",
+                "--gram-lprm-loss-weight",
+                "0.3",
+                "--gram-lprm-max-cases",
+                "5",
+                "--gram-lprm-every",
+                "7",
+                "--gram-lprm-ranking-loss-weight",
+                "1.25",
+                "--gram-candidate-topk-per-trajectory",
+                "3",
+                "--gram-candidate-score-mode",
+                "candidate_forward",
+                "--gram-candidate-score-train-body",
+                "--gram-candidate-selector",
+                "attractor",
+                "--gram-attractor-iterations",
+                "4",
+                "--gram-attractor-step-scale",
+                "0.75",
+                "--gram-trace-max-len",
+                "5",
+                "--gram-trace-consistency-weight",
+                "0.4",
+            ]
+        )
+
+        self.assertTrue(args.eval_gram_trajectory_search)
+        self.assertEqual(args.gram_trajectory_count, 4)
+        self.assertAlmostEqual(args.gram_stochastic_noise_std, 0.25)
+        self.assertAlmostEqual(args.gram_lprm_loss_weight, 0.3)
+        self.assertEqual(args.gram_lprm_max_cases, 5)
+        self.assertEqual(args.gram_lprm_every, 7)
+        self.assertAlmostEqual(args.gram_lprm_ranking_loss_weight, 1.25)
+        self.assertEqual(args.gram_candidate_topk_per_trajectory, 3)
+        self.assertEqual(args.gram_candidate_score_mode, "candidate_forward")
+        self.assertTrue(args.gram_candidate_score_train_body)
+        self.assertEqual(args.gram_candidate_selector, "attractor")
+        self.assertEqual(args.gram_attractor_iterations, 4)
+        self.assertAlmostEqual(args.gram_attractor_step_scale, 0.75)
+        self.assertEqual(args.gram_trace_max_len, 5)
+        self.assertAlmostEqual(args.gram_trace_consistency_weight, 0.4)
+
+    def test_parser_accepts_latent_consistency_verifier_flags(self):
+        module = load_module()
+        args = module.build_arg_parser().parse_args(
+            [
+                "--gram-candidate-selector",
+                "latent_consistency",
+                "--gram-lcv-latent-dim",
+                "16",
+                "--gram-lcv-temperature",
+                "0.5",
+            ]
+        )
+
+        self.assertEqual(args.gram_candidate_selector, "latent_consistency")
+        self.assertEqual(args.gram_lcv_latent_dim, 16)
+        self.assertAlmostEqual(args.gram_lcv_temperature, 0.5)
+
+    def test_parser_accepts_trace_consistency_verifier_flag(self):
+        module = load_module()
+        args = module.build_arg_parser().parse_args(
+            [
+                "--gram-candidate-selector",
+                "trace_consistency",
+            ]
+        )
+
+        self.assertEqual(args.gram_candidate_selector, "trace_consistency")
 
 
 if __name__ == "__main__":

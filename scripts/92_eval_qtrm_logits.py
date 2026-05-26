@@ -18,6 +18,7 @@ from qtrm_mm.diagnostics import (
     residual_logit_telemetry,
     topk_token_report,
 )
+from qtrm_mm.eval.general_answer_interface import extract_answer_candidate_text
 from qtrm_mm.qtrm_model import QTRMMultimodalModel
 from qtrm_mm.qwen_donor import QwenDonorAdapter
 
@@ -82,6 +83,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--enable-core-halt",
         action="store_true",
         help="Enable the learned recursive-core halt decision during forward/eval generation.",
+    )
+    ap.add_argument(
+        "--stage59-candidates-jsonl",
+        default="",
+        help=(
+            "Optional output JSONL in the Stage59 general-answer candidate contract: "
+            "{id, candidates, raw_completions}. Requires --data-jsonl rows with id/case_id."
+        ),
     )
     ap.add_argument("--json", action="store_true", help="Emit JSON records instead of pretty text.")
     return ap
@@ -223,6 +232,47 @@ def iter_jsonl_texts(paths: Iterable[str]) -> Iterable[str]:
                     yield text
 
 
+def _row_id(row: dict, fallback: str) -> str:
+    for key in ("id", "case_id", "example_id", "uid"):
+        if row.get(key) is not None:
+            return str(row[key])
+    return fallback
+
+
+def _row_prompt(row: dict) -> str:
+    for key in ("prompt", "qwen_prompt", "question", "text"):
+        if row.get(key):
+            return str(row[key])
+    prompt = row.get("prompt") or ""
+    answer = row.get("answer") or ""
+    return f"{prompt}\n\n{answer}".strip()
+
+
+def iter_stage59_rows(paths: Iterable[str]) -> Iterable[dict]:
+    ordinal = 0
+    for raw_path in paths:
+        path = Path(raw_path)
+        if not path.exists():
+            continue
+        with path.open("r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                text = _row_prompt(row)
+                if not text:
+                    continue
+                yield {
+                    "id": _row_id(row, f"row-{ordinal}"),
+                    "text": text,
+                    "task_family": row.get("task_family") or row.get("family") or row.get("category") or "unknown",
+                }
+                ordinal += 1
+
+
 def collect_texts(args: argparse.Namespace) -> list[str]:
     if args.prompt:
         return [apply_answer_contract(text, args.answer_contract) for text in args.prompt[: args.max_samples]]
@@ -235,6 +285,19 @@ def collect_texts(args: argparse.Namespace) -> list[str]:
         if texts:
             return texts
     return [apply_answer_contract(text, args.answer_contract) for text in DEFAULT_PROMPTS[: args.max_samples]]
+
+
+def collect_stage59_items(args: argparse.Namespace) -> list[dict]:
+    if not args.data_jsonl:
+        raise SystemExit("--stage59-candidates-jsonl requires --data-jsonl")
+    items = []
+    for row in iter_stage59_rows(args.data_jsonl):
+        items.append({**row, "text": apply_answer_contract(str(row["text"]), args.answer_contract)})
+        if len(items) >= args.max_samples:
+            break
+    if not items:
+        raise SystemExit("no Stage59 rows loaded from --data-jsonl")
+    return items
 
 
 def apply_ablation_mode(model: QTRMMultimodalModel, mode: str) -> None:
@@ -486,7 +549,15 @@ def main() -> None:
     apply_logit_scale_overrides(model, args)
     apply_ablation_mode(model, args.ablation_mode)
     donor = build_donor(cfg, no_donor=args.no_donor, json_mode=args.json)
-    texts = collect_texts(args)
+    stage59_mode = bool(str(args.stage59_candidates_jsonl).strip())
+    items = (
+        collect_stage59_items(args)
+        if stage59_mode
+        else [
+            {"id": f"sample-{index}", "text": text, "task_family": "manual"}
+            for index, text in enumerate(collect_texts(args))
+        ]
+    )
     if args.num_candidates < 1:
         raise SystemExit("--num-candidates must be >= 1")
     refresh_donor_each_step = args.refresh_donor_each_step or not args.fixed_donor_during_generation
@@ -518,7 +589,9 @@ def main() -> None:
         )
         print("=" * 72)
 
-    for idx, text in enumerate(texts):
+    stage59_records = []
+    for idx, item in enumerate(items):
+        text = str(item["text"])
         inputs = prepare_inputs(tokenizer, text, max_length, device)
         input_ids = inputs["input_ids"]
         attention_mask = inputs.get("attention_mask", torch.ones_like(input_ids))
@@ -582,13 +655,18 @@ def main() -> None:
                 min_new_tokens_before_stop=args.min_new_tokens_before_stop,
             )
             rep = repetition_stats(generated, prompt_len=input_ids.shape[1])
+            completion = generated_completion_text(tokenizer, generated, prompt_len=input_ids.shape[1])
+            answer_candidate = extract_answer_candidate_text(completion)
             record = {
                 "sample": idx,
                 "candidate_id": candidate_id,
+                "id": item["id"],
                 "ablation_mode": args.ablation_mode,
                 "core_halt": core_halt,
                 "residual_gate": residual_gate,
                 "text": text,
+                "completion": completion,
+                "answer_candidate": answer_candidate,
                 "input_tokens": int(input_ids.shape[1]),
                 "offset": int(offset),
                 "teacher_forced": metrics,
@@ -606,12 +684,27 @@ def main() -> None:
                     "answer_contract": args.answer_contract,
                 },
                 "greedy_text": tokenizer.decode(generated, skip_special_tokens=True),
+                "greedy_completion": completion,
                 "greedy_repetition": rep,
                 "greedy_steps": steps[: min(5, len(steps))],
             }
             records.append(record)
             if args.json:
                 print(json.dumps(record, ensure_ascii=False))
+
+        if stage59_mode:
+            stage59_records.append(
+                {
+                    "id": item["id"],
+                    "task_family": item.get("task_family", "unknown"),
+                    "ablation_mode": args.ablation_mode,
+                    "candidates": [str(record.get("answer_candidate", "")) for record in records],
+                    "raw_completions": [str(record.get("greedy_completion", "")) for record in records],
+                    "full_generations": [str(record.get("greedy_text", "")) for record in records],
+                    "num_candidates": len(records),
+                    "decoding": records[0]["decoding"] if records else {},
+                }
+            )
 
         if args.json:
             continue
@@ -664,6 +757,16 @@ def main() -> None:
             )
             print(f"candidate {record['candidate_id']} text:")
             print(record["greedy_text"])
+
+    if stage59_mode:
+        out_path = Path(args.stage59_candidates_jsonl)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in stage59_records),
+            encoding="utf-8",
+        )
+        if not args.json:
+            print(f"\nWrote Stage59 candidate JSONL: {out_path}")
 
 
 if __name__ == "__main__":

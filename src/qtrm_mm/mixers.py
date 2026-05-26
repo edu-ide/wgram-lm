@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional
 import importlib
+import inspect
 import os
 from pathlib import Path
 import sys
@@ -142,6 +143,135 @@ class FLADeltaMixer(nn.Module):
             if isinstance(out, tuple):
                 out = out[0]
             return out
+
+
+class OfficialGatedDeltaNet2Mixer(nn.Module):
+    """Adapter for NVlabs/GatedDeltaNet-2 official implementation.
+
+    The official repository is a LiTGPT training tree, not a small installed
+    package.  Load ``lit_gpt/gdn2.py`` directly so importing the mixer does not
+    pull optional training dependencies such as Lightning.
+    """
+
+    def __init__(
+        self,
+        d_model: int,
+        n_heads: int,
+        strict: bool = False,
+        fallback_dropout: float = 0.0,
+        **kwargs,
+    ):
+        super().__init__()
+        self.strict = bool(strict)
+        self.impl = self._build_impl(d_model=d_model, n_heads=n_heads, strict=bool(strict), **kwargs)
+        self.is_official_backend = self.impl is not None
+        if self.impl is None:
+            raise RuntimeError(
+                "Requested official GatedDeltaNet-2, but no compatible implementation was found; "
+                "fallback is disabled for official_gated_delta2."
+            )
+        object.__setattr__(self, "_runtime_fallback_active", False)
+
+    def _build_impl(self, *, d_model: int, n_heads: int, strict: bool, **kwargs):
+        repo_root = Path(__file__).resolve().parents[2]
+        fla_root = repo_root / "references" / "official" / "flash-linear-attention"
+        gdn2_fla_root = repo_root / "references" / "official" / "flash-linear-attention-gdn2"
+        gdn2_root = repo_root / "references" / "official" / "gated-deltanet-2"
+        lit_gpt_root = gdn2_root / "lit_gpt"
+        errors: list[str] = []
+
+        fla_roots = [root for root in (gdn2_fla_root, fla_root) if root.exists()]
+        for root in reversed(fla_roots):
+            root_str = str(root)
+            sys.path[:] = [path for path in sys.path if path != root_str]
+            sys.path.insert(0, root_str)
+
+        preferred_fla_root = gdn2_fla_root if gdn2_fla_root.exists() else fla_root
+        loaded_fla = sys.modules.get("fla")
+        loaded_fla_file = str(getattr(loaded_fla, "__file__", "")) if loaded_fla is not None else ""
+        if loaded_fla is not None and preferred_fla_root.exists() and not loaded_fla_file.startswith(str(preferred_fla_root)):
+            for name in list(sys.modules):
+                if name == "fla" or name.startswith("fla."):
+                    sys.modules.pop(name, None)
+        if str(gdn2_root) not in sys.path and gdn2_root.exists():
+            sys.path.insert(0, str(gdn2_root))
+        if not lit_gpt_root.exists():
+            if strict:
+                raise RuntimeError(f"Official GatedDeltaNet-2 reference not found at {gdn2_root}")
+            return None
+        try:
+            package = sys.modules.get("lit_gpt")
+            if package is None or not hasattr(package, "__path__"):
+                package = types.ModuleType("lit_gpt")
+                package.__path__ = [str(lit_gpt_root)]
+                sys.modules["lit_gpt"] = package
+            spec = importlib.util.spec_from_file_location("lit_gpt.gdn2", lit_gpt_root / "gdn2.py")
+            if spec is None or spec.loader is None:
+                raise ImportError(f"could not create import spec for {lit_gpt_root / 'gdn2.py'}")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules["lit_gpt.gdn2"] = module
+            spec.loader.exec_module(module)
+            self._patch_official_gdn2_fla_compat()
+            cls = getattr(module, "GatedDeltaNet2")
+        except Exception as exc:
+            errors.append(f"load official GatedDeltaNet2: {type(exc).__name__}: {exc}")
+            if strict:
+                detail = "\n".join(f"  - {item}" for item in errors)
+                raise RuntimeError(f"Could not import official GatedDeltaNet-2\n{detail}") from exc
+            return None
+
+        head_dim = int(kwargs.pop("head_dim", None) or max(1, int(d_model) // max(1, int(n_heads))))
+        num_v_heads = int(kwargs.pop("num_v_heads", None) or int(n_heads))
+        expand_v = float(kwargs.pop("expand_v", 1.0))
+        mode = str(kwargs.pop("mode", "chunk"))
+        use_short_conv = bool(kwargs.pop("use_short_conv", True))
+        conv_size = int(kwargs.pop("conv_size", 4))
+        norm_eps = float(kwargs.pop("norm_eps", 1e-5))
+        return cls(
+            hidden_size=int(d_model),
+            num_heads=int(n_heads),
+            num_v_heads=num_v_heads,
+            head_dim=head_dim,
+            expand_v=expand_v,
+            mode=mode,
+            use_short_conv=use_short_conv,
+            conv_size=conv_size,
+            norm_eps=norm_eps,
+            **kwargs,
+        )
+
+    @staticmethod
+    def _patch_official_gdn2_fla_compat() -> None:
+        """Bridge minor public GDN2/FLA API skew without changing GDN2 math."""
+
+        try:
+            chunk_module = importlib.import_module("lit_gpt.gdn2_ops.chunk_gdn2")
+            target = getattr(chunk_module, "chunk_gla_fwd_o_gk")
+            if getattr(target, "_qtrm_gdn2_kwargs_compat", False):
+                return
+            signature = inspect.signature(target)
+            accepts_kwargs = any(param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values())
+            if accepts_kwargs:
+                return
+            supported = set(signature.parameters)
+            passthrough_target = target
+
+            def wrapped_chunk_gla_fwd_o_gk(*args, **kwargs):
+                kwargs = {key: value for key, value in kwargs.items() if key in supported}
+                return passthrough_target(*args, **kwargs)
+
+            wrapped_chunk_gla_fwd_o_gk.__name__ = getattr(target, "__name__", "chunk_gla_fwd_o_gk")
+            wrapped_chunk_gla_fwd_o_gk.__doc__ = getattr(target, "__doc__", None)
+            wrapped_chunk_gla_fwd_o_gk._qtrm_gdn2_kwargs_compat = True
+            setattr(chunk_module, "chunk_gla_fwd_o_gk", wrapped_chunk_gla_fwd_o_gk)
+        except Exception:
+            return
+
+    def forward(self, x: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        out = self.impl(x, attention_mask=attention_mask)
+        if isinstance(out, tuple):
+            out = out[0]
+        return out
 
 
 class OfficialMamba3Mixer(nn.Module):
@@ -289,6 +419,14 @@ class OfficialMamba3Mixer(nn.Module):
 def build_delta_mixer(d_model: int, n_heads: int, backend: str, strict: bool, dropout: float = 0.0, **kwargs):
     if backend == "torch_gated_delta":
         return TorchGatedDeltaMixer(d_model, n_heads, dropout=dropout)
+    if backend in {"official_gated_delta2", "official_gdn2"}:
+        return OfficialGatedDeltaNet2Mixer(
+            d_model=d_model,
+            n_heads=n_heads,
+            strict=True,
+            fallback_dropout=dropout,
+            **kwargs,
+        )
     if backend in {"fla_kda", "fla_gated_delta"}:
         return FLADeltaMixer(
             d_model,

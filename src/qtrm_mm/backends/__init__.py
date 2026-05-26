@@ -2,7 +2,8 @@
 
 Available backends:
   attention: sdpa, flash_attn
-  delta:     torch_gated_delta, fla_kda, fla_gated_delta
+  delta:     torch_gated_delta, fla_kda, fla_gated_delta,
+             official_gated_delta2 / official_gdn2
 
 FlashAttention is optional; if not installed, falls back to SDPA.
 """
@@ -42,6 +43,23 @@ _HAS_FLA_KDA = any(
     )
 )
 _HAS_FLA = _HAS_FLA_GATED_DELTA or _HAS_FLA_KDA
+
+
+def _has_official_gdn2_reference() -> bool:
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[3]
+    return (
+        repo_root
+        / "references"
+        / "official"
+        / "gated-deltanet-2"
+        / "lit_gpt"
+        / "gdn2.py"
+    ).exists()
+
+
+_HAS_OFFICIAL_GDN2 = _has_official_gdn2_reference()
 
 
 def get_attention_backend(name: str):
@@ -86,6 +104,18 @@ def get_delta_backend(name: str):
     if name == "torch_gated_delta":
         from ..mixers import TorchGatedDeltaMixer
         return TorchGatedDeltaMixer
+    if name in {"official_gated_delta2", "official_gdn2"}:
+        if not _HAS_OFFICIAL_GDN2:
+            import warnings
+            warnings.warn(
+                "Official GatedDeltaNet-2 reference is not installed under "
+                "references/official/gated-deltanet-2, falling back to torch_gated_delta.",
+                UserWarning,
+            )
+            from ..mixers import TorchGatedDeltaMixer
+            return TorchGatedDeltaMixer
+        from ..mixers import OfficialGatedDeltaNet2Mixer
+        return OfficialGatedDeltaNet2Mixer
     if name in {"fla_kda", "fla_gated_delta"}:
         if name == "fla_kda" and not _HAS_FLA_KDA:
             import warnings
@@ -124,6 +154,8 @@ def check_strict_backends(cfg):
             errors.append("FLA KDA backend required but not installed")
         if delta == "fla_gated_delta" and not _HAS_FLA_GATED_DELTA:
             errors.append("FLA GatedDeltaNet backend required but not installed")
+        if delta in {"official_gated_delta2", "official_gdn2"} and not _HAS_OFFICIAL_GDN2:
+            errors.append("Official GatedDeltaNet-2 reference required but not installed")
 
     if errors:
         raise RuntimeError(
@@ -135,6 +167,7 @@ HAS_FLASH_ATTN = _HAS_FLASH_ATTN
 HAS_FLA = _HAS_FLA
 HAS_FLA_GATED_DELTA = _HAS_FLA_GATED_DELTA
 HAS_FLA_KDA = _HAS_FLA_KDA
+HAS_OFFICIAL_GDN2 = _HAS_OFFICIAL_GDN2
 
 __all__ = [
     "get_attention_backend",
@@ -144,4 +177,5 @@ __all__ = [
     "HAS_FLA",
     "HAS_FLA_GATED_DELTA",
     "HAS_FLA_KDA",
+    "HAS_OFFICIAL_GDN2",
 ]

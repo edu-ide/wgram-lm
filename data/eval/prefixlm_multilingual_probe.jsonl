@@ -1,0 +1,22 @@
+{"case_id":"ko_capital_direct","family":"korean_qa","language":"ko","instruction":"다음 질문에 한국어로 짧게 답하세요. 대한민국의 수도는 어디인가요?","expected_contains":["서울"]}
+{"case_id":"ko_arithmetic_direct","family":"korean_math","language":"ko","instruction":"다음 계산의 답만 쓰세요. 12 더하기 7은 얼마인가요?","expected_contains":["19"]}
+{"case_id":"en_to_ko_translation","family":"translation","language":"ko","instruction":"Translate to Korean. Answer with only the translated word.\n\napple","expected_contains":["사과"]}
+{"case_id":"ko_to_en_translation","family":"translation","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\n고양이","expected_contains":["cat"]}
+{"case_id":"es_capital_direct","family":"spanish_qa","language":"es","instruction":"Responde solo con la respuesta final. ¿Cuál es la capital de Francia?","expected_contains":["París","Paris"]}
+{"case_id":"de_arithmetic_direct","family":"german_math","language":"de","instruction":"Antworte nur mit der Zahl. Was ist 6 mal 7?","expected_contains":["42"]}
+{"case_id":"en_to_fr_translation","family":"translation_wmt","language":"fr","instruction":"Translate to French. Answer with only the translated word.\n\nwater","expected_contains":["eau"]}
+{"case_id":"fr_to_en_translation","family":"translation_wmt","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\nchien","expected_contains":["dog"]}
+{"case_id":"en_to_de_translation","family":"translation_wmt","language":"de","instruction":"Translate to German. Answer with only the translated word.\n\ncat","expected_contains":["Katze","katze"]}
+{"case_id":"de_to_en_translation","family":"translation_wmt","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\nHaus","expected_contains":["house"]}
+{"case_id":"en_to_tr_translation","family":"translation_wmt","language":"tr","instruction":"Translate to Turkish. Answer with only the translated word.\n\nbook","expected_contains":["kitap"]}
+{"case_id":"tr_to_en_translation","family":"translation_wmt","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\nsu","expected_contains":["water"]}
+{"case_id":"en_to_ru_translation","family":"translation_wmt","language":"ru","instruction":"Translate to Russian. Answer with only the translated word.\n\nsun","expected_contains":["солнце"]}
+{"case_id":"ru_to_en_translation","family":"translation_wmt","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\nкнига","expected_contains":["book"]}
+{"case_id":"en_to_ro_translation","family":"translation_wmt","language":"ro","instruction":"Translate to Romanian. Answer with only the translated word.\n\nbread","expected_contains":["pâine","paine"]}
+{"case_id":"ro_to_en_translation","family":"translation_wmt","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\napă","expected_contains":["water"]}
+{"case_id":"en_to_fi_translation","family":"translation_wmt","language":"fi","instruction":"Translate to Finnish. Answer with only the translated word.\n\nhouse","expected_contains":["talo"]}
+{"case_id":"fi_to_en_translation","family":"translation_wmt","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\naurinko","expected_contains":["sun"]}
+{"case_id":"en_to_cs_translation","family":"translation_wmt","language":"cs","instruction":"Translate to Czech. Answer with only the translated word.\n\nwater","expected_contains":["voda"]}
+{"case_id":"cs_to_en_translation","family":"translation_wmt","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\npes","expected_contains":["dog"]}
+{"case_id":"codeswitch_math_ko_answer","family":"code_switch","language":"ko","instruction":"Answer in Korean with only the final answer: What is 2 plus 2?","expected_contains":["4","네"]}
+{"case_id":"xquad_style_es_context","family":"xquad_style","language":"es","instruction":"Lee el contexto y responde solo con la entidad correcta.\n\nContexto: Madrid es la capital de España. Barcelona es una ciudad grande de España.\n\nPregunta: ¿Cuál es la capital de España?","expected_contains":["Madrid"]}

@@ -1,0 +1,49 @@
+{
+  "probe_type": "official_gdsuite_choice_logprob_families",
+  "source": "https://github.com/Jiaxin-Wen/GDsuite",
+  "source_dataset": "jiaxin-wen/generalization-dynamics-evals",
+  "families": [
+    "flipped_answer",
+    "repetitive_answer",
+    "successive_answer",
+    "truthy_answer",
+    "intuitive_answer"
+  ],
+  "family_counts": {
+    "flipped_answer": 28928,
+    "repetitive_answer": 16000,
+    "successive_answer": 18380,
+    "truthy_answer": 2256,
+    "intuitive_answer": 600
+  },
+  "task_counts": {
+    "flipped_answer/sst2": 4000,
+    "flipped_answer/imdb": 4000,
+    "flipped_answer/rotten_tomatoes": 4000,
+    "flipped_answer/poem_sentiment": 928,
+    "flipped_answer/yahoo_health_computers": 4000,
+    "flipped_answer/yahoo_business_science": 4000,
+    "flipped_answer/emotion": 4000,
+    "flipped_answer/emotion_anger_joy": 4000,
+    "repetitive_answer/code_tracing": 4000,
+    "repetitive_answer/letter_counting": 4000,
+    "repetitive_answer/logic": 4000,
+    "repetitive_answer/algebra/original": 1000,
+    "repetitive_answer/algebra/v2fmt": 1000,
+    "repetitive_answer/algebra/numbered": 1000,
+    "repetitive_answer/algebra/instruction": 1000,
+    "successive_answer/number_words": 3528,
+    "successive_answer/letters": 10904,
+    "successive_answer/arithmetic": 1976,
+    "successive_answer/even": 1972,
+    "truthy_answer/surprising_truth": 1148,
+    "truthy_answer/common_misconception": 1108,
+    "intuitive_answer/crt": 600
+  },
+  "rows": 66164,
+  "skipped_official_families": {
+    "multihop_persona_qa": "Official family 6 is generative + regex-based; this script emits the five official logprob families for the BLT choice evaluator."
+  },
+  "plain_language_read": "This is no longer the hand-written 6-row GD-lite smoke. It uses the official GDsuite data and prompt sampling for the five logprob families, then asks our custom checkpoint whether the correct answer has higher probability than the parrot answer.",
+  "out": "data/eval/official_gdsuite_choice_probe.jsonl"
+}

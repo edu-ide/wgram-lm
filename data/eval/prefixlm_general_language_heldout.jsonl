@@ -1,0 +1,16 @@
+{"case_id":"en_sky_color_sentence","family":"plain_qa","language":"en","instruction":"Answer in one short natural sentence. What color is the sky on a clear day?","response":"The sky is blue."}
+{"case_id":"en_water_state_sentence","family":"plain_qa","language":"en","instruction":"Answer in one short natural sentence. What do people drink when they are thirsty?","response":"People often drink water when they are thirsty."}
+{"case_id":"en_grass_color_sentence","family":"plain_qa","language":"en","instruction":"Answer in one short natural sentence. What color is healthy grass usually?","response":"Healthy grass is usually green."}
+{"case_id":"en_opposite_hot","family":"word_knowledge","language":"en","instruction":"Complete the sentence with one word: The opposite of hot is","response":"cold"}
+{"case_id":"en_two_fruits","family":"list_language","language":"en","instruction":"Name two common fruits in a short phrase.","response":"apples and bananas"}
+{"case_id":"en_rain_sentence","family":"commonsense","language":"en","instruction":"Write one short sentence about what rain does to the ground.","response":"Rain makes the ground wet."}
+{"case_id":"en_sun_east","family":"commonsense","language":"en","instruction":"Answer in one short sentence. Where does the sun appear to rise?","response":"The sun appears to rise in the east."}
+{"case_id":"en_polite_thanks","family":"dialogue","language":"en","instruction":"Reply politely to: Thank you for your help.","response":"You are welcome."}
+{"case_id":"ko_sky_color_sentence","family":"plain_qa","language":"ko","instruction":"맑은 하늘 색은?","response":"파란색입니다."}
+{"case_id":"ko_water_drink_sentence","family":"plain_qa","language":"ko","instruction":"목마를 때 마시는 것은?","response":"물입니다."}
+{"case_id":"ko_opposite_hot","family":"word_knowledge","language":"ko","instruction":"뜨겁다의 반대말은?","response":"차갑다"}
+{"case_id":"ko_polite_thanks","family":"dialogue","language":"ko","instruction":"도와줘서 고마워요. 답하세요.","response":"천만에요."}
+{"case_id":"es_capital_italy","family":"plain_qa","language":"es","instruction":"Responde en una frase corta y natural. ¿Cuál es la capital de Italia?","response":"La capital de Italia es Roma."}
+{"case_id":"es_opposite_big","family":"word_knowledge","language":"es","instruction":"Completa con una palabra: Lo opuesto de grande es","response":"pequeño"}
+{"case_id":"de_grass_color","family":"plain_qa","language":"de","instruction":"Antworte in einem kurzen natürlichen Satz. Welche Farbe hat Gras normalerweise?","response":"Gras ist normalerweise grün."}
+{"case_id":"de_polite_thanks","family":"dialogue","language":"de","instruction":"Antworte höflich auf: Danke für deine Hilfe.","response":"Gern geschehen."}

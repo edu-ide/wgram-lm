@@ -9,6 +9,7 @@ algorithmic reasoning through the normal LM logits path.
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import copy
 import importlib.util
 import json
@@ -21,7 +22,12 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from qtrm_mm.mixers import FLADeltaMixer, OfficialMamba3Mixer, TorchGatedDeltaMixer
+from qtrm_mm.mixers import (
+    FLADeltaMixer,
+    OfficialGatedDeltaNet2Mixer,
+    OfficialMamba3Mixer,
+    TorchGatedDeltaMixer,
+)
 
 
 def load_native_module():
@@ -43,9 +49,158 @@ active_program_len_for_step = _native.active_program_len_for_step
 applicable_ablation_names = _native.applicable_ablation_names
 
 
+class GramAttractorCandidateSelector(torch.nn.Module):
+    """Iteratively refine candidate scores with group-level context."""
+
+    def __init__(
+        self,
+        d_model: int,
+        *,
+        iterations: int = 3,
+        step_scale: float = 0.5,
+    ) -> None:
+        super().__init__()
+        self.iterations = int(iterations)
+        self.step_scale = float(step_scale)
+        self.score_head = torch.nn.Linear(int(d_model), 1)
+        self.update_norm = torch.nn.LayerNorm(int(d_model) * 3)
+        self.score_update = torch.nn.Linear(int(d_model) * 3, 1)
+
+    def forward(self, candidate_states: torch.Tensor) -> torch.Tensor:
+        if candidate_states.ndim != 2:
+            raise ValueError("candidate_states must have shape [candidates, d_model]")
+        states = candidate_states.float()
+        scores = self.score_head(states).reshape(-1)
+        for _ in range(max(0, int(self.iterations))):
+            weights = F.softmax(scores, dim=0).unsqueeze(-1)
+            attractor = (weights * states).sum(dim=0, keepdim=True).expand_as(states)
+            center = states.mean(dim=0, keepdim=True).expand_as(states)
+            update_input = torch.cat([states, attractor, states - center], dim=-1)
+            delta = self.score_update(self.update_norm(update_input)).reshape(-1)
+            scores = scores + float(self.step_scale) * delta
+        return scores
+
+
+class GramLatentConsistencyVerifier(torch.nn.Module):
+    """Score candidates by matching prompt-predicted and candidate-read latents."""
+
+    def __init__(
+        self,
+        d_model: int,
+        *,
+        latent_dim: int | None = None,
+        temperature: float = 1.0,
+    ) -> None:
+        super().__init__()
+        hidden = int(latent_dim or d_model)
+        self.temperature = float(temperature)
+        self.prompt_proj = torch.nn.Linear(int(d_model), hidden)
+        self.candidate_proj = torch.nn.Linear(int(d_model), hidden)
+
+    def forward(
+        self,
+        prompt_state: torch.Tensor,
+        candidate_states: torch.Tensor,
+    ) -> torch.Tensor:
+        if candidate_states.ndim != 2:
+            raise ValueError("candidate_states must have shape [candidates, d_model]")
+        prompt = prompt_state.float()
+        if prompt.ndim == 1:
+            prompt = prompt.unsqueeze(0)
+        if int(prompt.shape[0]) == 1 and int(candidate_states.shape[0]) != 1:
+            prompt = prompt.expand(int(candidate_states.shape[0]), -1)
+        if int(prompt.shape[0]) != int(candidate_states.shape[0]):
+            raise ValueError("prompt_state must have one row or one row per candidate")
+        prompt_latent = self.prompt_proj(prompt)
+        candidate_latent = self.candidate_proj(candidate_states.float())
+        distance = (prompt_latent - candidate_latent).pow(2).mean(dim=-1)
+        return -distance / max(float(self.temperature), 1.0e-6)
+
+
+class GramTraceConsistencyVerifier(torch.nn.Module):
+    """Score candidates by whether their state supports the claimed value trace."""
+
+    def __init__(
+        self,
+        d_model: int,
+        *,
+        num_values: int,
+        max_trace_len: int,
+    ) -> None:
+        super().__init__()
+        self.num_values = int(num_values)
+        self.max_trace_len = max(1, int(max_trace_len))
+        self.trace_head = torch.nn.Linear(
+            int(d_model),
+            self.max_trace_len * self.num_values,
+        )
+
+    def trace_logits(self, candidate_states: torch.Tensor) -> torch.Tensor:
+        if candidate_states.ndim != 2:
+            raise ValueError("candidate_states must have shape [candidates, d_model]")
+        logits = self.trace_head(candidate_states.float())
+        return logits.view(-1, self.max_trace_len, self.num_values)
+
+    def forward(
+        self,
+        candidate_states: torch.Tensor,
+        candidate_values: torch.Tensor,
+        *,
+        trace_lengths: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        logits = self.trace_logits(candidate_states)
+        values = candidate_values.to(device=logits.device, dtype=torch.long).reshape(-1)
+        if int(values.shape[0]) != int(logits.shape[0]):
+            raise ValueError("candidate_values must have one value per candidate")
+        if trace_lengths is None:
+            final_indexes = torch.full_like(values, self.max_trace_len - 1)
+        else:
+            final_indexes = trace_lengths.to(device=logits.device, dtype=torch.long).reshape(-1)
+            if int(final_indexes.shape[0]) == 1 and int(values.shape[0]) != 1:
+                final_indexes = final_indexes.expand_as(values)
+            if int(final_indexes.shape[0]) != int(values.shape[0]):
+                raise ValueError("trace_lengths must have one value or one per candidate")
+            final_indexes = final_indexes.clamp(min=1, max=self.max_trace_len) - 1
+        valid = (values >= 0) & (values < self.num_values)
+        safe_values = values.clamp(min=0, max=self.num_values - 1)
+        log_probs = F.log_softmax(logits, dim=-1)
+        row_indexes = torch.arange(int(values.shape[0]), device=logits.device)
+        scores = log_probs[row_indexes, final_indexes, safe_values]
+        return torch.where(valid, scores, torch.full_like(scores, -1.0e6))
+
+    def supervised_loss(
+        self,
+        candidate_states: torch.Tensor,
+        target_traces: torch.Tensor,
+        trace_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        logits = self.trace_logits(candidate_states)
+        targets = target_traces.to(device=logits.device, dtype=torch.long)
+        mask = trace_mask.to(device=logits.device, dtype=torch.bool)
+        if targets.shape != logits.shape[:2]:
+            raise ValueError("target_traces must have shape [candidates, max_trace_len]")
+        if mask.shape != targets.shape:
+            raise ValueError("trace_mask must match target_traces")
+        raw = F.cross_entropy(
+            logits.reshape(-1, self.num_values),
+            targets.clamp(min=0, max=self.num_values - 1).reshape(-1),
+            reduction="none",
+        ).view_as(targets)
+        weights = mask.float()
+        return (raw * weights).sum() / weights.sum().clamp_min(1.0)
+
+
 def backend_summary(model) -> dict[str, object]:
+    inactive_fallback_ids = set()
+    for module in model.modules():
+        if isinstance(module, OfficialGatedDeltaNet2Mixer):
+            if not bool(getattr(module, "_runtime_fallback_active", False)):
+                inactive_fallback_ids.add(id(module.runtime_fallback))
+
     fla_total = 0
     fla_official = 0
+    gdn2_total = 0
+    gdn2_official = 0
     mamba3_total = 0
     mamba3_official = 0
     torch_delta = 0
@@ -53,18 +208,25 @@ def backend_summary(model) -> dict[str, object]:
         if isinstance(module, FLADeltaMixer):
             fla_total += 1
             fla_official += int(bool(module.is_official_backend))
+        elif isinstance(module, OfficialGatedDeltaNet2Mixer):
+            gdn2_total += 1
+            gdn2_official += int(bool(module.is_official_backend))
         elif isinstance(module, OfficialMamba3Mixer):
             mamba3_total += 1
             mamba3_official += int(bool(module.is_official_backend))
         elif isinstance(module, TorchGatedDeltaMixer):
-            torch_delta += 1
+            if id(module) not in inactive_fallback_ids:
+                torch_delta += 1
     return {
         "fla_delta_mixers": fla_total,
         "official_fla_delta_mixers": fla_official,
+        "gdn2_mixers": gdn2_total,
+        "official_gdn2_mixers": gdn2_official,
         "mamba3_mixers": mamba3_total,
         "official_mamba3_mixers": mamba3_official,
         "torch_delta_mixers": torch_delta,
         "all_fla_mixers_official": bool(fla_total > 0 and fla_total == fla_official),
+        "all_gdn2_mixers_official": bool(gdn2_total > 0 and gdn2_total == gdn2_official),
         "all_mamba3_mixers_official": bool(mamba3_total > 0 and mamba3_total == mamba3_official),
     }
 
@@ -397,6 +559,33 @@ def compute_answer(
             value = (value + int(op_id)) % int(modulus)
         return int(value)
     raise ValueError(f"unsupported task family: {family}")
+
+
+def case_value_trace(
+    case: TextReasoningCase,
+    *,
+    modulus: int,
+) -> tuple[int, ...]:
+    """Return intermediate values in the family's causal operation order."""
+    family = str(case.family)
+    ordered_op_ids = tuple(
+        int(op_id)
+        for op_id in case.op_ids
+        if int(op_id) != int(NOOP_OP_ID)
+    )
+    if family == "revchain":
+        ordered_op_ids = tuple(reversed(ordered_op_ids))
+    value = int(case.start)
+    trace: list[int] = []
+    for op_id in ordered_op_ids:
+        if family == "checksum":
+            value = (value + int(op_id)) % int(modulus)
+        elif family in {"modchain", "revchain"}:
+            value = apply_op(value, int(op_id), int(modulus))
+        else:
+            raise ValueError(f"unsupported task family: {family}")
+        trace.append(int(value))
+    return tuple(trace)
 
 
 def parse_op_ids(value: str) -> tuple[int, ...]:
@@ -3997,6 +4186,630 @@ def generate_answer_with_runtime(
     return result
 
 
+def _gram_final_state_from_runtime(runtime: dict[str, object]) -> torch.Tensor:
+    trace = runtime.get("core_state_trace_h")
+    if not isinstance(trace, torch.Tensor):
+        raise ValueError("GRAM trajectory search requires core_state_trace_h")
+    if trace.ndim != 4 or int(trace.shape[1]) == 0:
+        raise ValueError("core_state_trace_h must have shape [batch, depth, seq, dim]")
+    return trace[:, -1, -1, :].float()
+
+
+def _candidate_aware_gram_states(
+    model,
+    states: torch.Tensor,
+    candidate_token_ids: torch.Tensor | None = None,
+) -> torch.Tensor:
+    if candidate_token_ids is None or not hasattr(model, "token_embed"):
+        return states
+    token_embed = getattr(model, "token_embed")
+    if not callable(token_embed):
+        return states
+    token_ids = candidate_token_ids.to(device=states.device, dtype=torch.long)
+    token_features = token_embed(token_ids).float()
+    if token_features.ndim == 3:
+        token_features = token_features.mean(dim=1)
+    if token_features.shape != states.shape:
+        return states
+    return states + token_features.to(dtype=states.dtype)
+
+
+def _candidate_answer_values_from_token_ids(
+    tokenizer: CharTokenizer,
+    candidate_token_ids: torch.Tensor,
+    *,
+    num_values: int,
+    device: torch.device,
+) -> torch.Tensor:
+    values: list[int] = []
+    for token_row in candidate_token_ids.detach().cpu().tolist():
+        parsed = answer_value(tokenizer.decode([int(item) for item in token_row]))
+        if parsed is None or parsed < 0 or parsed >= int(num_values):
+            values.append(-1)
+        else:
+            values.append(int(parsed))
+    return torch.tensor(values, dtype=torch.long, device=device)
+
+
+def _score_gram_final_states(
+    model,
+    states: torch.Tensor,
+    candidate_token_ids: torch.Tensor | None = None,
+    prompt_state: torch.Tensor | None = None,
+    candidate_values: torch.Tensor | None = None,
+    trace_lengths: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Score sampled states with an LPRM, a Latent Process Reward Model."""
+    score_states = _candidate_aware_gram_states(model, states.float(), candidate_token_ids)
+    trace_scores: torch.Tensor | None = None
+    if hasattr(model, "gram_trace_consistency_verifier"):
+        if candidate_values is None:
+            raise ValueError("trace-consistency verifier requires candidate_values")
+        verifier = getattr(model, "gram_trace_consistency_verifier")
+        trace_scores = verifier(
+            score_states,
+            candidate_values.to(device=score_states.device),
+            trace_lengths=(
+                trace_lengths.to(device=score_states.device)
+                if trace_lengths is not None
+                else None
+            ),
+        )
+        if not isinstance(trace_scores, torch.Tensor):
+            raise ValueError("gram_trace_consistency_verifier must return a tensor")
+        trace_scores = trace_scores.reshape(-1).float()
+    scores: torch.Tensor | None = None
+    if hasattr(model, "gram_latent_consistency_verifier"):
+        if prompt_state is None:
+            raise ValueError("latent-consistency verifier requires prompt_state")
+        verifier = getattr(model, "gram_latent_consistency_verifier")
+        scores = verifier(prompt_state.to(device=score_states.device), score_states)
+        if not isinstance(scores, torch.Tensor):
+            raise ValueError("gram_latent_consistency_verifier must return a tensor")
+        scores = scores.reshape(-1).float()
+    elif hasattr(model, "gram_attractor_selector"):
+        selector = getattr(model, "gram_attractor_selector")
+        scores = selector(score_states)
+        if not isinstance(scores, torch.Tensor):
+            raise ValueError("gram_attractor_selector must return a tensor")
+        scores = scores.reshape(-1).float()
+    elif hasattr(model, "gram_lprm_scores"):
+        scores = model.gram_lprm_scores(score_states)
+        if not isinstance(scores, torch.Tensor):
+            raise ValueError("gram_lprm_scores must return a tensor")
+        scores = scores.reshape(-1).float()
+    elif hasattr(model, "gram_lprm_head"):
+        head = getattr(model, "gram_lprm_head")
+        scores = head(score_states).reshape(-1).float()
+    elif trace_scores is not None:
+        return trace_scores
+    else:
+        scores = score_states.float().pow(2).mean(dim=-1)
+    if trace_scores is not None:
+        trace_weight = float(getattr(model, "gram_trace_score_weight", 0.0))
+        if trace_weight != 0.0:
+            scores = scores + trace_weight * trace_scores
+    return scores.reshape(-1).float()
+
+
+def _candidate_score_state_inputs(
+    model,
+    prompt_ids: torch.Tensor,
+    generated_states: torch.Tensor,
+    candidate_token_ids: torch.Tensor,
+    *,
+    think_steps: int,
+    candidate_score_mode: str,
+    candidate_score_train_body: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor | None]:
+    mode = str(candidate_score_mode)
+    if mode == "generated_state":
+        return generated_states.float(), candidate_token_ids
+    if mode != "candidate_forward":
+        raise ValueError(f"Unsupported GRAM candidate score mode: {mode}")
+    score_states: list[torch.Tensor] = []
+    train_body = bool(candidate_score_train_body)
+    context = nullcontext() if train_body else torch.no_grad()
+    with context:
+        for token_row in candidate_token_ids.detach().to(device=prompt_ids.device):
+            full_ids = torch.cat([prompt_ids, token_row.view(1, -1)], dim=1)
+            runtime = model.forward_with_runtime(
+                full_ids,
+                think_steps=int(think_steps),
+                return_state_trace=True,
+            )
+            state = _gram_final_state_from_runtime(runtime).squeeze(0)
+            if not train_body:
+                state = state.detach()
+            score_states.append(state)
+    return torch.stack(score_states).to(device=generated_states.device).float(), None
+
+
+def _gram_prompt_score_state(
+    model,
+    prompt_ids: torch.Tensor,
+    *,
+    think_steps: int,
+    train_body: bool = False,
+) -> torch.Tensor:
+    context = nullcontext() if bool(train_body) else torch.no_grad()
+    with context:
+        runtime = model.forward_with_runtime(
+            prompt_ids,
+            think_steps=int(think_steps),
+            return_state_trace=True,
+        )
+        state = _gram_final_state_from_runtime(runtime).squeeze(0)
+        if not bool(train_body):
+            state = state.detach()
+    return state.float()
+
+
+def gram_groupwise_candidate_ranking_loss(
+    scores: torch.Tensor,
+    targets: torch.Tensor,
+) -> torch.Tensor:
+    """Prefer any correct candidate over the other candidates for one prompt."""
+    flat_scores = scores.reshape(-1).float()
+    flat_targets = targets.reshape(-1).to(device=flat_scores.device).float()
+    positives = flat_targets > 0.5
+    if not bool(positives.any()):
+        return flat_scores.sum() * 0.0
+    return torch.logsumexp(flat_scores, dim=0) - torch.logsumexp(
+        flat_scores[positives],
+        dim=0,
+    )
+
+
+@torch.no_grad()
+def generate_answer_gram_trajectory_search(
+    model,
+    prompt_ids: torch.Tensor,
+    *,
+    answer_len: int,
+    think_steps: int,
+    trajectory_count: int,
+    stochastic_noise_std: float,
+    candidate_topk_per_trajectory: int = 1,
+    candidate_score_mode: str = "generated_state",
+    tokenizer: CharTokenizer | None = None,
+    trace_length: int | None = None,
+) -> dict[str, object]:
+    """Sample K latent trajectories and let LPRM/PTRM select the answer path."""
+    count = max(1, int(trajectory_count))
+    candidate_topk = max(1, int(candidate_topk_per_trajectory))
+    trajectory_tokens: list[list[int]] = []
+    trajectory_indices: list[int] = []
+    trajectory_states: list[torch.Tensor] = []
+    for trajectory_index in range(count):
+        beams: list[tuple[torch.Tensor, float, dict[str, object] | None]] = [
+            (prompt_ids.clone(), 0.0, None)
+        ]
+        for _step in range(int(answer_len)):
+            expanded: list[tuple[torch.Tensor, float, dict[str, object]]] = []
+            for out, score, _last_runtime in beams:
+                runtime = model.forward_with_runtime(
+                    out,
+                    think_steps=int(think_steps),
+                    return_state_trace=True,
+                )
+                logits = runtime["logits"]
+                if float(stochastic_noise_std) > 0.0:
+                    logits = logits + torch.randn_like(logits) * float(stochastic_noise_std)
+                log_probs = F.log_softmax(logits[:, -1, :], dim=-1)
+                values, indexes = torch.topk(
+                    log_probs,
+                    k=min(candidate_topk, int(log_probs.shape[-1])),
+                    dim=-1,
+                )
+                for value, index in zip(values[0], indexes[0]):
+                    next_id = index.view(1, 1)
+                    expanded.append(
+                        (
+                            torch.cat([out, next_id], dim=1),
+                            float(score + float(value.detach().cpu())),
+                            runtime,
+                        )
+                    )
+            expanded.sort(key=lambda item: item[1], reverse=True)
+            beams = expanded[:candidate_topk]
+        if not beams or beams[0][2] is None:
+            raise ValueError("answer_len must be positive for GRAM trajectory search")
+        for out, _score, last_runtime in beams:
+            if last_runtime is None:
+                raise ValueError("answer_len must be positive for GRAM trajectory search")
+            state = _gram_final_state_from_runtime(last_runtime)
+            trajectory_states.append(state.squeeze(0).detach().cpu())
+            trajectory_tokens.append(
+                out[0, int(prompt_ids.shape[1]) :].detach().cpu().tolist()
+            )
+            trajectory_indices.append(int(trajectory_index))
+    state_tensor = torch.stack(trajectory_states).float()
+    token_tensor = torch.tensor(
+        trajectory_tokens,
+        dtype=torch.long,
+        device=prompt_ids.device,
+    )
+    score_state_tensor, score_token_tensor = _candidate_score_state_inputs(
+        model,
+        prompt_ids,
+        state_tensor.to(device=prompt_ids.device),
+        token_tensor,
+        think_steps=int(think_steps),
+        candidate_score_mode=str(candidate_score_mode),
+    )
+    prompt_score_state = (
+        _gram_prompt_score_state(
+            model,
+            prompt_ids,
+            think_steps=int(think_steps),
+            train_body=False,
+        )
+        if hasattr(model, "gram_latent_consistency_verifier")
+        else None
+    )
+    candidate_values = None
+    trace_lengths = None
+    if hasattr(model, "gram_trace_consistency_verifier"):
+        if tokenizer is None:
+            raise ValueError("trace-consistency verifier requires tokenizer")
+        verifier = getattr(model, "gram_trace_consistency_verifier")
+        candidate_values = _candidate_answer_values_from_token_ids(
+            tokenizer,
+            token_tensor,
+            num_values=int(verifier.num_values),
+            device=prompt_ids.device,
+        )
+        final_trace_length = int(trace_length) if trace_length is not None else int(
+            verifier.max_trace_len
+        )
+        trace_lengths = torch.full(
+            (int(token_tensor.shape[0]),),
+            max(1, final_trace_length),
+            dtype=torch.long,
+            device=prompt_ids.device,
+        )
+    score_tensor = _score_gram_final_states(
+        model,
+        score_state_tensor,
+        score_token_tensor,
+        prompt_state=prompt_score_state,
+        candidate_values=candidate_values,
+        trace_lengths=trace_lengths,
+    ).detach().cpu()
+    selected = int(score_tensor.argmax().item())
+    if int(state_tensor.shape[0]) > 1:
+        normalized = F.normalize(state_tensor, dim=-1)
+        similarities = normalized @ normalized.t()
+        off_diagonal = ~torch.eye(int(state_tensor.shape[0]), dtype=torch.bool)
+        diversity = max(0.0, float((1.0 - similarities[off_diagonal]).mean().item()))
+    else:
+        diversity = 0.0
+    return {
+        "token_ids": list(trajectory_tokens[selected]),
+        "selected_trajectory": int(trajectory_indices[selected]),
+        "selected_candidate": selected,
+        "trajectory_scores": [float(value) for value in score_tensor.tolist()],
+        "trajectory_token_ids": trajectory_tokens,
+        "candidate_count": int(len(trajectory_tokens)),
+        "candidate_topk_per_trajectory": int(candidate_topk),
+        "candidate_score_mode": str(candidate_score_mode),
+        "trajectory_diversity": diversity,
+    }
+
+
+def gram_lprm_generated_trajectory_loss(
+    model,
+    cases: list[TextReasoningCase],
+    *,
+    tokenizer: CharTokenizer,
+    device: torch.device,
+    include_family_tag: bool,
+    state_anchor: bool,
+    state_anchor_position: str,
+    think_steps: int,
+    trajectory_count: int,
+    stochastic_noise_std: float,
+    max_cases: int,
+    candidate_topk_per_trajectory: int = 1,
+    ranking_loss_weight: float = 0.0,
+    candidate_score_mode: str = "generated_state",
+    candidate_score_train_body: bool = False,
+    modulus: int | None = None,
+) -> tuple[torch.Tensor, dict[str, float | int]]:
+    """Train LPRM on generated trajectories, not teacher-forced answer states."""
+    if (
+        not hasattr(model, "gram_lprm_scores")
+        and not hasattr(model, "gram_lprm_head")
+        and not hasattr(model, "gram_attractor_selector")
+        and not hasattr(model, "gram_latent_consistency_verifier")
+        and not hasattr(model, "gram_trace_consistency_verifier")
+    ):
+        raise ValueError(
+            "GRAM LPRM loss requires model.gram_lprm_head or "
+            "model.gram_attractor_selector or "
+            "model.gram_latent_consistency_verifier or "
+            "model.gram_trace_consistency_verifier"
+        )
+    selected_cases = cases[: int(max_cases)] if int(max_cases) > 0 else list(cases)
+    if not selected_cases:
+        return torch.zeros((), device=device), {
+            "trajectory_count": int(max(1, trajectory_count)),
+            "cases": 0,
+            "positive_fraction": 0.0,
+            "oracle_accuracy": 0.0,
+            "selected_accuracy": 0.0,
+            "mean_lprm_score_gap": 0.0,
+            "trace_loss": 0.0,
+        }
+    count = max(1, int(trajectory_count))
+    candidate_topk = max(1, int(candidate_topk_per_trajectory))
+    all_states: list[torch.Tensor] = []
+    all_score_states: list[torch.Tensor] = []
+    all_prompt_score_states: list[torch.Tensor] = []
+    all_token_ids: list[list[int]] = []
+    all_score_token_ids: list[list[int]] = []
+    all_candidate_values: list[int] = []
+    all_trace_targets: list[torch.Tensor] = []
+    all_trace_masks: list[torch.Tensor] = []
+    all_trace_lengths: list[int] = []
+    all_targets: list[float] = []
+    selected_correct = 0.0
+    oracle_correct = 0.0
+    score_gaps: list[float] = []
+    ranking_losses: list[torch.Tensor] = []
+    trace_verifier = getattr(model, "gram_trace_consistency_verifier", None)
+    has_non_trace_selector = (
+        hasattr(model, "gram_lprm_scores")
+        or hasattr(model, "gram_lprm_head")
+        or hasattr(model, "gram_attractor_selector")
+        or hasattr(model, "gram_latent_consistency_verifier")
+    )
+    trace_modulus = int(
+        modulus if modulus is not None else getattr(trace_verifier, "num_values", 0)
+    )
+    if trace_verifier is not None and trace_modulus <= 0:
+        raise ValueError("trace-consistency verifier requires a positive modulus")
+    for case in selected_cases:
+        prompt = case_prompt(
+            case,
+            include_family_tag=include_family_tag,
+            state_anchor=state_anchor,
+            state_anchor_position=state_anchor_position,
+        )
+        prompt_ids = torch.tensor(
+            [tokenizer.encode(prompt)],
+            dtype=torch.long,
+            device=device,
+        )
+        gold = case_answer(case)
+        answer_len = len(tokenizer.encode(gold))
+        trace_target = None
+        trace_mask = None
+        trace_len = 0
+        if trace_verifier is not None:
+            trace_values = list(case_value_trace(case, modulus=trace_modulus))
+            if not trace_values:
+                trace_values = [int(case.answer) % int(trace_modulus)]
+            trace_values = trace_values[: int(trace_verifier.max_trace_len)]
+            trace_len = max(1, len(trace_values))
+            padded = trace_values + [0] * (int(trace_verifier.max_trace_len) - trace_len)
+            mask_values = [1] * trace_len + [0] * (
+                int(trace_verifier.max_trace_len) - trace_len
+            )
+            trace_target = torch.tensor(padded, dtype=torch.long, device=device)
+            trace_mask = torch.tensor(mask_values, dtype=torch.bool, device=device)
+        case_states: list[torch.Tensor] = []
+        case_token_ids: list[list[int]] = []
+        case_candidate_values: list[int] = []
+        case_targets: list[float] = []
+        for _trajectory_index in range(count):
+            beams: list[tuple[torch.Tensor, float, dict[str, object] | None]] = [
+                (prompt_ids.clone(), 0.0, None)
+            ]
+            with torch.no_grad():
+                for _step in range(int(answer_len)):
+                    expanded: list[tuple[torch.Tensor, float, dict[str, object]]] = []
+                    for out, score, _last_runtime in beams:
+                        runtime = model.forward_with_runtime(
+                            out,
+                            think_steps=int(think_steps),
+                            return_state_trace=True,
+                        )
+                        logits = runtime["logits"]
+                        if float(stochastic_noise_std) > 0.0:
+                            logits = logits + torch.randn_like(logits) * float(
+                                stochastic_noise_std
+                            )
+                        log_probs = F.log_softmax(logits[:, -1, :], dim=-1)
+                        values, indexes = torch.topk(
+                            log_probs,
+                            k=min(candidate_topk, int(log_probs.shape[-1])),
+                            dim=-1,
+                        )
+                        for value, index in zip(values[0], indexes[0]):
+                            next_id = index.view(1, 1)
+                            expanded.append(
+                                (
+                                    torch.cat([out, next_id], dim=1),
+                                    float(score + float(value.detach().cpu())),
+                                    runtime,
+                                )
+                            )
+                    expanded.sort(key=lambda item: item[1], reverse=True)
+                    beams = expanded[:candidate_topk]
+            if not beams or beams[0][2] is None:
+                raise ValueError("answer_len must be positive for GRAM LPRM loss")
+            for out, _score, last_runtime in beams:
+                if last_runtime is None:
+                    raise ValueError("answer_len must be positive for GRAM LPRM loss")
+                state = _gram_final_state_from_runtime(last_runtime).squeeze(0).detach()
+                token_ids = out[0, int(prompt_ids.shape[1]) :].detach().cpu().tolist()
+                pred = tokenizer.decode(token_ids)
+                target = 1.0 if pred == gold else 0.0
+                if trace_verifier is not None:
+                    pred_value = answer_value(pred)
+                    if (
+                        pred_value is None
+                        or pred_value < 0
+                        or pred_value >= int(trace_verifier.num_values)
+                    ):
+                        case_candidate_values.append(-1)
+                    else:
+                        case_candidate_values.append(int(pred_value))
+                case_states.append(state)
+                case_token_ids.append(token_ids)
+                case_targets.append(target)
+                all_states.append(state)
+                all_token_ids.append(token_ids)
+                all_targets.append(target)
+                if trace_verifier is not None:
+                    all_candidate_values.append(int(case_candidate_values[-1]))
+                    if trace_target is None or trace_mask is None:
+                        raise ValueError("missing trace target for trace verifier")
+                    all_trace_targets.append(trace_target)
+                    all_trace_masks.append(trace_mask)
+                    all_trace_lengths.append(int(trace_len))
+        case_state_tensor = torch.stack(case_states).to(device=device).float()
+        case_token_tensor = torch.tensor(case_token_ids, dtype=torch.long, device=device)
+        case_score_state_tensor, case_score_token_tensor = _candidate_score_state_inputs(
+            model,
+            prompt_ids,
+            case_state_tensor,
+            case_token_tensor,
+            think_steps=int(think_steps),
+            candidate_score_mode=str(candidate_score_mode),
+            candidate_score_train_body=bool(candidate_score_train_body),
+        )
+        if bool(candidate_score_train_body):
+            all_score_states.extend([row for row in case_score_state_tensor])
+        else:
+            all_score_states.extend([row.detach() for row in case_score_state_tensor])
+        case_prompt_score_state = None
+        if hasattr(model, "gram_latent_consistency_verifier"):
+            case_prompt_score_state = _gram_prompt_score_state(
+                model,
+                prompt_ids,
+                think_steps=int(think_steps),
+                train_body=bool(candidate_score_train_body),
+            ).to(device=device)
+            prompt_rows = case_prompt_score_state.unsqueeze(0).expand(
+                int(case_score_state_tensor.shape[0]),
+                -1,
+            )
+            if bool(candidate_score_train_body):
+                all_prompt_score_states.extend([row for row in prompt_rows])
+            else:
+                all_prompt_score_states.extend([row.detach() for row in prompt_rows])
+        if case_score_token_tensor is not None:
+            all_score_token_ids.extend(case_token_ids)
+        case_candidate_value_tensor = (
+            torch.tensor(case_candidate_values, dtype=torch.long, device=device)
+            if trace_verifier is not None
+            else None
+        )
+        case_trace_lengths_tensor = (
+            torch.full(
+                (int(case_score_state_tensor.shape[0]),),
+                int(trace_len),
+                dtype=torch.long,
+                device=device,
+            )
+            if trace_verifier is not None
+            else None
+        )
+        with torch.enable_grad():
+            case_scores = _score_gram_final_states(
+                model,
+                case_score_state_tensor,
+                case_score_token_tensor,
+                prompt_state=case_prompt_score_state,
+                candidate_values=case_candidate_value_tensor,
+                trace_lengths=case_trace_lengths_tensor,
+            )
+        if float(ranking_loss_weight) > 0.0:
+            case_target_tensor = torch.tensor(
+                case_targets,
+                dtype=torch.float32,
+                device=device,
+            )
+            ranking_losses.append(
+                gram_groupwise_candidate_ranking_loss(case_scores, case_target_tensor)
+            )
+        selected_index = int(case_scores.detach().argmax().item())
+        selected_correct += float(case_targets[selected_index])
+        oracle_correct += float(max(case_targets))
+        if int(case_scores.numel()) > 1:
+            sorted_scores = torch.sort(case_scores.detach(), descending=True).values
+            score_gaps.append(float((sorted_scores[0] - sorted_scores[1]).cpu()))
+    state_tensor = torch.stack(all_score_states).to(device=device).float()
+    token_tensor = (
+        torch.tensor(all_score_token_ids, dtype=torch.long, device=device)
+        if all_score_token_ids
+        else None
+    )
+    target_tensor = torch.tensor(all_targets, dtype=torch.float32, device=device)
+    prompt_state_tensor = (
+        torch.stack(all_prompt_score_states).to(device=device).float()
+        if all_prompt_score_states
+        else None
+    )
+    candidate_value_tensor = (
+        torch.tensor(all_candidate_values, dtype=torch.long, device=device)
+        if trace_verifier is not None
+        else None
+    )
+    trace_length_tensor = (
+        torch.tensor(all_trace_lengths, dtype=torch.long, device=device)
+        if trace_verifier is not None
+        else None
+    )
+    scores = _score_gram_final_states(
+        model,
+        state_tensor,
+        token_tensor,
+        prompt_state=prompt_state_tensor,
+        candidate_values=candidate_value_tensor,
+        trace_lengths=trace_length_tensor,
+    )
+    trace_loss = scores.sum() * 0.0
+    if trace_verifier is not None:
+        trace_loss = trace_verifier.supervised_loss(
+            state_tensor,
+            torch.stack(all_trace_targets).to(device=device),
+            torch.stack(all_trace_masks).to(device=device),
+        )
+    if trace_verifier is not None and not bool(has_non_trace_selector):
+        loss = trace_loss
+    else:
+        loss = F.binary_cross_entropy_with_logits(scores, target_tensor)
+        if trace_verifier is not None:
+            trace_weight = float(getattr(model, "gram_trace_score_weight", 0.0))
+            if trace_weight != 0.0:
+                loss = loss + trace_weight * trace_loss
+    mean_ranking_loss = (
+        torch.stack(ranking_losses).mean()
+        if ranking_losses
+        else scores.sum() * 0.0
+    )
+    if float(ranking_loss_weight) > 0.0:
+        loss = loss + float(ranking_loss_weight) * mean_ranking_loss
+    case_count = max(1, len(selected_cases))
+    return loss, {
+        "trajectory_count": int(count),
+        "candidate_topk_per_trajectory": int(candidate_topk),
+        "candidate_count": int(len(all_targets)),
+        "candidate_score_train_body": int(bool(candidate_score_train_body)),
+        "cases": int(len(selected_cases)),
+        "positive_fraction": float(target_tensor.detach().mean().cpu()),
+        "oracle_accuracy": float(oracle_correct / case_count),
+        "selected_accuracy": float(selected_correct / case_count),
+        "mean_lprm_score_gap": float(sum(score_gaps) / max(1, len(score_gaps))),
+        "ranking_loss": float(mean_ranking_loss.detach().cpu()),
+        "trace_loss": float(trace_loss.detach().cpu()),
+    }
+
+
 @torch.no_grad()
 def generate_answer_beam(
     model,
@@ -4153,6 +4966,9 @@ def evaluate(
     generation_halt_steps: list[float] = []
     generation_executed_steps: list[float] = []
     generation_halted_fractions: list[float] = []
+    gram_selected_trajectories: list[int] = []
+    gram_diversities: list[float] = []
+    gram_score_gaps: list[float] = []
     for index, case in enumerate(cases):
         prompt = case_prompt(
             prompt_cases[index],
@@ -4165,22 +4981,49 @@ def evaluate(
             dtype=torch.long,
             device=device,
         )
-        generated = generate_answer_with_runtime(
-            model,
-            prompt_ids,
-            answer_len=answer_len,
-            think_steps=int(think_steps),
-            state_reset_each_step=state_reset,
-            thinking_block_off=thinking_off,
-            coupling_off=coupling_off,
-            z_l_zero=z_l_zero,
-            z_h_zero=z_h_zero,
-            carrier_off=carrier_off,
-            op_order_off=op_order_off,
-            adaptive_halt=adaptive_halt,
-            halt_threshold=float(args.halt_threshold),
-            halt_min_steps=int(args.halt_min_steps),
-        )
+        if (
+            bool(args.eval_gram_trajectory_search)
+            and int(think_steps) > 0
+            and ablation == "none"
+            and not adaptive_halt
+        ):
+            generated = generate_answer_gram_trajectory_search(
+                model,
+                prompt_ids,
+                answer_len=answer_len,
+                think_steps=int(think_steps),
+                trajectory_count=int(args.gram_trajectory_count),
+                stochastic_noise_std=float(args.gram_stochastic_noise_std),
+                candidate_topk_per_trajectory=int(
+                    args.gram_candidate_topk_per_trajectory
+                ),
+                candidate_score_mode=str(args.gram_candidate_score_mode),
+                tokenizer=tokenizer,
+                trace_length=max(1, effective_program_len(prompt_cases[index])),
+            )
+            gram_selected_trajectories.append(int(generated["selected_trajectory"]))
+            gram_diversities.append(float(generated["trajectory_diversity"]))
+            scores = [float(value) for value in generated["trajectory_scores"]]
+            if len(scores) > 1:
+                sorted_scores = sorted(scores, reverse=True)
+                gram_score_gaps.append(float(sorted_scores[0] - sorted_scores[1]))
+        else:
+            generated = generate_answer_with_runtime(
+                model,
+                prompt_ids,
+                answer_len=answer_len,
+                think_steps=int(think_steps),
+                state_reset_each_step=state_reset,
+                thinking_block_off=thinking_off,
+                coupling_off=coupling_off,
+                z_l_zero=z_l_zero,
+                z_h_zero=z_h_zero,
+                carrier_off=carrier_off,
+                op_order_off=op_order_off,
+                adaptive_halt=adaptive_halt,
+                halt_threshold=float(args.halt_threshold),
+                halt_min_steps=int(args.halt_min_steps),
+            )
         pred_ids = generated["token_ids"]
         if adaptive_halt:
             generation_halt_steps.append(float(generated["mean_halt_steps"]))
@@ -4283,6 +5126,28 @@ def evaluate(
         result[f"beam{int(args.eval_beam_width)}_oracle_exact"] = float(
             beam_oracle_correct / max(1, beam_evaluated)
         )
+    if gram_selected_trajectories:
+        result["gram_trajectory_search"] = {
+            "trajectory_count": int(args.gram_trajectory_count),
+            "candidate_topk_per_trajectory": int(
+                args.gram_candidate_topk_per_trajectory
+            ),
+            "candidate_score_mode": str(args.gram_candidate_score_mode),
+            "candidate_count_per_case": int(args.gram_trajectory_count)
+            * max(1, int(args.gram_candidate_topk_per_trajectory)),
+            "selected_nonzero_fraction": float(
+                sum(1 for item in gram_selected_trajectories if int(item) != 0)
+                / max(1, len(gram_selected_trajectories))
+            ),
+            "mean_trajectory_diversity": float(
+                sum(gram_diversities) / max(1, len(gram_diversities))
+            ),
+            "mean_lprm_score_gap": float(
+                sum(gram_score_gaps) / max(1, len(gram_score_gaps))
+            )
+            if gram_score_gaps
+            else 0.0,
+        }
     if (
         bool(args.eval_answer_space_argmax)
         and ablation == "none"
@@ -4980,6 +5845,31 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
     max_seq_len = int(input_ids.shape[1])
     if int(args.model_max_seq_len) > 0:
         max_seq_len = max(max_seq_len, int(args.model_max_seq_len))
+    checkpoint: dict[str, object] | None = None
+    checkpoint_state: dict[str, torch.Tensor] | None = None
+    checkpoint_has_gram_lprm = False
+    checkpoint_has_gram_attractor = False
+    checkpoint_has_gram_lcv = False
+    checkpoint_has_gram_trace = False
+    if str(args.resume_from):
+        checkpoint = torch.load(Path(str(args.resume_from)), map_location=device)
+        checkpoint_state = checkpoint["model_state"]
+        checkpoint_has_gram_lprm = any(
+            str(key).startswith("gram_lprm_head.")
+            for key in checkpoint_state.keys()
+        )
+        checkpoint_has_gram_attractor = any(
+            str(key).startswith("gram_attractor_selector.")
+            for key in checkpoint_state.keys()
+        )
+        checkpoint_has_gram_lcv = any(
+            str(key).startswith("gram_latent_consistency_verifier.")
+            for key in checkpoint_state.keys()
+        )
+        checkpoint_has_gram_trace = any(
+            str(key).startswith("gram_trace_consistency_verifier.")
+            for key in checkpoint_state.keys()
+        )
     model = NativeQTRMETDLM(
         vocab=tokenizer.vocab_size,
         max_seq_len=max_seq_len,
@@ -5019,10 +5909,46 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         trm_recurrent_layerscale_mode=str(args.trm_recurrent_layerscale_mode),
         trm_recurrent_layerscale_init=float(args.trm_recurrent_layerscale_init),
     ).to(device)
+    if str(args.gram_candidate_selector) == "attractor" or bool(checkpoint_has_gram_attractor):
+        model.gram_attractor_selector = GramAttractorCandidateSelector(
+            int(args.d_model),
+            iterations=int(args.gram_attractor_iterations),
+            step_scale=float(args.gram_attractor_step_scale),
+        ).to(device)
+    if str(args.gram_candidate_selector) == "latent_consistency" or bool(
+        checkpoint_has_gram_lcv
+    ):
+        model.gram_latent_consistency_verifier = GramLatentConsistencyVerifier(
+            int(args.d_model),
+            latent_dim=(
+                int(args.gram_lcv_latent_dim)
+                if int(args.gram_lcv_latent_dim) > 0
+                else None
+            ),
+            temperature=float(args.gram_lcv_temperature),
+        ).to(device)
+    if (
+        str(args.gram_candidate_selector) == "trace_consistency"
+        or float(args.gram_trace_consistency_weight) > 0.0
+        or bool(checkpoint_has_gram_trace)
+    ):
+        model.gram_trace_consistency_verifier = GramTraceConsistencyVerifier(
+            int(args.d_model),
+            num_values=int(args.modulus),
+            max_trace_len=(
+                int(args.gram_trace_max_len)
+                if int(args.gram_trace_max_len) > 0
+                else int(args.program_len)
+            ),
+        ).to(device)
+        model.gram_trace_score_weight = float(args.gram_trace_consistency_weight)
+    if (
+        str(args.gram_candidate_selector) == "lprm_head"
+        and float(args.gram_lprm_loss_weight) > 0.0
+    ) or bool(checkpoint_has_gram_lprm):
+        model.gram_lprm_head = torch.nn.Linear(int(args.d_model), 1).to(device)
     resume_load_summary: dict[str, object] | None = None
-    if str(args.resume_from):
-        checkpoint_path = Path(str(args.resume_from))
-        checkpoint = torch.load(checkpoint_path, map_location=device)
+    if checkpoint is not None and checkpoint_state is not None:
         checkpoint_chars = tuple(checkpoint.get("chars", ()))
         if checkpoint_chars and checkpoint_chars != tuple(tokenizer.chars):
             if not bool(args.resume_allow_missing):
@@ -5032,14 +5958,53 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         if bool(args.resume_allow_missing):
             resume_load_summary = load_model_state_flexible(
                 model,
-                checkpoint["model_state"],
+                checkpoint_state,
                 pos_embed_resize_strategy=str(args.pos_embed_resize_strategy),
                 source_chars=checkpoint_chars,
                 target_chars=tuple(tokenizer.chars),
             )
+        elif (
+            (
+                hasattr(model, "gram_lprm_head")
+                and not bool(checkpoint_has_gram_lprm)
+            )
+            or (
+                hasattr(model, "gram_attractor_selector")
+                and not bool(checkpoint_has_gram_attractor)
+            )
+            or (
+                hasattr(model, "gram_latent_consistency_verifier")
+                and not bool(checkpoint_has_gram_lcv)
+            )
+            or (
+                hasattr(model, "gram_trace_consistency_verifier")
+                and not bool(checkpoint_has_gram_trace)
+            )
+        ):
+            incompatible = model.load_state_dict(checkpoint_state, strict=False)
+            unexpected = list(incompatible.unexpected_keys)
+            missing = [
+                key
+                for key in incompatible.missing_keys
+                if not (
+                    str(key).startswith("gram_lprm_head.")
+                    or str(key).startswith("gram_attractor_selector.")
+                    or str(key).startswith("gram_latent_consistency_verifier.")
+                    or str(key).startswith("gram_trace_consistency_verifier.")
+                )
+            ]
+            if unexpected or missing:
+                raise RuntimeError(
+                    "resume checkpoint mismatch after adding GRAM LPRM head: "
+                    f"missing={missing}, unexpected={unexpected}"
+                )
+            resume_load_summary = {
+                "loaded_tensors": len(checkpoint_state),
+                "missing_aux_tensors": list(incompatible.missing_keys),
+            }
         else:
-            model.load_state_dict(checkpoint["model_state"])
-            resume_load_summary = {"loaded_tensors": len(checkpoint["model_state"])}
+            model.load_state_dict(checkpoint_state)
+            resume_load_summary = {"loaded_tensors": len(checkpoint_state)}
     if bool(args.train_only_resume_missing_params):
         if not isinstance(resume_load_summary, dict):
             raise ValueError("--train-only-resume-missing-params requires --resume-from")
@@ -5250,6 +6215,7 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
     )
     del _sample_x, _sample_y
     last_loss = 0.0
+    last_gram_lprm_metrics: dict[str, float | int] = {}
     for step in range(1, int(args.steps) + 1):
         lr_scale = lr_scale_for_step(
             step=step,
@@ -5968,6 +6934,38 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
                     min_halt_step=int(args.halt_min_steps),
                 )
             loss = loss + float(args.adaptive_halt_loss_weight) * halt_loss
+        step_gram_lprm_metrics: dict[str, float | int] = {}
+        if (
+            float(args.gram_lprm_loss_weight) > 0.0
+            and (
+                int(args.gram_lprm_every) <= 1
+                or step % int(args.gram_lprm_every) == 0
+            )
+        ):
+            gram_lprm_loss, gram_lprm_metrics = gram_lprm_generated_trajectory_loss(
+                model,
+                batch,
+                tokenizer=tokenizer,
+                device=device,
+                include_family_tag=include_family_tag,
+                state_anchor=state_anchor,
+                state_anchor_position=state_anchor_position,
+                think_steps=int(args.train_think_steps),
+                trajectory_count=int(args.gram_trajectory_count),
+                stochastic_noise_std=float(args.gram_stochastic_noise_std),
+                max_cases=int(args.gram_lprm_max_cases),
+                candidate_topk_per_trajectory=int(
+                    args.gram_candidate_topk_per_trajectory
+                ),
+                ranking_loss_weight=float(args.gram_lprm_ranking_loss_weight),
+                candidate_score_mode=str(args.gram_candidate_score_mode),
+                candidate_score_train_body=bool(args.gram_candidate_score_train_body),
+                modulus=int(args.modulus),
+            )
+            loss = loss + float(args.gram_lprm_loss_weight) * gram_lprm_loss
+            step_gram_lprm_metrics = dict(gram_lprm_metrics)
+            step_gram_lprm_metrics["loss"] = float(gram_lprm_loss.detach().cpu())
+            last_gram_lprm_metrics = step_gram_lprm_metrics
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(optimizer_params, float(args.grad_clip))
@@ -5976,9 +6974,12 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         if int(args.log_every) > 0 and (
             step == 1 or step % int(args.log_every) == 0 or step == int(args.steps)
         ):
+            log_record: dict[str, object] = {"step": step, "loss": last_loss, "lr": last_lr}
+            if step_gram_lprm_metrics:
+                log_record["gram_lprm"] = step_gram_lprm_metrics
             print(
                 json.dumps(
-                    {"step": step, "loss": last_loss, "lr": last_lr},
+                    log_record,
                     ensure_ascii=False,
                 )
             )
@@ -6175,6 +7176,7 @@ def train_probe(args: argparse.Namespace) -> dict[str, object]:
         "last_lr": last_lr,
         "periodic_eval": periodic_eval_records,
         "best_periodic_eval": best_eval_record,
+        "last_gram_lprm": last_gram_lprm_metrics,
         "resume_load_summary": resume_load_summary,
         "restored_best_eval_checkpoint": bool(
             args.restore_best_eval_checkpoint and best_eval_state is not None
@@ -6845,6 +7847,39 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-beam-width", type=int, default=1)
     parser.add_argument("--eval-answer-space-argmax", action="store_true")
     parser.add_argument("--eval-answer-space-argmax-batch-size", type=int, default=512)
+    parser.add_argument("--eval-gram-trajectory-search", action="store_true")
+    parser.add_argument("--gram-trajectory-count", type=int, default=1)
+    parser.add_argument("--gram-stochastic-noise-std", type=float, default=0.0)
+    parser.add_argument("--gram-lprm-loss-weight", type=float, default=0.0)
+    parser.add_argument("--gram-lprm-max-cases", type=int, default=4)
+    parser.add_argument("--gram-lprm-every", type=int, default=1)
+    parser.add_argument("--gram-lprm-ranking-loss-weight", type=float, default=0.0)
+    parser.add_argument("--gram-candidate-topk-per-trajectory", type=int, default=1)
+    parser.add_argument(
+        "--gram-candidate-selector",
+        choices=("lprm_head", "attractor", "latent_consistency", "trace_consistency"),
+        default="lprm_head",
+    )
+    parser.add_argument("--gram-attractor-iterations", type=int, default=3)
+    parser.add_argument("--gram-attractor-step-scale", type=float, default=0.5)
+    parser.add_argument("--gram-lcv-latent-dim", type=int, default=0)
+    parser.add_argument("--gram-lcv-temperature", type=float, default=1.0)
+    parser.add_argument("--gram-trace-max-len", type=int, default=0)
+    parser.add_argument("--gram-trace-consistency-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--gram-candidate-score-mode",
+        choices=("generated_state", "candidate_forward"),
+        default="generated_state",
+    )
+    parser.add_argument(
+        "--gram-candidate-score-train-body",
+        action="store_true",
+        help=(
+            "When candidate-forward scoring is used for LPRM training, let the "
+            "candidate verifier loss update the recurrent body instead of only "
+            "training the reward head."
+        ),
+    )
     parser.add_argument(
         "--pos-embed-resize-strategy",
         choices=("random_tail", "repeat_last", "tail_shift"),

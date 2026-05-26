@@ -10,6 +10,8 @@ MEMORY_EFFICIENT_OPTIMIZERS = (
     "adamw",
     "adamw8bit",
     "paged_adamw8bit",
+    "ademamix8bit",
+    "paged_ademamix8bit",
     "galore_adamw",
     "galore_adamw8bit",
 )
@@ -23,6 +25,16 @@ def _import_bitsandbytes_adamw8bit():
             "bitsandbytes is required for adamw8bit/paged_adamw8bit"
         ) from exc
     return bnb.optim.AdamW8bit, bnb.optim.PagedAdamW8bit
+
+
+def _import_bitsandbytes_ademamix8bit():
+    try:
+        import bitsandbytes as bnb
+    except Exception as exc:  # pragma: no cover - depends on optional package
+        raise RuntimeError(
+            "bitsandbytes is required for ademamix8bit/paged_ademamix8bit"
+        ) from exc
+    return bnb.optim.AdEMAMix8bit, bnb.optim.PagedAdEMAMix8bit
 
 
 def _import_galore():
@@ -129,6 +141,9 @@ def build_memory_efficient_optimizer(
     lr: float,
     weight_decay: float,
     device: torch.device,
+    beta1: float = 0.9,
+    beta2: float = 0.999,
+    extra_named_parameters: Iterable[tuple[str, torch.nn.Parameter]] | None = None,
     galore_rank: int = 128,
     galore_update_proj_gap: int = 200,
     galore_scale: float = 0.25,
@@ -145,16 +160,27 @@ def build_memory_efficient_optimizer(
 
     resolved = resolve_optimizer_name(str(optimizer_name), device=device)
     named = _named_trainable_parameters(model)
+    if extra_named_parameters is not None:
+        named.extend(
+            (str(name), param)
+            for name, param in extra_named_parameters
+            if param.requires_grad
+        )
     total_params = int(sum(param.numel() for _, param in named))
+    if not named:
+        raise ValueError("no trainable parameters selected")
     report: dict[str, object] = {
         "requested": str(optimizer_name),
         "resolved": resolved,
         "trainable_parameter_count": total_params,
+        "beta1": float(beta1),
+        "beta2": float(beta2),
     }
     if resolved == "adamw":
         optimizer = torch.optim.AdamW(
             [param for _, param in named],
             lr=float(lr),
+            betas=(float(beta1), float(beta2)),
             weight_decay=float(weight_decay),
         )
         return optimizer, report
@@ -164,8 +190,20 @@ def build_memory_efficient_optimizer(
         optimizer = cls(
             [param for _, param in named],
             lr=float(lr),
+            betas=(float(beta1), float(beta2)),
             weight_decay=float(weight_decay),
         )
+        return optimizer, report
+    if resolved in {"ademamix8bit", "paged_ademamix8bit"}:
+        AdEMAMix8bit, PagedAdEMAMix8bit = _import_bitsandbytes_ademamix8bit()
+        cls = PagedAdEMAMix8bit if resolved == "paged_ademamix8bit" else AdEMAMix8bit
+        optimizer = cls(
+            [param for _, param in named],
+            lr=float(lr),
+            betas=(float(beta1), float(beta2), 0.9999),
+            weight_decay=float(weight_decay),
+        )
+        report["beta3"] = 0.9999
         return optimizer, report
     if resolved in {"galore_adamw", "galore_adamw8bit"}:
         GaLoreAdamW, GaLoreAdamW8bit = _import_galore()
@@ -180,9 +218,11 @@ def build_memory_efficient_optimizer(
             include_embeddings=bool(galore_include_embeddings),
         )
         cls = GaLoreAdamW8bit if resolved == "galore_adamw8bit" else GaLoreAdamW
-        kwargs: dict[str, object] = {"lr": float(lr), "weight_decay": float(weight_decay)}
-        if resolved == "galore_adamw":
-            kwargs["no_deprecation_warning"] = True
+        kwargs: dict[str, object] = {
+            "lr": float(lr),
+            "betas": (float(beta1), float(beta2)),
+            "weight_decay": float(weight_decay),
+        }
         optimizer = cls(groups, **kwargs)
         report.update(galore_report)
         return optimizer, report

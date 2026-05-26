@@ -10,12 +10,15 @@ from .mixers import build_delta_mixer
 from .config import QTRMConfig
 
 
+CANONICAL_LT2_ATTN_EVERY = 4
+
+
 class QTRMBlock(nn.Module):
     """Hybrid Qwen/Kimi-style block.
 
     If use_attention=True, use GQA exact attention. Otherwise, use delta/recurrent
-    mixer backend. In the core, use attn_every=4 to get a 3:1 delta-to-attention
-    pattern.
+    mixer backend. The canonical LT2-style path is attn_every=4, giving three
+    GatedDelta/GDN blocks followed by one full-attention sync block.
     """
 
     def __init__(self, cfg: QTRMConfig, use_attention: bool, causal: bool):

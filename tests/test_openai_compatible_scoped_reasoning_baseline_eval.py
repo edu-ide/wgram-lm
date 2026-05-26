@@ -39,6 +39,40 @@ class OpenAICompatibleScopedReasoningBaselineEvalTests(unittest.TestCase):
         self.assertEqual(module.normalize_two_digit_answer("Answer: 12."), "12")
         self.assertEqual(module.normalize_two_digit_answer("no answer"), "")
 
+    def test_normalize_exact_text_answer(self):
+        module = _load_script()
+
+        self.assertEqual(
+            module.normalize_answer("Answer:  \\sqrt{3}-1 <|box_end|>", answer_format="exact_text"),
+            "\\sqrt{3}-1",
+        )
+        self.assertEqual(
+            module.normalize_answer("The value is 4.", answer_format="exact_text"),
+            "The value is 4.",
+        )
+
+    def test_normalize_boxed_text_answer_extracts_final_boxed_expression(self):
+        module = _load_script()
+
+        self.assertEqual(
+            module.normalize_answer(
+                "First compute. Therefore $\\boxed{\\frac{38}{35}}$.",
+                answer_format="boxed_text",
+            ),
+            "\\frac{38}{35}",
+        )
+        self.assertEqual(
+            module.normalize_answer(
+                "One candidate is \\boxed{10}, but the final answer is \\boxed{42}.",
+                answer_format="boxed_text",
+            ),
+            "42",
+        )
+        self.assertEqual(
+            module.normalize_answer("Answer: 17.5<|box_end|>", answer_format="boxed_text"),
+            "17.5",
+        )
+
     def test_chat_completion_extracts_message_content(self):
         module = _load_script()
         with mock.patch.object(

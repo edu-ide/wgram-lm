@@ -27,6 +27,7 @@ class QwenBackboneQTRMReport:
     standalone_graph: bool = True
     mandatory_core: bool = False
     core_impl: str = ""
+    core_update: str = ""
     normal_core_gate: float = 0.0
     qwen_core_layers_cloned: bool = False
     core_insertion_mode: str = "final_residual"

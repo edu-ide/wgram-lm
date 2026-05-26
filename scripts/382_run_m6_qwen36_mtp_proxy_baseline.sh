@@ -11,6 +11,7 @@ OUT_JSON="${OUT_JSON:-${OUT_DIR}/report.json}"
 OUT_JSONL="${OUT_JSONL:-${OUT_DIR}/predictions.jsonl}"
 MAX_CASES="${MAX_CASES:-0}"
 MAX_TOKENS="${MAX_TOKENS:-8}"
+ANSWER_FORMAT="${ANSWER_FORMAT:-two_digit}"
 CTX_SIZE="${CTX_SIZE:-4096}"
 LOG_EVERY="${LOG_EVERY:-32}"
 START_SERVER="${START_SERVER:-1}"
@@ -70,4 +71,5 @@ PYTHONPATH="${PYTHONPATH:-src}" "${PYTHON_BIN}" scripts/381_eval_openai_compatib
   --out-jsonl "${OUT_JSONL}" \
   --max-cases "${MAX_CASES}" \
   --max-tokens "${MAX_TOKENS}" \
+  --answer-format "${ANSWER_FORMAT}" \
   --log-every "${LOG_EVERY}"

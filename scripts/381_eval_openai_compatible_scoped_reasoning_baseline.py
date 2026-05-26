@@ -26,6 +26,69 @@ def normalize_two_digit_answer(text: str) -> str:
     return ""
 
 
+def normalize_single_digit_answer(text: str) -> str:
+    """Extract the final standalone digit from model output."""
+    stripped = str(text).strip()
+    if re.fullmatch(r"\d", stripped):
+        return stripped
+    matches = re.findall(r"(?<!\d)(\d)(?!\d)", stripped)
+    if matches:
+        return matches[-1]
+    return ""
+
+
+def normalize_exact_text_answer(text: str) -> str:
+    stripped = str(text).strip()
+    if "<|box_end|>" in stripped:
+        stripped = stripped.split("<|box_end|>", 1)[0].strip()
+    stripped = re.sub(r"^\s*answer\s*:\s*", "", stripped, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", stripped).strip()
+
+
+def extract_boxed_expressions(text: str) -> list[str]:
+    expressions: list[str] = []
+    marker = r"\boxed{"
+    value = str(text)
+    index = 0
+    while True:
+        start = value.find(marker, index)
+        if start < 0:
+            break
+        content_start = start + len(marker)
+        depth = 1
+        position = content_start
+        while position < len(value) and depth > 0:
+            char = value[position]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+            position += 1
+        if depth == 0:
+            expressions.append(value[content_start : position - 1])
+            index = position
+        else:
+            index = content_start
+    return expressions
+
+
+def normalize_boxed_text_answer(text: str) -> str:
+    boxed = extract_boxed_expressions(str(text))
+    if boxed:
+        return re.sub(r"\s+", " ", boxed[-1]).strip()
+    return normalize_exact_text_answer(text)
+
+
+def normalize_answer(text: str, *, answer_format: str) -> str:
+    if str(answer_format) == "boxed_text":
+        return normalize_boxed_text_answer(text)
+    if str(answer_format) == "exact_text":
+        return normalize_exact_text_answer(text)
+    if str(answer_format) == "single_digit":
+        return normalize_single_digit_answer(text)
+    return normalize_two_digit_answer(text)
+
+
 def load_suite(path: str | Path, *, max_cases: int = 0) -> list[dict[str, Any]]:
     rows = []
     for line_no, raw_line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), start=1):
@@ -130,8 +193,8 @@ def evaluate_api(args: argparse.Namespace) -> dict[str, Any]:
             timeout=float(args.timeout),
             retries=int(args.retries),
         )
-        pred = normalize_two_digit_answer(raw)
-        gold = normalize_two_digit_answer(str(row["answer_text"]))
+        pred = normalize_answer(raw, answer_format=str(args.answer_format))
+        gold = normalize_answer(str(row["answer_text"]), answer_format=str(args.answer_format))
         scored = dict(row)
         scored.update(
             {
@@ -168,7 +231,16 @@ def evaluate_api(args: argparse.Namespace) -> dict[str, Any]:
         "prompt_protocol": prompt_protocol,
         "score": metrics["generation_exact"],
         "cases": metrics["cases"],
-        "scorer": "first standalone two-digit exact match",
+        "scorer": (
+            "final boxed text exact match"
+            if str(args.answer_format) == "boxed_text"
+            else
+            "normalized exact text match"
+            if str(args.answer_format) == "exact_text"
+            else "final standalone single-digit exact match"
+            if str(args.answer_format) == "single_digit"
+            else "first standalone two-digit exact match"
+        ),
         "metrics": metrics,
         "accepted": True,
         "comparison_role": str(args.comparison_role),
@@ -199,6 +271,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out-jsonl", default="local_eval/m6_qwen36_mtp_proxy_baseline/predictions.jsonl")
     parser.add_argument("--max-cases", type=int, default=0)
     parser.add_argument("--max-tokens", type=int, default=8)
+    parser.add_argument(
+        "--answer-format",
+        choices=("two_digit", "single_digit", "exact_text", "boxed_text"),
+        default="two_digit",
+    )
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument("--retries", type=int, default=2)

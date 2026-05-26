@@ -1235,6 +1235,38 @@ def _record_core_steps_actual(
     )
 
 
+def _core_depth_residual_curve(outputs: dict[str, Any]) -> list[float]:
+    states = outputs.get("core_depth_states")
+    if states is None or getattr(states, "numel", lambda: 0)() == 0:
+        return []
+    if getattr(states, "ndim", 0) < 3 or int(states.shape[1]) < 2:
+        return []
+    values = states.detach().float()
+    deltas = values[:, 1:] - values[:, :-1]
+    if deltas.ndim > 3:
+        deltas = deltas.reshape(deltas.shape[0], deltas.shape[1], -1)
+    residuals = deltas.norm(dim=-1).mean(dim=0).detach().cpu()
+    return [float(value) for value in residuals.tolist()]
+
+
+def _record_core_residual_telemetry(
+    telemetry: dict[str, Any] | None,
+    outputs: dict[str, Any],
+) -> None:
+    if telemetry is None:
+        return
+    residual_curve = _core_depth_residual_curve(outputs)
+    if not residual_curve:
+        return
+    telemetry.setdefault("residual_curve_values", []).append(residual_curve)
+    telemetry.setdefault("fixed_point_residual_values", []).append(
+        float(residual_curve[-1])
+    )
+    telemetry.setdefault("mean_fixed_point_residual_values", []).append(
+        sum(residual_curve) / len(residual_curve)
+    )
+
+
 def _record_answer_state_loop_halt(
     telemetry: dict[str, Any] | None,
     outputs: dict[str, Any],
@@ -1287,6 +1319,35 @@ def _finalize_choice_telemetry(telemetry: dict[str, Any]) -> dict[str, Any]:
                 "core_steps_actual_observations": len(step_values),
             }
         )
+    residual_curves = [
+        [float(value) for value in curve]
+        for curve in telemetry.get("residual_curve_values", [])
+        if curve
+    ]
+    fixed_residual_values = [
+        float(value)
+        for value in telemetry.get("fixed_point_residual_values", [])
+    ]
+    mean_residual_values = [
+        float(value)
+        for value in telemetry.get("mean_fixed_point_residual_values", [])
+    ]
+    if residual_curves and fixed_residual_values:
+        fixed_point_residual = sum(fixed_residual_values) / len(fixed_residual_values)
+        mean_fixed_point_residual = (
+            sum(mean_residual_values) / len(mean_residual_values)
+            if mean_residual_values
+            else fixed_point_residual
+        )
+        result.update(
+            {
+                "residual_curve": residual_curves[-1],
+                "fixed_point_residual": fixed_point_residual,
+                "core_fixed_point_residual": fixed_point_residual,
+                "mean_fixed_point_residual": mean_fixed_point_residual,
+                "fixed_point_residual_observations": len(fixed_residual_values),
+            }
+        )
     halt_argmax_steps = [
         float(value)
         for value in telemetry.get("answer_state_loop_halt_argmax_step_values", [])
@@ -1322,6 +1383,26 @@ def _finalize_choice_telemetry(telemetry: dict[str, Any]) -> dict[str, Any]:
             }
         )
     return result
+
+
+def _promote_best_choice_telemetry(
+    record: dict[str, Any],
+    choice_scores: list[dict[str, Any]] | None,
+) -> None:
+    if not choice_scores:
+        return
+    best_choice = choice_scores[0]
+    for key in (
+        "core_steps_actual_mean",
+        "core_steps_actual_observations",
+        "residual_curve",
+        "fixed_point_residual",
+        "core_fixed_point_residual",
+        "mean_fixed_point_residual",
+        "fixed_point_residual_observations",
+    ):
+        if key in best_choice:
+            record[key] = best_choice[key]
 
 
 def _answer_choice_logprob(
@@ -1503,6 +1584,7 @@ def _answer_choice_logprob(
             end=full_len - 1,
         )
         _record_core_steps_actual(telemetry, outputs)
+        _record_core_residual_telemetry(telemetry, outputs)
         _record_answer_state_loop_halt(telemetry, outputs)
         log_probs = torch.log_softmax(aligned, dim=-1)
         token_log_probs = log_probs.gather(-1, targets.unsqueeze(-1)).squeeze(-1)
@@ -1687,6 +1769,7 @@ def _answer_choice_causal_logprob(
             next_logits = outputs["logits"][:, -1, :].float()
             _record_conflict_gate_mean(telemetry, outputs, start=-1, end=None)
             _record_core_steps_actual(telemetry, outputs)
+            _record_core_residual_telemetry(telemetry, outputs)
             _record_answer_state_loop_halt(telemetry, outputs)
             total += float(
                 torch.log_softmax(next_logits, dim=-1)[0, int(target_id)]
@@ -2529,16 +2612,7 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                             sum(1 for row in choice_scores if bool(row.get("tied_for_best")))
                             > 1
                         )
-                        if choice_scores:
-                            best_choice = choice_scores[0]
-                            if "core_steps_actual_mean" in best_choice:
-                                record["core_steps_actual_mean"] = best_choice[
-                                    "core_steps_actual_mean"
-                                ]
-                                record["core_steps_actual_observations"] = best_choice.get(
-                                    "core_steps_actual_observations",
-                                    0,
-                                )
+                        _promote_best_choice_telemetry(record, choice_scores)
                     records.append(record)
                     f.write(json.dumps(record, ensure_ascii=False) + "\n")
                     f.flush()

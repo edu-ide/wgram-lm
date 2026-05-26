@@ -79,6 +79,19 @@ class GroupedQueryAttention(nn.Module):
             # attention_mask: [B, T] with 1 for valid.
             # Convert to additive key mask [B, 1, 1, T].
             mask = (1.0 - attention_mask[:, None, None, :].to(q.dtype)) * torch.finfo(q.dtype).min
+        dropout_p = self.dropout_p if self.training else 0.0
+        if self.causal and mask is None:
+            out = F.scaled_dot_product_attention(
+                q,
+                k,
+                v,
+                attn_mask=None,
+                dropout_p=dropout_p,
+                is_causal=True,
+            )
+            out = out.transpose(1, 2).contiguous().view(b, t, d)
+            return self.o_proj(out)
+
         if self.causal:
             causal = torch.zeros((t, t), dtype=q.dtype, device=q.device)
             causal = causal.masked_fill(
@@ -93,7 +106,7 @@ class GroupedQueryAttention(nn.Module):
             k,
             v,
             attn_mask=mask,
-            dropout_p=self.dropout_p if self.training else 0.0,
+            dropout_p=dropout_p,
             is_causal=False,
         )
         out = out.transpose(1, 2).contiguous().view(b, t, d)

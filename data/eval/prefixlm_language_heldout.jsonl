@@ -1,0 +1,8 @@
+{"case_id":"en_plain_answer","family":"plain_qa","language":"en","instruction":"Answer in one short sentence. What color is the sky on a clear day?","response":"The sky is blue."}
+{"case_id":"ko_plain_answer","family":"plain_qa","language":"ko","instruction":"한국어로 한 문장으로 답하세요. 맑은 날 하늘은 보통 무슨 색인가요?","response":"맑은 날 하늘은 보통 파란색입니다."}
+{"case_id":"en_simple_math","family":"math","language":"en","instruction":"Answer with only the number. What is 14 plus 9?","response":"23"}
+{"case_id":"ko_simple_math","family":"math","language":"ko","instruction":"답만 쓰세요. 8 곱하기 7은 얼마인가요?","response":"56"}
+{"case_id":"en_to_ko_word","family":"translation","language":"ko","instruction":"Translate to Korean. Answer with only the translated word.\n\nbook","response":"책"}
+{"case_id":"ko_to_en_word","family":"translation","language":"en","instruction":"Translate to English. Answer with only the translated word.\n\n물","response":"water"}
+{"case_id":"es_plain_answer","family":"plain_qa","language":"es","instruction":"Responde en una frase corta. ¿Cuál es la capital de Italia?","response":"La capital de Italia es Roma."}
+{"case_id":"de_plain_answer","family":"plain_qa","language":"de","instruction":"Antworte in einem kurzen Satz. Welche Farbe hat Gras normalerweise?","response":"Gras ist normalerweise grün."}

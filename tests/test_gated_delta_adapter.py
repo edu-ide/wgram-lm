@@ -3,6 +3,7 @@ import types
 import unittest
 import importlib
 import os
+from unittest import mock
 
 import torch
 from torch import nn
@@ -114,8 +115,10 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         self.assertEqual(mixer.kwargs["norm_eps"], 1e-6)
 
     def test_strict_fla_gated_delta_raises_when_official_backend_missing(self):
-        sys.modules.pop("fla", None)
-        sys.modules.pop("fla.layers", None)
+        for name in list(sys.modules):
+            if name == "fla" or name.startswith("fla."):
+                sys.modules.pop(name, None)
+        sys.path[:] = [path for path in sys.path if "flash-linear-attention" not in path]
         os.environ["QTRM_DISABLE_LOCAL_FLA_REFERENCE"] = "1"
 
         from qtrm_mm.mixers import FLADeltaMixer
@@ -142,6 +145,86 @@ class GatedDeltaAdapterTests(unittest.TestCase):
 
         self.assertTrue(backends.HAS_FLA_GATED_DELTA)
         self.assertEqual(backends.get_delta_backend("fla_gated_delta").__name__, "FLADeltaMixer")
+
+    def test_official_gated_delta2_exposes_separate_erase_and_write_gates(self):
+        sys.modules.pop("fla", None)
+        sys.modules.pop("fla.layers", None)
+
+        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+
+        mixer = OfficialGatedDeltaNet2Mixer(
+            d_model=64,
+            n_heads=4,
+            strict=True,
+            head_dim=16,
+            num_v_heads=4,
+            use_short_conv=False,
+        )
+
+        self.assertTrue(mixer.is_official_backend)
+        self.assertIsNot(mixer.impl.b_proj, mixer.impl.w_proj)
+        self.assertEqual(mixer.impl.b_proj.out_features, 64)
+        self.assertEqual(mixer.impl.w_proj.out_features, 64)
+        if torch.cuda.is_available():
+            x = torch.randn(2, 8, 64, device="cuda", requires_grad=True)
+            y = mixer.cuda().eval()(x)
+            self.assertEqual(y.shape, x.shape)
+            mixer.train()
+            loss = mixer(x).float().square().mean()
+            loss.backward()
+            self.assertIsNotNone(mixer.impl.b_proj.weight.grad)
+            self.assertIsNotNone(mixer.impl.w_proj.weight.grad)
+
+    def test_official_gated_delta2_never_constructs_torch_fallback_when_missing(self):
+        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+
+        with mock.patch.object(OfficialGatedDeltaNet2Mixer, "_build_impl", return_value=None):
+            with self.assertRaisesRegex(RuntimeError, "fallback is disabled"):
+                OfficialGatedDeltaNet2Mixer(d_model=16, n_heads=4, strict=False)
+
+    def test_official_gated_delta2_forward_does_not_runtime_fallback(self):
+        class _FailingOfficial(nn.Module):
+            def forward(self, hidden_states, attention_mask=None):
+                raise RuntimeError("kernel compile failed")
+
+        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+
+        with mock.patch.object(OfficialGatedDeltaNet2Mixer, "_build_impl", return_value=_FailingOfficial()):
+            mixer = OfficialGatedDeltaNet2Mixer(d_model=16, n_heads=4, strict=False)
+
+        self.assertTrue(mixer.is_official_backend)
+        self.assertFalse(hasattr(mixer, "runtime_fallback"))
+        with self.assertRaisesRegex(RuntimeError, "kernel compile failed"):
+            mixer(torch.randn(1, 2, 16))
+
+    def test_qtrm_block_accepts_official_gated_delta2_backend_for_3to1_schedule(self):
+        sys.modules.pop("fla", None)
+        sys.modules.pop("fla.layers", None)
+
+        from qtrm_mm.blocks import CANONICAL_LT2_ATTN_EVERY, QTRMBlockStack
+        from qtrm_mm.config import QTRMConfig
+        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+
+        self.assertEqual(CANONICAL_LT2_ATTN_EVERY, 4)
+        cfg = QTRMConfig(
+            d_model=64,
+            n_heads=4,
+            n_kv_heads=2,
+            d_ff=128,
+            max_seq_len=8,
+            delta_backend="official_gated_delta2",
+            strict_backends=True,
+            delta_head_dim=16,
+            delta_num_v_heads=4,
+            delta_use_short_conv=False,
+        )
+
+        stack = QTRMBlockStack(cfg, n_layers=4, causal=True, attn_every=4)
+
+        self.assertIsInstance(stack.layers[0].mixer, OfficialGatedDeltaNet2Mixer)
+        self.assertIsInstance(stack.layers[1].mixer, OfficialGatedDeltaNet2Mixer)
+        self.assertIsInstance(stack.layers[2].mixer, OfficialGatedDeltaNet2Mixer)
+        self.assertTrue(stack.layers[3].use_attention)
 
 
 if __name__ == "__main__":
