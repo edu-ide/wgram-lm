@@ -337,6 +337,18 @@ promote only if:
   that scalar "more exposure to the failure mode" has reached diminishing returns.
   The next move should be a structural change to how the recurrent state binds
   and computes the final equation (one-body equation-state readback direction).
+
+  Stage119 experimental contract defined (see dedicated decision record):
+    - Hypothesis: forcing the recurrent state itself to explicitly bind the
+      final equation operands/operation and maintain a "solved" representation
+      will give a cleaner causal gain on hard algebra cases than additional
+      final-answer preference pressure.
+    - Minimal addition: lightweight equation-binding auxiliary objective on
+      generated algebra trap data (leveraging or extending existing typed
+      register / state supervision machinery).
+    - Falsification gate: short local probe from current anchor + standard
+      44-row GD smoke + language/generation preservation + state ablation.
+    - Status: ready for minimal implementation and cheap local probe.
 ```
 
 ### Stage95I DGX OPUS/GD Contract Audit
