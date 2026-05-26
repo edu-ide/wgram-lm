@@ -320,6 +320,23 @@ promote only if:
       same LM answer path,
       language CE preservation,
       heldout smoke rows only for evaluation.
+
+  Stage118 (fixed-parrot algebra diagnostic, 60 steps) was evaluated as a direct follow-up.
+  Result on the same GD gate:
+    - Stage118 last: accuracy 1.0, mean_margin +1.208, min_margin +0.022, accepted True
+    - All algebra variants now pass (big improvement over Stage117's 0.85 / negative min margin).
+  Language heldout actually improved vs Stage117.
+  However, direct generation quality regressed (exact 0/12 vs 1/12, prefix accuracy 0.133 vs 0.317).
+
+  Decision (per handoff promotion rule):
+    Stage118 is a strong diagnostic but is **not promoted** as the new local anchor
+    because of material regression on the generation gate.
+    Current local anchor remains Stage117.
+
+  The persistent wall after two rounds of preference pressure strongly suggests
+  that scalar "more exposure to the failure mode" has reached diminishing returns.
+  The next move should be a structural change to how the recurrent state binds
+  and computes the final equation (one-body equation-state readback direction).
 ```
 
 ### Stage95I DGX OPUS/GD Contract Audit
