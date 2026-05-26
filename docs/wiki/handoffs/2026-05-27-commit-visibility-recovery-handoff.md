@@ -43,6 +43,10 @@ git log --oneline --decorate --since='2026-05-20' --until='2026-05-27' --all
 # 4) 보존 체크포인트 실행
 
 bash scripts/999_workspace_commit_guard.sh
+
+# 5) main에서 바로 분기 판단/이동 가이드(원하면 한 줄 정리)
+
+bash scripts/998_checkout_stage119_if_missing.sh
 ```
 
 ## 운영 규칙
