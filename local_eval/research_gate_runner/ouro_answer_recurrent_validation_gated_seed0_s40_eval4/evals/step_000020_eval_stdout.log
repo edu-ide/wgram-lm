@@ -1,5 +1,0 @@
-[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
-[donor] Frozen (all params requires_grad=False)
-[donor] params: 1,363,305,280 total, 0 trainable
-wrote 16 records to local_eval/research_gate_runner/ouro_answer_recurrent_validation_gated_seed0_s40_eval4/evals/step_000020_causal_forced_choice.jsonl
-hits=0/16

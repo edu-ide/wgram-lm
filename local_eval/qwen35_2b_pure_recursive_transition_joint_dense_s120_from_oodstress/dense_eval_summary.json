@@ -1,9 +1,0 @@
-{
-  "families": [
-    "list_transform"
-  ],
-  "input_jsonl": "data/eval/pure_recursive_transition_finality_family_holdout_list_eval.jsonl",
-  "max_depth": 8,
-  "output_jsonl": "data/eval/pure_recursive_transition_joint_dense_family_holdout_list_eval.jsonl",
-  "rows": 64
-}

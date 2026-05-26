@@ -1,8 +1,0 @@
-[init] skipped shape-mismatched keys: core_role_value_state_embed.weight
-[init] skipped shape-mismatched keys: core_source_position_binder_slot_queries, core_source_position_binder_logit_gate, core_source_position_binder_state_gate
-[init] skipped shape-mismatched keys: core_source_position_binder_slot_queries, core_source_position_binder_logit_gate, core_source_position_binder_state_gate
-[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
-[donor] Frozen (all params requires_grad=False)
-[donor] params: 1,363,305,280 total, 0 trainable
-wrote 22 records to local_eval/l4_source_slot_path_smoke_s1/generation_eval.jsonl
-hits=11/22
