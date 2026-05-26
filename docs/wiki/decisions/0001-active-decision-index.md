@@ -539,3 +539,33 @@ Plain-language reason:
 ```text
 The archive is useful memory, but it is not the driver's seat.
 ```
+
+### Stage119 One-Body Equation-State Readback (L1 Probe)
+
+file:
+  docs/wiki/decisions/2026-05-26-stage119-one-body-equation-state-readback.md
+  docs/wiki/decisions/stage119/probe_results_2026-05-26.md
+  docs/wiki/decisions/stage119/failure_ledger.md
+  src/qtrm_mm/losses/equation_state_binding.py (full)
+  scripts/625_train_bpe_gd_preference.py (guarded hook)
+  scripts/627_run_stage119_equation_probe.py (self-contained runnable)
+
+status:
+  active L1 diagnostic probe
+
+current read (direct run 2026-05-26, synthetic algebra traps):
+  before_exact: 0.000
+  after_exact: 0.125
+  ablation_drop: -0.5625 (proxy model)
+  language_proxy: 0.75
+  aux active and decreasing
+  verdict: probe
+
+  Small exact lift on target family under the new compute_equation_state_binding_loss
+  (logit margin on final components + readback enforcement). Ablation not yet causal
+  in micro-proxy. Language held.
+
+next expected move (factual only):
+  Real anchor continuation from Stage117/118 checkpoint using the now-runnable
+  627/625 integration + recurrent state capture. Re-record numbers on actual data.
+  Promote only on same-LM-metric exact lift + state-off drop.

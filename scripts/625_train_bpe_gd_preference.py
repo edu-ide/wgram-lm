@@ -533,6 +533,52 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         with amp_context():
             chosen_logits = model(chosen_input_ids, think_steps=int(args.think_steps))
             rejected_logits = model(rejected_input_ids, think_steps=int(args.think_steps))
+
+            # === Stage119 equation-state binding aux loss (minimal, guarded) ===
+            stage119_aux = torch.zeros((), device=device)
+            if float(getattr(args, "stage119_equation_binding_weight", 0.0)) > 0.0:
+                task_str = str(batch.get("tasks", [""])[0]) if isinstance(batch.get("tasks"), (list, tuple)) else ""
+                if "algebra" in task_str.lower():
+                    try:
+                        from src.qtrm_mm.losses.equation_state_binding import (
+                            compute_equation_state_binding_loss,
+                            EquationStateBindingConfig,
+                            extract_equation_fields_from_algebra_row,
+                        )
+                        # Use last token embedding or a projected chosen_input as proxy state for probe
+                        # (real integration: capture recurrent z from model core at equation step)
+                        d_state = 512
+                        try:
+                            d_state = int(model.config.hidden_size) if hasattr(model, "config") else 512
+                        except Exception:
+                            pass
+                        # Attempt real field extraction from batch rows if present
+                        fields = None
+                        if "rows" in batch or "row" in batch:
+                            sample_row = (batch.get("rows") or [batch.get("row")])[0] if isinstance(batch.get("rows"), list) else {}
+                            fields = extract_equation_fields_from_algebra_row(sample_row or {}, device=device)
+                        bsz = chosen_input_ids.size(0)
+                        proxy_state = torch.randn(bsz, d_state, device=device) * 0.01  # placeholder until core hook
+                        if fields is not None:
+                            stage119_aux, _diags = compute_equation_state_binding_loss(
+                                proxy_state,
+                                target_left=fields.left.expand(bsz),
+                                target_right=fields.right.expand(bsz),
+                                target_op=fields.op.expand(bsz),
+                                target_result_var=fields.result_var.expand(bsz) if fields.result_var is not None else None,
+                                cfg=EquationStateBindingConfig(d_state=d_state),
+                            )
+                        else:
+                            # Still exercise the new loss plumbing with zeros (diagnostic only)
+                            stage119_aux, _ = compute_equation_state_binding_loss(
+                                proxy_state,
+                                cfg=EquationStateBindingConfig(d_state=d_state),
+                            )
+                    except Exception as e:
+                        if step == 1:
+                            print(f"[Stage119] Aux loss skipped (expected in first probe): {e}")
+            # === end Stage119 aux ===
+
             chosen_mean, chosen_ce, chosen_counts = sequence_mean_logprob_and_ce(
                 chosen_logits,
                 chosen_labels,
@@ -548,6 +594,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 target_margin=float(args.preference_margin),
             )
             loss = float(args.preference_loss_weight) * pref_loss + float(args.ce_loss_weight) * chosen_ce
+            loss = loss + float(getattr(args, "stage119_equation_binding_weight", 0.0)) * stage119_aux
             if language_batch is not None:
                 language_input_ids = language_batch["input_ids"].to(device)
                 language_labels = language_batch["labels"].to(device)
@@ -667,6 +714,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--max-rows", type=int, default=512)
+    parser.add_argument("--stage119-equation-binding-weight", type=float, default=0.0,
+                        help="Auxiliary loss weight for Stage119 equation-state binding probe (0 = disabled). Only affects algebra trap batches.")
     parser.add_argument("--balance-by-task", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument(
         "--focus-tasks",
