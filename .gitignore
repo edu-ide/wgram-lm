@@ -44,3 +44,12 @@ references/*
 Thumbs.db
 *.swp
 *.swo
+
+# Personal scratch space and temporary notes
+scratch/
+
+# Local tool / CLI state (Gemini, antigravity, etc.)
+.antigravitycli/
+
+# Filtered / derived experiment data (not canonical)
+data/filtered/
