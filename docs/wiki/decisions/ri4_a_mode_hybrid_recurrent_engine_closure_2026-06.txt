@@ -1300,3 +1300,76 @@ All actions under A-Mode and the user's RI-4 focus.
 
 All under A-Mode and the user's RI-4 focus.
 
+## A-Mode Cycle: d=256 internal-primary ladder extension (+32 steps from step8) — Most-Deficient scale data gathering (2026-06)
+
+**User directive driving this cycle:** Repeated "/research-driven-architecture-debugging 작업 진행해" + explicit pending from prior cycle ("d=256 internal-primary continuation을 조금 더 밀어서 (예: +20~30 step) 더 의미 있는 데이터 만들기") + strict A-Mode + Most-Deficient + Highest-Value-First.
+
+**Re-assessment (post step8 scout):**
+- d=128: persistent_carry_rate saturates at 1.0 extremely early (8~12 step thinking + full 4-way ablation still perfect).
+- First d=256 internal_primary (step8): identical early ceiling (1.0 on 6/6 carries in v2 driver).
+- The highest-value remaining insufficiency for RI-4 (and the ability to claim the hybrid recurrent engine + 5.56 recipe produces visible selective memory compounding / long-horizon robustness) is **lack of trend data at higher width + more rehearsal steps**. One data point at step8 is insufficient to decide "width helps" vs "saturation is fundamental at current recipe/scale".
+
+**Holistic Largest-Gap Closure (single coherent move):**
+- No code change to blocks/router/measurement (already verified).
+- The move is the **immediate launch of a meaningful continuation ladder** from the verified step8 d=256 internal_primary checkpoint using the exact same trainer + gold_structured + 5.56 + internal_ri4_primary recipe.
+- Target: +~24-32 steps with save_every=4 to produce a usable measurement ladder (step12/16/20/24/28/32/36/40).
+- This directly tests whether additional gold_structured rehearsal at d=256 moves the carry observable off the ceiling or produces any differentiation under ablation.
+
+**Immediate rigorous experiment (launched right after re-assessment + record update):**
+- Exact command (A-Mode safe pattern, venv + PYTHONPATH, dedicated branch):
+  ```
+  source .venv/bin/activate && PYTHONPATH=. python scripts/train_hybrid_ri4_real_continuation_minimal.py \
+    --steps 32 --d_model 256 --batch 2 --enable_stochastic_breadth \
+    --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt \
+    --save_every 4 --out_dir checkpoints/hybrid_ri4_internal_primary_test_d256 \
+    --resume_from checkpoints/hybrid_ri4_internal_primary_test_d256/hybrid_ri4_cont_step8.pt \
+    --internal_ri4_primary --input_mode gold_structured
+  ```
+- Log: logs/ri4_d256_internal_primary_continuation_from_step8_20260527_181825.log
+- Result: Clean resume (step8 → internal router re-attach), all checkpoints produced (step12,16,20,24,28,32,36,40). Training completed in ~10s wall (lightweight rehearsal steps). Norm stable ~31-32. No crashes, contract preserved.
+
+**Post-training v2 measurement (d_model-agnostic scout + longer-thinking + ablation probes):**
+- Driver: scripts/measure_continuation_hybrid_192.py (generalized)
+- Key runs on the new ladder:
+
+  - step40 (final), 4 cases × 8 thinking, full mode:
+    - persistent_carry_rate: **1.0** (12/12 thinking carries)
+    - engine_exercised: True, wall_time 0.03s
+
+  - step12 (early ladder), 3 cases × 6 thinking, full mode:
+    - persistent_carry_rate: **1.0**
+
+  - step40, 3 cases × 12 thinking, --persistence_ablate:
+    - persistent_carry_rate: **1.0** (observed carries remain high)
+
+  - step40, 3 cases × 8 thinking, --slots_off:
+    - persistent_carry_rate: **1.0**
+
+All measurements used the trained router from the continuation checkpoint (faithful to trainer contract). 4-way ablation flags honored in driver.
+
+**Analysis (honest, per skill rules):**
+- The carry robustness observable remains at ceiling (1.0) across the entire new ladder (step8 → step40) at d=256, even with 12-step thinking probes and under slots_off / persistence_ablate.
+- This is a clean replication + extension of the d=128 saturation finding. Increasing width (128→256) + additional gold_structured rehearsal steps did **not** produce measurable degradation in the persistent slot carry metric under the current v2 driver protocol.
+- Negative evidence for the hypothesis "more of the current 5.56 + RI-4 recipe at moderate width will eventually surface the selective memory compounding / long-horizon robustness signal".
+- Positive: the internal_ri4_primary path + v2 driver + ablation contract remain fully functional and stable at d=256 through real continuation. The substrate is solid.
+
+**Updated Most-Deficient + Highest-Value (post this cycle):**
+- RI-4 carry robustness at moderate width (d=256) + current rehearsal recipe: **saturated early, no visible trend with additional steps**.
+- The single largest remaining blocker for claiming production-viable RI-4 (and therefore for the broader "1B model surpassing Qwen3.6-27B via architecture" goal) has cleanly moved to **effective scale / recipe pressure on selectivity**:
+  - Significantly larger d_model (512+), or
+  - Targeted pressure on the slot write / Gumbel / top-k selectivity itself (not just more rehearsal steps), or
+  - Longer real-data continuation where the model must actually use the selective memory for the 192-style heldout signal.
+- RI-3 (stochastic breadth) matrix on the same substrate remains strong and isolated; the RI-4 memory mechanism is the current binding constraint.
+
+**Artifacts for this cycle:**
+- New ladder: checkpoints/hybrid_ri4_internal_primary_test_d256/hybrid_ri4_cont_step{12,16,20,24,28,32,36,40}.pt
+- Continuation log: logs/ri4_d256_internal_primary_continuation_from_step8_20260527_181825.log
+- Multiple v2 measurement JSON blocks (scout + ablations)
+- This verbatim section
+
+**A-Mode discipline note:** One coherent data-gathering move (ladder extension) → immediate measurement on multiple points + ablations → honest re-assessment. No diffusion, no code patch before data, no claim beyond what the numbers support. Reverse I→G→A (5.56 + router inductive bias) fully active in the non-ablated path. One-Body + 4-way contract 100% preserved.
+
+This cycle directly fulfills the user's "미흡 한걸 수정했으면 실험 해야되는거 아니야?" + "A 방식으로 해" + Most-Deficient rule on the RI-4 pillar.
+
+---
+
