@@ -979,6 +979,10 @@ if __name__ == "__main__":
         print("Next: run full multi-seed + longer horizon + real LM-head completion when available.")
     elif getattr(cfg, "run_ri3_ri4_matrix", False) or "--run_ri3_ri4_matrix" in sys.argv:
         print("[A-Mode] RI-3 (5.56) x RI-4 orthogonal matrix — SSOT highest-value evidence path on hybrid.")
-        run_ri3_ri4_matrix(cfg, steps=min(60, getattr(cfg, "total_steps", 40)))
+        # A-Mode: respect user --steps for the Most-Deficient longer-horizon scale diagnostic.
+        # The previous min(60, ...) cap was a temporary small-matrix guard; it blocked
+        # the RI-1/RI-2 hallmark test the SSOT and decision record require.
+        requested = getattr(cfg, "total_steps", 160)
+        run_ri3_ri4_matrix(cfg, steps=requested)
     else:
         run_556_curriculum(cfg)
