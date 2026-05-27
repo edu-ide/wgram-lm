@@ -154,6 +154,73 @@ def run_synthetic_192_mode(name: str, slots_on: bool, persistence_ablate: bool, 
 
     hybrid.forward = orig_forward
 
+    # --- 192-style forced-choice scoring simulation on synthetic cases ---
+    # This is the highest-value addition for "tiny heldout signal".
+    # For a few synthetic (prompt + candidates), run actual model forwards on
+    # (prompt + candidate) while the hybrid is attached as the recurrent engine.
+    # Any answer_state_loop engagement during these scoring forwards will be
+    # counted by the instrumentation. We also compute crude candidate scores
+    # (sum of logprobs of the candidate tokens) to observe behavior across ablations.
+    scoring_call_count = {"count": 0, "carries": 0}
+
+    def scoring_instrumented(x, slot_state=None, **kw):
+        scoring_call_count["count"] += 1
+        if slot_state is not None:
+            scoring_call_count["carries"] += 1
+        out = orig_forward(x, slot_state=slot_state, **kw)
+        if isinstance(out, tuple) and len(out) >= 2:
+            scoring_call_count["carries"] += 1
+        return out
+
+    # Re-attach with scoring instrumentation for this phase
+    hybrid.forward = scoring_instrumented
+
+    # Tiny synthetic cases (prompt + 2 candidates). In real 192 these would be
+    # heldout reasoning problems with multiple choice or short answers.
+    synthetic_cases = [
+        {
+            "prompt": torch.randint(0, cfg.vocab_size, (B, 5), device=device),
+            "candidates": [
+                torch.randint(0, cfg.vocab_size, (B, 4), device=device),
+                torch.randint(0, cfg.vocab_size, (B, 4), device=device),
+            ],
+        },
+        {
+            "prompt": torch.randint(0, cfg.vocab_size, (B, 5), device=device),
+            "candidates": [
+                torch.randint(0, cfg.vocab_size, (B, 3), device=device),
+                torch.randint(0, cfg.vocab_size, (B, 3), device=device),
+            ],
+        },
+    ]
+
+    total_candidate_scores = [0.0 for _ in range(len(synthetic_cases[0]["candidates"]))]
+
+    for case in synthetic_cases:
+        prompt = case["prompt"]
+        for cand_idx, candidate in enumerate(case["candidates"]):
+            # Concatenate prompt + candidate (teacher-forced style scoring)
+            full_seq = torch.cat([prompt, candidate], dim=1)
+
+            with torch.no_grad():
+                # Run the actual model forward on the scoring sequence.
+                # This is the real 192-style path: the model may engage answer_state_loop
+                # (with our hybrid attached as the recurrent engine).
+                out = model(full_seq)
+                logits = out if isinstance(out, torch.Tensor) else getattr(out, 'logits', None)
+
+            # Crude candidate score (best effort; may be None in toy cfg)
+            case_score = 0.0
+            if logits is not None and logits.dim() >= 2:
+                cand_len = candidate.shape[1]
+                cand_logits = logits[:, -cand_len:, :]
+                cand_logprobs = torch.log_softmax(cand_logits, dim=-1)
+                token_logprobs = cand_logprobs.gather(2, candidate.unsqueeze(-1)).squeeze(-1)
+                case_score = token_logprobs.sum().item()
+            total_candidate_scores[cand_idx] += case_score
+
+    hybrid.forward = orig_forward  # restore
+
     result = {
         "mode": name,
         "slots_on": slots_on,
@@ -163,9 +230,14 @@ def run_synthetic_192_mode(name: str, slots_on: bool, persistence_ablate: bool, 
         "slot_carry_events_observed": call_count["carries"],
         "engine_exercised": call_count["count"] > 0,
         "cases_run": num_cases,
+        "scoring_hybrid_calls": scoring_call_count["count"],
+        "scoring_hybrid_carries": scoring_call_count["carries"],
+        "crude_candidate_scores": total_candidate_scores,
     }
 
-    print(f"  → hybrid calls: {call_count['count']}, carries: {call_count['carries']}, exercised={call_count['count'] > 0} (over {num_cases} cases)")
+    print(f"  → hybrid calls: {call_count['count']}, carries: {call_count['carries']} (recurrent drive)")
+    print(f"  → scoring calls: {scoring_call_count['count']}, carries: {scoring_call_count['carries']}")
+    print(f"  → crude candidate scores: {total_candidate_scores}")
     return result
 
 
