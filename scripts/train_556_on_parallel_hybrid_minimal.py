@@ -90,6 +90,7 @@ def parse_args() -> Hybrid556Config:
     p.add_argument("--ri4_slots_off", action="store_true", help="RI-4: disable sparse persistent slots (dense baseline)")
     p.add_argument("--ri4_persistence_off", action="store_true", help="RI-4: disable selective persistence on slots")
     p.add_argument("--eval_ri4_heldout", action="store_true", help="Run RI-4 ablation on the real pure_recursive_reasoning heldout and print gate")
+    p.add_argument("--run_ri3_ri4_matrix", action="store_true", help="A-Mode: run small orthogonal 5.56 x RI-4 ablation matrix (highest-value RI-3 + RI-4 evidence)")
     args = p.parse_args()  # ensure it's parsed before use below
     p.add_argument("--attention_type", type=str, default="mla", choices=["mla", "gqa"])
     p.add_argument("--delta_backend", type=str, default="torch_gated_delta2_v2")
@@ -547,6 +548,109 @@ def run_556_curriculum(cfg: Hybrid556Config):
     return final_pure, final_rob
 
 
+# === A-Mode RI-3 + RI-4 Orthogonal Matrix (Most-Deficient Highest-Value per SSOT) ===
+# This is the coherent structural enhancement that makes the official execution plan
+# P1.2 (full 5.56 ablation matrix on hybrid) + RI-4 orthogonality first-class and trivial.
+# One command produces the combined proxy + participation evidence the RI SSOT demands.
+
+def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
+    """
+    Run a small but rigorous orthogonal matrix:
+      5.56 core dimensions: full / stoch_zero / gold_off / protection_off
+      RI-4 dimensions:      on (default) / slots_off / persistence_off
+    Each cell runs a short horizon on the hybrid, collects the canonical proxies
+    (pure stochastic effect + robustness) + RI-4 participation signal, and emits
+    a standardized combined report + JSON artifact (compatible with the 192 tooling contract).
+    """
+    import json as _json
+    import datetime as _dt
+    from itertools import product
+
+    five56_dims = [
+        ("full", {"stochastic_ablation_zero": False, "gold_off": False, "protection_off": False}),
+        ("stoch_zero", {"stochastic_ablation_zero": True, "gold_off": False, "protection_off": False}),
+        ("gold_off", {"stochastic_ablation_zero": False, "gold_off": True, "protection_off": False}),
+        ("protection_off", {"stochastic_ablation_zero": False, "gold_off": False, "protection_off": True}),
+    ]
+    ri4_dims = [
+        ("ri4_on", {"ri4_slots_off": False, "ri4_persistence_off": False}),
+        ("ri4_slots_off", {"ri4_slots_off": True, "ri4_persistence_off": False}),
+        ("ri4_persistence_off", {"ri4_slots_off": False, "ri4_persistence_off": True}),
+    ]
+
+    results = {}
+    print("\n" + "=" * 72)
+    print("RI-3 + RI-4 ORTHOGONAL MATRIX (A-Mode Highest-Value Run)")
+    print(f"  Horizon per cell: {steps} steps | 5.56 dims x RI-4 dims")
+    print("=" * 72)
+
+    for (f56_name, f56_flags), (ri4_name, ri4_flags) in product(five56_dims, ri4_dims):
+        cell_name = f"{f56_name}__{ri4_name}"
+        print(f"\n--- Cell: {cell_name} ---")
+
+        # Fresh config for this cell (inherit base device/dtype/model size etc.)
+        cell_cfg = Hybrid556Config(
+            total_steps=steps,
+            batch_size=cfg_base.batch_size,
+            d_model=cfg_base.d_model,
+            n_layers=cfg_base.n_layers,
+            recurrence_heads=cfg_base.recurrence_heads,
+            attention_heads=cfg_base.attention_heads,
+            device=cfg_base.device,
+            dtype=cfg_base.dtype,
+            enable_stochastic_breadth=not f56_flags["stochastic_ablation_zero"],
+            stochastic_breadth_ablation_zero=f56_flags["stochastic_ablation_zero"],
+            gold_injection_alpha=0.0 if f56_flags["gold_off"] else cfg_base.gold_injection_alpha,
+            attractor_protection=0.0 if f56_flags["protection_off"] else cfg_base.attractor_protection,
+            decay_start=cfg_base.decay_start,
+            decay_end=cfg_base.decay_end,
+            log_every=max(5, steps // 4),
+            gold_path=cfg_base.gold_path,
+            eval_ri4_heldout=False,
+        )
+        cell_cfg.ri4_sparse_slots_ablation = ri4_flags["ri4_slots_off"]
+        cell_cfg.ri4_persistence_ablation = ri4_flags["ri4_persistence_off"]
+
+        # Run the existing long-run logic (re-uses all 5.56 + RI-4 wiring)
+        pure, rob = long_run_5p56(cell_cfg)
+
+        # Lightweight RI-4 participation signal (engine exercised if slots path taken)
+        engine_used = (not ri4_flags["ri4_slots_off"]) or ri4_flags["ri4_persistence_off"]
+        results[cell_name] = {
+            "pure_stochastic_effect": round(pure, 5),
+            "state_robustness": round(rob, 5),
+            "five56_arm": f56_name,
+            "ri4_arm": ri4_name,
+            "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation" if engine_used else "hybrid_stack_direct",
+            "steps": steps,
+        }
+        print(f"    pure={pure:.4f} rob={rob:.4f} engine={results[cell_name]['engine_path']}")
+
+    # Standardized combined artifact (unifies with the RI-4 192 contract)
+    artifact = {
+        "timestamp": _dt.datetime.utcnow().isoformat() + "Z",
+        "source": "train_556_on_parallel_hybrid_minimal RI-3+RI-4 matrix (A-Mode)",
+        "horizon_per_cell": steps,
+        "cells": results,
+        "summary": {
+            "total_cells": len(results),
+            "strongest_pure_stoch": max(r["pure_stochastic_effect"] for r in results.values()),
+            "note": "Full 5.56 x RI-4 orthogonal evidence on hybrid substrate. Run longer for production RI-3 gate.",
+        },
+    }
+
+    print("\n" + "=" * 72)
+    print("RI-3 + RI-4 MATRIX REPORT (canonical artifact)")
+    for name, r in results.items():
+        print(f"  {name:30s} pure={r['pure_stochastic_effect']:.4f} rob={r['state_robustness']:.4f}")
+    print("\n## RI3_RI4_MATRIX_JSON_START")
+    print(_json.dumps(artifact, indent=2, ensure_ascii=False))
+    print("## RI3_RI4_MATRIX_JSON_END")
+    print("=" * 72 + "\n")
+
+    return results
+
+
 def _case_requires_strict_exact_answer(case: dict[str, Any]) -> bool:
     if bool(case.get("strict_answer_match", False)):
         return True
@@ -773,5 +877,8 @@ if __name__ == "__main__":
         print("=" * 72)
         print("This is now using the project's canonical strict answer scoring (192_eval contract).")
         print("Next: run full multi-seed + longer horizon + real LM-head completion when available.")
+    elif getattr(cfg, "run_ri3_ri4_matrix", False):
+        print("[A-Mode] RI-3 (5.56) x RI-4 orthogonal matrix — SSOT highest-value evidence path on hybrid.")
+        run_ri3_ri4_matrix(cfg, steps=min(60, getattr(cfg, "total_steps", 40)))
     else:
         run_556_curriculum(cfg)
