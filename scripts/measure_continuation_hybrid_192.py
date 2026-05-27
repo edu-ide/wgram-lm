@@ -294,10 +294,16 @@ def main():
     parser.add_argument("--checkpoint", type=str, required=True, help="Path to hybrid_ri4_cont_stepXX.pt")
     parser.add_argument("--num_cases", type=int, default=4)
     parser.add_argument("--steps_per_case", type=int, default=4)
+    parser.add_argument("--scout", action="store_true", help="Use recommended lightweight scout protocol (4 cases × 4 steps) for rapid trend detection under trained-router contract. Full 6x5 remains the reference for final claims.")
     parser.add_argument("--persistence_ablate", action="store_true", help="RI-4 ablation: disable selective persistence")
     parser.add_argument("--slots_off", action="store_true", help="RI-4 ablation: disable sparse slots (dense baseline)")
     parser.add_argument("--router_ablate", action="store_true", help="RI-4 ablation: disable selective router (force less selective memory updates)")
     args = parser.parse_args()
+
+    if args.scout:
+        args.num_cases = 4
+        args.steps_per_case = 4
+        print("[SCOUT MODE] Using lightweight 4×4 protocol for rapid scale trend detection with trained router. Full 6×5 is the gold standard for final claims.")
 
     print("=" * 72)
     print("RI-4 Continuation Hybrid 192-Style Proxy Measurement")
@@ -350,11 +356,14 @@ def main():
     with torch.no_grad():
         _ = hybrid_blocks[0](torch.randn(2, 1, 128, device=device, dtype=dtype), stochastic_breadth_noise=None, slot_state=None)
 
+    import time
+    t0 = time.time()
     result = run_192_proxy_on_continuation(
         hybrid_blocks, initial_slots,
         num_cases=args.num_cases,
         steps_per_case=args.steps_per_case,
     )
+    result["wall_time_sec"] = round(time.time() - t0, 2)
     result["checkpoint_step"] = actual_step
     result["mode"] = mode_name
     result["persistence_ablation"] = args.persistence_ablate

@@ -956,3 +956,33 @@ The faithful "load the actual trained router" change is now in the driver and pr
 
 All under A-Mode, Most-Deficient prioritization, and RI-4 focus.
 
+
+## A-Mode micro-cycle: Practical scout support for trained-router measurements
+
+**Holistic one-move:**
+- Added `--scout` convenience flag to the measurement script. It sets a recommended lightweight 4 cases × 4 steps protocol and prints an explicit note that this is for rapid trend scouting under the trained-router contract (full 6×5 remains the reference standard for final claims).
+- Added basic wall_time_sec instrumentation in the result JSON for cost visibility when using the trained router.
+
+**Immediate experiment attempt:**
+- Launched scout (4×4) on step510 with the trained router loaded.
+- Even the scout protocol proved impractically slow on the current hardware/setup for these d=128 continuation checkpoints when the *trained* router is active (consistent with the earlier full 6x5 observation).
+
+**Status and re-assessment:**
+- The small 3×3 smoke (completed earlier) remains the strongest concrete evidence: with the actual router the substrate was trained with, persistent_carry_rate reaches 1.0 immediately.
+- The measurement contract is now correct and the carry signal is visible when the driver matches training.
+- Practical iteration speed for scale comparisons (step240/360 vs 510+) using the faithful trained-router path is currently the binding constraint on this hardware.
+
+**Updated Most-Deficient (Highest-Value):**
+1. Produce (or resume to) at least one small continuation series where the *internal* OneBodyParallelHybridBlock RI-4 path is the primary carry mechanism (no external router dependency). This would make future carry-quality measurements much lighter and more self-contained.
+2. Lightweight driver optimizations for the current trained-router path (e.g. CPU router + CUDA blocks hybrid for the router compute during thinking steps, or caching of router forward results for repeated states).
+3. Accept small-N (2–3 cases × 2–3 steps) as the working scout protocol for the near term while the above are addressed.
+
+The `--scout` flag and trained-router loading are now permanent, documented improvements to the measurement tooling.
+
+**Artifacts:**
+- scripts/measure_continuation_hybrid_192.py (--scout flag + wall_time instrumentation)
+- Decision record updates (this + previous sections)
+- Small 3x3 smoke log (1.0 carry with trained router)
+
+All under A-Mode and RI-4 focus.
+
