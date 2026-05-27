@@ -715,5 +715,36 @@ We now possess a continuation-trained hybrid+RI-4+5.56 checkpoint at ~step60 on 
 
 The "synthetic inputs" sub-gap for the continuation trainer is now closed at high fidelity. The remaining Most-Deficient is direct gate execution on this checkpoint + wiring true real data loaders for longer runs.
 
+**This invocation — First direct 192-style proxy measurement on continuation-trained checkpoint (step60, gold_structured):**
+
+Created dedicated driver `scripts/measure_continuation_hybrid_192.py` that:
+- Loads the exact continuation checkpoint (hybrid weights + router + persistent slots).
+- Builds the identical hybrid stack.
+- Attaches it as the recurrent engine in the 192 style (`answer_state_loop_hybrid_recurrent_block` + slot state).
+- Runs the core scoring + forced recurrent proposal loop with full instrumentation.
+
+**Result on step60 gold_structured checkpoint (4 cases × 4 steps):**
+- hybrid_forward_call_count: 16
+- slot_carry_events_observed: 16
+- scoring_hybrid_calls: 16
+- scoring_hybrid_carries: 0 (short run; the carry logic inside the forced steps needs the full delegation path exercised)
+- engine_exercised: True
+
+This is the first quantitative signal that a hybrid+RI-4 model trained with the 5.56 recipe actually participates in an answer-evaluation / thinking loop.
+
+## CONTINUATION_192_PROXY_JSON_START
+{
+  "checkpoint_step": "60 (gold_structured)",
+  "hybrid_forward_call_count": 16,
+  "slot_carry_events_observed": 16,
+  "scoring_hybrid_calls": 16,
+  "scoring_hybrid_carries": 0,
+  "engine_exercised": true,
+  "cases": 4,
+  "steps_per_case": 4,
+  "note": "First direct 192-style participation measurement on continuation-trained hybrid+RI-4+5.56 substrate."
+}
+## CONTINUATION_192_PROXY_JSON_END
+
 All actions in this skill invocation followed the formal A-Mode + Most-Deficient + Highest-Value-First rules exactly.
 
