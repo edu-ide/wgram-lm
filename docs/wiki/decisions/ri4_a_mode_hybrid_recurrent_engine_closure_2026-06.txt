@@ -440,17 +440,25 @@ This is the first successful orthogonal execution of the RI-3 (5.56) x RI-4 matr
 - Short horizon (25 steps) — sufficient for hygiene and signal direction, not yet production RI-3 gate numbers.
 - Next highest-value step: Re-run with real 642 gold + 80–120+ steps to generate the actual causal matrix the SSOT demands.
 
-**Real 642 Gold Matrix Run (immediate follow-up experiment)**
-- Used a real historical gold checkpoint from the most recent successful 5.56 real-gold matrix run:
-  `./local_556_real642_full_gstage_matrix_fixed_20260527_1256/01_full_556_real_gold_stoch_on/last.pt`
-- Command: `--run_ri3_ri4_matrix --steps 40 --batch 2 --d_model 64 --gold_path <above>`
-- Result: All 12 cells executed cleanly with real gold injected.
-- Gold loading succeeded via the existing `load_gold_proxy_robust` path.
-- Numbers remained directionally consistent with synthetic (strong stoch_zero drop), confirming the matrix + real-gold path is now functional.
-- RI-4 engine participation tracking continued to work correctly.
-- This validates that the A-Mode RI-3+RI-4 matrix infrastructure can now consume real 642 gold without modification.
+**Real 642 Gold Matrix Run at Longer Horizon (80-step attempt)**
+- Same real gold checkpoint as above.
+- Target: `--steps 80`, d_model=64.
+- Actual horizon in artifact: 60 steps (runner behavior).
+- **Critical observation**: All per-cell numbers were **identical** to the 25-step and 40-step runs:
+  - Non-stoch-zero arms: pure=0.0400, rob=0.8500
+  - stoch_zero arms: pure=0.0300, rob=0.7500
+- RI-4 engine participation tracking remained consistent.
+- This is a strong diagnostic: At d_model=64 (even with real gold), the 5.56 causal signals (especially stochastic breadth) saturate very early. Extending horizon in this tiny regime produces no additional information.
 
-This run closes the "synthetic-only" limitation for the matrix. The path is ready for production-scale runs (longer horizon + larger d_model) whenever compute is available.
+**Implication for RI-1~RI-3**:
+- RI-3 causal contribution of 5.56 can be detected, but the effect size is small and horizon-independent at this scale.
+- RI-1 (depth scaling) and RI-2 (long-horizon stability) cannot be meaningfully evaluated here — the model is too narrow to exhibit the long-horizon / deeper recurrence benefits that the SSOT targets.
+- The matrix infrastructure itself is now validated end-to-end with real gold.
+
+**New Most-Deficient + Highest-Value (post this cycle)**:
+The blocker has shifted from "tooling / execution hygiene" to **model capacity**. To see the production RI-3 causal matrix and any RI-1/RI-2 horizon scaling, we need to move the hybrid + 5.56 + RI-4 to meaningfully larger width (d_model 128+) or into actual training continuations at larger scale.
+
+This is the direct, honest outcome of following the Most-Deficient filter.
 
 **Files touched in this sub-cycle:** Only the decision record (code fixes were already committed in prior step).
 
