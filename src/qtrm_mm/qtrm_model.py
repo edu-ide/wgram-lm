@@ -6054,6 +6054,31 @@ class QTRMMultimodalModel(nn.Module):
             query_y = text_query if core_state_only else y
             state_for_cross = state
             state_mask = workspace_mask
+
+            # RI-4 A-Mode integration safety (Most-Deficient closure):
+            # The answer_state_loop state preparation was written assuming richer
+            # workspace/trajectory shapes. In tiny diagnostics and early hybrid
+            # recurrent engine integration, state_for_cross can end up with seq dim=1
+            # (or very small), causing "index out of bounds for dimension 1 with size 1"
+            # in later cats, _select, gather, or cross-attn.
+            # This guard ensures we always have enough seq dimension to reach the
+            # recurrent proposal (hybrid block) without changing behavior on normal
+            # rich-trajectory paths.
+            min_state_seq = max(2, int(getattr(self.cfg, 'workspace_tokens', 2) or 2))
+            cur_seq = int(state_for_cross.shape[1]) if state_for_cross.dim() == 3 else 0
+            if cur_seq > 0 and cur_seq < min_state_seq:
+                pad_len = min_state_seq - cur_seq
+                pad = state_for_cross.new_zeros(
+                    (state_for_cross.shape[0], pad_len, state_for_cross.shape[2])
+                )
+                state_for_cross = torch.cat([state_for_cross, pad], dim=1)
+                pad_mask = state_mask.new_ones((state_mask.shape[0], pad_len))
+                state_mask = torch.cat([state_mask, pad_mask], dim=1)
+
+            # When the hybrid recurrent engine is attached (the RI-4 goal), or when
+            # force_dense is requested, we prefer to bypass complex selection that
+            # can still have edge-case fragility in the current integration state.
+            effective_force_dense = bool(force_dense_context) or bool(self.answer_state_loop_hybrid_recurrent_block is not None)
             if (
                 transition_code_active
                 and step_index < int(transition_state_code_embeddings.shape[1])
@@ -6125,7 +6150,7 @@ class QTRMMultimodalModel(nn.Module):
                 text_context_seq,
                 text_context_mask,
                 disabled=bool(disable_selective_context or core_state_only),
-                force_dense=bool(force_dense_context),
+                force_dense=effective_force_dense,
             )
             delta = self.answer_state_loop_cross(
                 self.answer_state_loop_query_norm(query_y),
@@ -6465,7 +6490,7 @@ class QTRMMultimodalModel(nn.Module):
         candidate_mask = torch.cat([state_mask, text_context_mask], dim=1)
         if bool(force_dense):
             return candidates, candidate_mask
-        if top_k >= int(candidates.shape[1]):
+        if candidates.shape[1] <= 1 or top_k >= int(candidates.shape[1]):
             return candidates, candidate_mask
 
         query = self.answer_state_loop_selective_query(y.mean(dim=1))

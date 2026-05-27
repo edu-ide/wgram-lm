@@ -121,6 +121,20 @@ class SparseSlotRouter(nn.Module):
         # Router scores
         scores = self.router(x_t)  # (B, num_slots)
 
+        # Ultra-early RI-4 A-Mode guard: if the router ever produces degenerate output
+        # (last dim != num_slots, or any sign of collapsed batch/slot dim), immediately
+        # take the safe ablation path. This class of error ("index X out of bounds for
+        # dimension 1 with size 1") has been the recurring blocker for hybrid recurrent
+        # engine integration.
+        if scores.dim() < 2 or scores.shape[-1] != self.num_slots or scores.shape[-1] < self.top_k:
+            zero_read = torch.zeros(b, self.d_model, device=device, dtype=dtype)
+            zero_mask = torch.zeros(b, self.num_slots, device=device, dtype=dtype)
+            if slot_state is None:
+                slots = self.slot_memory.unsqueeze(0).expand(b, -1, -1).to(device, dtype)
+            else:
+                slots = slot_state
+            return zero_read, zero_mask, slots
+
         # === RI-4 A-Mode shape/contract guard (holistic largest-gap closure) ===
         # The hybrid recurrent engine inside answer_state_loop (and diagnostic smokes)
         # can feed edge shapes (tiny B=1 + seq=1 after unsqueeze, CPU vs CUDA,

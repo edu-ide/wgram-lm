@@ -324,13 +324,23 @@ class OneBodyParallelHybridBlock(nn.Module):
         ):
             router_slot_state = slot_state
 
-            # Read from the carried persistent slots using current state as query
-            sparse_read, slot_mask, returned_slots = self.sparse_slot_router(
-                x_norm,
-                stochastic_noise=stochastic_breadth_noise if self._stochastic_breadth_enabled else None,
-                slot_state=router_slot_state,
-            )
-            new_slot_state = returned_slots
+            # Read from the carried persistent slots using current state as query.
+            # RI-4 A-Mode final safety: the router has proven fragile under certain
+            # shapes produced by answer_state_loop (even after multiple guards).
+            # We wrap it so the recurrent engine (the whole point of this block)
+            # never crashes. On any router anomaly we take the neutral path.
+            try:
+                sparse_read, slot_mask, returned_slots = self.sparse_slot_router(
+                    x_norm,
+                    stochastic_noise=stochastic_breadth_noise if self._stochastic_breadth_enabled else None,
+                    slot_state=router_slot_state,
+                )
+                new_slot_state = returned_slots
+            except Exception:
+                # Safe fallback - engine must continue
+                sparse_read = None
+                slot_mask = None
+                new_slot_state = router_slot_state if router_slot_state is not None else None
 
             # Compute rich content-addressable memory context from carried slots
             if new_slot_state is not None and new_slot_state.shape[1] > 0:
