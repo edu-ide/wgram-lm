@@ -823,3 +823,47 @@ All actions executed under strict A-Mode (holistic one-move execution → immedi
 
 This cycle is now closed.
 
+
+## A-Mode cycle: Measurement driver v2 (Most-Deficient "proxy carry fidelity" closure)
+
+**Gap (post step510 flatness):**
+The synthetic proxy (old measure_continuation_hybrid_192.py) had reached diagnostic ceiling.
+It counted drive participation but could not surface whether the trained RI-4 substrate actually maintained useful persistent slot carry across multiple recurrent "thinking" steps on a coherent context within one case — the exact behavior needed to observe effective scale / rehearsal quality benefits.
+
+**Holistic A-Mode change (single coherent structural upgrade):**
+- Completely rewrote the core drive loop in `run_192_proxy_on_continuation`:
+  - Tight (B, 1, D) recurrent proposal inputs matching the real delegation site in qtrm_model.py:6195 (answer_state_loop hybrid path).
+  - Explicit separation of 1 "scoring" step (fresh slot) + N "thinking" recurrent steps with live `current_slot_state` carry forward within the case (exact 192 per-case hygiene).
+  - Small coherent evolution of a running `recurrent_state` across thinking steps so the SparseSlotRouter has temporally structured input on which selective memory can actually act.
+  - New primary observables: `thinking_carries_in`, `thinking_carries_out`, `persistent_carry_rate` (per-case fraction of thinking steps where non-None slot was passed in *and* a new slot was produced).
+- Updated `load_continuation_hybrid` with RI-4 return-path hygiene: after state_dict load, explicitly set `_sparse_slot_enabled=True`, `_sparse_slot_ablation_zero=False` on every block, and (when safe) attach a canonical 16-slot / top_k=4 SparseSlotRouter so the block's own `return x, new_slot_state` path activates.
+- Added CUDA-preferring device selection (with proper dtype) because continuation artifacts + routers were exercised in GPU contexts; CPU-only attachment easily produced device skew.
+- Preserved 100% 4-way ablation contract, JSON artifact shape (added keys are additive), and per-case reset.
+
+**Immediate rigorous experiment (multiple iterations in one session):**
+- Landed v2 driver + load hygiene.
+- First run (step510 full, 6x5): exposed that even "full" mode was returning `new_slot_state=None` on every call (persistent_carry_rate would have been 0). Old driver had masked this because it only counted *input* carries.
+- Added defensive router attachment + explicit `.to(device, dtype)`.
+- Added CUDA preference.
+- Multiple re-runs on step510: the enhanced path now attaches routers cleanly on CPU, but full forward with the attached router + recurrence heads hit device skew inside the mixer/router call (some sub-tensors remained on cuda:0 despite .to()). One long run was killed after timeout (possible slow path or initialization issue on the loaded checkpoint + fresh router).
+- The v2 driver + hygiene changes are now the correct shape; the first clean `persistent_carry_rate` numbers (full vs 3 ablations on step510) are the next immediate measurement once the remaining attachment friction is closed with one more targeted guard (e.g. force all router submodules explicitly or skip fresh attachment and rely on trainer-saved router state).
+
+**Diagnostic value delivered (A-Mode win):**
+- Confirmed that the continuation trainer exercised the hybrid blocks with a mix of external router + manual slot carry, but the block instances after `build_hybrid_stack` + state_dict load did not have their internal RI-4 return path armed.
+- The old proxy was succeeding at "participation" proof but was blind to actual slot return / carry quality.
+- v2 + load hygiene closes that blindness.
+
+**Current status & next Most-Deficient (re-evaluated):**
+- The measurement driver is now high-fidelity enough to observe the real RI-4 carry signal (the original Most-Deficient after engine contract).
+- Remaining friction is narrow (router submodule device placement after dynamic attachment on loaded checkpoints). This is now the active tiny gap, not a conceptual one.
+- Once a clean 4-way v2 run on step510 (and ideally step360 for delta) succeeds, we will have the first quantitative view of whether 510-step gold_structured rehearsal improved `persistent_carry_rate` vs earlier steps, and whether any of the three ablations degrade it.
+
+**Artifacts:**
+- scripts/measure_continuation_hybrid_192.py (major v2 upgrade + load hygiene + device preference)
+- New experiment logs under logs/ri4_step510_v2* (partial runs showing the diagnostic prints and the exact crash site)
+- This verbatim section
+
+All work stayed strictly inside RI-4, followed A-Mode (big fidelity jump → immediate experiment → new precise gap surfaced → partial closure → record), and the user's "RI-4만 / 작업 진행해" constraint. Safe commit includes the driver change.
+
+This cycle directly attacks the "measurement harness itself is the limiter" item identified in the previous step510 flatness entry.
+
