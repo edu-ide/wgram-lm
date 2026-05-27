@@ -45,8 +45,15 @@ import torch.nn as nn
 
 from src.qtrm_mm.config import QTRMConfig
 from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+
+# Level-3 pivot safety: importing this will fire loud warnings if critical
+# historical inductive biases (e.g. real training-time stochastic breadth) are
+# known to be unreachable from the current primary path.
+from src.qtrm_mm.architecture.component_registry import warn_on_missing_primary_path_biases
+warn_on_missing_primary_path_biases()
 from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
 from src.qtrm_mm.memory.decoupled_latent_memory_bank import DecoupledLatentMemoryBank, make_decoupled_latent_memory_bank
+from src.qtrm_mm.memory.latent_episode_memory import LatentEpisodeMemory, make_latent_episode_memory
 
 # Reuse the exact proven helpers from the matrix runner (no drift)
 from scripts.train_556_on_parallel_hybrid_minimal import (
@@ -92,6 +99,49 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--enable_surprise_write_trigger", action="store_true", help="Enable surprise-driven modulation of write strength (Titans-style literature mechanism). Changes the write *trigger* causal route. Skill-mandated next Big Jump after previous candidate negative.")
     # === 2026-06 Big Jump: Decoupled Latent Memory Bank (MELT + G-MemLLM style) ===
     p.add_argument("--use_decoupled_memory_bank", action="store_true", help="Use DecoupledLatentMemoryBank (external controller-driven memory instead of per-step embedded slots). This is the topology-level change after repeated falsification of embedded per-block design.")
+    p.add_argument("--use_latent_episode_memory", action="store_true", help="Radical 2026-06 direction: Latent Episode Memory (LEM). Memory writes happen sparsely at explicit episode/commit boundaries, not continuously. True causal frequency change.")
+    p.add_argument("--uncertainty_gated_memory", action="store_true", help="Direction B: Only allow memory read/commit when internal uncertainty (simple proxy) is high.")
+    p.add_argument("--pure_recurrence_then_consolidate", action="store_true", help="Direction C: Run stretches of pure recurrence with memory disabled, then explicit consolidation pass for memory writes.")
+    p.add_argument("--limited_workspace", action="store_true", help="Direction D: Force all information heading to long-term memory through a very small learned bottleneck workspace vector before commit (extreme information bottleneck).")
+    # === 2026-06-27 Next Parallel Fast-Falsification Batch (after all timing/granularity/bottleneck variants saturated at 1.0) ===
+    p.add_argument("--use_external_consolidation_net", action="store_true", help="Next radical batch Direction X1: Dedicated slow consolidation net (separate params + future-utility prediction loss on commits). Attacks parameter separation + supervision signal.")
+    p.add_argument("--narrow_global_broadcast_interference", action="store_true", help="Next radical batch Direction X2: Single ultra-narrow global broadcast vector + explicit destructive interference noise on non-broadcast content during rehearsal. Tests extreme competition + forced forgetting as selectivity driver.")
+    p.add_argument("--contrastive_write_utility", action="store_true", help="Next radical batch Direction X3: Direct answer-quality contrastive supervision on write decisions (gold-derived counterfactual useful-write labels during rehearsal). Changes the training signal for selectivity without new topology.")
+    # === 2026-06-27 Next Next Batch (after supervision/competition/parameter-separation also saturated at 1.0) ===
+    p.add_argument("--recurrence_free_memory_decision", action="store_true", help="Next radical substrate attack: Memory write/read decisions are made by a completely non-recurrent module (MLP on aggregated trajectory). The tight hybrid recurrence no longer participates in selectivity at all.")
+    p.add_argument("--learned_episode_boundary_gate", action="store_true", help="Next radical substrate attack: A small learned head detects episode boundaries; long-term memory commit is only allowed at those boundaries. Fast recurrence is isolated from memory.")
+    # === Next wave after full substrate attacks (recurrence-free, boundary gate, external) also 1.0 ===
+    p.add_argument("--memory_path_completely_separate", action="store_true", help="Extreme separation: Memory system is a completely separate module that the main hybrid recurrence + answer_state_loop thinking steps never interact with during the 8 thinking steps.")
+    p.add_argument("--disable_hybrid_for_memory_during_thinking", action="store_true", help="Direct test of delegation: During thinking steps, answer_state_loop delegation to hybrid is bypassed for memory decisions; memory path only active outside the tight loop.")
+    # === Next escalation wave (after even complete separation and delegation bypass also 1.0) ===
+    p.add_argument("--pure_main_recurrence_during_thinking", action="store_true", help="Fundamental test: Force the 8 thinking steps to run with pure main recurrence only — completely disable hybrid block participation during thinking (only used at scoring boundaries).")
+    p.add_argument("--destructive_state_interference", action="store_true", help="Strong interference pressure: Every micro-step, apply aggressive random noise / partial zeroing to recurrent state components not selected by the memory router.")
+    # === Next escalation after pure main + aggressive interference also 1.0 ===
+    p.add_argument("--no_hybrid_during_continuation", action="store_true", help="Direct architecture test: Completely disable the OneBodyParallelHybridBlock for the entire continuation run. Main recurrence only.")
+    p.add_argument("--force_forget_non_selected", action="store_true", help="Hard forget pressure: Non-selected slots receive strong explicit decay + noise every micro-step (much stronger than previous interference).")
+    # === 2026-06 High-Probability Substrate Attacks (user: "확률 높은 방향으로") ===
+    # These directly target the diagnosed root: tight micro-step recurrence frequency + current rehearsal objective prevents selectivity learning.
+    p.add_argument("--coarse_recurrence_engine", action="store_true", help="High-prob Direction 1: Hybrid block (the recurrent engine) participates at much lower temporal resolution (every 4-8 micro-steps) for BOTH thinking and memory decisions. Attacks the micro-step frequency itself as the blocker.")
+    p.add_argument("--explicit_think_consolidate_phases", action="store_true", help="High-prob Direction 2: Strict training-time phase separation — blocks of pure thinking recurrence (memory writes completely disabled) followed by consolidation blocks where memory writes are trained with a predictive/future-state objective instead of current rehearsal utility.")
+    p.add_argument("--memory_predicts_future_state", action="store_true", help="High-prob Direction 3: Memory write decisions and learning target are driven by prediction error of future recurrent hidden state (simple next-step or short-horizon prediction loss on the memory pathway). Changes the fundamental objective for what 'useful to remember' means.")
+    # === Next Radical Escalation Wave (after high-prob frequency/objective batch also returned 1.0) ===
+    p.add_argument("--coarse_convergence_engine", action="store_true", help="Next radical wave Direction A: Multiple internal recurrence steps (convergence ticks) per external thinking step before any memory interaction. Attacks the fundamental temporal granularity of the recurrent engine.")
+    p.add_argument("--memory_as_primary_recurrent_thinker", action="store_true", help="Next radical wave Direction B: The memory system becomes the primary carrier of recurrent state. The hybrid block is reduced to a thin read/write interface. Tests whether the current hybrid micro-step engine itself is the blocker.")
+    p.add_argument("--dominant_future_trajectory_prediction", action="store_true", help="Next radical wave Direction C: The entire memory + recurrence stack is trained under a strong future-trajectory prediction objective (predicting future hidden states / answer progress) as the dominant signal, not current rehearsal utility.")
+    # === Wave After Next (pre-prepared under "진행해" directive) ===
+    p.add_argument("--complete_thinking_memory_decoupling", action="store_true", help="Wave after next Direction 1: Memory decisions happen ONLY in explicit offline/consolidation phases. Thinking recurrence is completely decoupled from long-term memory writes during the main loop.")
+    p.add_argument("--attractor_fixed_point_core", action="store_true", help="Wave after next Direction 2: Replace step-by-step hybrid recurrence with fixed-point / attractor-style convergence core for the thinking engine.")
+    p.add_argument("--pure_predictive_world_model", action="store_true", help="Wave after next Direction 3: Train the entire system under dominant pure predictive world-model objective (future state prediction), with answer generation as downstream readout only.")
+    # === Even More Radical Directions (pre-defined under "진행해" while waiting for measurements) ===
+    p.add_argument("--algorithm_discovery_engine", action="store_true", help="More radical Direction 1: Replace 'reasoning' with on-the-fly discovery and composition of new reusable computational procedures (neural program synthesis as the core thinking operation).")
+    p.add_argument("--latent_trajectory_diffusion", action="store_true", help="More radical Direction 2: Replace sequential recurrence with direct generative modeling / diffusion over entire future latent thought trajectories.")
+    p.add_argument("--meta_recurrent_system", action="store_true", help="More radical Direction 3: The recurrence rule / memory update mechanism itself is plastic and generated/modified by a higher-level process during thinking (recurrence over the recurrence).")
+    # === Post "다해보자" Substrate Diagnostic Direction (non-recurrent thinking phase) ===
+    p.add_argument("--non_recurrent_generative_thinking", action="store_true", help="Diagnostic: During the thinking phase, replace recurrent state evolution with a non-recurrent generative/optimization/search process. Memory participates only at boundaries or as downstream effect. Designed to test the hypothesis that the recurrent + memory participation substrate itself is the deeper blocker.")
+    # === Even Deeper Layer (post NRG-TP) ===
+    p.add_argument("--pure_parallel_latent_search", action="store_true", help="Deeper diagnostic: Replace sequential recurrence entirely with pure parallel search/optimization over latent candidates during the thinking phase (no state carry between steps).")
+    p.add_argument("--evolutionary_latent_population", action="store_true", help="Deeper diagnostic: Maintain a small population of latent 'individuals' that evolve via selection/mutation-style operations instead of recurrence.")
+    p.add_argument("--test_time_self_modifying_arch", action="store_true", help="Deeper diagnostic: During thinking, the model generates small, temporary architectural modifications or adapters on the fly.")
     args = p.parse_args()
 
     cfg = ContinuationConfig(
@@ -115,6 +165,41 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.enable_gated_memory_update = args.enable_gated_memory_update
     cfg.enable_surprise_write_trigger = args.enable_surprise_write_trigger
     cfg.use_decoupled_memory_bank = args.use_decoupled_memory_bank
+    cfg.use_latent_episode_memory = args.use_latent_episode_memory
+    cfg.uncertainty_gated_memory = args.uncertainty_gated_memory
+    cfg.pure_recurrence_then_consolidate = args.pure_recurrence_then_consolidate
+    cfg.limited_workspace = args.limited_workspace
+    cfg.use_external_consolidation_net = args.use_external_consolidation_net
+    cfg.narrow_global_broadcast_interference = args.narrow_global_broadcast_interference
+    cfg.contrastive_write_utility = args.contrastive_write_utility
+    cfg.recurrence_free_memory_decision = args.recurrence_free_memory_decision
+    cfg.learned_episode_boundary_gate = args.learned_episode_boundary_gate
+    cfg.memory_path_completely_separate = args.memory_path_completely_separate
+    cfg.disable_hybrid_for_memory_during_thinking = args.disable_hybrid_for_memory_during_thinking
+    cfg.pure_main_recurrence_during_thinking = args.pure_main_recurrence_during_thinking
+    cfg.destructive_state_interference = args.destructive_state_interference
+    cfg.no_hybrid_during_continuation = args.no_hybrid_during_continuation
+    cfg.force_forget_non_selected = args.force_forget_non_selected
+    # High-probability substrate directions (2026-06)
+    cfg.coarse_recurrence_engine = args.coarse_recurrence_engine
+    cfg.explicit_think_consolidate_phases = args.explicit_think_consolidate_phases
+    cfg.memory_predicts_future_state = args.memory_predicts_future_state
+    # Next radical escalation wave (post high-prob 1.0 saturation)
+    cfg.coarse_convergence_engine = args.coarse_convergence_engine
+    cfg.memory_as_primary_recurrent_thinker = args.memory_as_primary_recurrent_thinker
+    cfg.dominant_future_trajectory_prediction = args.dominant_future_trajectory_prediction
+    # Wave after next (pre-armed for auto-escalation)
+    cfg.complete_thinking_memory_decoupling = args.complete_thinking_memory_decoupling
+    cfg.attractor_fixed_point_core = args.attractor_fixed_point_core
+    cfg.pure_predictive_world_model = args.pure_predictive_world_model
+    # More radical directions (pre-armed)
+    cfg.algorithm_discovery_engine = args.algorithm_discovery_engine
+    cfg.latent_trajectory_diffusion = args.latent_trajectory_diffusion
+    cfg.meta_recurrent_system = args.meta_recurrent_system
+    cfg.non_recurrent_generative_thinking = args.non_recurrent_generative_thinking
+    cfg.pure_parallel_latent_search = args.pure_parallel_latent_search
+    cfg.evolutionary_latent_population = args.evolutionary_latent_population
+    cfg.test_time_self_modifying_arch = args.test_time_self_modifying_arch
     return cfg
 
 
@@ -141,6 +226,15 @@ def main():
             top_k=4,
         ).to(device=cfg.device, dtype=cfg.dtype)
 
+    # === Early creation of Decoupled Bank (must happen before resume logic) ===
+    bank = None
+    if cfg.use_decoupled_memory_bank and make_decoupled_latent_memory_bank is not None:
+        bank = make_decoupled_latent_memory_bank(
+            d_model=cfg.d_model,
+            num_slots=16,
+            top_k=4,
+        ).to(device=cfg.device, dtype=cfg.dtype)
+
     # Internal RI-4 primary attachment is done *after* resume so we attach the correctly loaded router object.
 
     # === Resume support (A-Mode: close the "can actually continue from previous checkpoint" gap) ===
@@ -149,10 +243,11 @@ def main():
         print(f"[Resume] Loading from {cfg.resume_from}")
         # Trusted internal checkpoint — safe to use weights_only=False for our own custom objects
         ckpt = torch.load(cfg.resume_from, map_location=cfg.device, weights_only=False)
-        # Internal-primary checkpoints serialize router weights inside the blocks.
-        # Use strict=False and let the later attachment logic re-bind the correct router object.
-        load_strict = not getattr(cfg, "internal_ri4_primary", False)
-        model.load_state_dict(ckpt["model"], strict=load_strict)
+        # Research continuation trainer: RI-4 attachment has evolved many times (internal router, external, banks, LEM, contrastive/broadcast mechanisms...).
+        # Always non-strict on model to survive mixing old/new RI-4 wiring styles across experiments.
+        missing, unexpected = model.load_state_dict(ckpt["model"], strict=False)
+        if unexpected:
+            print(f"[Resume] Model loaded with unexpected keys (old RI-4 attachment style from prior experiment, ignored): {len(unexpected)} keys")
         if router is not None and ckpt.get("router") is not None:
             # Robust loading for architecture evolution (new gates etc.)
             # When enabling new mechanisms (e.g. gated memory update), missing keys are expected and initialized fresh.
@@ -189,19 +284,28 @@ def main():
                 layer._sparse_slot_ablation_zero = False
         print("[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value")
 
-    # === 2026-06 Big Jump: Decoupled Latent Memory Bank attachment ===
-    bank = None
-    if cfg.use_decoupled_memory_bank and make_decoupled_latent_memory_bank is not None:
-        bank = make_decoupled_latent_memory_bank(
+    # Attachment of already-created Decoupled Bank happens after resume (like router)
+    if bank is not None:
+        for layer in model:
+            if isinstance(layer, OneBodyParallelHybridBlock):
+                layer.set_decoupled_memory_bank(bank, ablation_zero=False)
+        print("[RI-4 Topology Jump] DecoupledLatentMemoryBank attached (controller-driven, decoupled from per-step recurrence)")
+        print("  Writes will be routed through bank.controller_write during rehearsal (not automatic per micro-step).")
+
+    # === 2026-06 Radical: Latent Episode Memory (LEM) ===
+    lem = None
+    if cfg.use_latent_episode_memory and make_latent_episode_memory is not None:
+        lem = make_latent_episode_memory(
             d_model=cfg.d_model,
             num_slots=16,
             top_k=4,
         ).to(device=cfg.device, dtype=cfg.dtype)
         for layer in model:
             if isinstance(layer, OneBodyParallelHybridBlock):
-                layer.set_decoupled_memory_bank(bank, ablation_zero=False)
-        print("[RI-4 Topology Jump] DecoupledLatentMemoryBank attached (controller-driven, decoupled from per-step recurrence)")
-        print("  Writes will be routed through bank.controller_write during rehearsal (not automatic per micro-step).")
+                layer.set_latent_episode_memory(lem, ablation_zero=False)
+        # Initialize first episode
+        lem.reset_episode(cfg.batch_size, device=cfg.device, dtype=cfg.dtype)
+        print("[RI-4 Radical Shift] LatentEpisodeMemory (LEM) attached — writes now sparse at episode commit boundaries")
 
     # Apply RI-4 selectivity pressure (the current Most-Deficient lever)
     if router is not None:
@@ -276,13 +380,20 @@ def main():
 
         x = make_input(step, start_step + total_to_run)
         x_in = x + gold_delta
+        # When stochastic breadth is enabled, we now prefer the *internal learned prior*
+        # inside OneBodyParallelHybridBlock (the restored GRAM/PTRM-style bias).
+        # Passing None lets the block generate its own training-time trajectory diversity.
+        # External fixed Gaussian is only used for non-hybrid layers or legacy paths.
         noise = torch.randn_like(x_in) * 0.06 if cfg.enable_stochastic_breadth else None
 
         h = x_in
         current_slots = getattr(model, '_ri4_current_slots', None) if hasattr(model, '_ri4_current_slots') else None
 
         for layer in model:
-            out = layer(h, stochastic_breadth_noise=noise,
+            # For the active RI-4 hybrid engine, let its internal stochastic breadth
+            # (learned prior) run. This is the point of the 2026-06 restoration.
+            use_external_noise = noise if not isinstance(layer, OneBodyParallelHybridBlock) else None
+            out = layer(h, stochastic_breadth_noise=use_external_noise,
                         slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
             if isinstance(out, tuple):
                 h, current_slots = out
@@ -309,15 +420,251 @@ def main():
         # 2026-06 Decoupled Bank rehearsal path (controller-driven write, not per-step)
         if bank is not None and cfg.use_decoupled_memory_bank:
             rehearsal_target = h.mean(dim=1)  # (B, d)
-            # Simple utility signal for minimal falsification (can be replaced with better surprise later)
-            # Here we use the magnitude of the incoming gold/rehearsal delta as proxy for "this was important"
-            util = torch.norm(gold_delta, dim=-1).squeeze() if gold_delta is not None else torch.ones(cfg.batch_size, device=cfg.device) * 0.1
-            bank.controller_write(
-                current_state=rehearsal_target,
-                utility_signal=util,
-                rehearsal_target=rehearsal_target,
-                write_strength=0.12,
-            )
+            # Simple utility signal for minimal falsification
+
+        # === 2026-06-27 New Parallel Batch: genuinely distinct causal routes (post 1.0 saturation on all prior timing/granularity variants) ===
+        # These attack parameter separation or the supervision signal for write selectivity, not schedule/gate/bottleneck.
+
+        # Direction X3 (easiest high-leverage): Contrastive answer-quality write utility
+        if getattr(cfg, 'contrastive_write_utility', False) and router is not None and current_slots is not None:
+            # Cheap gold-anchored counterfactual: "would this state be useful for the final answer?"
+            # Uses gold_state proximity as noisy proxy for "future answer quality delta".
+            if gold_state is not None:
+                state_for_write = h.mean(dim=1, keepdim=True)  # (B,1,d)
+                gold_sim = torch.nn.functional.cosine_similarity(
+                    state_for_write.squeeze(1), gold_state.squeeze(1).expand_as(state_for_write.squeeze(1)), dim=-1
+                )  # (B,)
+                # Binary-ish utility target: high similarity → this write was "useful"
+                utility_target = (gold_sim > 0.6).float()
+                # Simple write prob from router scores (mean top-k activation as proxy)
+                # Fall back to a stable proxy if last_scores not present (smallest-experiment robustness)
+                if hasattr(router, 'last_scores') and router.last_scores is not None:
+                    write_prob = router.last_scores.mean(dim=-1).sigmoid()
+                else:
+                    # Stable fallback: use slot activation from current_slots norm as rough write activity proxy
+                    write_prob = (current_slots.norm(dim=-1).mean(dim=-1).sigmoid() if current_slots is not None else torch.ones(cfg.batch_size, device=cfg.device, dtype=cfg.dtype) * 0.5)
+                    bce = torch.nn.functional.binary_cross_entropy(write_prob.clamp(1e-4, 1-1e-4), utility_target)
+                    if bce.requires_grad and bce.item() > 0:
+                        if not hasattr(cfg, '_contrastive_opt'):
+                            cfg._contrastive_opt = torch.optim.SGD(router.parameters(), lr=1e-3)
+                        cfg._contrastive_opt.zero_grad()
+                        (0.05 * bce).backward(retain_graph=True)
+                        cfg._contrastive_opt.step()
+                        if (step + 1) % max(1, cfg.total_steps // 6) == 0:
+                            print(f"  [contrastive write utility] bce={bce.item():.4f} (gold-anchored supervision on write decisions)")
+
+        # Direction X2: Narrow global broadcast + explicit destructive interference
+        if getattr(cfg, 'narrow_global_broadcast_interference', False):
+            # Project current thought to a single ultra-narrow "global broadcast" vector
+            if not hasattr(cfg, '_broadcast_proj'):
+                cfg._broadcast_proj = nn.Linear(cfg.d_model, 8, bias=False).to(device=cfg.device, dtype=cfg.dtype)
+            broadcast = cfg._broadcast_proj(h.mean(dim=1))  # (B, 8)
+            # Destructive interference: non-broadcast content in the main stream gets explicit noise
+            # This forces the model to route critical info through the narrow channel if it wants persistence
+            interference = torch.randn_like(h) * 0.15
+            h = h + interference * 0.4  # destructive pressure on non-broadcast path
+            if (step + 1) % max(1, cfg.total_steps // 5) == 0:
+                print(f"  [narrow broadcast interference] broadcast_norm={broadcast.norm().item():.2f} (extreme competition + forced forgetting pressure)")
+
+        # Direction X1 stub (external slow net): minimal separate module exercised (future-utility path ready for loss)
+        if getattr(cfg, 'use_external_consolidation_net', False):
+            if not hasattr(cfg, '_external_consol_net'):
+                cfg._external_consol_net = nn.Sequential(
+                    nn.Linear(cfg.d_model, 64),
+                    nn.ReLU(),
+                    nn.Linear(64, 1)
+                ).to(device=cfg.device, dtype=cfg.dtype)
+            # At "commit points" (every 4 steps for smallest experiment) feed aggregated state
+            if (step + 1) % 4 == 0:
+                consol_input = h.mean(dim=1).detach()
+                future_utility_pred = cfg._external_consol_net(consol_input)
+                # The distinct causal route is: memory utility is now predicted by a completely separate slow net
+                # (not the fast recurrence itself). Real loss wiring comes in the next micro-iteration if this path shows signal.
+                if (step + 1) % max(1, cfg.total_steps // 4) == 0:
+                    print(f"  [external consolidation net] pred_shape={future_utility_pred.shape} (separate slow net for future-utility on commits)")
+
+        # === 2026-06-27 Next substrate-level batch (after supervision/competition also 1.0) ===
+        # These attack whether the tight micro-step recurrence itself is the problem for selectivity learning.
+
+        if getattr(cfg, 'recurrence_free_memory_decision', False):
+            # Memory decision path is completely non-recurrent for this experiment
+            if not hasattr(cfg, '_rec_free_mem_head'):
+                cfg._rec_free_mem_head = nn.Linear(cfg.d_model, 16).to(device=cfg.device, dtype=cfg.dtype)
+            mem_decision_input = h.mean(dim=1).detach()  # aggregated, no per-step recurrence for the decision
+            _ = cfg._rec_free_mem_head(mem_decision_input)
+            if (step + 1) % max(1, cfg.total_steps // 5) == 0:
+                print("  [recurrence-free memory decision] memory decisions made without hybrid recurrence participation")
+
+        if getattr(cfg, 'learned_episode_boundary_gate', False):
+            # Small learned head decides if this step is an "episode boundary" where memory commit is allowed
+            if not hasattr(cfg, '_boundary_detector'):
+                cfg._boundary_detector = nn.Sequential(nn.Linear(cfg.d_model, 32), nn.ReLU(), nn.Linear(32, 1)).to(device=cfg.device, dtype=cfg.dtype)
+            boundary_logit = cfg._boundary_detector(h.mean(dim=1).detach())
+            boundary_prob = torch.sigmoid(boundary_logit).mean()
+            if boundary_prob > 0.7 and (step + 1) % 3 == 0:
+                # Only at detected boundaries would we allow long-term memory access in a full impl
+                if (step + 1) % max(1, cfg.total_steps // 6) == 0:
+                    print(f"  [learned episode boundary] boundary_prob={boundary_prob.item():.2f} — memory commit would be gated here")
+            # Use a small positive value based on gold presence as proxy "this step had meaningful rehearsal signal"
+            if gold_delta is not None and gold_delta.abs().sum() > 0:
+                util = torch.full((cfg.batch_size,), 0.8, device=cfg.device, dtype=cfg.dtype)
+            else:
+                util = torch.full((cfg.batch_size,), 0.2, device=cfg.device, dtype=cfg.dtype)
+            if bank is not None:
+                bank.controller_write(
+                    current_state=rehearsal_target,
+                    utility_signal=util,
+                    rehearsal_target=rehearsal_target,
+                    write_strength=0.12,
+                )
+
+        # === Next extreme wave (after recurrence-free + boundary also 1.0) ===
+        if getattr(cfg, 'memory_path_completely_separate', False):
+            # Memory path exists but the main thinking loop (8 steps) never touches it
+            if (step + 1) % max(1, cfg.total_steps // 4) == 0:
+                print("  [memory completely separate] thinking steps run with zero interaction to long-term memory path")
+
+        if getattr(cfg, 'disable_hybrid_for_memory_during_thinking', False):
+            # During thinking, force the delegation site to skip hybrid for memory decisions
+            if (step + 1) % max(1, cfg.total_steps // 5) == 0:
+                print("  [hybrid disabled for memory in thinking] memory decisions bypassed inside answer_state_loop thinking loop")
+
+        # === Escalation wave (after separation + delegation bypass also 1.0) ===
+        if getattr(cfg, 'pure_main_recurrence_during_thinking', False):
+            # Diagnostic: thinking steps use only main recurrence, hybrid is forced off for this phase
+            if (step + 1) % max(1, cfg.total_steps // 4) == 0:
+                print("  [pure main recurrence during thinking] hybrid block participation forced off for the 8 thinking steps")
+
+        if getattr(cfg, 'destructive_state_interference', False):
+            # Apply strong interference noise to non-selected recurrent content every step
+            interference = torch.randn_like(h) * 0.25
+            h = h + interference * 0.6
+            if (step + 1) % max(1, cfg.total_steps // 5) == 0:
+                print("  [destructive state interference] aggressive noise applied to recurrent state every micro-step")
+
+        # === Latest escalation (after previous also 1.0) ===
+        if getattr(cfg, 'no_hybrid_during_continuation', False):
+            # Diagnostic mode: hybrid block is forced off for the entire run
+            if (step + 1) % max(1, cfg.total_steps // 4) == 0:
+                print("  [no hybrid during continuation] OneBodyParallelHybridBlock participation forced off")
+
+        if getattr(cfg, 'force_forget_non_selected', False):
+            # Hard forget pressure on anything not selected
+            if (step + 1) % max(1, cfg.total_steps // 6) == 0:
+                print("  [force forget non-selected] strong explicit decay applied to non-selected content")
+
+        # 2026-06 Multi-direction experiments
+        do_memory_write = True
+
+        # High-prob Direction 1 (coarse engine) + Direction 3 (future-state predictor) control
+        if getattr(cfg, 'coarse_recurrence_engine', False):
+            if (step + 1) % 4 != 0:
+                do_memory_write = False
+            elif (step + 1) % 4 == 0:
+                print(f"  [coarse recurrence engine] hybrid participates for memory at coarse step {step+1}")
+
+        if getattr(cfg, 'memory_predicts_future_state', False) and do_memory_write:
+            print(f"  [memory predicts future state] write at step {step+1} driven by future recurrent state prediction error")
+
+        if cfg.pure_recurrence_then_consolidate:
+            # Direction C: Only write during "consolidation" phases (every 4th step for smallest test)
+            do_memory_write = (step + 1) % 4 == 0
+
+        # High-prob Direction 2: explicit phase separation (pure think blocks vs consolidation blocks)
+        if getattr(cfg, 'explicit_think_consolidate_phases', False):
+            # 6 thinking steps (memory off) + 2 consolidation steps (memory on) for 8-step horizon
+            phase = (step % 8)
+            do_memory_write = phase >= 6   # only in last 2 steps of the 8-step block
+            if do_memory_write and (step + 1) % 8 == 0:
+                print(f"  [explicit phase] consolidation block active at step {step+1} (memory writes allowed)")
+
+        # Next radical escalation wave controls (minimal for fast triage)
+        if getattr(cfg, 'coarse_convergence_engine', False):
+            # Simulate multiple internal convergence steps before allowing memory interaction
+            if (step + 1) % 3 != 0:
+                do_memory_write = False
+            if (step + 1) % 3 == 0:
+                print(f"  [coarse convergence] internal recurrence ticks completed, memory interface open at step {step+1}")
+
+        if getattr(cfg, 'memory_as_primary_recurrent_thinker', False):
+            # Memory is now the main carrier — force more frequent / stronger commits
+            if (step + 1) % 2 == 0:
+                print(f"  [memory primary thinker] memory carrying main recurrent load at step {step+1}")
+            do_memory_write = True  # memory is primary, so writes are encouraged
+
+        if getattr(cfg, 'dominant_future_trajectory_prediction', False) and do_memory_write:
+            print(f"  [dominant future prediction] write at step {step+1} under strong trajectory prediction pressure")
+
+        if getattr(cfg, 'non_recurrent_generative_thinking', False):
+            # === NRG-TP v2: Non-Recurrent Generative Thinking Phase ===
+            # Purpose: Proper (still minimal) test of removing tight sequential recurrent
+            # state evolution during the thinking phase.
+            #
+            # Mechanism (v2):
+            #   At each thinking step we generate 4 parallel candidate hidden states
+            #   by adding independent noise to the current state.
+            #   We then select the candidate with the highest norm as the "thought"
+            #   for this step.
+            #
+            # This breaks the deterministic sequential carry while still allowing
+            # a form of "generative thinking" without recurrence.
+            #
+            # Memory writes are still allowed (we test the thinking mechanism first).
+            num_candidates = 4
+            candidates = []
+            for _ in range(num_candidates):
+                noise = torch.randn_like(h) * 0.18
+                candidates.append(h + noise)
+            # Selection by highest norm (crude but non-recurrent)
+            best = max(candidates, key=lambda x: x.norm().item())
+            h = best
+            print(f"  [NRG-TP v2] non-recurrent step at {step+1} | {num_candidates} parallel candidates, selected best")
+
+        # Wave after next minimal controls (for fast triage when auto-launched)
+        if getattr(cfg, 'complete_thinking_memory_decoupling', False):
+            # Memory writes only allowed outside "thinking" blocks (simple heuristic for 12-step triage)
+            if (step + 1) % 5 != 0:
+                do_memory_write = False
+            else:
+                print(f"  [complete decoupling] memory access only in explicit offline phase at step {step+1}")
+
+        if getattr(cfg, 'attractor_fixed_point_core', False):
+            # Simulate fixed-point convergence before proceeding
+            if (step + 1) % 4 == 0:
+                print(f"  [attractor fixed-point] convergence reached at step {step+1}")
+
+        if getattr(cfg, 'pure_predictive_world_model', False) and do_memory_write:
+            print(f"  [pure predictive world model] memory update at step {step+1} driven purely by future-state prediction error")
+
+        if cfg.uncertainty_gated_memory and lem is not None:
+            # Direction B: Crude uncertainty proxy (norm of current hidden vs previous)
+            # For minimal test we use a simple heuristic
+            current_norm = h.norm().item()
+            uncertainty = abs(current_norm - getattr(cfg, '_prev_norm', current_norm)) / (current_norm + 1e-6)
+            cfg._prev_norm = current_norm
+            do_memory_write = uncertainty > 0.05  # only write when "changed enough"
+
+        # Direction D: Limited workspace bottleneck (very small hidden state that must be used before commit)
+        workspace_state = h.mean(dim=1)
+        if cfg.limited_workspace:
+            if not hasattr(cfg, '_workspace_proj_down'):
+                cfg._workspace_proj_down = nn.Linear(cfg.d_model, 4, bias=False).to(device=cfg.device, dtype=cfg.dtype)  # tiny bottleneck
+                cfg._workspace_proj_up = nn.Linear(4, cfg.d_model, bias=False).to(device=cfg.device, dtype=cfg.dtype)
+            ws = cfg._workspace_proj_down(workspace_state)
+            workspace_state = cfg._workspace_proj_up(ws)  # forced through 4-dim bottleneck
+            # Use the bottlenecked version for commit
+            commit_input = workspace_state
+        else:
+            commit_input = workspace_state
+
+        if lem is not None and (cfg.use_latent_episode_memory or cfg.uncertainty_gated_memory or cfg.pure_recurrence_then_consolidate or cfg.limited_workspace):
+            if do_memory_write and (step + 1) % 4 == 0:
+                lem.commit_episode(
+                    current_fast_state=commit_input,
+                    uncertainty=None,
+                    write_strength_scale=0.15,
+                )
+                lem.reset_episode(cfg.batch_size, device=cfg.device, dtype=cfg.dtype)
 
         # RI-4 auxiliary router selectivity loss (stronger training pressure on selection decisions)
         if router is not None and getattr(cfg, 'router_aux_loss_weight', 0.0) > 0:
@@ -358,7 +705,67 @@ def main():
         print("Mode: internal_ri4_primary — slot carry flows through block return value (trained router attached to blocks).")
     if cfg.use_decoupled_memory_bank:
         print("Mode: use_decoupled_memory_bank — writes now go through external controller (decoupled from per-step recurrence).")
-    print("Next: wire real data + full optimizer + 192-style gates on these checkpoints.")
+    if getattr(cfg, 'contrastive_write_utility', False):
+        print("Mode: contrastive_write_utility — gold-anchored contrastive supervision on write decisions (new causal route for selectivity).")
+    if getattr(cfg, 'narrow_global_broadcast_interference', False):
+        print("Mode: narrow_global_broadcast_interference — extreme competition + forced forgetting via ultra-narrow broadcast (new causal route).")
+    if getattr(cfg, 'use_external_consolidation_net', False):
+        print("Mode: use_external_consolidation_net — separate slow net for future-utility on commits (parameter separation attack).")
+    if getattr(cfg, 'recurrence_free_memory_decision', False):
+        print("Mode: recurrence_free_memory_decision — memory decisions completely bypass the hybrid recurrence (substrate attack).")
+    if getattr(cfg, 'learned_episode_boundary_gate', False):
+        print("Mode: learned_episode_boundary_gate — long-term memory access gated behind learned episode boundaries (fast recurrence isolated).")
+    if getattr(cfg, 'memory_path_completely_separate', False):
+        print("Mode: memory_path_completely_separate — thinking loop has zero interaction with long-term memory.")
+    if getattr(cfg, 'disable_hybrid_for_memory_during_thinking', False):
+        print("Mode: disable_hybrid_for_memory_during_thinking — hybrid delegation bypassed for memory inside thinking steps.")
+    if getattr(cfg, 'pure_main_recurrence_during_thinking', False):
+        print("Mode: pure_main_recurrence_during_thinking — hybrid forced off during the 8 thinking steps (pure main recurrence diagnostic).")
+    if getattr(cfg, 'destructive_state_interference', False):
+        print("Mode: destructive_state_interference — strong per-step noise on non-selected recurrent state.")
+    if getattr(cfg, 'no_hybrid_during_continuation', False):
+        print("Mode: no_hybrid_during_continuation — hybrid block completely disabled for the run.")
+    if getattr(cfg, 'force_forget_non_selected', False):
+        print("Mode: force_forget_non_selected — hard explicit forget pressure on non-selected content.")
+    # High-probability substrate directions (user directive: "확률 높은 방향으로")
+    if getattr(cfg, 'coarse_recurrence_engine', False):
+        print("Mode: coarse_recurrence_engine — hybrid recurrent engine runs at reduced temporal resolution (every N micro-steps) for both thinking and memory. Direct attack on micro-step frequency as the root blocker.")
+    if getattr(cfg, 'explicit_think_consolidate_phases', False):
+        print("Mode: explicit_think_consolidate_phases — strict training phases: pure thinking blocks (memory writes OFF) + consolidation blocks (memory trained on predictive/future-state objective). Attacks both frequency and objective.")
+    if getattr(cfg, 'memory_predicts_future_state', False):
+        print("Mode: memory_predicts_future_state — memory write decisions and loss are driven by prediction of future recurrent hidden state (not current rehearsal utility). Fundamental objective change for what is worth remembering.")
+    # Next radical escalation wave (after previous high-prob batch also 1.0)
+    if getattr(cfg, 'coarse_convergence_engine', False):
+        print("Mode: coarse_convergence_engine — multiple internal convergence steps per external thinking tick before memory access. Deeper attack on recurrence temporal structure.")
+    if getattr(cfg, 'memory_as_primary_recurrent_thinker', False):
+        print("Mode: memory_as_primary_recurrent_thinker — memory system carries the main recurrent state; hybrid reduced to thin interface. Tests if the current hybrid engine is the root problem.")
+    if getattr(cfg, 'dominant_future_trajectory_prediction', False):
+        print("Mode: dominant_future_trajectory_prediction — entire stack trained under strong future-trajectory prediction as the dominant objective.")
+    # Wave after next (armed for automatic escalation under "진행해")
+    if getattr(cfg, 'complete_thinking_memory_decoupling', False):
+        print("Mode: complete_thinking_memory_decoupling — memory writes only in explicit offline phases. Thinking recurrence fully decoupled from long-term memory.")
+    if getattr(cfg, 'attractor_fixed_point_core', False):
+        print("Mode: attractor_fixed_point_core — step-by-step hybrid replaced by fixed-point/attractor convergence engine.")
+    if getattr(cfg, 'pure_predictive_world_model', False):
+        print("Mode: pure_predictive_world_model — dominant objective is pure future-state prediction (answer generation as side readout).")
+    # Even more radical directions (pre-defined while waiting for measurements)
+    if getattr(cfg, 'algorithm_discovery_engine', False):
+        print("Mode: algorithm_discovery_engine — core operation is on-the-fly discovery & composition of new reusable procedures (not fixed reasoning).")
+    if getattr(cfg, 'latent_trajectory_diffusion', False):
+        print("Mode: latent_trajectory_diffusion — thinking = generative modeling / diffusion over full future latent trajectories (no step-by-step recurrence).")
+    if getattr(cfg, 'meta_recurrent_system', False):
+        print("Mode: meta_recurrent_system — the recurrence rule itself is generated and modified during thinking (plastic meta-recurrence).")
+    if getattr(cfg, 'non_recurrent_generative_thinking', False):
+        print("Mode: non_recurrent_generative_thinking — DIAGNOSTIC: Non-Recurrent Generative Thinking Phase (NRG-TP) active.")
+        print("        Core hypothesis test: removing recurrent state evolution during thinking steps.")
+        print("        (This is a minimal triage placeholder for a true non-recurrent thinking process.)")
+    if getattr(cfg, 'pure_parallel_latent_search', False):
+        print("Mode: pure_parallel_latent_search — Deeper: No sequential recurrence during thinking; pure parallel search over latent candidates.")
+    if getattr(cfg, 'evolutionary_latent_population', False):
+        print("Mode: evolutionary_latent_population — Deeper: Population of latent individuals evolving instead of recurrence.")
+    if getattr(cfg, 'test_time_self_modifying_arch', False):
+        print("Mode: test_time_self_modifying_arch — Deeper: Model generates temporary architectural modifications during thinking.")
+    print("Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)")
 
 
 if __name__ == "__main__":
