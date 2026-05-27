@@ -645,14 +645,60 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
             x = h.detach()
 
             if (step + 1) % max(1, cell_cfg.log_every) == 0 or step == cell_cfg.total_steps - 1:
-                # Real RI-3 proxy measurement (A-Mode: use the actual clean functions)
-                try:
-                    pure_stoch = compute_pure_stochastic_contribution(model, x, cell_cfg, noise_scale=0.06)
-                    rob = simple_state_robustness_probe(model, x, ablation_strength=0.4, num_trials=3)
-                except Exception:
-                    # Fallback (should not happen after shape contract hardening)
-                    pure_stoch = 0.0
-                    rob = 0.0
+                # Authentic RI-3 measurement inside the cell's own rehearsal (A-Mode alignment)
+                # We replicate the logic of the proxy functions but drive it with this cell's exact 5.56 flags + real gold handling.
+                with torch.no_grad():
+                    model.eval()
+                    # Use the current x as the "state" and apply the cell's own gold logic for measurement consistency
+                    gold_state = torch.randn(cell_cfg.batch_size, 1, cell_cfg.d_model, device=cell_cfg.device, dtype=cell_cfg.dtype) * 0.1
+                    decay = scheduled_decay(step, cell_cfg.total_steps, cell_cfg.decay_start, cell_cfg.decay_end)
+                    gold_delta = gold_state * (cell_cfg.gold_injection_alpha * decay)
+                    x_in = x + gold_delta
+
+                    # Pure stochastic effect for this cell
+                    noise = torch.randn_like(x_in) * 0.06 if cell_cfg.enable_stochastic_breadth and not cell_cfg.stochastic_breadth_ablation_zero else None
+                    h_with = x_in
+                    for layer in model:
+                        out = layer(h_with, stochastic_breadth_noise=noise, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
+                        if isinstance(out, tuple):
+                            h_with, _ = out
+                        else:
+                            h_with = out
+
+                    h_without = x_in
+                    for layer in model:
+                        out = layer(h_without, stochastic_breadth_noise=None, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
+                        if isinstance(out, tuple):
+                            h_without, _ = out
+                        else:
+                            h_without = out
+
+                    pure_stoch = (h_with - h_without).norm(dim=-1).mean().item()
+
+                    # Simple robustness (state perturbation)
+                    h_clean = x
+                    for layer in model:
+                        out = layer(h_clean, stochastic_breadth_noise=None, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
+                        if isinstance(out, tuple):
+                            h_clean, _ = out
+                        else:
+                            h_clean = out
+                    clean_quality = h_clean.norm(dim=-1).mean().item()
+
+                    degradations = []
+                    for _ in range(3):
+                        h_abl = x + torch.randn_like(x) * 0.4
+                        for layer in model:
+                            out = layer(h_abl, stochastic_breadth_noise=None, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
+                            if isinstance(out, tuple):
+                                h_abl, _ = out
+                            else:
+                                h_abl = out
+                        abl_quality = h_abl.norm(dim=-1).mean().item()
+                        rel_deg = abs(clean_quality - abl_quality) / max(1e-6, clean_quality)
+                        degradations.append(rel_deg)
+                    rob = max(0.0, 1.0 - (sum(degradations) / len(degradations)))
+
                 pure_history.append(pure_stoch)
                 rob_history.append(rob)
 
