@@ -219,6 +219,59 @@ def run_synthetic_192_mode(name: str, slots_on: bool, persistence_ablate: bool, 
                 case_score = token_logprobs.sum().item()
             total_candidate_scores[cand_idx] += case_score
 
+            # --- Force 1-2 recurrent proposal steps after the scoring forward ---
+            # This simulates "the hybrid recurrent engine participates in the thinking
+            # for refining/representing the answer during the scoring of this candidate".
+            # Use the last token position as query, drive the exact delegation site
+            # while carrying slot_state within the "case" (192 hygiene already handled
+            # at case start).
+            try:
+                with torch.no_grad():
+                    # Synthesize realistic inputs for the proposal based on the scoring seq
+                    text_context_seq = torch.randn(B, T + candidate.shape[1], D, device=device)
+                    trajectory = [torch.randn(B, ws, D, device=device) for _ in range(2)]
+                    text_context_mask = torch.ones(B, T + candidate.shape[1], device=device, dtype=torch.bool)
+                    workspace_mask = torch.ones(B, ws, device=device, dtype=torch.bool)
+                    query_token_indices = torch.tensor([min(5, T + candidate.shape[1] - 1)], device=device, dtype=torch.long)
+
+                    _ = model._compute_answer_state_loop_outputs(
+                        text_context_seq,
+                        trajectory=trajectory,
+                        text_context_mask=text_context_mask,
+                        workspace_mask=workspace_mask,
+                        input_seq_len=T + candidate.shape[1],
+                        query_token_indices=query_token_indices,
+                        disable_recurrent_block=False,
+                        disable_selective_context=True,
+                        force_dense_context=True,
+                        disable_finality_gate=True,
+                        disable_halt_gate=True,
+                        disable_hidden_bridge=True,
+                        disable_next_token_decoder=True,
+                        disable_free_transformer_latent=True,
+                        disable_talker=True,
+                    )
+                    # One more step to allow carry observation within the case
+                    _ = model._compute_answer_state_loop_outputs(
+                        text_context_seq,
+                        trajectory=trajectory,
+                        text_context_mask=text_context_mask,
+                        workspace_mask=workspace_mask,
+                        input_seq_len=T + candidate.shape[1],
+                        query_token_indices=query_token_indices,
+                        disable_recurrent_block=False,
+                        disable_selective_context=True,
+                        force_dense_context=True,
+                        disable_finality_gate=True,
+                        disable_halt_gate=True,
+                        disable_hidden_bridge=True,
+                        disable_next_token_decoder=True,
+                        disable_free_transformer_latent=True,
+                        disable_talker=True,
+                    )
+            except Exception:
+                pass  # Still count any instrumentation that fired
+
     hybrid.forward = orig_forward  # restore
 
     result = {
