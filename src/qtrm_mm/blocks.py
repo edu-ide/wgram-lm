@@ -281,6 +281,11 @@ class OneBodyParallelHybridBlock(nn.Module):
         self._stochastic_breadth_min_std = float(getattr(cfg, "core_stochastic_high_level_min_std", 1e-4))
         self._stochastic_breadth_max_std = float(getattr(cfg, "core_stochastic_high_level_max_std", 0.2))
 
+        # M2 starter (Elastic Depth policy learning)
+        # Basic scaffolding for learnable depth policy (beyond pure random).
+        # Full implementation will be done after M1 causal data.
+        self._elastic_depth_learn_policy = bool(getattr(cfg, "core_elastic_depth_learn_policy", False))
+
         # Learned prior for self-contained stochastic breadth generation inside the hybrid engine.
         # This was the missing piece: the active RI-4 recurrent engine (this block) could only
         # *receive* external noise, not generate training-time trajectory diversity itself.

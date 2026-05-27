@@ -198,3 +198,16 @@ This document is the single place to track progress on "solving the missing piec
 
 **Current State**: M1 measurement running in background. While it completes, M2–M4 planning is already live in this roadmap. Sequential milestone progression is active.
 
+
+**M1 Measurement Result (2026-06)**:
+- Checkpoint from 60-step continuation with internal learned prior active.
+- v2 192 measurement (8 real cases, 6 steps): persistent_carry_rate = 1.0 (same as all prior RI-4 baselines).
+- Engine was exercised with proper RI-4 carry (88 slot carry events observed).
+- Conclusion so far: Restoring the bias in a short 60-step continuation was not sufficient to move the selectivity signal.
+- Next required for M1: 
+  1. Longer continuation (200+ steps) with the restored bias.
+  2. Explicit on/off contrast (breadth during continuation + ablation during measurement).
+  3. true_gram mode vs delta comparison.
+
+This data point is now part of the official M1 record.
+
