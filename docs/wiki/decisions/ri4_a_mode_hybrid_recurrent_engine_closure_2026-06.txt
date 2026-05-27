@@ -1640,6 +1640,102 @@ This completes the required "smallest experiment that can falsify the best candi
 
 ---
 
+## Skill-Mandated Repeated-Reject Big-Jump Assessment & Next Candidate Proposal (2026-06)
+
+**Plain-language failure (repeated across variants):**
+Even after adding multiple forms of selectivity pressure on selection (temperature, Gumbel) and on write (learned per-slot forget/write gates via GSMU, plus direct aux loss on router during rehearsal), the RI-4 memory system on the hybrid recurrent engine still produces near-perfect persistent carry (1.0) on real heldout reasoning cases. All 4-way ablations (router, persistence, slots) continue to show no material degradation in carry or reasoning proxy. The memory "works" (robust, no collapse), but its claimed *sparse selective* nature has not been shown to be causally useful for the task the model is solving.
+
+This is the same core failure that has now repeated through several distinct pressure mechanisms and one architecture-level change to the write path.
+
+**Last working / strongest anchor (Return To What Worked):**
+The verified success is the early A-Mode engine integration: the OneBodyParallelHybridBlock + SparseSlotRouter successfully acts as the actual recurrent proposal engine inside answer_state_loop, with live persistent slot carry, proper per-case hygiene, and a fully executable 4-way ablation contract on realistic shapes and real heldout cases. The carry robustness itself is also a preserved (double-edged) behavior — the system maintains state without catastrophic interference.
+
+**Classification of the GSMU move and prior pressure (Big-Jump Rule):**
+All prior pressure work (temp/Gumbel schedules + aux entropy loss) were nearby tweaks on the *scoring/selection* part of the existing topology.
+GSMU (adding learned gates inside update_slots) was a genuine attempt at a Big Jump because it changed the *write causal route* (fixed persistence → content-conditioned learned gates). It was the best candidate from the literature sweep at the time (LM2/G-MemLLM style gating).
+
+It was properly falsified per the skill (20-step training with gates active + full real-heldout 4-way measurement showed no ablation signal).
+
+Therefore, per the Big-Jump Rule, we must not tune GSMU or add more scalars on the existing router/hybrid block memory path. We treat further "add more gating/pressure on the current slot-in-block design" as a local minimum.
+
+**Humanistic preflight for the current bottleneck:**
+- Reader: The hybrid block reads the recurrent proposal and can query the slots.
+- Thinker (recurrent core): The hybrid recurrence heads do the actual thinking/computation.
+- Memory: The slots are supposed to provide selective, persistent, useful state that the thinker can read and selectively update.
+- Problem: The memory is always "on" and robust, but the thinker does not appear to be learning to *use its selectivity* in a way that makes turning it off hurt the final answer. The memory is a safe scratchpad, not a causally necessary selective workspace the model has learned to rely on for better reasoning.
+- Intuition: We have built a very good "always-available notebook", but the student has not yet learned when and what to write in it to get better test scores. Adding more rules for "how neatly to write" (gates, pressure) hasn't taught the student the value of the notebook.
+
+**Refined bottleneck (after GSMU falsification):**
+The missing causal capability is a *training signal and mechanism that makes the memory write decision depend on the actual utility of the information for the downstream reasoning/rehearsal objective*, rather than just local state similarity or fixed rules.
+
+**Literature mapping (focused refresh on the refined bottleneck):**
+From the 2025-2026 sweep (LM2, G-MemLLM, Titans, Recurrent Memory-Augmented Transformers, surprise-based memory papers):
+- Common successful mechanism for "useful selective memory": write decisions driven by **surprise / prediction error / utility** relative to the current model's own expectations or goals, not just by routing scores or fixed rehearsal pull.
+- Titans-style: long-term memory updated at test/training time based on surprise (KL, gradient, reconstruction error).
+- Many gated banks succeed when the gate is conditioned on "how much this helps the current task" or "how novel this is to the existing memory".
+
+This points to a different causal route change than "better gates on the existing write": changing the *trigger for when a write happens at all* to be surprise- or utility-driven from the recurrent state itself.
+
+**Proposed next Big-Jump architecture candidate (changes a causal route):**
+**Surprise-Driven Selective Write Trigger** integrated into the RI-4 path.
+
+Instead of (or in addition to) the current router deciding *which* slots to update based on scores, add a mechanism where the *decision to write / how strongly to write* to the selected slots is modulated by a surprise signal computed from the recurrent proposal vs. what the current memory + core would predict.
+
+This directly changes the write decision causal route: from "always apply rehearsal pull to routed slots with learned gates" → "apply update only / more strongly when the incoming information is surprising relative to the current latent state and memory".
+
+It preserves the existing top-k routing and One-Body carry contract as the base, but adds the surprise trigger as the new learned control on write.
+
+**Humanistic prediction:**
+Before: The model always writes the rehearsal/gold signal into the "important" slots (decided by router), regardless of whether that information was already expected or redundant.
+After: The model only strongly updates memory when the new information meaningfully changes its internal expectation (surprise), leading to sparser, more useful memory that actually helps when ablated.
+Expected first signal: Under surprise-driven write, the persistence_ablate or router_ablate should now produce a clearer drop in carry robustness or reasoning proxy on heldout cases, because the memory will contain less "always-written" redundant information and more high-utility items.
+Falsification gate: After minimal implementation + short training on the current d=512 substrate, run the real-heldout v2 driver + 4-way ablation. If ablations still show no material difference vs full (carry stays ~1.0 and no reasoning proxy movement), the surprise trigger in this form is also insufficient → archive and propose next (e.g. full decoupled LM2-style bank or utility head with direct reasoning supervision).
+
+**Smallest falsifying experiment (per skill):**
+Implement the surprise signal (e.g., simple reconstruction error or KL between current recurrent proposal and a quick prediction from current memory read + state) as a multiplicative modulator on the write strength inside the existing update path (or the new gated path).
+Add a flag to enable/disable the surprise trigger (for clean ablation).
+Run a short continuation (10-20 steps) from the latest checkpoint with the trigger enabled + existing pressure.
+Immediately measure with the real-heldout v2 driver + full 4-way matrix.
+If the ablation gap appears (even small), promote to longer training + I→G→A.
+If still flat, archive this specific surprise formulation as another rejected variant in the same family and move to a deeper topology change.
+
+This is the skill-required next step after the GSMU falsification: a new Big Jump candidate on the write *trigger* route, with explicit falsification gate and smallest experiment defined before any long run.
+
+**Falsification results for Surprise-Driven Write Trigger candidate:**
+8-step continuation from step52 with surprise trigger enabled (minimal norm-based surprise modulator on write, + existing pressure).
+New artifacts: step54–60 in `checkpoints/hybrid_ri4_surprise_test/`.
+
+Measurement on step60 (real heldout 4 cases, 8 thinking steps, v2 driver):
+- full: persistent_carry_rate = **1.0**
+- persistence_ablate: **1.0**
+- slots_off: **1.0**
+
+Same flat result. The surprise trigger in this minimal form (added on top of the existing routed slot update path) did not produce the expected ablation degradation on real heldout distribution.
+
+**Per-skill conclusion on this candidate:**
+Another clean negative for "modulating write on the current slot-in-hybrid-block topology" family, even when changing the trigger from score/gate-based to surprise-based.
+
+This reinforces the pattern: incremental mechanisms layered on the existing "sparse slots tightly coupled inside every hybrid recurrence step" approach are repeatedly failing to make RI-4 selectivity causally visible in the critical observable (ablation impact on carry/reasoning utility on real cases).
+
+**Strong recommendation per Big-Jump Rule + repeated rejects:**
+We have now falsified (or strongly challenged) two Big Jump candidates on the write path (GSMU gated write + Surprise trigger) after multiple selection pressure variants. Further work in the "improve selection/write control inside the current per-block slot design" direction should be treated as local minimum per the skill.
+
+The next honest Big Jump must change a more fundamental causal route — most likely the **memory topology itself** (moving from slots embedded inside every hybrid block step toward a more decoupled latent memory bank or global workspace that the recurrent core queries/updates via explicit learned mechanisms, closer to LM2-style designs).
+
+This will be the focus of the next skill-mandated step.
+
+---
+
+**Current status (after this assessment):**
+We have followed the skill's mandatory order for the repeated-reject situation created by the GSMU falsification.
+The GSMU candidate has been properly tested and (provisionally) archived as negative evidence for "gated write on the current slot-in-hybrid topology".
+The next proposed candidate (Surprise-Driven Write Trigger) changes a different causal route (the decision of *whether/when* to write, not just *how much*).
+The smallest falsifying experiment is defined and ready to launch.
+
+All One-Body, 4-way ablation, and Reverse I→G→A invariants remain in force.
+
+---
+
 ## A-Mode Cycle: Stronger router selectivity pressure via auxiliary loss (entropy) during rehearsal + measurement — 2026-06
 
 **Most-Deficient driving this cycle:**
