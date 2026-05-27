@@ -1885,3 +1885,125 @@ This is the disciplined continuation after the real-heldout measurement upgrade.
 
 ---
 
+
+---
+
+## Full RI-1~RI-7 Re-Assessment (Most-Deficient + Highest-Value-First) — 2026-06
+**Trigger**: User explicit request "전체 RI-1~RI-7 재평가 해봐" (direct continuation of the RI-4 concentration thread and repeated "작업 진행해" + "/research-driven-architecture-debugging 스킬 대로 진행해").
+
+**Date of this re-assessment**: Immediately following the GSMU falsification + Surprise-Driven Write Trigger falsification + repeated selection/write pressure negative results on the hybrid recurrent engine (all documented in prior sections of this record).
+
+**Method**: Strictly per research-driven-architecture-debugging skill (Failure Discipline, Big-Jump Rule after repeated rejects, Most-Deficient + Highest-Value-First prioritization, A-Mode 4-step cycle, Reverse I→G→A, Humanistic preflight, verbatim record). No local tuning on falsified families. One-Body Covenant + 4-way ablation contract + 5.56 inductive bias preservation held as non-negotiable anchors.
+
+### 1. Current Evidence Snapshot per Pillar (from SSOT + RI-4 thread + PoC Execution Plan + recent A-Mode tooling)
+
+**RI-1: Causal Test-Time Compute Scaling via Hybrid Recurrence Depth**
+- Positive: Pure stochastic effect proxy + state robustness instrumentation exist and have shown directional depth sensitivity on the hybrid substrate. OneBodyParallelHybridBlock (recurrence-primary + attention sync every 4) is the verified substrate. v2 measurement driver supports depth-aware carry + thinking loops.
+- Negative / Gap: Full causal depth sweep (1/4/8/12+) on no-retrieval real heldout reasoning accuracy with clean ablations (recurrence-off vs hybrid depth N) has not yet been executed at the required fidelity (real 642 gold + extended raw intelligence gate). Proxy signals have not yet been converted into direct heldout reasoning gains under depth ablation.
+- Current maturity: Medium (infrastructure strong, causal heldout evidence pending).
+
+**RI-2: Long-Horizon Latent State Stability via Attractor Dynamics + Sparse Memory**
+- Positive: Attractor protection (0.7 during rehearsal), scheduled binding decay, and RI-4 persistent non-selected slot carry (near-1.0 robustness across 8-12+ thinking steps on real heldout distribution) are implemented and verified in the engine contract. Carry robustness is a real, replicated behavior (d=128/256/512, synthetic + real heldout).
+- Negative / Gap: Long-horizon (80–200+ steps) causal ablation evidence on actual raw reasoning heldout correctness / diversity (not only carry rate) is missing. We do not yet know whether the observed carry robustness translates into reasoning stability or is "robust but non-useful" memory.
+- Current maturity: Medium (mechanisms + carry robustness strong; reasoning utility at long horizon unproven).
+
+**RI-3: Causal Contribution of 5.56 Inductive Biases to Raw Reasoning (Highest Immediate Priority per SSOT)**
+- Positive (Strongest signal in the entire current map): Historical S2 ~5.5× gap on pure stochastic contribution was driven primarily by stochastic recurrent breadth. The 5.56 recipe (stochastic breadth + real gold structural injection + attractor protection + scheduled decay) is the dominant causal prior that produced the largest measured intelligence margin on the hybrid substrate. SSOT and RI PoC Execution Plan explicitly declare P1.2 / RI-3 as the #1 highest immediate priority ("Run the full 5.56 ablation matrix on the hybrid using both the cheap clean proxy and direct raw reasoning heldouts"). Orthogonal RI-3 × RI-4 matrix runner + standardized JSON artifact emission was added via A-Mode (train_556_on_parallel_hybrid_minimal.py --run_ri3_ri4_matrix). Reverse I→G→A for the 5.56 inductive biases is actively maintained in all recent RI-4 work.
+- Negative / Gap: The full 5.56 ablation matrix (full vs stoch_zero vs gold_off vs protection_off) with both pure stochastic proxy **and** direct raw reasoning heldout accuracy on real gold has not yet been executed at 80/120+ step horizons on the verified hybrid engine. This is the single largest unclosed high-value gap in the current RI map.
+- Current maturity: **Highest positive directional signal + highest actionable value**. Infrastructure recently completed. This is the clearest "what actually worked before and must be re-proven on the new substrate" anchor.
+
+**RI-4: Sparse Selective Memory Access is Causally Active Inside the Latent Reasoning Loop (MSA/Raven-style) — Current Pillar with Most Repeated Rejects**
+- Positive (Engine foundation — major verified asset):
+  - One-Body hybrid recurrent engine contract fully closed via multiple A-Mode holistic cycles: OneBodyParallelHybridBlock successfully delegated as the actual recurrent proposal engine inside answer_state_loop (pure delegation + realistic shapes + real heldout proxy + per-case hygiene all green on CUDA/bf16).
+  - Persistent slot carry + strong non-selected persistence (Raven/MSA hallmark) implemented and verified (apply_rehearsal_update selective only on top-k; untouched slots ~0.92 persistence).
+  - Full 4-way ablation contract (slots_on/full, slots_off, persistence_ablate, router_ablate) executable and honored in v2 real-heldout measurement driver (measure_continuation_hybrid_192.py) and canonical 192_eval harness (unified JSON report emission).
+  - d_model-agnostic (128/256/512 ladders all functional). Trained router attachment, real heldout_72 case loading + case-seeded proposals all operational.
+  - All Reverse I→G→A for 5.56 rehearsal path through the router preserved.
+- Negative (Core selectivity claim — severe, repeated-reject deficiency):
+  - After engine closure, every subsequent attack on the "selectivity is causally useful" claim has produced flat results: persistent_carry_rate remains **1.0** (ceiling) even under full ablations on both synthetic gold_structured and real heldout_72 distributions.
+  - Cross-width saturation (128→256→512): increasing hidden dimension produced no movement in carry degradation under ablation.
+  - Big-Jump candidates properly tested and falsified/challenged per skill:
+    - Multiple selection pressure variants (temperature schedules, Gumbel stochastic breadth noise, entropy aux loss on router scores during rehearsal) → no ablation signal.
+    - GSMU (learned per-slot forget/write gates, LM2/G-MemLLM style change to the write causal route itself) → 20-step continuation + real-heldout 4-way measurement at step52: still 1.0 flat across all ablations.
+    - Surprise-Driven Write Trigger (Titans-style, minimal norm-based surprise modulator on write) → 8-step continuation + measurement at step60: again 1.0 flat.
+  - Humanistic preflight (per skill): We have built an extremely robust "always-available notebook" with clean One-Body integration and persistence guarantees. The thinker (hybrid recurrence) has not yet learned to treat the selective memory as causally necessary for better answers. Turning the notebook off does not hurt because the student has not learned when/what to write that actually improves test performance.
+- Current maturity: **Engine / One-Body / ablation contract = production-grade verified asset**. Core "sparse selective memory improves reasoning via causal utility" claim = **most deficient pillar in the entire RI-1~RI-7 map after repeated Big-Jump falsifications**. Per Big-Jump Rule: further incremental pressure/gating on the current "embedded slots inside every hybrid step" topology must be treated as local minimum.
+
+**RI-5: Efficient One-Body Hybrid Synergy for Raw Reasoning**
+- Positive: The parallel hybrid design (recurrence-primary + attention-secondary with vector gating) is the actual substrate used in all recent work. Gating v2 + attention sync every 4 are wired. Engine closure work exercised the full hybrid path.
+- Gap: Explicit hybrid > pure-recurrence ablation (attention heads disabled) on raw reasoning heldout accuracy has not been the focus of the latest measurement campaigns (focus was RI-4 engine + carry).
+- Current maturity: Medium (design is canonical; specific synergy evidence for raw intelligence pending the RI-3 matrix).
+
+**RI-6: Low Training Waste — Core Mechanisms Are Actually Used for Reasoning**
+- Positive: 5.56 rehearsal + real 642 gold + clean probe infrastructure is the active training regime. RI-4 4-way ablations and RI-3 matrix tooling exist to detect "cheating".
+- Gap: Mid-training ablation checks (does ablating depth/router/5.56 components hurt held-out raw reasoning even before convergence?) have not been systematically reported on the hybrid + internal_ri4_primary checkpoints.
+- Current maturity: Medium (infrastructure supports it; systematic evidence not yet produced).
+
+**RI-7: Better Data Efficiency via Stronger Priors for Reasoning**
+- Positive: The ~5.5× gap evidence (historical) and the real 642 gold curriculum already demonstrate superior sample efficiency of the 5.56 + hybrid substrate over weaker priors. The 5.56 recipe itself is the strong prior.
+- Gap: Matched data budget comparisons (historical core vs current hybrid + MSA + 5.56) on the same raw reasoning heldouts have not been re-run at the current fidelity.
+- Current maturity: Directional positive from prior work; fresh controlled comparison pending RI-3 matrix completion.
+
+### 2. Most-Deficient + Highest-Value-First Ranking (Current Snapshot)
+
+**Tier 1 — Most Deficient + Highest Remaining Value (Primary Focus Now)**
+1. **RI-3 (5.56 causal matrix on verified hybrid)** — Highest immediate priority explicitly declared in SSOT + PoC Execution Plan. Strongest historical signal. Tooling (orthogonal matrix + JSON contract) just closed via A-Mode. Closing this simultaneously advances S2 #4, RI-3, and gives the cleanest lever to interpret all other pillars (including whether RI-4 selectivity finally shows utility under real reasoning pressure).
+2. **RI-4 selectivity causal utility (not the engine)** — Most repeated-reject pillar after engine closure. Current embedded-slots topology + all tested write/selection pressures (including two Big Jumps: GSMU, Surprise) have been falsified for the critical observable. Per skill: archive further local tuning on this family; prepare topology-level change (decoupled latent memory bank + explicit controller, LM2-style) as the honest next architecture candidate.
+
+**Tier 2 — High Value, Blocked Behind Tier 1**
+3. RI-1 (depth scaling on real heldout reasoning) — Direct causal evidence required; will be interpretable only after RI-3 matrix quality is known.
+4. RI-2 (long-horizon robustness on real reasoning) — Carry robustness is real; reasoning utility at 150-200+ steps is the missing causal piece.
+
+**Tier 3 — Dependent / Lower Current Leverage**
+5. RI-5 (hybrid synergy)
+6. RI-6 (low training waste)
+7. RI-7 (data efficiency)
+
+### 3. Humanistic Preflight for the Overall Situation (per skill)
+- Reader: Hybrid block + sparse router read prompt + gold/rehearsal signals.
+- Thinker: OneBodyParallelHybridBlock recurrence (delta/GDN + attention sync) does the actual iterative latent computation.
+- Memory: Slots are supposed to be the selective, persistent, utility-bearing workspace the thinker learns to rely on.
+- Current story: The thinker has a very high-quality, always-on notebook with perfect persistence guarantees and clean One-Body integration. It rarely needs to "remember" selectively because the current rehearsal + pressure regime has not forced it to discover that selective writes produce better answers. Stochastic breadth (RI-3) remains the clearest historical lever that actually moved intelligence margins.
+- Implication: The highest-leverage next move is not "add one more gate or surprise term to the notebook." It is to re-prove (or falsify) that the 5.56 stochastic + gold + attractor recipe is still the dominant causal driver on the new verified engine. Only after that signal is secured do we have a trustworthy substrate on which to judge whether a deeper memory topology change is required.
+
+### 4. Big-Jump Classification & Failure Discipline Compliance
+- RI-4 engine integration work (early A-Mode cycles) = restoration + holistic largest-gap closure of a real structural deficiency (hybrid was not the actual recurrent engine). This was the correct move and remains a verified asset.
+- All subsequent RI-4 work (pressure variants + GSMU + Surprise) = repeated attempts on the same causal route family (selection/write control inside the per-block embedded slots topology). Per Big-Jump Rule after repeated rejects: treat further work in this family as local minimum. The next architecture candidate for memory must change a more fundamental route (decoupled bank + learned controller that the core queries/updates, not slots updated inside every recurrence step).
+- RI-3 has no such repeated-reject history on the current substrate. It has the opposite: the strongest positive signal + explicit SSOT declaration as P1.
+
+### 5. Recommended Primary Effort (Most-Deficient + Highest-Value-First + Reverse I→G→A)
+**New primary (execute immediately when hardware/checkpoint allows):**
+- Run the full RI-3 5.56 causal matrix (full / stoch_zero / gold_off / protection_off) × RI-4 4-way orthogonal on the best current internal_ri4_primary or equivalent hybrid checkpoint at 80 / 120+ step horizons using real 642 gold.
+- Use both the cheap pure stochastic proxy **and** the extended raw intelligence gate on no-retrieval heldout_72 (and larger when available).
+- Produce the standardized matrix + JSON artifact (the tooling added in the recent A-Mode cycle makes this one-command).
+- This is the single highest-value, highest-priority, lowest-regret action per the canonical SSOT and PoC Execution Plan.
+
+**Simultaneous / immediate follow-on (after RI-3 matrix delivers signal or clear reject):**
+- If RI-3 matrix shows strong causal drops (especially stochastic breadth) and RI-4 orthogonality reveals any useful interaction: promote the combined recipe as the new canonical training prior and unlock RI-1 depth scaling + RI-2 long-horizon robustness campaigns on the same substrate.
+- If RI-3 matrix is weak or RI-4 ablations remain flat even under real reasoning pressure: this is now high-confidence evidence that the current memory topology (embedded slots updated inside hybrid steps) is the binding architectural constraint. At that point, execute the next skill-mandated Big Jump: design + smallest falsifying experiment for a decoupled latent memory bank + explicit controller (LM2 / global workspace style) while preserving the verified One-Body hybrid recurrent engine contract and all 5.56 Reverse I→G→A wiring.
+
+**Frozen / archived per skill**:
+- Further scalar pressure, Gumbel schedules, aux losses, or gating tweaks on the current SparseSlotRouter + embedded slots write path inside the hybrid block. These have been repeatedly falsified for the critical observable.
+
+### 6. Preservation Commitments (Reverse I→G→A + One-Body)
+- All future primary work (RI-3 matrix first) must continue to route through the verified OneBodyParallelHybridBlock as the recurrent engine inside answer_state_loop.
+- The 5.56 inductive bias path (stochastic breadth, gold structural injection, attractor protection, scheduled decay) must remain executable via ablation_zero flags in the primary forward and must be the first thing re-measured on any new memory topology candidate.
+- The 4-way RI-4 ablation contract (and the unified measurement/reporting tooling) must remain first-class in any future memory bank design.
+- No hidden answer channels, no renderer shortcuts, no donor credit leakage on the no-retrieval raw reasoning gates.
+
+### 7. Decision & Next Concrete Action
+This re-assessment is the direct, honest response to the user's request under the exact discipline the skill and prior user feedback ("A 방식으로 해", "미흡 한걸 수정했으면 실험 해야되는거 아니야?", Most-Deficient + Highest-Value-First) have embedded in the project.
+
+**Immediate next step (when environment permits)**: Execute `python scripts/train_556_on_parallel_hybrid_minimal.py --run_ri3_ri4_matrix --steps 80 ...` (or the 120-step equivalent on real gold) using the best available hybrid checkpoint. Record the full matrix, proxy + heldout numbers, and ablation drops verbatim in this decision record and the PoC plan.
+
+**If the RI-3 matrix is the expected strong causal signal**: RI-1 and RI-2 become the natural next highest-value targets on the now-trusted substrate. RI-4 selectivity can then be re-evaluated in the context of real reasoning pressure rather than synthetic carry observables.
+
+**If the RI-3 matrix or RI-4 orthogonality is flat**: The project has now accumulated sufficient negative evidence on the current memory topology to justify the topology-level Big Jump (decoupled bank) with a clean conscience and a strong Reverse I→G→A anchor.
+
+This record closes the "full RI-1~RI-7 re-evaluation" action requested by the user. All principles (A-Mode, Most-Deficient, Big-Jump Rule after repeated rejects, Failure Discipline, Reverse I→G→A, One-Body) were followed without exception.
+
+**Artifacts for this re-assessment**:
+- This verbatim section (appended to the living RI-4 thread SSOT).
+- Cross-reference to raw-intelligence-necessary-conditions-2026-06.md (SSOT definitions) and RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md (P1.2 as declared priority).
+- All prior measurement JSON artifacts, logs, and checkpoints from the GSMU/Surprise/pressure falsification campaigns (already recorded in this file).
+
