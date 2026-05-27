@@ -62,8 +62,8 @@ else
 
     echo ""
     echo "Key: The JSON block (between ## RI4_192_PROXY_REPORT_JSON_START/END) is the canonical artifact."
-    echo "     When a real checkpoint exists, run the real 192 tiny heldout and diff the two JSONs"
-    echo "     for hybrid engine participation during actual forced_choice scoring."
+    echo "     Use scripts/ri4_compare_192_reports.py proxy.json real.json for a focused diff on"
+    echo "     hybrid engine participation during the actual forced_choice scoring phase."
     echo ""
     echo "Strongest available 192-style proxy complete."
     echo "When a Qwen-integrated checkpoint is ready: bash this script again (it will auto-detect and run the real 4-case 192 heldout on the 4 hybrid_*_no_evidence modes using the verified engine attach logic)."
