@@ -157,7 +157,119 @@ def run_smoke_variant(name: str, slots_on: bool, persistence_ablate: bool, route
     model.answer_state_loop_hybrid_recurrent_block = None
     model._ri4_hybrid_recurrent_slot_state = None
 
+    # === Phase 2: Direct internal call to force the exact recurrent delegation path ===
+    # This is the controlled experiment that actually exercises _compute_answer_state_loop_outputs
+    # (the method containing the hybrid delegation at ~6159). Top-level forward in tiny cfg may
+    # not reach it; this guarantees we test the A-mode wiring we just built.
+    direct_result = _run_direct_recurrent_path_test(
+        model, hybrid_stack, name, slots_on, persistence_ablate, router_ablate, cfg, device
+    )
+    result["direct_recurrent_path"] = direct_result
+
+    # Final hygiene
+    model.answer_state_loop_hybrid_recurrent_block = None
+    model._ri4_hybrid_recurrent_slot_state = None
+
     return result
+
+
+def _run_direct_recurrent_path_test(
+    model: "QTRMMultimodalModel",
+    hybrid_block: "OneBodyParallelHybridBlock",
+    variant_name: str,
+    slots_on: bool,
+    persistence_ablate: bool,
+    router_ablate: bool,
+    cfg: "QTRMConfig",
+    device: torch.device,
+) -> dict[str, Any]:
+    """Force execution of the answer_state_loop recurrent proposal logic with the hybrid attached.
+    This directly tests whether the A-mode delegation (hybrid as real recurrent engine) fires
+    and whether the RI-4 ablations control it.
+    """
+    print(f"  [Direct Path Test] Forcing _compute_answer_state_loop_outputs with hybrid attached...")
+
+    # For this diagnostic direct-path smoke we force CPU to avoid CUDA context poisoning
+    # from index asserts in the tiny answer_state_loop configuration. The delegation logic
+    # and ablation behavior are identical; we only care about call counts and carry.
+    test_device = torch.device("cpu")
+    model = model.to(test_device)
+    hybrid_block = hybrid_block.to(test_device)
+    device = test_device  # update local device for tensor creation below
+
+    # Re-attach for this controlled test
+    model.answer_state_loop_hybrid_recurrent_block = hybrid_block
+    model._ri4_hybrid_recurrent_slot_state = None
+
+    # Minimal but valid inputs to reach the recurrent proposal inside the trajectory loop
+    B = 1
+    T = 4
+    D = cfg.d_model
+    num_steps = 3
+
+    text_context_seq = torch.randn(B, T, D, device=device)
+    trajectory = [torch.randn(B, 2, D, device=device) for _ in range(num_steps)]
+    text_context_mask = torch.ones(B, T, device=device, dtype=torch.bool)
+    workspace_mask = torch.ones(B, 2, device=device, dtype=torch.bool)
+    input_seq_len = T
+
+    # Conservative indices to avoid index-out-of-bounds in the tiny test trajectory / workspace selection
+    # (the real answer_state_loop has more complex state selection logic that can trigger asserts on edge sizes)
+    safe_query_idx = min(1, T-1)
+    query_token_indices = torch.tensor([safe_query_idx], device=device, dtype=torch.long)
+
+    # Instrument again for this phase
+    call_count = {"count": 0, "carries": 0}
+    orig_forward = hybrid_block.forward
+
+    def instrumented(x, slot_state=None, **kw):
+        call_count["count"] += 1
+        if slot_state is not None:
+            call_count["carries"] += 1
+        out = orig_forward(x, slot_state=slot_state, **kw)
+        if isinstance(out, tuple) and len(out) >= 2:
+            call_count["carries"] += 1
+        return out
+
+    hybrid_block.forward = instrumented
+
+    try:
+        with torch.no_grad():
+            logits, final_y, depth_hidden, rec_gate_mean, halt_logits, *_ = model._compute_answer_state_loop_outputs(
+                text_context_seq,
+                trajectory=trajectory,
+                text_context_mask=text_context_mask,
+                workspace_mask=workspace_mask,
+                input_seq_len=input_seq_len,
+                query_token_indices=query_token_indices,
+                disable_recurrent_block=False,
+            )
+    except Exception as e:
+        hybrid_block.forward = orig_forward
+        model.answer_state_loop_hybrid_recurrent_block = None
+        model._ri4_hybrid_recurrent_slot_state = None
+        return {
+            "executed": False,
+            "error": str(e)[:200],
+            "hybrid_calls": 0,
+            "slot_carries": 0,
+        }
+
+    hybrid_block.forward = orig_forward
+    slot_after = getattr(model, "_ri4_hybrid_recurrent_slot_state", None)
+
+    direct_res = {
+        "executed": True,
+        "hybrid_calls_during_loop": call_count["count"],
+        "slot_carries_during_loop": call_count["carries"],
+        "slot_state_after": "present" if slot_after is not None else "None",
+        "logits_shape": list(logits.shape) if logits is not None else None,
+        "recurrent_gate_mean_shape": list(rec_gate_mean.shape) if rec_gate_mean is not None else None,
+    }
+
+    print(f"    → hybrid calls: {call_count['count']}, carries: {call_count['carries']}, success={call_count['count'] > 0}")
+
+    return direct_res
 
 
 def main() -> None:
