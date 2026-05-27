@@ -5958,9 +5958,14 @@ class QTRMMultimodalModel(nn.Module):
         gate_min = min(max(float(self.cfg.answer_state_loop_gate_min), 0.0), 1.0)
         recurrent_active = (
             not disable_recurrent_block
-            and self.answer_state_loop_recurrent_norm is not None
-            and self.answer_state_loop_recurrent_stack is not None
-            and self.answer_state_loop_recurrent_gate is not None
+            and (
+                (
+                    self.answer_state_loop_recurrent_norm is not None
+                    and self.answer_state_loop_recurrent_stack is not None
+                    and self.answer_state_loop_recurrent_gate is not None
+                )
+                or (self.answer_state_loop_hybrid_recurrent_block is not None)
+            )
         )
         recurrent_gate_min = min(
             max(float(self.cfg.answer_state_loop_recurrent_gate_min), 0.0),
@@ -6157,8 +6162,11 @@ class QTRMMultimodalModel(nn.Module):
                             + loop_delta[..., :loop_dim].to(dtype=y.dtype)
                         )
                 if self.answer_state_loop_hybrid_recurrent_block is not None:
-                    # RI-4: Use the hybrid block as the actual recurrence engine (the big One-Body step).
-                    # Feed the current recurrent input; carry slot state across answer loop steps.
+                    # RI-4 (A-mode): hybrid block IS the answer_state_loop recurrent engine.
+                    # One-Body native: SparseSlotRouter + persistent slots participate directly
+                    # in every recurrent proposal step inside the trajectory loop.
+                    # Slot state is carried on the model instance across steps for this case.
+                    # Falls back to classic recurrent_stack when the attr is None (zero behavior change).
                     hybrid_in = self.answer_state_loop_recurrent_norm(recurrent_input).unsqueeze(1)
                     hybrid_out, new_slot = self.answer_state_loop_hybrid_recurrent_block(
                         hybrid_in,
