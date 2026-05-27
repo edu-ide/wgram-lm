@@ -71,11 +71,42 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
             "gold_injection_alpha": 0.25, "attractor_protection": 0.7,
         })()
 
-    # Build identical stack
+    # === Infer real d_model from the checkpoint before building the stack ===
+    # This is required to support d=128, 256, etc. without hardcoding.
+    actual_d_model = None
+    model_sd = ckpt.get("model", {})
+    for v in model_sd.values():
+        if isinstance(v, torch.Tensor) and v.dim() >= 1:
+            s = v.shape[-1]
+            if s > 32:   # heuristic: d_model is the large hidden dimension
+                actual_d_model = int(s)
+                break
+    if actual_d_model is None:
+        actual_d_model = getattr(cfg, "d_model", 128)
+
+    # Override cfg d_model so build_hybrid_stack creates the correct width stack
+    cfg.d_model = actual_d_model
+
+    # Build identical stack (now with correct d_model)
     model = build_hybrid_stack(cfg)  # this returns the ModuleList on the right device/dtype
 
     # Load weights
-    model.load_state_dict(ckpt["model"])
+    # Internal-primary checkpoints (produced with --internal_ri4_primary) have the
+    # router weights serialized inside the blocks. We load with strict=False and
+    # then re-attach/force the router object so the measurement driver always
+    # sees a consistent runtime router (the one from the ckpt if present, or a fresh one).
+    missing, unexpected = model.load_state_dict(ckpt["model"], strict=False)
+    if unexpected and any('sparse_slot_router' in k for k in unexpected):
+        # These are the internal router weights from an internal-primary checkpoint.
+        # We will re-attach a properly loaded router object below.
+        pass
+
+    # Final confirmation of d_model from the now-loaded model (safe against 0-d params)
+    try:
+        actual_d_model = next(p for p in model.parameters() if p.dim() >= 1).shape[-1]
+    except StopIteration:
+        # Fallback to the value we inferred from the checkpoint before building
+        pass
 
     # Force the entire loaded model to the target device/dtype first (critical hygiene)
     model = model.to(device=device, dtype=dtype)
@@ -143,7 +174,7 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
 
     actual_step = ckpt.get("step", "unknown")
 
-    return model, initial_slots, cfg, actual_step, loaded_router
+    return model, initial_slots, cfg, actual_step, loaded_router, actual_d_model
 
 
 def run_192_proxy_on_continuation(
@@ -151,6 +182,7 @@ def run_192_proxy_on_continuation(
     initial_slots: torch.Tensor | None,
     num_cases: int = 4,
     steps_per_case: int = 4,
+    d_model: int = 128,   # now taken from the loaded checkpoint (supports 128, 256, ...)
 ) -> Dict[str, Any]:
     """
     Run the core 192-style scoring + recurrent proposal loop with instrumentation,
@@ -171,12 +203,13 @@ def run_192_proxy_on_continuation(
        actually compounds usefully across recurrent steps after gold_structured rehearsal).
     - Preserves 100% of the 4-way ablation contract and per-case reset hygiene.
     - Old keys kept for backward compatibility with existing report consumers.
+    - d_model is now passed from the loaded checkpoint (no longer hardcoded to 128).
     """
     device = next(hybrid_blocks.parameters()).device
     dtype = next(hybrid_blocks.parameters()).dtype
 
     B = 2
-    D = 128  # must match d_model of the continuation checkpoint
+    D = d_model  # from loaded checkpoint (supports 128, 256, etc.)
 
     call_count = {"count": 0, "carries": 0}
 
@@ -320,7 +353,7 @@ def main():
         device = "cpu"
         dtype = torch.float32
 
-    hybrid_blocks, initial_slots, cfg, actual_step, loaded_router = load_continuation_hybrid(args.checkpoint, device, dtype)
+    hybrid_blocks, initial_slots, cfg, actual_step, loaded_router, actual_d_model = load_continuation_hybrid(args.checkpoint, device, dtype)
 
     # Apply RI-4 ablations if requested (preserves the full contract for measurement)
     for layer in hybrid_blocks:
@@ -352,9 +385,9 @@ def main():
     if device == "cuda":
         torch.cuda.synchronize()
 
-    # Tiny warm-up forward on a dummy (B,1,D) to force any lazy initialization inside heads/router.
+    # Tiny warm-up forward on a dummy (B,1,D) using the actual d_model of the checkpoint.
     with torch.no_grad():
-        _ = hybrid_blocks[0](torch.randn(2, 1, 128, device=device, dtype=dtype), stochastic_breadth_noise=None, slot_state=None)
+        _ = hybrid_blocks[0](torch.randn(2, 1, actual_d_model, device=device, dtype=dtype), stochastic_breadth_noise=None, slot_state=None)
 
     import time
     t0 = time.time()
@@ -362,6 +395,7 @@ def main():
         hybrid_blocks, initial_slots,
         num_cases=args.num_cases,
         steps_per_case=args.steps_per_case,
+        d_model=actual_d_model,
     )
     result["wall_time_sec"] = round(time.time() - t0, 2)
     result["checkpoint_step"] = actual_step

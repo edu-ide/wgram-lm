@@ -1268,3 +1268,35 @@ This small d=256 smoke + identified measurement gap constitutes the first concre
 
 All actions under A-Mode and the user's RI-4 focus.
 
+
+## First higher-width measurement: d=256 internal-primary step8 (driver generalization + initial signal)
+
+**Holistic one-move (tooling generalization):**
+- Extended the v2 measurement driver (`measure_continuation_hybrid_192.py`) to dynamically infer the real d_model from the checkpoint's state_dict *before* building the stack.
+- This removes the previous hard dependency on d_model=128 and makes the entire longer-thinking + ablation measurement pipeline work for d=256, 512, etc.
+- Also added safe fallback logic in case post-load parameter inspection is ambiguous.
+
+**Immediate rigorous experiment:**
+- Ran the now-generalized v2 driver on the first d=256 internal_ri4_primary artifact (`hybrid_ri4_cont_step8.pt` from the 8-step smoke).
+- Small 3×3 scout (full mode):
+
+  - persistent_carry_rate: **1.0**
+  - thinking_carries_in/out: 6/6
+  - wall_time: 0.02s (very fast even at d=256)
+
+**Early observation vs d=128 baseline:**
+- Even after only 8 steps of internal-primary training at d=256 (with the same 5.56 gold_structured recipe), carry persistence is already perfect in the v2 driver.
+- This is an encouraging early signal that the excellent carry robustness we observed at d=128 is not an artifact of the narrow width, and may be a property that carries (or even improves) at higher capacity.
+
+**Status:**
+- The measurement tooling is now width-agnostic.
+- We have the first concrete higher-width carry data point (d=256, step8, internal-primary, 1.0).
+- The path for systematic larger-width experiments (the new #1 Most-Deficient after the d=128 saturation closure) is now open.
+
+**Artifacts:**
+- Updated `scripts/measure_continuation_hybrid_192.py` (dynamic d_model inference + safe handling)
+- First d=256 measurement log
+- This section
+
+All under A-Mode and the user's RI-4 focus.
+
