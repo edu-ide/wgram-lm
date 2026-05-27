@@ -54,6 +54,7 @@ class ContinuationConfig(Hybrid556Config):
     save_every: int = 10
     out_dir: str = "checkpoints/hybrid_ri4_cont"
     resume_from: Optional[str] = None
+    input_mode: str = "gold_structured"
 
 
 def parse_continuation_args() -> ContinuationConfig:
@@ -69,6 +70,7 @@ def parse_continuation_args() -> ContinuationConfig:
     # Pass-through RI-4 ablation flags for contract preservation
     p.add_argument("--ri4_slots_off", action="store_true")
     p.add_argument("--ri4_persistence_off", action="store_true")
+    p.add_argument("--input_mode", type=str, default="gold_structured", choices=["random", "gold_structured"], help="Input generation mode for continuation (gold_structured = much more faithful to 5.56 rehearsal cases)")
     args = p.parse_args()
 
     cfg = ContinuationConfig(
@@ -80,6 +82,7 @@ def parse_continuation_args() -> ContinuationConfig:
         save_every=args.save_every,
         out_dir=args.out_dir,
         resume_from=args.resume_from,
+        input_mode=args.input_mode,
     )
     cfg.ri4_sparse_slots_ablation = args.ri4_slots_off
     cfg.ri4_persistence_ablation = args.ri4_persistence_off
@@ -145,9 +148,23 @@ def main():
     else:
         gold_state = torch.randn(1, 1, cfg.d_model, device=cfg.device, dtype=cfg.dtype) * 0.1
 
+    def make_input(step: int, total: int) -> torch.Tensor:
+        """Generate inputs. gold_structured is far more faithful to the 5.56 rehearsal cases than pure random."""
+        if cfg.input_mode == "gold_structured" and gold_state is not None:
+            # Structured around gold: small decay-modulated noise + slight temporal variation (mimics rehearsal cases)
+            decay = scheduled_decay(step, total, 0.40, 0.04)
+            base = gold_state.expand(cfg.batch_size, 8, -1)
+            noise = torch.randn_like(base) * (0.08 * decay)
+            # Add a tiny step-dependent phase so different steps see slightly different "contexts"
+            phase = torch.sin(torch.tensor(step * 0.1, device=base.device)) * 0.03
+            return base + noise + phase
+        else:
+            # Legacy random (for comparison / backward)
+            return torch.randn(cfg.batch_size, 8, cfg.d_model, device=cfg.device, dtype=cfg.dtype) * 0.02
+
     # Simple training-like loop (placeholder for real data + optimizer)
     # In the next step this becomes a real DataLoader + AdamW + checkpointing
-    x = torch.randn(cfg.batch_size, 8, cfg.d_model, device=cfg.device, dtype=cfg.dtype) * 0.02
+    x = make_input(start_step, cfg.total_steps)
 
     total_to_run = cfg.total_steps
     for step in range(start_step, start_step + total_to_run):
@@ -158,6 +175,7 @@ def main():
         if gold_state is not None and cfg.gold_injection_alpha > 0:
             gold_delta = gold_state * (cfg.gold_injection_alpha * decay)
 
+        x = make_input(step, start_step + total_to_run)
         x_in = x + gold_delta
         noise = torch.randn_like(x_in) * 0.06 if cfg.enable_stochastic_breadth else None
 
