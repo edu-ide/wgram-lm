@@ -37,3 +37,12 @@ This cycle is a **complement**, not a replacement, for the existing Improvement�
 - First result committed: docs/wiki/decisions/ri4_a_mode_hybrid_recurrent_first_smoke_2026-06.txt
 
 This update makes the user's requested operating mode part of the official research skill guidance for future work.
+
+## Second Update (same session)
+
+Added the mandatory prioritization rule:
+
+**Most-Deficient + Highest-Value-First Prioritization Principle (최종 목표 필요 조건 중 가장 미흡하면서 가장 가치 있는 것부터)**
+
+This rule must be applied before deciding whether to use granular incremental work or the new A-Mode holistic cycle. It requires maintaining a living assessment of insufficiency vs. strategic value across all necessary conditions of the final goal (RI-1~RI-7 in this project), and always targeting the current #1 (most insufficient + highest value) item.
+
