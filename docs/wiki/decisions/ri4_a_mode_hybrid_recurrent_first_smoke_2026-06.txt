@@ -1,0 +1,83 @@
+RI-4 A-mode Hybrid Recurrent Engine Smoke
+Testing that OneBodyParallelHybridBlock now drives answer_state_loop recurrence
+
+=== Variant: full_slots (slots_on=True, pers_ablate=False, router_ablate=False) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "full_slots",
+  "slots_on": true,
+  "persistence_ablation": false,
+  "router_ablation": false,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+
+=== Variant: slots_off_ablation (slots_on=False, pers_ablate=False, router_ablate=False) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "slots_off_ablation",
+  "slots_on": false,
+  "persistence_ablation": false,
+  "router_ablation": false,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+
+=== Variant: persistence_ablation (slots_on=True, pers_ablate=True, router_ablate=False) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "persistence_ablation",
+  "slots_on": true,
+  "persistence_ablation": true,
+  "router_ablation": false,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+
+=== Variant: router_ablation (slots_on=True, pers_ablate=False, router_ablate=True) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "router_ablation",
+  "slots_on": true,
+  "persistence_ablation": false,
+  "router_ablation": true,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/pathlib.py", line 1313, in mkdir
+    os.mkdir(self, mode)
+FileNotFoundError: [Errno 2] No such file or directory: 'runs/eval'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 206, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 189, in main
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+  File "/usr/lib/python3.12/pathlib.py", line 1317, in mkdir
+    self.parent.mkdir(parents=True, exist_ok=True)
+  File "/usr/lib/python3.12/pathlib.py", line 1313, in mkdir
+    os.mkdir(self, mode)
+FileExistsError: [Errno 17] File exists: 'runs'
