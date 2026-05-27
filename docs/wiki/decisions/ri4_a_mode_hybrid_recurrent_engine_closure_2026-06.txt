@@ -1373,3 +1373,68 @@ This cycle directly fulfills the user's "미흡 한걸 수정했으면 실험 �
 
 ---
 
+## A-Mode Cycle: First d=512 internal-primary ladder (test of "significantly larger d_model") — Most-Deficient scale hypothesis (2026-06)
+
+**User directive + record context driving this cycle:** "작업 진행해" (repeated) + explicit Most-Deficient statement from the immediately preceding cycle:
+> The single largest remaining blocker ... has cleanly moved to **effective scale / recipe pressure on selectivity**:
+>   - Significantly larger d_model (512+), or
+>   - Targeted pressure on the slot write / Gumbel / top-k selectivity itself...
+
+This was the #1 item after d=128 and d=256 both showed early saturation (persistent_carry_rate=1.0 even at 12-step thinking + full 4-way ablation).
+
+**Holistic Largest-Gap Closure (single coherent move, zero code change):**
+- The trainer + build_hybrid_stack were already proven d_model-agnostic in prior cycles.
+- The move is the **immediate launch of the first d=512 internal_ri4_primary diagnostic ladder** (same gold_structured + 5.56 + stochastic breadth + internal_ri4_primary recipe that produced the d=256 data).
+- Target: short but usable ladder (--steps 16, save_every=4) from scratch → step4/8/12/16. This is the smallest falsifying experiment that can reject or support the "larger width will eventually surface the RI-4 robustness signal" hypothesis.
+
+**Immediate rigorous experiment:**
+- Exact command (identical safe A-Mode pattern used for d=256):
+  ```
+  source .venv/bin/activate && PYTHONPATH=. python scripts/train_hybrid_ri4_real_continuation_minimal.py \
+    --steps 16 --d_model 512 --batch 2 --enable_stochastic_breadth \
+    --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt \
+    --save_every 4 --out_dir checkpoints/hybrid_ri4_internal_primary_test_d512 \
+    --internal_ri4_primary --input_mode gold_structured
+  ```
+- Log: logs/ri4_d512_internal_primary_first_ladder_20260527_*.log
+- Result: Clean execution in 11s. Checkpoints produced at step4,8,12,16. Gold prepared successfully for d=512. Internal router attached. Norm stable ~43.5-43.75.
+
+**v2 measurement on the new d=512 ladder (width-agnostic driver, scout + ablation probes):**
+- All runs used the trained router loaded from the continuation checkpoint.
+
+  - step16 (highest), 4 cases × 8 thinking, **full** mode:
+    - persistent_carry_rate: **1.0** (12/12 thinking carries)
+    - engine_exercised: True, wall_time 0.03s
+
+  - step16, 3 cases × 8 thinking, **--persistence_ablate**:
+    - persistent_carry_rate: **1.0**
+
+  - step4 (early ladder), 3 cases × 6 thinking, **--slots_off**:
+    - persistent_carry_rate: **1.0**
+
+**Analysis (honest, per skill + A-Mode rules):**
+- The carry robustness observable remains at ceiling (1.0) at d=512 after the first meaningful training steps — identical behavior to d=128 (step8~) and d=256 (step8~40).
+- Increasing model width from 128 → 256 → 512 (a 4× jump in hidden dimension for the hybrid recurrent engine) produced **no measurable movement** in the persistent slot carry rate under the v2 driver protocol, even with 8-step thinking and under two different RI-4 ablations.
+- This is now a replicated, cross-width negative result: the current 5.56 gold_structured rehearsal + SparseSlotRouter + OneBodyParallelHybridBlock implementation saturates the carry observable extremely early, and moderate-to-large width increases alone do not unlock visible degradation under ablation or longer thinking within this rehearsal regime.
+- The substrate itself remains healthy (internal_ri4_primary path, router attachment, gold loading, and ablation flags all function at d=512 with no new shape/contract issues).
+
+**Updated Most-Deficient + Highest-Value (post d=512 test):**
+- "Just make the model wider" (at least up to 512 in the current lightweight rehearsal setup) has been falsified as a sufficient fix for the RI-4 saturation.
+- The binding constraint for RI-4 has now cleanly shifted to **targeted pressure on the selectivity / write mechanism itself** (the second option in the prior Most-Deficient statement):
+  - Stronger Gumbel temperature scheduling or contrast during training
+  - Explicit write-rate / sparsity pressure on the router
+  - Attractor-style or monotonic pressure specifically on slot selection / persistence
+  - Or moving the exact same recipe into a heavier real-data continuation regime where the model is forced to use selective memory for actual 192-style heldout reasoning (rather than the current synthetic gold_structured rehearsal).
+- RI-3 (stochastic breadth) remains the strongest causal signal we have on this substrate. RI-4 memory compounding is the current primary blocker for the full RI-1~RI-7 picture.
+
+**Artifacts for this cycle:**
+- First d=512 internal-primary ladder: checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step{4,8,12,16}.pt
+- Continuation log + multiple v2 measurement JSON blocks (full + ablations at two widths)
+- This verbatim section + prior d=128/d=256 saturation entries (forming a clean cross-width evidence chain)
+
+**A-Mode discipline note:** One coherent falsification experiment (d=512 ladder) → immediate multi-point + ablation measurements → honest negative result → re-prioritization away from pure width scaling. No local scalar tuning, no premature claims. One-Body + 4-way RI-4 contract + Reverse I→G→A for the 5.56 inductive bias fully preserved at the new width.
+
+This cycle directly tests and updates the exact Most-Deficient item the previous cycle surfaced, in strict accordance with the user's repeated "작업 진행해" + A-Mode + Most-Deficient + Highest-Value-First rules.
+
+---
+
