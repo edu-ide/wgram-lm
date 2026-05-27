@@ -629,7 +629,42 @@ Safe commit: 1cdb358.
 **Launch 4 (final for this cycle — true 160-step cells):**  
 Fired immediately after the cap removal + record update with the now-correct command (venv + PYTHONPATH + 160 steps). This is the first time the verified hybrid+RI-4+5.56 substrate has been exercised at the horizon required to test whether the high-robustness basin finally cracks.
 
-When Launch 4 completes, Result Confirmation will contain the real 160-step numbers the SSOT needs. The cycle will then re-apply the Most-Deficient filter and output the next concrete step (training continuation prep vs. even longer local diagnostic vs. d_model scale-up).
+**Result Confirmation — 160-step d_model=128 real 642 gold RI-3+RI-4 matrix (Launch 4, 36.7s, exit 0):**
 
-All actions in this /research-driven-architecture-debugging invocation followed the skill's A-Mode 4-step cycle + Most-Deficient + Highest-Value-First + "Return To What Worked" + safe dedicated-branch commit rules exactly.
+Horizon per cell: 160 steps (cap removal verified — the runner now respects `--steps`).
+
+**Full matrix (pure_stochastic_effect / state_robustness):**
+
+| Cell                        | pure   | rob    | Engine path |
+|-----------------------------|--------|--------|-------------|
+| full__ri4_on                | 2.4688 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+| full__ri4_slots_off         | 2.2656 | 1.0000 | hybrid_stack_direct |
+| full__ri4_persistence_off   | 2.4219 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+| stoch_zero__ri4_on          | 0.0000 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+| stoch_zero__ri4_slots_off   | 0.0000 | 1.0000 | hybrid_stack_direct |
+| stoch_zero__ri4_persistence_off | 0.0000 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+| gold_off__ri4_on            | 2.3594 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+| gold_off__ri4_slots_off     | 2.4531 | 1.0000 | hybrid_stack_direct |
+| gold_off__ri4_persistence_off | 2.2812 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+| protection_off__ri4_on      | 2.3750 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+| protection_off__ri4_slots_off | 2.3906 | 0.9981 | hybrid_stack_direct |
+| protection_off__ri4_persistence_off | 2.3594 | 1.0000 | OneBodyParallelHybridBlock + verified_answer_state_loop_delegation |
+
+**Canonical JSON artifact** emitted (`## RI3_RI4_MATRIX_JSON_START/END`) with per-cell data, 160-step horizon, and engine_path tracking.
+
+**Analysis (honest, per skill + A-Mode rules):**
+- Stochastic breadth causal isolation remains perfect (all stoch_zero = 0.0) — contract holds at longer horizon.
+- Pure stochastic effect strengthened materially vs the 60-step run (peak ~2.47 vs ~1.98). RI-3 signal is real, early, and scales with horizon on this substrate.
+- **Robustness remains extremely high** (≥0.9981 across all 12 arms). Only one tiny dip (0.9981 in one ablated cell). No RI-2 hallmark (clear degradation in ablated arms while non-ablated holds/improves) has surfaced even at 160 steps.
+- Engine correctly reports the One-Body delegation path for RI-4 on modes.
+- Deprecation warning on utcnow still present (minor artifact hygiene).
+
+**Conclusion for this A-Mode cycle:** The verified hybrid + RI-4 + 5.56 substrate produces clean, strong, causally isolated RI-3 evidence that strengthens with horizon. However, at d_model=128 + 160 steps on real gold, the system is still inside a high-robustness basin. The RI-1 (depth/test-time scaling) and RI-2 (long-horizon stability) hallmark phenomena the SSOT requires to claim production readiness have not appeared.
+
+**Updated Most-Deficient + Highest-Value (post 160-step run):**
+The artificial tooling cap is now gone (closed in this cycle). The remaining blocker is **effective model scale** (width × depth × horizon). 128-wide + 160 recurrent steps on a tiny synthetic rehearsal loop is still "toy regime" for the stability/degradation signals that define real raw intelligence progress.
+
+Highest-value next move: Move the now-proven substrate (OneBodyParallelHybridBlock as actual recurrent engine + RI-4 slots + 5.56 rehearsal + real gold) into **actual training continuation** (real data, real optimizer, real checkpoints) at the smallest viable production scale where these hallmarks can plausibly surface. Local 300+ step toy runs have diminishing returns.
+
+All actions followed the skill exactly. Ready for Result Confirmation → re-prioritization → next experiment.
 
