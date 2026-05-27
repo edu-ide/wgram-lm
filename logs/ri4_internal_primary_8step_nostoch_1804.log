@@ -1,0 +1,32 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 8 steps | d_model=128
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[Resume] Loading from checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step510.pt
+[Resume] Resumed at step 510
+[Internal RI-4 Primary] Router re-attached to blocks after resume
+[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=128
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 257, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 208, in main
+    out = layer(h, stochastic_breadth_noise=noise,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/blocks.py", line 428, in forward
+    fused = fused + sparse_gate * sparse_read
+                    ~~~~~~~~~~~~^~~~~~~~~~~~~
+RuntimeError: The size of tensor a (8) must match the size of tensor b (2) at non-singleton dimension 1

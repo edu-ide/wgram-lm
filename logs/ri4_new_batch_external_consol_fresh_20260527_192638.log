@@ -1,0 +1,20 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 12 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=512
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 507, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 414, in main
+    bank.controller_write(
+    ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'controller_write'

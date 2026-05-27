@@ -2,6 +2,19 @@
 """
 train_556_full_curriculum_minimal.py
 
+================================================================================
+MODEL ARCHITECTURE VERSION: v0.5 — 5.56 Full Adaptive Rehearsal Curriculum
+================================================================================
+(See docs/wiki/architecture/model_architecture_versioning.md for full history)
+
+- Core: QTRMRecursiveCore + AdaptiveRehearsal (full composite recipe)
+- Key biases: Scheduled binding decay 0.40→0.04, attractor protection *during*
+  rehearsal, stochastic breadth, real 642 gold structural bias
+- This is the source of the strongest pre-pivot historical signals.
+- Not a direct continuation of the 5xx series (which was component-level
+  StateTransition + verifiers); it is a later synthesis/reproduction effort.
+================================================================================
+
 Minimal but production-style trainer entrypoint for the Full 5.56 Adaptive Rehearsal Curriculum
 + Stochastic Recurrent Breadth (Reverse I→G→A).
 

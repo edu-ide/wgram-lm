@@ -1,0 +1,42 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step360.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+Running in mode: router_ablate
+
+=== RESULT ===
+hybrid_forward_call_count: 30
+slot_carry_events_observed: 30
+scoring_hybrid_calls: 30
+scoring_hybrid_carries: 0
+engine_exercised: True
+cases: 6
+steps_per_case: 5
+note: Continuation-trained hybrid+RI-4 on gold_structured inputs. First direct 192-style participation measurement.
+checkpoint_step: 360
+mode: router_ablate
+persistence_ablation: False
+slots_off: False
+router_ablation: True
+
+## CONTINUATION_192_PROXY_JSON_START
+{
+  "hybrid_forward_call_count": 30,
+  "slot_carry_events_observed": 30,
+  "scoring_hybrid_calls": 30,
+  "scoring_hybrid_carries": 0,
+  "engine_exercised": true,
+  "cases": 6,
+  "steps_per_case": 5,
+  "note": "Continuation-trained hybrid+RI-4 on gold_structured inputs. First direct 192-style participation measurement.",
+  "checkpoint_step": 360,
+  "mode": "router_ablate",
+  "persistence_ablation": false,
+  "slots_off": false,
+  "router_ablation": true
+}
+## CONTINUATION_192_PROXY_JSON_END

@@ -9,6 +9,20 @@ import re
 import sys
 from typing import Any, Iterable
 
+# --- Compatibility shim for loading trainer-generated checkpoints (ContinuationConfig etc.) ---
+try:
+    # When the checkpoint was saved from train_hybrid_ri4_real_continuation_minimal.py,
+    # the dataclass lives under __main__. We register it so pickle can find it during load.
+    from scripts.train_hybrid_ri4_real_continuation_minimal import ContinuationConfig, Hybrid556Config
+    _main = sys.modules.get('__main__')
+    if _main is not None:
+        if not hasattr(_main, 'ContinuationConfig'):
+            _main.ContinuationConfig = ContinuationConfig
+        if not hasattr(_main, 'Hybrid556Config'):
+            _main.Hybrid556Config = Hybrid556Config
+except Exception:
+    pass
+
 DEFAULT_MODES = [
     "donor_only_no_evidence",
     "qtrm_core_off_no_evidence",
@@ -189,6 +203,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
+    parser.add_argument(
+        "--hybrid-continuation",
+        action="store_true",
+        help=(
+            "Dual-track hygiene: checkpoint is a bare hybrid continuation artifact "
+            "(OneBodyParallelHybridBlock stack from train_hybrid_ri4_real_continuation_minimal). "
+            "Pre-imports the local ContinuationConfig so unpickling succeeds. "
+            "Hybrid_* modes still require the v2 driver path (measure_continuation_hybrid_192 style) for full B-track scoring."
+        ),
+    )
     parser.add_argument("--qtrm-logits-scale", type=float, default=None)
     parser.add_argument("--donor-logits-scale", type=float, default=None)
     parser.add_argument(
@@ -1578,7 +1602,7 @@ def _answer_choice_logprob(
                 token_numeric_source_slot_mask=source_slot_mask,
                 **extra,
                 **_core_carry_forward_kwargs(runtime, core_carry),
-                **_ri4_memory_residual_kwargs(model),
+                **_ri4_memory_residual_kwargs(runtime),  # fixed: was passing model instead of runtime dict
                 disable_core=bool(runtime.get("disable_core", False)),
                 zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                 enable_core_halt=_runtime_enable_core_halt(runtime),
@@ -2530,6 +2554,21 @@ def _build_question_derived_input_192(
 
 
 def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
+    # Dual-track hygiene (A/B balance): when evaluating bare hybrid continuation
+    # checkpoints (GRAM/PTRM restored bias runs etc), pre-import the trainer-local
+    # dataclass so torch unpickling can resolve ContinuationConfig / Hybrid556Config.
+    # This is the minimal patch that lets B-track (192 narrow sanity) attempt the
+    # same artifacts that A-track (measure_continuation) already exercises.
+    if bool(getattr(args, "hybrid_continuation", False)):
+        import sys as _sys
+        from pathlib import Path as _Path
+        _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+        try:
+            import train_hybrid_ri4_real_continuation_minimal as _hcont_mod  # registers names for pickle
+            _ = getattr(_hcont_mod, "ContinuationConfig", None)
+        except Exception as _e:
+            print(f"[dual-track] hybrid-continuation pre-import warning: {_e}", file=_sys.stderr)
+
     import torch
     from transformers import AutoTokenizer
 
@@ -2623,7 +2662,13 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
 
     records: list[dict[str, Any]] = []
     out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        out.parent.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        # 'runs' or parent exists as file from previous bad run — clean it
+        if out.parent.exists() and not out.parent.is_dir():
+            out.parent.unlink()
+        out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as f, torch.no_grad(), redirect_stdout(sys.stderr):
         for mode in resolve_modes(args):
             runtime = mode_runtime(mode)

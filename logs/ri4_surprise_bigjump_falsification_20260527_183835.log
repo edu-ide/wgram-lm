@@ -1,0 +1,31 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 8 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[Resume] Loading from checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step52.pt
+[Resume] Router loaded with missing keys (new architecture components initialized fresh): ['forget_gate.0.weight', 'forget_gate.0.bias', 'forget_gate.2.weight', 'forget_gate.2.bias', 'write_gate.0.weight', 'write_gate.0.bias', 'write_gate.2.weight', 'write_gate.2.bias']
+[Resume] Resumed at step 52
+[Internal RI-4 Primary] Router re-attached to blocks after resume
+[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value
+[RI-4 Selectivity] Router temperature=0.8 gumbel_std=0.1
+[RI-4 Big-Jump Candidate] Surprise-Driven Write Trigger ENABLED (post-GSMU falsification per skill)
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=512
+step 54/8 | norm=45.250
+[Checkpoint] saved checkpoints/hybrid_ri4_surprise_test/hybrid_ri4_cont_step54.pt
+step 56/8 | norm=45.500
+[Checkpoint] saved checkpoints/hybrid_ri4_surprise_test/hybrid_ri4_cont_step56.pt
+step 58/8 | norm=44.750
+[Checkpoint] saved checkpoints/hybrid_ri4_surprise_test/hybrid_ri4_cont_step58.pt
+step 60/8 | norm=44.750
+[Checkpoint] saved checkpoints/hybrid_ri4_surprise_test/hybrid_ri4_cont_step60.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Mode: internal_ri4_primary — slot carry flows through block return value (trained router attached to blocks).
+Next: wire real data + full optimizer + 192-style gates on these checkpoints.

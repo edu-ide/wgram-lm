@@ -119,7 +119,7 @@ class QTRMBlockStack(nn.Module):
 
 class OneBodyParallelHybridBlock(nn.Module):
     """
-    One-Body Parallel Hybrid Block.
+    One-Body Parallel Hybrid Block (Model Architecture Version: v1.0 — Hybrid RI-4 Recurrent Engine).
 
     Recurrence branch: Prefers official GDN2 (via OfficialGatedDeltaNet2Mixer) when cfg.delta_backend indicates it;
                        otherwise falls back to TorchGatedDeltaNet2MixerV2 (our improved Gating v2).
@@ -127,6 +127,9 @@ class OneBodyParallelHybridBlock(nn.Module):
                        otherwise GQA or simplified fallback.
 
     Current focus: Strong preference for official implementations wherever possible (consistent with project philosophy).
+
+    See docs/wiki/architecture/model_architecture_versioning.md for full version history
+    and relation to v0.5 (5.56 Full Curriculum) and earlier StateTransitionCore work.
     """
 
     def __init__(
@@ -295,9 +298,13 @@ class OneBodyParallelHybridBlock(nn.Module):
             )
 
         # Learned prior for self-contained stochastic breadth generation inside the hybrid engine.
-        # This was the missing piece: the active RI-4 recurrent engine (this block) could only
-        # *receive* external noise, not generate training-time trajectory diversity itself.
+        # Upgraded to be more GRAM-like: supports training-time posterior guidance
+        # (target-conditioned sampling) in addition to the prior. This brings the
+        # spirit of GRAM's amortized variational trajectory modeling into the active
+        # RI-4 recurrent engine while remaining One-Body and fully ablatable.
         self.stochastic_breadth_prior = None
+        self.stochastic_breadth_posterior = None
+
         if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
             hidden = int(getattr(cfg, "core_stochastic_breadth_hidden_dim", None) or d * 2)
             self.stochastic_breadth_prior = nn.Sequential(
@@ -311,6 +318,20 @@ class OneBodyParallelHybridBlock(nn.Module):
                     nn.init.xavier_uniform_(m.weight)
                     if m.bias is not None:
                         nn.init.zeros_(m.bias)
+
+            # GRAM-style posterior guidance (training-time only, when labels/rehearsal targets are available)
+            if getattr(cfg, "core_stochastic_posterior_guidance", False):
+                self.stochastic_breadth_posterior = nn.Sequential(
+                    RMSNorm(d * 3),  # extra capacity for target conditioning
+                    nn.Linear(d * 3, hidden),
+                    nn.GELU(),
+                    nn.Linear(hidden, d * 2),
+                )
+                for m in self.stochastic_breadth_posterior:
+                    if isinstance(m, nn.Linear):
+                        nn.init.xavier_uniform_(m.weight)
+                        if m.bias is not None:
+                            nn.init.zeros_(m.bias)
 
         # === RI-4: Sparse Slot Router (Raven/MSA-style persistent memory slots) ===
         # This is the critical missing piece for causal long-horizon raw intelligence.
@@ -349,6 +370,16 @@ class OneBodyParallelHybridBlock(nn.Module):
         self._lem_enabled = False
         self._lem_ablation_zero = False
 
+        # === v1.2 Architectural Guardrail Restoration ===
+        # K-candidate trajectory selection inside the recurrence (per-block micro-step).
+        # This ports the v0.x StateTransitionCore + verifier/selector spirit (K-cand generation
+        # from learned prior/posterior + progress-aware selection) directly into the hybrid engine.
+        # When >1 and gold_target present during training/rehearsal, sample K trajectories,
+        # score with closeness-to-gold + local progress (verifier-style proxy), select best.
+        # This is the *architecture-level* guardrail (not outer rehearsal hack) needed for
+        # long-horizon stability. Default=1 keeps all prior behavior.
+        self._internal_k_trajectory: int = 1
+
     def set_decoupled_memory_bank(self, bank: Optional["DecoupledLatentMemoryBank"], ablation_zero: bool = False):
         """Attach a Decoupled Latent Memory Bank (new 2026-06 topology).
         This is the external, controller-driven memory (not updated inside every forward).
@@ -377,6 +408,7 @@ class OneBodyParallelHybridBlock(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         stochastic_breadth_noise: Optional[torch.Tensor] = None,
         slot_state: Optional[torch.Tensor] = None,   # RI-4: carried persistent slots
+        rehearsal_gold_target: Optional[torch.Tensor] = None,  # Strong conditioning for posterior during gold rehearsal (restores historical GRAM/PTRM bias strength)
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """
         Forward under Prior Contract rules.
@@ -386,6 +418,10 @@ class OneBodyParallelHybridBlock(nn.Module):
 
         slot_state: (B, num_slots, d) - carried persistent memory slots for RI-4.
                     When provided and RI-4 enabled, the router will use and return updated slots.
+
+        rehearsal_gold_target: when provided (gold_structured rehearsal), the posterior
+                               uses this as strong target conditioning instead of weak self-pooled signal.
+                               This is the key restoration of the pre-pivot true_gram + posterior strength.
 
         Returns:
             output: the fused hidden state
@@ -517,36 +553,124 @@ class OneBodyParallelHybridBlock(nn.Module):
         rec_projected = self.recurrence_proj(rec_concat)
 
         # --- Stochastic Breadth (self-generated) - Reverse I→G→A for the historically most-lost bias ---
-        # Previously this block could only consume external noise. Now it can generate
-        # its own training-time trajectory diversity using a learned prior on the current state.
-        # This directly targets the main gap that made the IMTA SSOT's mandatory
-        # "GRAM/PTRM stochastic breadth off" ablation unexecutable on the active RI-4 engine.
+        # Upgraded (1번): More GRAM-like training-time stochastic trajectory modeling.
+        # - Uses learned prior by default (for exploration).
+        # - When `core_stochastic_posterior_guidance` is enabled and we are in training,
+        #   the posterior can be used for better target-conditioned trajectories
+        #   (especially powerful during rehearsal/gold steps — this is the GRAM spirit).
+        #
+        # v1.2 Architectural Guardrail (K-candidate inside recurrence):
+        # When _internal_k_trajectory > 1 (set from --v0x_trajectory_selection) AND gold_target
+        # is present during training, we sample K different trajectories from the learned
+        # prior/posterior (exactly as StateTransitionCore true_gram did per-step), score them
+        # with a verifier-style proxy (current_dist to gold + progress made on this micro-step),
+        # and COMMIT ONLY THE BEST trajectory's update. This bakes the selection guardrail
+        # into the hybrid engine's every recurrent step — the missing piece for long-horizon
+        # (prevents error compounding into bad attractors between outer rehearsal boundaries).
         if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
             if stochastic_breadth_noise is None:
-                # Self-generate using learned prior (the missing capability)
                 pooled = rec_projected.mean(dim=1) if rec_projected.dim() == 3 else rec_projected
-                # Simple context: use pooled state itself (keeps it lightweight and One-Body)
-                guidance = torch.cat([pooled, pooled], dim=-1)
-                if self.stochastic_breadth_prior is not None:
+
+                use_posterior = (
+                    self.training
+                    and self.stochastic_breadth_posterior is not None
+                    and getattr(cfg, "core_stochastic_posterior_guidance", False)
+                )
+
+                if use_posterior:
+                    # GRAM-style: target-conditioned posterior sampling during training
+                    # When rehearsal_gold_target is provided (gold_structured accuracy runs),
+                    # use it as strong conditioning — this restores the historical pre-pivot
+                    # true_gram + posterior bias that drove high selectivity signals.
+                    if rehearsal_gold_target is not None:
+                        # Strong gold conditioning (the missing piece)
+                        tgt = rehearsal_gold_target
+                        if tgt.dim() == 3:
+                            tgt = tgt.mean(dim=1)
+                        if tgt.dim() == 1:
+                            tgt = tgt.unsqueeze(0)
+                        # Match batch if needed
+                        if tgt.shape[0] != pooled.shape[0]:
+                            tgt = tgt.expand(pooled.shape[0], -1)
+                        guidance = torch.cat([pooled, pooled, tgt.to(pooled.dtype)], dim=-1)
+                    else:
+                        # Fallback weak proxy (original behavior)
+                        guidance = torch.cat([pooled, pooled, pooled], dim=-1)
+                    hidden = torch.nn.functional.gelu(self.stochastic_breadth_posterior[1](self.stochastic_breadth_posterior[0](guidance)))
+                    out = self.stochastic_breadth_posterior[3](self.stochastic_breadth_posterior[2](hidden))
+                else:
+                    # Standard prior (works for both training and inference)
+                    guidance = torch.cat([pooled, pooled], dim=-1)
                     hidden = torch.nn.functional.gelu(self.stochastic_breadth_prior[1](self.stochastic_breadth_prior[0](guidance)))
                     out = self.stochastic_breadth_prior[3](self.stochastic_breadth_prior[2](hidden))
-                    mu, raw_std = out.chunk(2, dim=-1)
-                    std = torch.nn.functional.softplus(raw_std)
-                    std = (std + self._stochastic_breadth_min_std).clamp(max=self._stochastic_breadth_max_std)
 
+                mu, raw_std = out.chunk(2, dim=-1)
+                std = torch.nn.functional.softplus(raw_std)
+                std = (std + self._stochastic_breadth_min_std).clamp(max=self._stochastic_breadth_max_std)
+
+                k = getattr(self, "_internal_k_trajectory", 1)
+                if self.training and k > 1 and rehearsal_gold_target is not None:
+                    # === v1.2: K-candidate selection inside the recurrence step (architectural guardrail) ===
+                    # Sample K different trajectories, score, pick best (verifier-style).
+                    # This is the core of what made v0.x / 5xx StateTransitionCore + selector work:
+                    # explicit diversity + selection *at every recurrent update*, not just outer.
+                    candidates = []
+                    base_scale = self._stochastic_breadth_scale
+                    if rehearsal_gold_target is not None:
+                        base_scale = base_scale * 1.6  # keep the gold boost
+
+                    gold_pooled = rehearsal_gold_target
+                    if gold_pooled.dim() == 3:
+                        gold_pooled = gold_pooled.mean(dim=1)
+                    if gold_pooled.dim() == 1:
+                        gold_pooled = gold_pooled.unsqueeze(0)
+                    if gold_pooled.shape[0] != pooled.shape[0]:
+                        gold_pooled = gold_pooled.expand(pooled.shape[0], -1)
+
+                    prev_dist = torch.norm(pooled - gold_pooled, dim=-1).mean().item()
+
+                    for _ in range(k):
+                        eps_i = torch.randn_like(std)
+                        noise_i = (mu + std * eps_i) * base_scale
+
+                        if self._stochastic_breadth_mode == "true_gram":
+                            # true_gram blend (historical v0.x spirit)
+                            cand = (mu.to(rec_projected.dtype) + std * eps_i).unsqueeze(1).expand_as(rec_projected) * 0.5 + rec_projected * 0.5
+                        else:
+                            cand = rec_projected + noise_i.unsqueeze(1)
+
+                        cand_pooled = cand.mean(dim=1) if cand.dim() == 3 else cand
+                        curr_dist = torch.norm(cand_pooled - gold_pooled, dim=-1).mean().item()
+                        progress = prev_dist - curr_dist  # positive if this trajectory got closer
+
+                        # Verifier-style score: reward progress heavily, penalize final distance
+                        # (lower is better, consistent with outer logic)
+                        score = curr_dist - 0.75 * progress
+                        candidates.append((cand, score, curr_dist, progress))
+
+                    # Select best (deterministic argmax on the proxy; could softmax-sample for more diversity)
+                    best_idx = min(range(len(candidates)), key=lambda i: candidates[i][1])
+                    rec_projected = candidates[best_idx][0]
+
+                    # Optional: could emit selection stats via a hook or return value in future cycles
+                    # For now, the fact that only best trajectory's update is committed *is* the guardrail.
+                else:
+                    # Original single-trajectory behavior (K=1 or no gold)
                     if self.training:
                         eps = torch.randn_like(std)
-                        noise = (mu + std * eps) * self._stochastic_breadth_scale
+                        scale = self._stochastic_breadth_scale
+                        if rehearsal_gold_target is not None:
+                            scale = scale * 1.6
+                        noise = (mu + std * eps) * scale
                     else:
                         noise = mu * self._stochastic_breadth_scale
+                        eps = torch.zeros_like(std)  # safe for the true_gram line below
 
                     if self._stochastic_breadth_mode == "true_gram":
-                        # Stronger replace-style (historical true_gram behavior)
                         rec_projected = (mu.to(rec_projected.dtype) + std * (eps if self.training else 0)).unsqueeze(1).expand_as(rec_projected) * 0.5 + rec_projected * 0.5
                     else:
                         rec_projected = rec_projected + noise.unsqueeze(1)
             else:
-                # External noise provided (backward compat with previous callers)
                 rec_projected = rec_projected + stochastic_breadth_noise
 
         # --- Attention branch ---

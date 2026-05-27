@@ -1,0 +1,20 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_internal_primary_test/hybrid_ri4_cont_step516.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 384, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 323, in main
+    hybrid_blocks, initial_slots, cfg, actual_step, loaded_router = load_continuation_hybrid(args.checkpoint, device, dtype)
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 78, in load_continuation_hybrid
+    model.load_state_dict(ckpt["model"])
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 2593, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ModuleList:
+	Unexpected key(s) in state_dict: "0.sparse_slot_router.slot_memory", "0.sparse_slot_router.router.0.weight", "0.sparse_slot_router.router.0.bias", "0.sparse_slot_router.router.3.weight", "0.sparse_slot_router.router.3.bias", "0.sparse_slot_router.read_proj.weight", "1.sparse_slot_router.slot_memory", "1.sparse_slot_router.router.0.weight", "1.sparse_slot_router.router.0.bias", "1.sparse_slot_router.router.3.weight", "1.sparse_slot_router.router.3.bias", "1.sparse_slot_router.read_proj.weight", "2.sparse_slot_router.slot_memory", "2.sparse_slot_router.router.0.weight", "2.sparse_slot_router.router.0.bias", "2.sparse_slot_router.router.3.weight", "2.sparse_slot_router.router.3.bias", "2.sparse_slot_router.read_proj.weight", "3.sparse_slot_router.slot_memory", "3.sparse_slot_router.router.0.weight", "3.sparse_slot_router.router.0.bias", "3.sparse_slot_router.router.3.weight", "3.sparse_slot_router.router.3.bias", "3.sparse_slot_router.read_proj.weight". 

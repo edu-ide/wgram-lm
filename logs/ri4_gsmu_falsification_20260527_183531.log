@@ -1,0 +1,31 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 20 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[Resume] Loading from checkpoints/hybrid_ri4_gated_test/hybrid_ri4_cont_step34.pt
+[Resume] Resumed at step 34
+[Internal RI-4 Primary] Router re-attached to blocks after resume
+[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value
+[RI-4 Selectivity] Router temperature=1.2 gumbel_std=0.15
+[RI-4 Architecture Jump] Learned Gated Selective Memory Update ENABLED (per-slot forget/write gates active)
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=512
+step 35/20 | norm=44.000
+[Checkpoint] saved checkpoints/hybrid_ri4_gated_test/hybrid_ri4_cont_step36.pt
+step 40/20 | norm=44.250
+[Checkpoint] saved checkpoints/hybrid_ri4_gated_test/hybrid_ri4_cont_step40.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_gated_test/hybrid_ri4_cont_step44.pt
+step 45/20 | norm=45.250
+[Checkpoint] saved checkpoints/hybrid_ri4_gated_test/hybrid_ri4_cont_step48.pt
+step 50/20 | norm=45.500
+[Checkpoint] saved checkpoints/hybrid_ri4_gated_test/hybrid_ri4_cont_step52.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Mode: internal_ri4_primary — slot carry flows through block return value (trained router attached to blocks).
+Next: wire real data + full optimizer + 192-style gates on these checkpoints.

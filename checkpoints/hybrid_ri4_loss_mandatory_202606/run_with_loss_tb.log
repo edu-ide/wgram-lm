@@ -1,0 +1,52 @@
+/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py:446: UserWarning: Using a target size (torch.Size([1, 1, 128])) that is different to the input size (torch.Size([2, 1, 128])). This will likely lead to incorrect results due to broadcasting. Please ensure they have the same size.
+  train_loss = torch.nn.functional.mse_loss(rehearsal_target, gold_state)
+/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py:446: UserWarning: Using a target size (torch.Size([1, 1, 128])) that is different to the input size (torch.Size([2, 1, 128])). This will likely lead to incorrect results due to broadcasting. Please ensure they have the same size.
+  train_loss = torch.nn.functional.mse_loss(rehearsal_target, gold_state)
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 40 steps | d_model=128
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=128
+[C-Track] TensorBoard enabled at checkpoints/hybrid_ri4_loss_mandatory_202606/tb (train_loss + eval_loss)
+step 4/40 | train_loss=0.072266 | eval_loss=0.042725
+step 8/40 | train_loss=0.079590 | eval_loss=0.040527
+step 10/40 | norm=19.375
+[Checkpoint] saved checkpoints/hybrid_ri4_loss_mandatory_202606/hybrid_ri4_cont_step10.pt
+step 12/40 | train_loss=0.085449 | eval_loss=0.041016
+step 16/40 | train_loss=0.071777 | eval_loss=0.041992
+step 20/40 | train_loss=0.065918 | eval_loss=0.041016
+step 20/40 | norm=16.250
+[Checkpoint] saved checkpoints/hybrid_ri4_loss_mandatory_202606/hybrid_ri4_cont_step20.pt
+step 24/40 | train_loss=0.047363 | eval_loss=0.041260
+step 28/40 | train_loss=0.065918 | eval_loss=0.041748
+step 30/40 | norm=17.375
+[Checkpoint] saved checkpoints/hybrid_ri4_loss_mandatory_202606/hybrid_ri4_cont_step30.pt
+step 32/40 | train_loss=0.105957 | eval_loss=0.040283
+step 36/40 | train_loss=0.146484 | eval_loss=0.040771
+step 40/40 | train_loss=0.116211 | eval_loss=0.038818
+step 40/40 | norm=15.812
+[Checkpoint] saved checkpoints/hybrid_ri4_loss_mandatory_202606/hybrid_ri4_cont_step40.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)

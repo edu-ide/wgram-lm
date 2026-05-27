@@ -1,0 +1,8 @@
+usage: measure_continuation_hybrid_192.py [-h] --checkpoint CHECKPOINT
+                                          [--num_cases NUM_CASES]
+                                          [--steps_per_case STEPS_PER_CASE]
+                                          [--scout] [--persistence_ablate]
+                                          [--slots_off] [--router_ablate]
+                                          [--heldout_jsonl HELDOUT_JSONL]
+                                          [--max_real_cases MAX_REAL_CASES]
+measure_continuation_hybrid_192.py: error: unrecognized arguments: --thinking_steps 8 --internal_ri4_primary

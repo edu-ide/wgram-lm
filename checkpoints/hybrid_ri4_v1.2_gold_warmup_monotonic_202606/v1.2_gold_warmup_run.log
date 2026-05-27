@@ -1,0 +1,93 @@
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[Strong Protection] Enabled: attractor_protection_during_rehearsal raised to 0.9, heldout_answer_pressure_weight boosted to at least 1.0
+[Logging] Direct run log at checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/run.log (in addition to stdout + TB)
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 250 steps | d_model=384
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+>>> ARCHITECTURE: v1.2 (Hybrid RI-4 + FULL v0.5 5.56 Curriculum + ARCHITECTURAL TRAJECTORY GUARDRAIL)
+    full_curriculum_rehearsal_step + rolling buffer + decay-scaled gold injection + protection_during_rehearsal=0.7
+    + K-candidate selection INSIDE OneBodyParallelHybridBlock recurrence (v0.x StateTransitionCore spirit)
+    (This is the architecture modification that was required alongside the accuracy cycle.)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[v1.2 Arch Guardrail] Internal K-candidate trajectory selection armed inside hybrid recurrence (K=4). This is the architectural-level restoration from StateTransitionCore + verifier era.
+[v0.5 Curriculum Restoration] PRIMARY PATH: full_curriculum_rehearsal_step (decay + protection + gold injection + buffer selection) for gold_structured mode
+[Resume] Loading from checkpoints/hybrid_ri4_82m_v1.2_arch_guardrail_K4_202606/hybrid_ri4_cont_step400.pt
+[Resume] Resumed at step 400
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=384
+[C-Track] TensorBoard enabled at checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/tb (train_loss + eval_loss + Heldout/*_acc)
+[B+C-Track] Periodic real heldout accuracy probe ACTIVE every 5 steps (max_cases=8) on reasoning + memory 72.jsonl
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step410.pt
+  [v0.x Selection] Step 419: selected trajectory 1/4 (score=2.8016, progress=0.3281)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step420.pt
+step 425/650 | train_loss=0.013550 | eval_loss=0.035889 | reasoning_heldout=0/8(0.00) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step430.pt
+step 434/250 | norm=4.500
+  [v0.x Selection] Step 439: selected trajectory 3/4 (score=4.5469, progress=-0.4688)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step440.pt
+step 450/650 | train_loss=0.024658 | eval_loss=0.035400 | reasoning_heldout=0/8(0.00) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step450.pt
+  [v0.x Selection] Step 459: selected trajectory 4/4 (score=2.0141, progress=0.0469)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step460.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step470.pt
+step 475/650 | train_loss=0.063965 | eval_loss=0.034912 | reasoning_heldout=0/8(0.00) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 479: selected trajectory 1/4 (score=2.7984, progress=0.1094)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step480.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step490.pt
+step 496/250 | norm=4.125
+  [v0.x Selection] Step 499: selected trajectory 2/4 (score=2.9203, progress=-0.2656)
+step 500/650 | train_loss=0.019409 | eval_loss=0.033936 | reasoning_heldout=0/8(0.00) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step500.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step510.pt
+  [v0.x Selection] Step 519: selected trajectory 3/4 (score=1.9164, progress=0.0859)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step520.pt
+step 525/650 | train_loss=0.008728 | eval_loss=0.033936 | reasoning_heldout=0/8(0.00) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step530.pt
+  [v0.x Selection] Step 539: selected trajectory 4/4 (score=3.5781, progress=0.4688)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step540.pt
+step 550/650 | train_loss=0.009888 | eval_loss=0.034180 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step550.pt
+step 558/250 | norm=3.578
+  [v0.x Selection] Step 559: selected trajectory 4/4 (score=2.0641, progress=-0.2031)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step560.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step570.pt
+step 575/650 | train_loss=0.018921 | eval_loss=0.033936 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 579: selected trajectory 2/4 (score=2.0063, progress=0.1250)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step580.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step590.pt
+  [v0.x Selection] Step 599: selected trajectory 1/4 (score=5.5281, progress=0.7188)
+step 600/650 | train_loss=0.096191 | eval_loss=0.033447 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step600.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step610.pt
+  [v0.x Selection] Step 619: selected trajectory 1/4 (score=1.5000, progress=0.0000)
+step 620/250 | norm=3.062
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step620.pt
+step 625/650 | train_loss=0.012939 | eval_loss=0.033203 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step630.pt
+  [v0.x Selection] Step 639: selected trajectory 1/4 (score=2.1281, progress=0.2188)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step640.pt
+step 650/650 | train_loss=0.004761 | eval_loss=0.032959 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/hybrid_ri4_cont_step650.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)
+[C-Track] TensorBoard flushed+closed. Logs at: checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/tb  (tensorboard --logdir checkpoints/hybrid_ri4_v1.2_gold_warmup_monotonic_202606/tb)

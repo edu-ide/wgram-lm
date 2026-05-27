@@ -1,0 +1,18 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_internal_primary_test_d256/hybrid_ri4_cont_step8.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 414, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 352, in main
+    hybrid_blocks, initial_slots, cfg, actual_step, loaded_router, actual_d_model = load_continuation_hybrid(args.checkpoint, device, dtype)
+                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 105, in load_continuation_hybrid
+    actual_d_model = next(model.parameters()).shape[-1]
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+IndexError: tuple index out of range

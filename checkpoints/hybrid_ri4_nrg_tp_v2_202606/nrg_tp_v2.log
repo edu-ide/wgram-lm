@@ -1,0 +1,38 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 12 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=512
+  [NRG-TP v2] non-recurrent step at 1 | 4 parallel candidates, selected best
+  [NRG-TP v2] non-recurrent step at 2 | 4 parallel candidates, selected best
+  [NRG-TP v2] non-recurrent step at 3 | 4 parallel candidates, selected best
+step 3/12 | norm=32.750
+  [NRG-TP v2] non-recurrent step at 4 | 4 parallel candidates, selected best
+[Checkpoint] saved checkpoints/hybrid_ri4_nrg_tp_v2_202606/nrg_tp_v2/hybrid_ri4_cont_step4.pt
+  [NRG-TP v2] non-recurrent step at 5 | 4 parallel candidates, selected best
+  [NRG-TP v2] non-recurrent step at 6 | 4 parallel candidates, selected best
+step 6/12 | norm=33.000
+  [NRG-TP v2] non-recurrent step at 7 | 4 parallel candidates, selected best
+  [NRG-TP v2] non-recurrent step at 8 | 4 parallel candidates, selected best
+[Checkpoint] saved checkpoints/hybrid_ri4_nrg_tp_v2_202606/nrg_tp_v2/hybrid_ri4_cont_step8.pt
+  [NRG-TP v2] non-recurrent step at 9 | 4 parallel candidates, selected best
+step 9/12 | norm=33.500
+  [NRG-TP v2] non-recurrent step at 10 | 4 parallel candidates, selected best
+  [NRG-TP v2] non-recurrent step at 11 | 4 parallel candidates, selected best
+  [NRG-TP v2] non-recurrent step at 12 | 4 parallel candidates, selected best
+step 12/12 | norm=33.250
+[Checkpoint] saved checkpoints/hybrid_ri4_nrg_tp_v2_202606/nrg_tp_v2/hybrid_ri4_cont_step12.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Mode: non_recurrent_generative_thinking — DIAGNOSTIC: Non-Recurrent Generative Thinking Phase (NRG-TP) active.
+        Core hypothesis test: removing recurrent state evolution during thinking steps.
+        (This is a minimal triage placeholder for a true non-recurrent thinking process.)
+Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)

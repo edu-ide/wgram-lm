@@ -1,0 +1,67 @@
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[Logging] Direct run log at checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/run.log (in addition to stdout + TB)
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 150 steps | d_model=384
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+>>> ARCHITECTURE: v1.1 (Hybrid RI-4 + FULL v0.5 5.56 Curriculum Rehearsal as PRIMARY)
+    full_curriculum_rehearsal_step + rolling buffer + decay-scaled gold injection + protection_during_rehearsal=0.7
+    (This is the architecture modification that was required alongside the accuracy cycle.)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[v0.5 Curriculum Restoration] PRIMARY PATH: full_curriculum_rehearsal_step (decay + protection + gold injection + buffer selection) for gold_structured mode
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=384
+[C-Track] TensorBoard enabled at checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/tb (train_loss + eval_loss + Heldout/*_acc)
+[B+C-Track] Periodic real heldout accuracy probe ACTIVE every 3 steps (max_cases=8) on reasoning + memory 72.jsonl
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step10.pt
+step 15/150 | train_loss=0.041260 | eval_loss=0.046631 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step20.pt
+step 30/150 | train_loss=0.052734 | eval_loss=0.046387 | reasoning_heldout=3/8(0.38) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step30.pt
+step 37/150 | norm=10.438
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step40.pt
+step 45/150 | train_loss=0.041016 | eval_loss=0.045898 | reasoning_heldout=3/8(0.38) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step50.pt
+step 60/150 | train_loss=0.031738 | eval_loss=0.045654 | reasoning_heldout=4/8(0.50) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step60.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step70.pt
+step 74/150 | norm=7.562
+step 75/150 | train_loss=0.029663 | eval_loss=0.044922 | reasoning_heldout=4/8(0.50) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step80.pt
+step 90/150 | train_loss=0.032715 | eval_loss=0.044434 | reasoning_heldout=4/8(0.50) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step90.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step100.pt
+step 105/150 | train_loss=0.032715 | eval_loss=0.044189 | reasoning_heldout=4/8(0.50) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step110.pt
+step 111/150 | norm=6.562
+step 120/150 | train_loss=0.025024 | eval_loss=0.043945 | reasoning_heldout=4/8(0.50) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step120.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step130.pt
+step 135/150 | train_loss=0.030273 | eval_loss=0.043701 | reasoning_heldout=4/8(0.50) memory_heldout=3/8(0.38)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step140.pt
+step 148/150 | norm=4.094
+step 150/150 | train_loss=0.013672 | eval_loss=0.043457 | reasoning_heldout=4/8(0.50) memory_heldout=3/8(0.38)
+step 150/150 | norm=4.969
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/hybrid_ri4_cont_step150.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)
+[C-Track] TensorBoard flushed+closed. Logs at: checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/tb  (tensorboard --logdir checkpoints/hybrid_ri4_82m_v1.1_full_curriculum_rehearsal_202606/tb)

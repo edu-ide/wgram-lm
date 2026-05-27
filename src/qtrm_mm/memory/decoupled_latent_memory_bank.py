@@ -139,8 +139,16 @@ class DecoupledLatentMemoryBank(nn.Module):
         util = utility_signal
         if util is None:
             util = torch.zeros(b, 1, device=state_summary.device)
-        elif util.dim() == 1:
-            util = util.unsqueeze(1)
+        else:
+            if util.dim() == 0:
+                util = util.unsqueeze(0).unsqueeze(1)   # scalar → (1,1)
+            elif util.dim() == 1:
+                util = util.unsqueeze(1)                # (B,) → (B,1)
+            # if already (B,1) or more, leave it
+
+        # Ensure util has batch dim matching state_summary
+        if util.shape[0] != b:
+            util = util.expand(b, -1)
 
         ctrl_in = torch.cat([state_summary, util], dim=-1)
         ctrl_out = self.controller(ctrl_in)  # (B, num_slots + 1)

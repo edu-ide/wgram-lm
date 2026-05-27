@@ -147,6 +147,15 @@ class QTRMConfig:
     # This restores training-time stochastic trajectory generation inside the recurrence
     # (prior/posterior sampling + noise on z_h), which was dropped after the new-thought-structure pivot.
     # Must remain fully One-Body (normal LM head path only) and have strong ablation_zero.
+    #
+    # CRITICAL HISTORICAL NOTE (2026-06):
+    # The *full strength* version that contributed to 5.53~5.56 signals required the
+    # legacy state_transition_core true_gram machinery. After the pivot, this lives
+    # only as a partial delta-mode implementation here. The IMTA SSOT still lists the
+    # strong K>1 training-time breadth ablation as mandatory. This flag set is therefore
+    # a partial mitigation, not a complete restoration.
+    # See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+    #      scripts/gates/check_ssot_stochastic_breadth.py --strict
     core_stochastic_breadth_enabled: bool = False
     core_stochastic_mode: str = "delta"          # "delta" | "true_gram"
     core_stochastic_scale: float = 0.05

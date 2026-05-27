@@ -68,6 +68,12 @@ Even after restoring the above, the fundamental pattern "tight micro-step recurr
 - Every restoration follows **Reverse I→G→A** (Improvement → Generalization → Architecture-ization) with explicit records.
 - Every major change follows the **Pivot Safety process** (mandatory impact review, executable ablations, component_registry updates, loud warnings).
 - No promotion claim is valid until the relevant SSOT-mandated ablations are **executable** on the primary path and produce data.
+- **Triple-Track Evaluation Principle (mandatory from 2026-06 user feedback progression: "A,B 를 적절히 다 해야될거 같음 너는 너무 A 만해" → "narrow memory heldout도" → "추론능력이 얼마나 상승하는지" → "학습 효율도 체크하고 리서치 drive 스킬 업데이트해")**: Every restoration / M-milestone artifact must produce paired evidence on the *identical* checkpoint:
+  - A (Mechanism / Causal Track): v2 real-heldout driver (measure_continuation_hybrid_192 or successor) delivering the full ablation matrix (persistent_carry_rate, carry events, state_ablation drop, 4-way RI-4 contract).
+  - B (Narrow Capability Sanity Track) — two legs: narrow reasoning (pure_recursive_reasoning_heldout_72) + narrow memory (memory_reasoning_heldout_expanded_72, distractors/multi-hop/selective recall).
+  - C (Training Efficiency / Learning Dynamics Track): loss/step curves, convergence speed, final loss at matched step count, variance/stability under fixed data budget. Direct with-vs-without contrast on the identical trainer+data. "Codex style" full convergence + dynamics required before capability or "restoration ineffective" claims. Explicit C-debt note required if trainer only logs norm (no loss/tensorboard), as occurred in the 2026-06 GRAM-posterior_long 200-step run.
+  - Interpretation rule: A flat 1.0 / no-ablation negative may be read as substrate doubt / M4 candidate only after A + B + C (or explicit C debt) are on record for the same artifact. Any leg missing = incomplete evidence.
+  - Hygiene: hybrid continuation trainers must (1) emit loadable artifacts for reasoning+memory drivers, (2) emit loss/step + TensorBoard at reasonable frequency. The continuation_minimal trainer used for the critical M1 GRAM restoration (only sparse `norm=` prints) is the documented negative example that triggered C-track elevation.
 - Measurement always uses the v2 real-heldout harness + 4-way RI-4 ablation contract where applicable.
 - Parallel waves allowed only when they do not dilute focus on the current milestone.
 
@@ -87,7 +93,7 @@ Even after restoring the above, the fundamental pattern "tight micro-step recurr
   - Learned prior generation inside OneBodyParallelHybridBlock is the default when `--enable_stochastic_breadth` (true_gram mode supported).
   - `scripts/gates/check_ssot_stochastic_breadth.py --strict` passes cleanly.
   - Real 642 gold continuation with breadth armed produces clear stochastic effects.
-  - 192 real-heldout v2 measurement shows carry_rate movement and/or ablation drop.
+  - 192 real-heldout v2 measurement (A: carry/ablation matrix) **and** paired B-track narrow sanity (192_eval forced_choice / families on the same artifact or driver-equivalent) both exist and are recorded.
 - Latest Progress (2026-06):
   - I-stage implementation complete (self-contained prior in hybrid block + trainer wiring fix).
   - First smoke (60 steps, d=128, real 642 gold, `--enable_stochastic_breadth`): completed successfully. Checkpoints saved in `checkpoints/hybrid_ri4_learned_prior_test/`.
@@ -106,10 +112,22 @@ Even after restoring the above, the fundamental pattern "tight micro-step recurr
 - State_ablation_median / hard-family answer quality movement vs historical anchors.
 - Decision: "Composite promotes on current substrate" or "Document why it does not and pivot higher."
 
-**M4: Global Decision Gate**
-- All Tier 1–3 biases either (a) restored with executable ablations + positive causal data, (b) deliberately discarded with recorded evidence, or (c) explicitly deferred with hard review date.
-- Combined with substrate doubt diagnostics (NRG-TP style non-recurrent thinking tests).
-- Go / No-Go on "this substrate family + restored historical biases is sufficient" vs. higher-level architectural jump.
+**M4: Global Decision Gate** (Triggered 2026-06)
+
+**Trigger Evidence**:
+- M1 direct contrast (200-step continuation with restored internal learned stochastic breadth vs matched run without it) both returned persistent_carry_rate = 1.0 in v2 192 measurement.
+- This is the cleanest test to date on whether restoring the historically most-lost inductive bias inside the current RI-4 hybrid engine improves selectivity.
+- Result: No measurable improvement from the restoration in the current regime.
+
+**Decision Required**:
+- Whether the current substrate family (tight micro-step recurrent latent thinking + memory participation during thinking, even after restoring Tier 1–3 historical biases) is exhausted.
+- Go / No-Go on "continue local restoration + tuning inside this substrate" vs "higher-level architectural jump" (non-recurrent thinking phase, radically decoupled memory, different temporal granularity of recurrence, etc.).
+
+**Immediate M4 Actions**:
+1. Complete all Tier 1–3 bias status summary (restored / insufficient / to be discarded).
+2. Run parallel substrate doubt diagnostics (smallest non-recurrent generative thinking experiments).
+3. Produce explicit recommendation document with evidence.
+4. User decision on whether to commit to a structural jump.
 
 ---
 
@@ -259,4 +277,89 @@ M1 remains the current active milestone. M2–M4 planning artifacts exist and ca
 Launch v2 192 measurement + stochastic_breadth ablation contrast (full vs breadth_ablate) on the step200.pt (and ideally step120/160 for comparison).
 
 This contrast is the key to determining whether the restored bias is producing measurable selectivity improvement.
+
+
+**M1 Progress Update (2026-06)**:
+- 200-step continuation with restored bias: Success (5 checkpoints).
+- M1 critical contrast measurement (v2 192 on step200.pt): Launched in background.
+- Honest data from 60-step run (1.0) recorded.
+
+**M2 Light Parallel Starter**:
+- Basic learnable depth policy head added to OneBodyParallelHybridBlock (linear projection from pooled state).
+- Commit: f341ea3
+
+M1 remains the active focus. M2 receives minimal parallel scaffolding as allowed by the roadmap.
+
+
+**M1 Critical Data Point (2026-06)**:
+- 200-step continuation with restored internal learned prior → v2 192 measurement: **persistent_carry_rate = 1.0**
+- Engine was properly exercised with RI-4 carry (120 slot carries observed).
+- This is the longest checkpoint we have tested with the restored bias active.
+
+**Honest M1 Assessment**:
+Even after implementing the historically missing training-time stochastic breadth inside the active RI-4 engine and running a 200-step continuation, the current proxy measurement still shows flat 1.0 carry rate.
+
+**Defined Next Sub-Step for M1** (to be executed next):
+1. Produce a matched "no stochastic breadth" 200-step continuation (same config, just without --enable_stochastic_breadth).
+2. Run identical v2 192 measurement on both "with restored breadth" and "without" checkpoints.
+3. Direct contrast will give the clearest signal on whether the restored bias is moving the needle.
+
+If this contrast also shows no difference, M1 will need escalation (longer horizons, different mode, stronger integration, or honest conclusion that this bias alone is insufficient in the current substrate).
+
+This keeps M1 execution rigorous and sequential.
+
+
+**M1 Next Sub-Step Execution (2026-06)**:
+- Direct contrast continuation launched: 200 steps *without* stochastic breadth (matched to the previous "with restored bias" run).
+- This fulfills the "produce matched no-breadth continuation for direct comparison" action defined after the 1.0 measurement on the restored-bias 200-step checkpoint.
+
+M1 contrast data (with vs without the restored bias on equivalent long runs) will be the key input for deciding whether M1 has produced causal evidence or requires escalation.
+
+
+**M1 Contrast Measurement Launched (2026-06)**:
+- Matched "no stochastic breadth" 200-step continuation completed successfully.
+- v2 192 measurement on its step200.pt (direct contrast to the previous "with restored bias" measurement) is now running in background.
+
+This is the key data generation step for M1. Once both measurements are available, we can perform the direct With vs Without restored bias comparison and make the call on M1 progress.
+
+M1 remains the current active focus.
+
+
+**M1 Direct Contrast Result (2026-06) - Key Finding**:
+- 200-step "with restored internal learned prior" vs "without stochastic breadth": 
+  **Both returned persistent_carry_rate = 1.0** in identical v2 192 measurement.
+
+This is the cleanest apples-to-apples test we have on the impact of restoring the historically most completely lost inductive bias (GRAM/PTRM training-time stochastic recurrent breadth) inside the active RI-4 hybrid engine.
+
+**Current Assessment for M1**:
+Restoring this bias and giving it 200 steps of real gold continuation did not produce measurable improvement in the core selectivity metric (persistent_carry_rate) under the current v2 192 proxy.
+
+This is important negative data. It suggests that this particular restoration, at least at the current scale/integration/horizon, is not sufficient by itself to solve the persistent 1.0 problem.
+
+**Recommended Next for M1 (or escalation to M4)**:
+- Option A: Escalate M1 (much longer runs 500+, stronger true_gram integration, different injection points, etc.)
+- Option B: Treat this as evidence that the bias restoration alone is insufficient on this substrate and move toward the higher-level substrate doubt hypothesis (M4 direction).
+
+This data point should be treated as a major milestone input.
+
+
+**M1 GRAM-like Upgrade Test Run (2026-06)**:
+- 200-step continuation launched with the upgraded stochastic breadth in OneBodyParallelHybridBlock (learned prior + new posterior guidance scaffolding active via trainer patch).
+- Output: checkpoints/hybrid_ri4_gram_posterior_long (checkpoints up to step200)
+- Status: Completed cleanly, norms stable.
+- This is the first meaningful long-horizon execution of the GRAM-like training-time stochastic trajectory modeling upgrade inside the active RI-4 hybrid engine.
+
+This run produces a new comparison point for M1. Measurement on its step200.pt is the immediate next action.
+
+
+**M1 GRAM-like Upgrade (1번) Test Result (2026-06)**:
+- 200-step continuation with the upgraded stochastic breadth (learned prior + new posterior guidance) + trainer forcing posterior guidance during training.
+- v2 192 measurement on step200: **persistent_carry_rate = 1.0**
+- Same result as the previous "with restored bias" 200-step point.
+
+This is the first meaningful long-horizon data on the 1번 GRAM-like upgrade (posterior guidance active).
+
+Current reading: Making the stochastic breadth inside the hybrid block more GRAM-like (adding posterior scaffolding) did not move the selectivity needle in the current 200-step + current substrate regime.
+
+This data point strengthens the case for M4-level structural considerations rather than further local improvements to the stochastic breadth mechanism within the existing hybrid engine.
 

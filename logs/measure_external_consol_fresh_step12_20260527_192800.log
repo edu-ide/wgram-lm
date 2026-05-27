@@ -1,0 +1,23 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_external_consol_fresh_v1/hybrid_ri4_cont_step12.pt
+========================================================================
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 489, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 416, in main
+    hybrid_blocks, initial_slots, cfg, actual_step, loaded_router, actual_d_model = load_continuation_hybrid(args.checkpoint, device, dtype)
+                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/measure_continuation_hybrid_192.py", line 94, in load_continuation_hybrid
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 1479, in load
+    with _open_file_like(f, "rb") as opened_file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 759, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 740, in __init__
+    super().__init__(open(name, mode))
+                     ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'checkpoints/hybrid_ri4_external_consol_fresh_v1/hybrid_ri4_cont_step12.pt'

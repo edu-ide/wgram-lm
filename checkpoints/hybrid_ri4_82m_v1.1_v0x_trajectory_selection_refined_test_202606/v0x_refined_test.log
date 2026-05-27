@@ -1,0 +1,69 @@
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[Logging] Direct run log at checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/run.log (in addition to stdout + TB)
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 180 steps | d_model=384
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+>>> ARCHITECTURE: v1.1 (Hybrid RI-4 + FULL v0.5 5.56 Curriculum Rehearsal as PRIMARY)
+    full_curriculum_rehearsal_step + rolling buffer + decay-scaled gold injection + protection_during_rehearsal=0.7
+    (This is the architecture modification that was required alongside the accuracy cycle.)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[v0.5 Curriculum Restoration] PRIMARY PATH: full_curriculum_rehearsal_step (decay + protection + gold injection + buffer selection) for gold_structured mode
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=384
+[C-Track] TensorBoard enabled at checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/tb (train_loss + eval_loss + Heldout/*_acc)
+[B+C-Track] Periodic real heldout accuracy probe ACTIVE every 3 steps (max_cases=8) on reasoning + memory 72.jsonl
+step 18/180 | train_loss=0.039062 | eval_loss=0.037842 | reasoning_heldout=0/8(0.00) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 19: selected trajectory 1/4 (score=3.8031, progress=-0.0312)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step20.pt
+step 36/180 | train_loss=0.060791 | eval_loss=0.037354 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 39: selected trajectory 1/4 (score=4.2375, progress=0.3750)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step40.pt
+step 45/180 | norm=7.906
+step 54/180 | train_loss=0.030640 | eval_loss=0.037109 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 59: selected trajectory 1/4 (score=3.0844, progress=0.5938)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step60.pt
+step 72/180 | train_loss=0.036377 | eval_loss=0.036865 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 79: selected trajectory 1/4 (score=3.8312, progress=-0.2500)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step80.pt
+step 90/180 | train_loss=0.030640 | eval_loss=0.036621 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+step 90/180 | norm=7.062
+  [v0.x Selection] Step 99: selected trajectory 1/4 (score=4.0172, progress=-0.0469)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step100.pt
+step 108/180 | train_loss=0.027588 | eval_loss=0.036133 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 119: selected trajectory 1/4 (score=2.4203, progress=0.5156)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step120.pt
+step 126/180 | train_loss=0.042480 | eval_loss=0.035889 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+step 135/180 | norm=7.406
+  [v0.x Selection] Step 139: selected trajectory 1/4 (score=2.8672, progress=0.2344)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step140.pt
+step 144/180 | train_loss=0.019775 | eval_loss=0.035645 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 159: selected trajectory 1/4 (score=4.2562, progress=0.4375)
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step160.pt
+step 162/180 | train_loss=0.040283 | eval_loss=0.035400 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+  [v0.x Selection] Step 179: selected trajectory 1/4 (score=1.9062, progress=0.0000)
+step 180/180 | train_loss=0.009460 | eval_loss=0.035400 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+step 180/180 | norm=3.891
+[Checkpoint] saved checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/hybrid_ri4_cont_step180.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)
+[C-Track] TensorBoard flushed+closed. Logs at: checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/tb  (tensorboard --logdir checkpoints/hybrid_ri4_82m_v1.1_v0x_trajectory_selection_refined_test_202606/tb)

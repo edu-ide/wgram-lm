@@ -1,0 +1,33 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step240.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+
+=== RESULT ===
+checkpoint_step: 60 (gold_structured)
+hybrid_forward_call_count: 48
+slot_carry_events_observed: 48
+scoring_hybrid_calls: 48
+scoring_hybrid_carries: 0
+engine_exercised: True
+cases: 8
+steps_per_case: 6
+note: Continuation-trained hybrid+RI-4 on gold_structured inputs. First direct 192-style participation measurement.
+
+## CONTINUATION_192_PROXY_JSON_START
+{
+  "checkpoint_step": "60 (gold_structured)",
+  "hybrid_forward_call_count": 48,
+  "slot_carry_events_observed": 48,
+  "scoring_hybrid_calls": 48,
+  "scoring_hybrid_carries": 0,
+  "engine_exercised": true,
+  "cases": 8,
+  "steps_per_case": 6,
+  "note": "Continuation-trained hybrid+RI-4 on gold_structured inputs. First direct 192-style participation measurement."
+}
+## CONTINUATION_192_PROXY_JSON_END

@@ -1,0 +1,44 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 12 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=512
+  [force forget non-selected] strong explicit decay applied to non-selected content
+step 3/12 | norm=30.875
+  [force forget non-selected] strong explicit decay applied to non-selected content
+[Checkpoint] saved checkpoints/hybrid_ri4_force_forget_fresh_v1/hybrid_ri4_cont_step4.pt
+  [force forget non-selected] strong explicit decay applied to non-selected content
+step 6/12 | norm=30.875
+  [force forget non-selected] strong explicit decay applied to non-selected content
+[Checkpoint] saved checkpoints/hybrid_ri4_force_forget_fresh_v1/hybrid_ri4_cont_step8.pt
+step 9/12 | norm=30.750
+  [force forget non-selected] strong explicit decay applied to non-selected content
+  [force forget non-selected] strong explicit decay applied to non-selected content
+step 12/12 | norm=32.000
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 965, in save
+    _save(
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 1266, in _save
+    zip_file.write_record(name, storage, num_bytes)
+RuntimeError: [enforce fail at inline_container.cc:857] . PytorchStreamWriter failed writing file data/117: file write failed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 602, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 559, in main
+    torch.save({
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 964, in save
+    with _open_zipfile_writer(f) as opened_zipfile:
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 798, in __exit__
+    self.file_like.write_end_of_file()
+RuntimeError: [enforce fail at inline_container.cc:659] . unexpected pos 59610048 vs 59609936

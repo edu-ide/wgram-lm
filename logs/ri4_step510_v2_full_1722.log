@@ -1,0 +1,50 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step510.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+Running in mode: full
+
+=== RESULT ===
+hybrid_forward_call_count: 30
+slot_carry_events_observed: 30
+scoring_hybrid_calls: 6
+scoring_hybrid_carries_in: 0
+thinking_hybrid_calls: 24
+thinking_carries_in: 0
+thinking_carries_out: 0
+persistent_carry_rate: 0.0
+engine_exercised: True
+cases: 6
+steps_per_case: 5
+note: A-Mode v2: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps within case (192 hygiene). Continuation-trained hybrid+RI-4 on gold_structured inputs.
+checkpoint_step: 510
+mode: full
+persistence_ablation: False
+slots_off: False
+router_ablation: False
+
+## CONTINUATION_192_PROXY_JSON_START
+{
+  "hybrid_forward_call_count": 30,
+  "slot_carry_events_observed": 30,
+  "scoring_hybrid_calls": 6,
+  "scoring_hybrid_carries_in": 0,
+  "thinking_hybrid_calls": 24,
+  "thinking_carries_in": 0,
+  "thinking_carries_out": 0,
+  "persistent_carry_rate": 0.0,
+  "engine_exercised": true,
+  "cases": 6,
+  "steps_per_case": 5,
+  "note": "A-Mode v2: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps within case (192 hygiene). Continuation-trained hybrid+RI-4 on gold_structured inputs.",
+  "checkpoint_step": 510,
+  "mode": "full",
+  "persistence_ablation": false,
+  "slots_off": false,
+  "router_ablation": false
+}
+## CONTINUATION_192_PROXY_JSON_END

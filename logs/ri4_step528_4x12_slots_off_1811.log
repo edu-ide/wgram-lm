@@ -1,0 +1,57 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_internal_primary_test/hybrid_ri4_cont_step528.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Loaded and attached TRAINED router from checkpoint (device=cuda) — now faithful to continuation trainer contract
+Running in mode: slots_off
+
+=== RESULT ===
+hybrid_forward_call_count: 48
+slot_carry_events_observed: 92
+scoring_hybrid_calls: 4
+scoring_hybrid_carries_in: 4
+thinking_hybrid_calls: 44
+thinking_carries_in: 44
+thinking_carries_out: 44
+persistent_carry_rate: 1.0
+engine_exercised: True
+cases: 4
+steps_per_case: 12
+note: A-Mode v2: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps within case (192 hygiene). Continuation-trained hybrid+RI-4 on gold_structured inputs.
+wall_time_sec: 0.08
+checkpoint_step: 528
+mode: slots_off
+persistence_ablation: False
+slots_off: True
+router_ablation: False
+
+## CONTINUATION_192_PROXY_JSON_START
+{
+  "hybrid_forward_call_count": 48,
+  "slot_carry_events_observed": 92,
+  "scoring_hybrid_calls": 4,
+  "scoring_hybrid_carries_in": 4,
+  "thinking_hybrid_calls": 44,
+  "thinking_carries_in": 44,
+  "thinking_carries_out": 44,
+  "persistent_carry_rate": 1.0,
+  "engine_exercised": true,
+  "cases": 4,
+  "steps_per_case": 12,
+  "note": "A-Mode v2: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps within case (192 hygiene). Continuation-trained hybrid+RI-4 on gold_structured inputs.",
+  "wall_time_sec": 0.08,
+  "checkpoint_step": 528,
+  "mode": "slots_off",
+  "persistence_ablation": false,
+  "slots_off": true,
+  "router_ablation": false
+}
+## CONTINUATION_192_PROXY_JSON_END

@@ -1,0 +1,75 @@
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_82m_v1.2_arch_guardrail_K4_202606/hybrid_ri4_cont_step400.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Loaded and attached TRAINED router from checkpoint (device=cuda) — now faithful to continuation trainer contract
+Running in mode: full
+[real-heldout] Loaded 8 cases from data/eval/pure_recursive_reasoning_heldout_72.jsonl for case-specific proposal seeding.
+
+=== RESULT ===
+hybrid_forward_call_count: 64
+slot_carry_events_observed: 120
+scoring_hybrid_calls: 8
+scoring_hybrid_carries_in: 8
+thinking_hybrid_calls: 56
+thinking_carries_in: 56
+thinking_carries_out: 56
+persistent_carry_rate: 1.0
+engine_exercised: True
+cases: 8
+steps_per_case: 8
+note: A-Mode v2 + real-heldout upgrade: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps. When real heldout cases are available, proposals are case-seeded for distributional fidelity to 192-style reasoning usage (the current RI-4 Most-Deficient gate). Continuation-trained hybrid+RI-4.
+wall_time_sec: 0.14
+checkpoint_step: 400
+mode: full
+persistence_ablation: False
+slots_off: False
+router_ablation: False
+real_heldout_cases_used: 8
+heldout_jsonl: data/eval/pure_recursive_reasoning_heldout_72.jsonl
+
+## CONTINUATION_192_PROXY_JSON_START
+{
+  "hybrid_forward_call_count": 64,
+  "slot_carry_events_observed": 120,
+  "scoring_hybrid_calls": 8,
+  "scoring_hybrid_carries_in": 8,
+  "thinking_hybrid_calls": 56,
+  "thinking_carries_in": 56,
+  "thinking_carries_out": 56,
+  "persistent_carry_rate": 1.0,
+  "engine_exercised": true,
+  "cases": 8,
+  "steps_per_case": 8,
+  "note": "A-Mode v2 + real-heldout upgrade: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps. When real heldout cases are available, proposals are case-seeded for distributional fidelity to 192-style reasoning usage (the current RI-4 Most-Deficient gate). Continuation-trained hybrid+RI-4.",
+  "wall_time_sec": 0.14,
+  "checkpoint_step": 400,
+  "mode": "full",
+  "persistence_ablation": false,
+  "slots_off": false,
+  "router_ablation": false,
+  "real_heldout_cases_used": 8,
+  "heldout_jsonl": "data/eval/pure_recursive_reasoning_heldout_72.jsonl"
+}
+## CONTINUATION_192_PROXY_JSON_END

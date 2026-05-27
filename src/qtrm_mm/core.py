@@ -16,6 +16,9 @@ from .provenance import (
     build_provenance_register_from_config,
 )
 
+# Pivot safety / SSOT drift detection (Level 3 defense)
+from .architecture.component_registry import warn_on_missing_primary_path_biases
+
 
 @dataclass
 class QTRMCoreCarry:
@@ -47,9 +50,21 @@ class QTRMCoreCarry:
 
 
 class QTRMRecursiveCore(nn.Module):
-    """TRM-style z_L/z_H recurrent latent workspace core."""
+    """TRM-style z_L/z_H recurrent latent workspace core.
+
+    PIVOT SAFETY WARNING (2026-06):
+    This core contains only a partial Reverse I→G→A for historical GRAM/PTRM
+    stochastic breadth. The real mechanism required by
+    internal-multitrajectory-answer-attractor-ssot.md lives in the legacy
+    state_transition_core and is currently NOT active in the primary RI-4 path.
+    See docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+    """
 
     def __init__(self, cfg: QTRMConfig):
+        # Emit loud, hard-to-miss warning on every import/use of the core
+        # if critical historical biases are known to be missing from the
+        # active One-Body path. This is deliberately noisy.
+        warn_on_missing_primary_path_biases()
         super().__init__()
         self.cfg = cfg
         core_causal = bool(getattr(cfg, "core_causal", False))
@@ -1004,6 +1019,15 @@ class QTRMRecursiveCore(nn.Module):
                         z_h = z_h + 0.012 * cf_push.unsqueeze(0).unsqueeze(0)  # light counterfactual push
 
         # === Reverse I→G→A (2026-05-30): Stochastic Breadth application point ===
+        # WARNING: This is only a partial I-stage port inside QTRMRecursiveCore.
+        # The *real* GRAM/PTRM training-time stochastic recurrent breadth
+        # (state_transition_core + true_gram prior/posterior) is NOT active in the
+        # current primary RI-4 path (OneBodyParallelHybridBlock + answer_state_loop).
+        #
+        # This directly violates the mandatory ablation declared in:
+        #   docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md
+        # See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+        #      scripts/gates/check_ssot_stochastic_breadth.py
         if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
             # Safe point: after memory/ALRMC/slow-tier enrichment, before attractor pressure
             # This gives the stochastic exploration a chance to interact with memory-enriched state

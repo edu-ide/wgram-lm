@@ -1,0 +1,63 @@
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[checkpoint] missing keys: 214 (text_embed.weight, prelude.layers.0.norm1.weight, prelude.layers.0.norm2.weight, prelude.layers.0.mixer.in_proj.weight, prelude.layers.0.mixer.gate_proj.weight, prelude.layers.0.mixer.gate_proj.bias, prelude.layers.0.mixer.out_proj.weight, prelude.layers.0.ffn.w1.weight, prelude.layers.0.ffn.w2.weight, prelude.layers.0.ffn.w3.weight, prelude.layers.1.norm1.weight, prelude.layers.1.norm2.weight...)
+[checkpoint] unexpected keys: 160 (0.gate_temperature, 0.recurrence_heads.0.in_proj.weight, 0.recurrence_heads.0.gate_proj.weight, 0.recurrence_heads.0.gate_proj.bias, 0.recurrence_heads.0.out_proj.weight, 0.recurrence_heads.0.norm.weight, 0.recurrence_heads.0.norm.bias, 0.recurrence_heads.1.in_proj.weight, 0.recurrence_heads.1.gate_proj.weight, 0.recurrence_heads.1.gate_proj.bias, 0.recurrence_heads.1.out_proj.weight, 0.recurrence_heads.1.norm.weight...)
+[donor] Loading Qwen/Qwen3.5-2B-Base (4bit), device_map=auto
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+Loading weights:   0%|          | 0/617 [00:00<?, ?it/s]Loading weights:   0%|          | 1/617 [00:00<01:11,  8.60it/s]Loading weights:  13%|█▎        | 79/617 [00:00<00:01, 427.08it/s]Loading weights:  25%|██▍       | 153/617 [00:00<00:00, 559.30it/s]Loading weights:  40%|████      | 249/617 [00:00<00:00, 711.14it/s]Loading weights:  61%|██████    | 374/617 [00:00<00:00, 901.19it/s]Loading weights: 100%|██████████| 617/617 [00:00<00:00, 1023.55it/s]
+[donor] LoRA trainable; base donor remains adapter-tuned
+[donor] params: 1,386,645,312 total, 23,340,032 trainable
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/192_eval_raw_intelligence.py", line 2987, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/192_eval_raw_intelligence.py", line 2925, in main
+    records = run_eval(args)
+              ^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/192_eval_raw_intelligence.py", line 2760, in run_eval
+    completion, choice_scores = _forced_choice_case(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/192_eval_raw_intelligence.py", line 1917, in _forced_choice_case
+    logprob_sum = _answer_choice_logprob(
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/192_eval_raw_intelligence.py", line 1677, in _answer_choice_logprob
+    logits = outputs["logits"].float()
+             ~~~~~~~^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable

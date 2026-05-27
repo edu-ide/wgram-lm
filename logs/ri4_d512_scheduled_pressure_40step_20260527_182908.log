@@ -1,0 +1,35 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 40 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[Resume] Loading from checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step38.pt
+[Resume] Resumed at step 38
+[Internal RI-4 Primary] Router re-attached to blocks after resume
+[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value
+[RI-4 Selectivity] Router temperature=1.3 gumbel_std=0.2
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=512
+step 40/40 | norm=43.500
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step40.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step44.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step48.pt
+step 50/40 | norm=45.000
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step52.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step56.pt
+step 60/40 | norm=44.500
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step60.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step64.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step68.pt
+step 70/40 | norm=43.500
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step72.pt
+[Checkpoint] saved checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step76.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Mode: internal_ri4_primary — slot carry flows through block return value (trained router attached to blocks).
+Next: wire real data + full optimizer + 192-style gates on these checkpoints.

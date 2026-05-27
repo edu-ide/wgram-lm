@@ -1,0 +1,20 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 12 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[Resume] Loading from checkpoints/hybrid_ri4_internal_primary_test_d512/hybrid_ri4_cont_step100.pt
+[Resume] Router loaded with missing keys (new architecture components initialized fresh): ['forget_gate.0.weight', 'forget_gate.0.bias', 'forget_gate.2.weight', 'forget_gate.2.bias', 'write_gate.0.weight', 'write_gate.0.bias', 'write_gate.2.weight', 'write_gate.2.bias']
+[Resume] Resumed at step 100
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 365, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 169, in main
+    if cfg.use_decoupled_memory_bank and bank is not None and ckpt.get("decoupled_bank") is not None:
+                                         ^^^^
+UnboundLocalError: cannot access local variable 'bank' where it is not associated with a value

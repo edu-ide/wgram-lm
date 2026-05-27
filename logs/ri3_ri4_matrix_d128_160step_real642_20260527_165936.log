@@ -1,0 +1,220 @@
+[A-Mode] RI-3 (5.56) x RI-4 orthogonal matrix — SSOT highest-value evidence path on hybrid.
+
+========================================================================
+RI-3 + RI-4 ORTHOGONAL MATRIX (A-Mode Highest-Value Run)
+  Horizon per cell: 60 steps | 5.56 dims x RI-4 dims
+========================================================================
+
+--- Cell: full__ri4_on ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.9062 rob=1.0000 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+
+--- Cell: full__ri4_slots_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.9297 rob=1.0000 engine=hybrid_stack_direct
+
+--- Cell: full__ri4_persistence_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.8438 rob=0.9932 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+
+--- Cell: stoch_zero__ri4_on ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=0.0000 rob=1.0000 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+
+--- Cell: stoch_zero__ri4_slots_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=0.0000 rob=1.0000 engine=hybrid_stack_direct
+
+--- Cell: stoch_zero__ri4_persistence_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=0.0000 rob=1.0000 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+
+--- Cell: gold_off__ri4_on ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.7969 rob=1.0000 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+
+--- Cell: gold_off__ri4_slots_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.8984 rob=0.9976 engine=hybrid_stack_direct
+
+--- Cell: gold_off__ri4_persistence_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.8906 rob=1.0000 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+
+--- Cell: protection_off__ri4_on ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.9141 rob=1.0000 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+
+--- Cell: protection_off__ri4_slots_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.9844 rob=1.0000 engine=hybrid_stack_direct
+
+--- Cell: protection_off__ri4_persistence_off ---
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+    pure=1.8750 rob=1.0000 engine=OneBodyParallelHybridBlock + verified_answer_state_loop_delegation
+/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_556_on_parallel_hybrid_minimal.py:731: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "timestamp": _dt.datetime.utcnow().isoformat() + "Z",
+
+========================================================================
+RI-3 + RI-4 MATRIX REPORT (canonical artifact)
+  full__ri4_on                   pure=1.9062 rob=1.0000
+  full__ri4_slots_off            pure=1.9297 rob=1.0000
+  full__ri4_persistence_off      pure=1.8438 rob=0.9932
+  stoch_zero__ri4_on             pure=0.0000 rob=1.0000
+  stoch_zero__ri4_slots_off      pure=0.0000 rob=1.0000
+  stoch_zero__ri4_persistence_off pure=0.0000 rob=1.0000
+  gold_off__ri4_on               pure=1.7969 rob=1.0000
+  gold_off__ri4_slots_off        pure=1.8984 rob=0.9976
+  gold_off__ri4_persistence_off  pure=1.8906 rob=1.0000
+  protection_off__ri4_on         pure=1.9141 rob=1.0000
+  protection_off__ri4_slots_off  pure=1.9844 rob=1.0000
+  protection_off__ri4_persistence_off pure=1.8750 rob=1.0000
+
+## RI3_RI4_MATRIX_JSON_START
+{
+  "timestamp": "2026-05-27T07:59:56.422896Z",
+  "source": "train_556_on_parallel_hybrid_minimal RI-3+RI-4 matrix (A-Mode)",
+  "horizon_per_cell": 60,
+  "cells": {
+    "full__ri4_on": {
+      "pure_stochastic_effect": 1.90625,
+      "state_robustness": 1.0,
+      "five56_arm": "full",
+      "ri4_arm": "ri4_on",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    },
+    "full__ri4_slots_off": {
+      "pure_stochastic_effect": 1.92969,
+      "state_robustness": 1.0,
+      "five56_arm": "full",
+      "ri4_arm": "ri4_slots_off",
+      "engine_path": "hybrid_stack_direct",
+      "steps": 60
+    },
+    "full__ri4_persistence_off": {
+      "pure_stochastic_effect": 1.84375,
+      "state_robustness": 0.99324,
+      "five56_arm": "full",
+      "ri4_arm": "ri4_persistence_off",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    },
+    "stoch_zero__ri4_on": {
+      "pure_stochastic_effect": 0.0,
+      "state_robustness": 1.0,
+      "five56_arm": "stoch_zero",
+      "ri4_arm": "ri4_on",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    },
+    "stoch_zero__ri4_slots_off": {
+      "pure_stochastic_effect": 0.0,
+      "state_robustness": 1.0,
+      "five56_arm": "stoch_zero",
+      "ri4_arm": "ri4_slots_off",
+      "engine_path": "hybrid_stack_direct",
+      "steps": 60
+    },
+    "stoch_zero__ri4_persistence_off": {
+      "pure_stochastic_effect": 0.0,
+      "state_robustness": 1.0,
+      "five56_arm": "stoch_zero",
+      "ri4_arm": "ri4_persistence_off",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    },
+    "gold_off__ri4_on": {
+      "pure_stochastic_effect": 1.79688,
+      "state_robustness": 1.0,
+      "five56_arm": "gold_off",
+      "ri4_arm": "ri4_on",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    },
+    "gold_off__ri4_slots_off": {
+      "pure_stochastic_effect": 1.89844,
+      "state_robustness": 0.99762,
+      "five56_arm": "gold_off",
+      "ri4_arm": "ri4_slots_off",
+      "engine_path": "hybrid_stack_direct",
+      "steps": 60
+    },
+    "gold_off__ri4_persistence_off": {
+      "pure_stochastic_effect": 1.89062,
+      "state_robustness": 1.0,
+      "five56_arm": "gold_off",
+      "ri4_arm": "ri4_persistence_off",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    },
+    "protection_off__ri4_on": {
+      "pure_stochastic_effect": 1.91406,
+      "state_robustness": 1.0,
+      "five56_arm": "protection_off",
+      "ri4_arm": "ri4_on",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    },
+    "protection_off__ri4_slots_off": {
+      "pure_stochastic_effect": 1.98438,
+      "state_robustness": 1.0,
+      "five56_arm": "protection_off",
+      "ri4_arm": "ri4_slots_off",
+      "engine_path": "hybrid_stack_direct",
+      "steps": 60
+    },
+    "protection_off__ri4_persistence_off": {
+      "pure_stochastic_effect": 1.875,
+      "state_robustness": 1.0,
+      "five56_arm": "protection_off",
+      "ri4_arm": "ri4_persistence_off",
+      "engine_path": "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation",
+      "steps": 60
+    }
+  },
+  "summary": {
+    "total_cells": 12,
+    "strongest_pure_stoch": 1.98438,
+    "note": "Full 5.56 x RI-4 orthogonal evidence on hybrid substrate. Run longer for production RI-3 gate."
+  }
+}
+## RI3_RI4_MATRIX_JSON_END
+========================================================================
+

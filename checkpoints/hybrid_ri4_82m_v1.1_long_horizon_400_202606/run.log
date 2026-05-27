@@ -1,0 +1,10 @@
+step 40/400 | train_loss=0.055420 | eval_loss=0.037842
+step 80/400 | train_loss=0.028809 | eval_loss=0.036865
+step 120/400 | train_loss=0.033447 | eval_loss=0.035889 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+step 160/400 | train_loss=0.035645 | eval_loss=0.034668
+step 200/400 | train_loss=0.025757 | eval_loss=0.033691
+step 240/400 | train_loss=0.019409 | eval_loss=0.033447 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+step 280/400 | train_loss=0.026733 | eval_loss=0.032471
+step 320/400 | train_loss=0.031982 | eval_loss=0.032715
+step 360/400 | train_loss=0.010193 | eval_loss=0.032471 | reasoning_heldout=1/8(0.12) memory_heldout=3/8(0.38)
+step 400/400 | train_loss=0.003525 | eval_loss=0.032227

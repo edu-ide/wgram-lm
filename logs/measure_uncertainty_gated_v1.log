@@ -1,0 +1,62 @@
+========================================================================
+RI-4 Continuation Hybrid 192-Style Proxy Measurement
+Checkpoint: checkpoints/hybrid_ri4_uncertainty_gated_v1/hybrid_ri4_cont_step112.pt
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.
+[measure v2] Loaded and attached TRAINED router from checkpoint (device=cuda) — now faithful to continuation trainer contract
+Running in mode: full
+[real-heldout] Loaded 4 cases from data/eval/pure_recursive_reasoning_heldout_72.jsonl for case-specific proposal seeding.
+
+=== RESULT ===
+hybrid_forward_call_count: 32
+slot_carry_events_observed: 60
+scoring_hybrid_calls: 4
+scoring_hybrid_carries_in: 4
+thinking_hybrid_calls: 28
+thinking_carries_in: 28
+thinking_carries_out: 28
+persistent_carry_rate: 1.0
+engine_exercised: True
+cases: 4
+steps_per_case: 8
+note: A-Mode v2 + real-heldout upgrade: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps. When real heldout cases are available, proposals are case-seeded for distributional fidelity to 192-style reasoning usage (the current RI-4 Most-Deficient gate). Continuation-trained hybrid+RI-4.
+wall_time_sec: 0.07
+checkpoint_step: 112
+mode: full
+persistence_ablation: False
+slots_off: False
+router_ablation: False
+real_heldout_cases_used: 4
+heldout_jsonl: data/eval/pure_recursive_reasoning_heldout_72.jsonl
+
+## CONTINUATION_192_PROXY_JSON_START
+{
+  "hybrid_forward_call_count": 32,
+  "slot_carry_events_observed": 60,
+  "scoring_hybrid_calls": 4,
+  "scoring_hybrid_carries_in": 4,
+  "thinking_hybrid_calls": 28,
+  "thinking_carries_in": 28,
+  "thinking_carries_out": 28,
+  "persistent_carry_rate": 1.0,
+  "engine_exercised": true,
+  "cases": 4,
+  "steps_per_case": 8,
+  "note": "A-Mode v2 + real-heldout upgrade: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps. When real heldout cases are available, proposals are case-seeded for distributional fidelity to 192-style reasoning usage (the current RI-4 Most-Deficient gate). Continuation-trained hybrid+RI-4.",
+  "wall_time_sec": 0.07,
+  "checkpoint_step": 112,
+  "mode": "full",
+  "persistence_ablation": false,
+  "slots_off": false,
+  "router_ablation": false,
+  "real_heldout_cases_used": 4,
+  "heldout_jsonl": "data/eval/pure_recursive_reasoning_heldout_72.jsonl"
+}
+## CONTINUATION_192_PROXY_JSON_END

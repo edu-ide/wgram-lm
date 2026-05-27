@@ -1,0 +1,25 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 120 steps | d_model=128
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[Resume] Loading from checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step240.pt
+[Resume] Resumed at step 240
+[Gold] Loading real 642 gold from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[Gold] Real 642 gold successfully prepared for d_model=128
+step 270/120 | norm=22.250
+[Checkpoint] saved checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step270.pt
+step 300/120 | norm=23.750
+[Checkpoint] saved checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step300.pt
+step 330/120 | norm=21.875
+[Checkpoint] saved checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step330.pt
+step 360/120 | norm=23.625
+[Checkpoint] saved checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step360.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Next: wire real data + full optimizer + 192-style gates on these checkpoints.

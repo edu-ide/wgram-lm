@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_556_on_parallel_hybrid_minimal.py", line 50, in <module>
+    from src.qtrm_mm.config import QTRMConfig
+ModuleNotFoundError: No module named 'src'

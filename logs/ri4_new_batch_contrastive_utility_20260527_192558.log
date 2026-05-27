@@ -1,0 +1,176 @@
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 12 steps | d_model=512
+  Gold: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+  RI-4 ablations: slots_off=False, persistence_off=False
+========================================================================
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[Resume] Loading from checkpoints/hybrid_ri4_cont_real/hybrid_ri4_cont_step60.pt
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 507, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 179, in main
+    missing, unexpected = model.load_state_dict(ckpt["model"], strict=False)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 2593, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ModuleList:
+	size mismatch for 0.recurrence_heads.0.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 0.recurrence_heads.0.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.recurrence_heads.0.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.0.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.recurrence_heads.0.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.0.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.1.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 0.recurrence_heads.1.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.recurrence_heads.1.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.1.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.recurrence_heads.1.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.1.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.2.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 0.recurrence_heads.2.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.recurrence_heads.2.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.2.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.recurrence_heads.2.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_heads.2.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.recurrence_proj.weight: copying a param with shape torch.Size([128, 384]) from checkpoint, the shape in current model is torch.Size([512, 1536]).
+	size mismatch for 0.attention_heads.0.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.attention_heads.0.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 0.attention_heads.0.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 0.attention_heads.0.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 0.attention_heads.0.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 0.attention_heads.0.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.attention_heads.1.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.attention_heads.1.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 0.attention_heads.1.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 0.attention_heads.1.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 0.attention_heads.1.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 0.attention_heads.1.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 0.attention_proj.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 0.fusion_gate.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 0.fusion_gate.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.norm1.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.norm2.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 0.ffn.w1.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 0.ffn.w2.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 0.ffn.w3.weight: copying a param with shape torch.Size([128, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for 1.recurrence_heads.0.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 1.recurrence_heads.0.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.recurrence_heads.0.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.0.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.recurrence_heads.0.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.0.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.1.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 1.recurrence_heads.1.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.recurrence_heads.1.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.1.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.recurrence_heads.1.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.1.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.2.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 1.recurrence_heads.2.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.recurrence_heads.2.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.2.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.recurrence_heads.2.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_heads.2.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.recurrence_proj.weight: copying a param with shape torch.Size([128, 384]) from checkpoint, the shape in current model is torch.Size([512, 1536]).
+	size mismatch for 1.attention_heads.0.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.attention_heads.0.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 1.attention_heads.0.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 1.attention_heads.0.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 1.attention_heads.0.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 1.attention_heads.0.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.attention_heads.1.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.attention_heads.1.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 1.attention_heads.1.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 1.attention_heads.1.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 1.attention_heads.1.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 1.attention_heads.1.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 1.attention_proj.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 1.fusion_gate.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 1.fusion_gate.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.norm1.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.norm2.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 1.ffn.w1.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 1.ffn.w2.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 1.ffn.w3.weight: copying a param with shape torch.Size([128, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for 2.recurrence_heads.0.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 2.recurrence_heads.0.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.recurrence_heads.0.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.0.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.recurrence_heads.0.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.0.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.1.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 2.recurrence_heads.1.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.recurrence_heads.1.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.1.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.recurrence_heads.1.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.1.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.2.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 2.recurrence_heads.2.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.recurrence_heads.2.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.2.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.recurrence_heads.2.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_heads.2.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.recurrence_proj.weight: copying a param with shape torch.Size([128, 384]) from checkpoint, the shape in current model is torch.Size([512, 1536]).
+	size mismatch for 2.attention_heads.0.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.attention_heads.0.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 2.attention_heads.0.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 2.attention_heads.0.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 2.attention_heads.0.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 2.attention_heads.0.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.attention_heads.1.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.attention_heads.1.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 2.attention_heads.1.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 2.attention_heads.1.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 2.attention_heads.1.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 2.attention_heads.1.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 2.attention_proj.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 2.fusion_gate.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 2.fusion_gate.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.norm1.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.norm2.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 2.ffn.w1.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 2.ffn.w2.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 2.ffn.w3.weight: copying a param with shape torch.Size([128, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for 3.recurrence_heads.0.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 3.recurrence_heads.0.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.recurrence_heads.0.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.0.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.recurrence_heads.0.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.0.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.1.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 3.recurrence_heads.1.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.recurrence_heads.1.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.1.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.recurrence_heads.1.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.1.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.2.in_proj.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 3.recurrence_heads.2.gate_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.recurrence_heads.2.gate_proj.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.2.out_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.recurrence_heads.2.norm.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_heads.2.norm.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.recurrence_proj.weight: copying a param with shape torch.Size([128, 384]) from checkpoint, the shape in current model is torch.Size([512, 1536]).
+	size mismatch for 3.attention_heads.0.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.attention_heads.0.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 3.attention_heads.0.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 3.attention_heads.0.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 3.attention_heads.0.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 3.attention_heads.0.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.attention_heads.1.q_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.attention_heads.1.k_rope.weight: copying a param with shape torch.Size([32, 128]) from checkpoint, the shape in current model is torch.Size([32, 512]).
+	size mismatch for 3.attention_heads.1.kv_proj.0.weight: copying a param with shape torch.Size([16, 128]) from checkpoint, the shape in current model is torch.Size([64, 512]).
+	size mismatch for 3.attention_heads.1.kv_proj.1.weight: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([64]).
+	size mismatch for 3.attention_heads.1.kv_proj.2.weight: copying a param with shape torch.Size([192, 16]) from checkpoint, the shape in current model is torch.Size([960, 64]).
+	size mismatch for 3.attention_heads.1.o_proj.weight: copying a param with shape torch.Size([128, 128]) from checkpoint, the shape in current model is torch.Size([512, 512]).
+	size mismatch for 3.attention_proj.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 3.fusion_gate.weight: copying a param with shape torch.Size([128, 256]) from checkpoint, the shape in current model is torch.Size([512, 1024]).
+	size mismatch for 3.fusion_gate.bias: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.norm1.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.norm2.weight: copying a param with shape torch.Size([128]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for 3.ffn.w1.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 3.ffn.w2.weight: copying a param with shape torch.Size([512, 128]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for 3.ffn.w3.weight: copying a param with shape torch.Size([128, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
