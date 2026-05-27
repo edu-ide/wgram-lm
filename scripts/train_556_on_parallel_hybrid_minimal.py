@@ -728,7 +728,7 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
 
     # Standardized combined artifact (unifies with the RI-4 192 contract)
     artifact = {
-        "timestamp": _dt.datetime.utcnow().isoformat() + "Z",
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
         "source": "train_556_on_parallel_hybrid_minimal RI-3+RI-4 matrix (A-Mode)",
         "horizon_per_cell": steps,
         "cells": results,
