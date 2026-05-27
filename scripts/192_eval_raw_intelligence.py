@@ -2840,11 +2840,13 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                         )
                         _promote_best_choice_telemetry(record, choice_scores)
 
-                    # RI-4 record enrichment: if hybrid pre-thinking ran, enrich the normal record
-                    # with the rich fields expected by build_ri4_sparse_memory_gate.
-                    # This lets the canonical harness produce gate-compatible records for RI-4 modes.
-                    # RI-4 record enrichment from runtime (now the clean source, no model attribute).
-                    if "ri4_memory_residual" in runtime:
+                    # RI-4 record enrichment (supports both legacy residual-injection path and
+                    # new A-mode where hybrid is the native recurrent engine inside answer_state_loop).
+                    # We enrich whenever the mode is a hybrid RI-4 mode (use_parallel_hybrid + flags present)
+                    # or the old residual key was set. This keeps build_ri4_sparse_memory_gate and
+                    # downstream analysis fully compatible with zero changes elsewhere.
+                    is_ri4_hybrid_mode = bool(runtime.get("use_parallel_hybrid")) or ("ri4_memory_residual" in runtime)
+                    if is_ri4_hybrid_mode:
                         record["slots_on"] = bool(
                             runtime.get("sparse_slots_enabled", False)
                             and not runtime.get("persistence_ablation", False)
@@ -2855,6 +2857,8 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                         record["raw_intelligence_axis"] = "ri4_sparse_persistent_memory"
                         if "ri4_hybrid_final_norm" in runtime:
                             record["ri4_hybrid_final_norm"] = runtime["ri4_hybrid_final_norm"]
+                        # In pure A-mode the memory effect is now inside the recurrent loop;
+                        # we no longer force-set a pre-computed residual for these modes.
 
                     records.append(record)
                     f.write(json.dumps(record, ensure_ascii=False) + "\n")
