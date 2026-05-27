@@ -409,16 +409,6 @@ class OneBodyParallelHybridBlock(nn.Module):
         else:
             return x, None
 
-        # --- Standard residual + FFN (same as QTRMBlock) ---
-        x = residual + fused
-        x = x + self.ffn(self.norm2(x))
-
-        # Return both the output and the carried slot state (for RI-4 persistence across steps)
-        if self._sparse_slot_enabled and not self._sparse_slot_ablation_zero:
-            return x, new_slot_state
-        else:
-            return x, None
-
 
 def build_parallel_hybrid_block(
     cfg: QTRMConfig,
