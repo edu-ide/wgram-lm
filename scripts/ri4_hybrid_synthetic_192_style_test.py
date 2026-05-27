@@ -406,6 +406,27 @@ def main() -> None:
     print(f"Proxy quantitative signal (agg candidate scores): full={full['crude_candidate_scores']} | router_ablate={router_ablate['crude_candidate_scores']}")
     print("This is the first 192-style heldout-proxy signal on the verified RI-4 hybrid recurrent engine.")
 
+    # === Machine-readable artifact for direct 192 진입 comparison (A-Mode highest-value) ===
+    # When a real checkpoint + 192 tiny heldout is run, this JSON (plus the equivalent
+    # from the real harness) allows exact diff of hybrid participation during forced_choice scoring.
+    import json, datetime
+    report = {
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "proxy_version": "ri4_192_style_v2_real_heldout",
+        "heldout_source": "data/eval/pure_recursive_reasoning_heldout_72.jsonl (or closest)",
+        "cases_per_mode": 4,
+        "modes": results,
+        "summary": {
+            "all_exercised": all_exercised,
+            "drive_calls_full": full["hybrid_forward_call_count"],
+            "scoring_think_calls_full": full["scoring_hybrid_calls"],
+            "real_heldout_used": any(r.get("used_real_heldout") for r in results),
+        }
+    }
+    print("\n## RI4_192_PROXY_REPORT_JSON_START")
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    print("## RI4_192_PROXY_REPORT_JSON_END")
+
 
 if __name__ == "__main__":
     main()
