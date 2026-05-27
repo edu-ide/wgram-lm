@@ -171,6 +171,8 @@ def main():
     parser.add_argument("--checkpoint", type=str, required=True, help="Path to hybrid_ri4_cont_stepXX.pt")
     parser.add_argument("--num_cases", type=int, default=4)
     parser.add_argument("--steps_per_case", type=int, default=4)
+    parser.add_argument("--persistence_ablate", action="store_true", help="RI-4 ablation: disable selective persistence")
+    parser.add_argument("--slots_off", action="store_true", help="RI-4 ablation: disable sparse slots (dense baseline)")
     args = parser.parse_args()
 
     print("=" * 72)
@@ -183,11 +185,31 @@ def main():
 
     hybrid_blocks, initial_slots, cfg = load_continuation_hybrid(args.checkpoint, device, dtype)
 
+    # Apply RI-4 ablations if requested (preserves the full contract for measurement)
+    for layer in hybrid_blocks:
+        if isinstance(layer, OneBodyParallelHybridBlock):
+            if args.persistence_ablate:
+                layer._ri4_persistence_ablation = True
+            if args.slots_off:
+                if hasattr(layer, "sparse_slot_router") and layer.sparse_slot_router is not None:
+                    layer.sparse_slot_router.set_ablation(enabled=False, ablation_zero=True)
+                layer._ri4_slots_on = False
+
+    ablation_name = []
+    if args.persistence_ablate: ablation_name.append("persistence_ablate")
+    if args.slots_off: ablation_name.append("slots_off")
+    mode_name = "full" if not ablation_name else "+".join(ablation_name)
+
+    print(f"Running in mode: {mode_name}")
+
     result = run_192_proxy_on_continuation(
         hybrid_blocks, initial_slots,
         num_cases=args.num_cases,
         steps_per_case=args.steps_per_case,
     )
+    result["mode"] = mode_name
+    result["persistence_ablation"] = args.persistence_ablate
+    result["slots_off"] = args.slots_off
 
     print("\n=== RESULT ===")
     for k, v in result.items():
