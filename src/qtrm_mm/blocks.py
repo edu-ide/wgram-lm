@@ -25,6 +25,15 @@ except Exception:
     DecoupledLatentMemoryBank = None
     make_decoupled_latent_memory_bank = None
 
+# 2026-06 Radical direction: Latent Episode Memory (LEM)
+# Fundamental shift: memory writes are sparse at coherent "episode" boundaries instead of continuous per micro-step.
+# This attacks the root cause ("too frequent write opportunities dilute selectivity learning").
+try:
+    from .memory.latent_episode_memory import LatentEpisodeMemory, make_latent_episode_memory
+except Exception:
+    LatentEpisodeMemory = None
+    make_latent_episode_memory = None
+
 
 CANONICAL_LT2_ATTN_EVERY = 4
 
@@ -263,8 +272,32 @@ class OneBodyParallelHybridBlock(nn.Module):
         self.ffn = SwiGLU(d, cfg.d_ff, dropout=cfg.dropout)
 
         # Stochastic breadth control (must match QTRMRecursiveCore behavior)
+        # This is the key Reverse I→G→A for the historically most-lost inductive bias
+        # (GRAM/PTRM training-time stochastic recurrent breadth).
         self._stochastic_breadth_enabled = bool(getattr(cfg, "core_stochastic_breadth_enabled", False))
         self._stochastic_breadth_ablation_zero = bool(getattr(cfg, "core_stochastic_breadth_ablation_zero", False))
+        self._stochastic_breadth_mode = getattr(cfg, "core_stochastic_mode", "delta")
+        self._stochastic_breadth_scale = float(getattr(cfg, "core_stochastic_scale", 0.06))
+        self._stochastic_breadth_min_std = float(getattr(cfg, "core_stochastic_high_level_min_std", 1e-4))
+        self._stochastic_breadth_max_std = float(getattr(cfg, "core_stochastic_high_level_max_std", 0.2))
+
+        # Learned prior for self-contained stochastic breadth generation inside the hybrid engine.
+        # This was the missing piece: the active RI-4 recurrent engine (this block) could only
+        # *receive* external noise, not generate training-time trajectory diversity itself.
+        self.stochastic_breadth_prior = None
+        if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
+            hidden = int(getattr(cfg, "core_stochastic_breadth_hidden_dim", None) or d * 2)
+            self.stochastic_breadth_prior = nn.Sequential(
+                RMSNorm(d * 2),
+                nn.Linear(d * 2, hidden),
+                nn.GELU(),
+                nn.Linear(hidden, d * 2),
+            )
+            for m in self.stochastic_breadth_prior:
+                if isinstance(m, nn.Linear):
+                    nn.init.xavier_uniform_(m.weight)
+                    if m.bias is not None:
+                        nn.init.zeros_(m.bias)
 
         # === RI-4: Sparse Slot Router (Raven/MSA-style persistent memory slots) ===
         # This is the critical missing piece for causal long-horizon raw intelligence.
@@ -298,6 +331,11 @@ class OneBodyParallelHybridBlock(nn.Module):
         self._decoupled_bank_enabled = False
         self._decoupled_bank_ablation_zero = False
 
+        # 2026-06 Radical: Latent Episode Memory (LEM)
+        self.latent_episode_memory: Optional["LatentEpisodeMemory"] = None
+        self._lem_enabled = False
+        self._lem_ablation_zero = False
+
     def set_decoupled_memory_bank(self, bank: Optional["DecoupledLatentMemoryBank"], ablation_zero: bool = False):
         """Attach a Decoupled Latent Memory Bank (new 2026-06 topology).
         This is the external, controller-driven memory (not updated inside every forward).
@@ -308,6 +346,17 @@ class OneBodyParallelHybridBlock(nn.Module):
         self._decoupled_bank_ablation_zero = ablation_zero
         if bank is not None:
             bank.set_ablation(enabled=not ablation_zero, ablation_zero=ablation_zero)
+
+    def set_latent_episode_memory(self, lem: Optional["LatentEpisodeMemory"], ablation_zero: bool = False):
+        """Attach Latent Episode Memory (radical 2026-06 direction).
+        Memory writes become sparse at episode boundaries instead of every micro-step.
+        This is the key architectural shift after repeated per-step / decoupled-bank failures.
+        """
+        self.latent_episode_memory = lem
+        self._lem_enabled = lem is not None and not ablation_zero
+        self._lem_ablation_zero = ablation_zero
+        if lem is not None:
+            lem.set_ablation(enabled=not ablation_zero, ablation_zero=ablation_zero)
 
     def forward(
         self,
@@ -426,6 +475,17 @@ class OneBodyParallelHybridBlock(nn.Module):
                 # Never crash the engine
                 pass
 
+            # --- 2026-06 Radical LEM: accumulate fast state for episode ---
+            if (
+                self.latent_episode_memory is not None
+                and self._lem_enabled
+                and not self._lem_ablation_zero
+            ):
+                try:
+                    self.latent_episode_memory.step_fast_state(x_norm)
+                except Exception:
+                    pass
+
         # --- Recurrence branch (Gating v2 heads in parallel) ---
         rec_outs = []
         for head in self.recurrence_heads:
@@ -443,13 +503,38 @@ class OneBodyParallelHybridBlock(nn.Module):
         rec_concat = torch.cat(rec_outs, dim=-1)
         rec_projected = self.recurrence_proj(rec_concat)
 
-        # --- Stochastic Breadth injection point (Reverse I→G→A contract) ---
-        if (
-            stochastic_breadth_noise is not None
-            and self._stochastic_breadth_enabled
-            and not self._stochastic_breadth_ablation_zero
-        ):
-            rec_projected = rec_projected + stochastic_breadth_noise
+        # --- Stochastic Breadth (self-generated) - Reverse I→G→A for the historically most-lost bias ---
+        # Previously this block could only consume external noise. Now it can generate
+        # its own training-time trajectory diversity using a learned prior on the current state.
+        # This directly targets the main gap that made the IMTA SSOT's mandatory
+        # "GRAM/PTRM stochastic breadth off" ablation unexecutable on the active RI-4 engine.
+        if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
+            if stochastic_breadth_noise is None:
+                # Self-generate using learned prior (the missing capability)
+                pooled = rec_projected.mean(dim=1) if rec_projected.dim() == 3 else rec_projected
+                # Simple context: use pooled state itself (keeps it lightweight and One-Body)
+                guidance = torch.cat([pooled, pooled], dim=-1)
+                if self.stochastic_breadth_prior is not None:
+                    hidden = torch.nn.functional.gelu(self.stochastic_breadth_prior[1](self.stochastic_breadth_prior[0](guidance)))
+                    out = self.stochastic_breadth_prior[3](self.stochastic_breadth_prior[2](hidden))
+                    mu, raw_std = out.chunk(2, dim=-1)
+                    std = torch.nn.functional.softplus(raw_std)
+                    std = (std + self._stochastic_breadth_min_std).clamp(max=self._stochastic_breadth_max_std)
+
+                    if self.training:
+                        eps = torch.randn_like(std)
+                        noise = (mu + std * eps) * self._stochastic_breadth_scale
+                    else:
+                        noise = mu * self._stochastic_breadth_scale
+
+                    if self._stochastic_breadth_mode == "true_gram":
+                        # Stronger replace-style (historical true_gram behavior)
+                        rec_projected = (mu.to(rec_projected.dtype) + std * (eps if self.training else 0)).unsqueeze(1).expand_as(rec_projected) * 0.5 + rec_projected * 0.5
+                    else:
+                        rec_projected = rec_projected + noise.unsqueeze(1)
+            else:
+                # External noise provided (backward compat with previous callers)
+                rec_projected = rec_projected + stochastic_breadth_noise
 
         # --- Attention branch ---
         attn_outs = []

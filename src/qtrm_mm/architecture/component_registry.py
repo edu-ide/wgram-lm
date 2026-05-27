@@ -19,6 +19,12 @@ class ComponentRecord:
     locations: tuple[str, ...]
     note: str
     full_answer_path: bool = False
+    # Critical for preventing silent SSOT drift during pivots.
+    # When False, this component (or the inductive bias it carries) is NOT part
+    # of the current primary One-Body training/eval path. Any SSOT that depends
+    # on this component having an executable ablation in the primary path is
+    # currently unfulfillable.
+    active_in_primary_onebody_path: bool = True
 
 
 COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
@@ -49,14 +55,13 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         locations=("src/qtrm_mm/state_transition_core.py",),
         note=(
             "Reusable GRAM/PTRM-style state transition core family (legacy implementation). "
-            "active_in_primary_onebody_path=false (as of 2026-05 post new-thought-structure pivot). "
             "Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) "
-            "that contributed to historical 5.53~5.56 signals. This bias is currently missing from QTRMRecursiveCore forward. "
+            "that contributed to historical 5.53~5.56 signals. "
             "See Historical Signal Reconstruction: docs/wiki/decisions/2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md "
             "and Inductive Bias Map: docs/wiki/architecture/inductive-bias-map.md. "
-            "Reverse I→G→A in progress. Until ported or explicitly closed, this entry is library-only, not active architecture. "
-            "executable_ablation_in_primary_path: none (SSOT-required 'stochastic breadth off' cannot be run on current canonical core)."
+            "Reverse I→G→A in progress. Until ported or explicitly closed, this entry is library-only, not active architecture."
         ),
+        active_in_primary_onebody_path=False,  # Historical note preserved for audit. As of 2026-06 Reverse I→G→A, self-contained training-time stochastic breadth generation was added directly inside OneBodyParallelHybridBlock (the active RI-4 recurrent engine). See 2026-06-reverse-iga-stochastic-breadth-hybrid-engine.md. The legacy state_transition_core remains library-only; the bias is now executable again in the primary path via the hybrid block.
     ),
     "bltd_byte_latent_prefixlm": ComponentRecord(
         name="bltd_byte_latent_prefixlm",
@@ -289,3 +294,62 @@ def assert_promoted_final_answer_path(name: str) -> ComponentRecord:
 
 def records_by_status(status: ComponentStatus) -> tuple[ComponentRecord, ...]:
     return tuple(record for record in COMPONENT_REGISTRY.values() if record.status is status)
+
+
+# === Pivot Safety / SSOT Drift Prevention Helpers (2026-06) ===
+
+def get_inactive_primary_path_components() -> list[ComponentRecord]:
+    """Return all PROMOTED components that are currently not active in the primary One-Body path.
+    
+    Use this in promotion scripts, gate runners, or at trainer startup to detect
+    when a historically important inductive bias has become unreachable due to pivot drift.
+    """
+    return [
+        rec for rec in COMPONENT_REGISTRY.values()
+        if rec.status is ComponentStatus.PROMOTED and not rec.active_in_primary_onebody_path
+    ]
+
+
+def warn_on_missing_primary_path_biases() -> None:
+    """Emit loud warnings for any PROMOTED component that is not active in the current primary path.
+    
+    This is a Level-1 defense against the exact failure mode where an SSOT declares a
+    mandatory ablation (e.g. "GRAM/PTRM stochastic breadth off") but the mechanism no
+    longer exists in the code being trained.
+    
+    Call this early in long-running trainers or gate scripts.
+    """
+    inactive = get_inactive_primary_path_components()
+    if not inactive:
+        return
+    print("\n" + "=" * 80)
+    print("PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path")
+    print("=" * 80)
+    for rec in inactive:
+        print(f"\n  Component: {rec.name}")
+        print(f"  active_in_primary_onebody_path = {rec.active_in_primary_onebody_path}")
+        print(f"  Note: {rec.note[:300]}{'...' if len(rec.note) > 300 else ''}")
+        print("  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.")
+    print("\n  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md")
+    print("=" * 80 + "\n")
+
+
+def assert_executable_in_primary_path(name: str, ssot_reference: str = "") -> ComponentRecord:
+    """Hard gate: raises if the component (or its bias) is not active in the primary path.
+    
+    Use this when a script or promotion gate absolutely requires the bias to be live.
+    Example: assert_executable_in_primary_path("state_transition_core", 
+             "internal-multitrajectory-answer-attractor-ssot.md stochastic breadth ablation")
+    """
+    record = get_component_record(name)
+    if not record.active_in_primary_onebody_path:
+        msg = (
+            f"Component {name} is marked active_in_primary_onebody_path=False.\n"
+            f"This means the inductive bias it carries is not reachable from the current "
+            f"primary One-Body training path.\n"
+            f"SSOT reference: {ssot_reference}\n"
+            f"Registry note: {record.note}\n"
+            f"See pivot-safety-and-inductive-bias-preservation.md for required process."
+        )
+        raise RuntimeError(msg)
+    return record
