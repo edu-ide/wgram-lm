@@ -1201,3 +1201,70 @@ All actions followed strict A-Mode (coherent deeper stress + full ablation combi
 
 This represents substantial closure on the "does more scale or standard ablations affect carry quality?" line of inquiry at the current experimental regime.
 
+
+## Formal Closure: RI-4 Carry Robustness at d=128 / 5.56 Gold-Structured Recipe — Saturation Finding (2026-06)
+
+**Summary of the thread (Most-Deficient evolution):**
+After establishing the hybrid as the actual recurrent engine inside answer_state_loop (with clean 4-way ablation contract) and moving to real gold_structured continuation, the active #1 Most-Deficient for RI-4 became:
+
+"Does additional continuation depth (effective scale) on the proven 5.56 Adaptive Rehearsal Gold Recipe improve the quality / persistence of selective memory carry (as measured by persistent_carry_rate and thinking-phase carry events in the v2 driver)?"
+
+A long series of A-Mode cycles produced the necessary tooling:
+- Faithful measurement driver that loads the trained router from continuation checkpoints (or uses the attached router in internal-primary mode).
+- internal_ri4_primary continuation mode (router attached to blocks; carry flows through block return value).
+- Robust shape guards that keep the engine alive under the trainer's calling conventions.
+
+**Definitive stress-test results (4×8 and 4×12 longer-thinking + full 4-way ablations):**
+- Across multiple depths (step360 → step528, ~168+ steps of gold_structured rehearsal):
+  - persistent_carry_rate remained 1.0.
+  - Thinking carries were perfect (all in/out events observed) even at 12 thinking steps per case.
+- On the internal-primary substrate (step528), the complete 4-way ablation (full / persistence_ablate / slots_off / router_ablate) with 4×12 thinking still produced 1.0 carry_rate with no measurable degradation.
+
+**Conclusion (A-Mode saturation finding):**
+At the current experimental regime (d_model=128, the specific 5.56 gold_structured input recipe, trained SparseSlotRouter + current guards, internal or external router usage), RI-4 selective memory carry persistence is highly robust and effectively saturates very early. Additional continuation depth and the three major standard ablations do not produce observable differentiation in carry quality within the current v2 driver.
+
+This is a positive, high-confidence result for the substrate at this scale: the carry mechanism "just works" reliably once the trained router is in the loop.
+
+**Re-prioritization for RI-4 (new #1 Most-Deficient + Highest-Value):**
+With the "does more depth improve carry quality at d=128?" question now substantially closed by strong negative evidence, the new highest-value direction within the RI-4 pillar is:
+
+**Test the now-mature RI-4 substrate (carry robustness + overall behavior) at larger width (d_model).**
+
+Immediate next practical actions:
+- Start small internal_ri4_primary continuation experiments at d=256 (or 192/224 as stepping stones) using the same 5.56 gold_structured recipe + gold from the 642 adaptive phase.
+- Use the v2 driver (with appropriate router loading or internal attachment) to measure carry persistence, ablation behavior, and any new phenomena that appear at higher capacity.
+- Compare robustness and any emergent scale effects against the well-characterized d=128 baseline.
+
+This move directly attacks whether the excellent carry properties we have observed are an artifact of the narrow current width or a genuine property of the architecture + recipe that can be scaled.
+
+All prior cycles on depth/ablation effects at d=128 can now be treated as largely complete for the current width. Future work at d=128 should be limited to maintenance, documentation, or specific diagnostic needs.
+
+**Artifacts for this closure:**
+- All 4×8 and 4×12 longer-thinking logs (step360/510/516/528)
+- Complete 4-way 4×12 ablation logs on internal-primary step528
+- This formal saturation finding + re-prioritization section
+
+This completes the major "carry quality via scale at current width" line of inquiry for RI-4 at d=128. The project now has a clear, evidence-based new Most-Deficient for the pillar: larger width experiments with the mature internal-primary tooling.
+
+
+## First small validation step toward larger width: d=256 internal_ri4_primary smoke (2026-06)
+
+**Action taken (first concrete move after re-prioritization):**
+- Launched an 8-step internal_ri4_primary continuation from scratch at d_model=256 (same 5.56 gold_structured recipe + gold from the 642 adaptive phase + stochastic breadth).
+- The run completed cleanly and produced `checkpoints/hybrid_ri4_internal_primary_test_d256/hybrid_ri4_cont_step8.pt`.
+
+**Result:**
+- Trainer path (including router attachment to blocks and guards) works at d=256 without immediate breakage.
+- This is a successful proof-of-concept that the mature internal-primary tooling can be used for larger-width experiments.
+
+**Immediate hygiene gap identified:**
+- The current v2 measurement driver (`measure_continuation_hybrid_192.py`) hardcodes d_model=128 in the synthetic context generation and warm-up forward (e.g., `torch.randn(2, 1, 128, ...)`).
+- When pointed at the d=256 checkpoint, it failed on dimension mismatch during the warm-up (as expected).
+
+**Next tiny practical step (documented):**
+- Make the v2 driver read the actual d_model from the loaded model / config (or accept it via a new `--d_model` CLI flag) so that longer-thinking and ablation measurements can be performed on higher-width checkpoints without code changes.
+
+This small d=256 smoke + identified measurement gap constitutes the first concrete step into the new Most-Deficient ("larger width experiments") after the formal saturation closure at d=128.
+
+All actions under A-Mode and the user's RI-4 focus.
+
