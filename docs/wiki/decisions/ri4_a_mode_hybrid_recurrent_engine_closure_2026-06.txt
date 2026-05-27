@@ -768,3 +768,58 @@ This is the cleanest RI-4 ablation data we have so far at the highest continuati
 
 All work today remained strictly within RI-4 (hybrid engine + selective memory scale + measurement), consistent with Most-Deficient prioritization.
 
+
+## A-Mode cycle: step360 → step510 gold_structured continuation + matched 4-way RI-4 ablation at new highest step (effective scale test)
+
+**Most-Deficient re-assessment (post step240/360 4-way):**
+- Robustness fully saturated in the current 192-style synthetic proxy: engine_exercised=True, ablation contract holds cleanly, zero crashes on all 4 modes (full / persistence_ablate / slots_off / router_ablate) even after +120 steps of additional gold_structured continuation.
+- The active highest-value question for the RI-4 pillar became: "Does effective scale (d_model=128 width × longer horizon on the exact 5.56 Adaptive Rehearsal Gold Recipe with attractor_protection=0.7 + scheduled binding decay) produce any observable improvement in selective memory behavior / carry quality?"
+- To close this gap we executed one coherent move: push continuation from the proven step360 checkpoint by +150 steps (target ~510) under identical recipe, then immediately re-execute the exact same clean 6-cases × 5-steps 4-way measurement protocol on the new highest checkpoint.
+
+**Holistic A-Mode action taken (single structural execution, no incremental patches):**
+- Background launch of scripts/train_hybrid_ri4_real_continuation_minimal.py with --resume_from checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step360.pt, gold_structured input mode, full RI-4 (no ablations), 5.56 parameters preserved exactly.
+- Run completed without error → new checkpoints written at step390/420/450/480/510 in checkpoints/hybrid_ri4_cont_today/.
+- Immediately after completion: executed four matched measurement runs on the fresh hybrid_ri4_cont_step510.pt using scripts/measure_continuation_hybrid_192.py --num_cases 6 --steps_per_case 5 plus each of the three ablation flags (full, persistence_ablate, slots_off, router_ablate). All runs used source .venv/bin/activate && PYTHONPATH=. hygiene.
+
+**Immediate rigorous experiment results (step510 4-way, logs created 2026-05-27 17:20):**
+
+| Mode                  | hybrid_forward_call_count | slot_carry_events_observed | scoring_hybrid_calls | scoring_hybrid_carries | engine_exercised | checkpoint_step |
+|-----------------------|---------------------------|----------------------------|----------------------|------------------------|------------------|-----------------|
+| **full**              | 30                        | 30                         | 30                   | 0                      | True             | 510             |
+| **persistence_ablate**| 30                        | 30                         | 30                   | 0                      | True             | 510             |
+| **slots_off**         | 30                        | 30                         | 30                   | 0                      | True             | 510             |
+| **router_ablate**     | 30                        | 30                         | 30                   | 0                      | True             | 510             |
+
+(Each mode emitted its full CONTINUATION_192_PROXY_JSON block; all four logs: logs/ri4_step510_{full,pers_ablate,slots_off,router_ablate}_1720.log)
+
+**Quantitative comparison (step240 vs step360 vs step510, identical 6×5 matched protocol):**
+
+- Participation metrics remained completely flat across 270 additional continuation steps on the real gold_structured recipe.
+- hybrid calls / drive carries / exercised flag: identical (30/30/True) at every depth on every ablation mode.
+- scoring_hybrid_carries: stuck at 0 in every single run at every depth.
+- No ablation ever produced degradation or improvement visible in this harness.
+
+**A-Mode closure + re-prioritization (Most-Deficient + Highest-Value-First):**
+
+The hypothesis "additional continuation steps on the proven 5.56 + RI-4 substrate will eventually surface effective-scale differentiation inside the current proxy" produced no signal up to step510. Robustness is saturated; the proxy has reached its diagnostic ceiling for this substrate.
+
+The true limiting factor is now the **measurement harness itself**:
+- The synthetic loop in scripts/measure_continuation_hybrid_192.py performs per-case `current_slot_state = None` reset (correct 192 hygiene) and then drives the engine on purely random synthetic tensors for a fixed number of steps.
+- This design successfully proved "engine participation" (the original Most-Deficient after the delegation contract was closed), but it structurally cannot observe realistic persistent slot carry depth across multiple recurrent proposal steps on a single "candidate" — the exact behavior that would reveal whether longer gold_structured rehearsal improved the router's selective memory quality.
+- scoring_hybrid_carries staying at 0 is an artifact of the driver, not necessarily of the trained substrate.
+
+**New #1 Most-Deficient for RI-4 (Highest-Value next move):**
+1. Harden or replace the continuation measurement driver so that it exercises a more faithful model of the actual 192 scoring + recurrent thinking loop with live persistent `_ri4_hybrid_recurrent_slot_state` carry across multiple proposal steps per case (while still preserving the 4-way ablation contract and per-case hygiene).
+2. Parallel path (higher fidelity when available): the instant any Qwen-integrated checkpoint lands, run the existing `ri4_hybrid_first_real_192_smoke.sh` (or its evolved form) on the step510 (or later) checkpoint for the four hybrid_*_no_evidence modes. The real 192 forced_choice + answer_state_loop path will by construction provide authentic scoring-phase and thinking-phase carry observation.
+
+The step510 checkpoint (and the entire continuation series) remains a clean, loadable, ablation-contract-preserving artifact produced under the exact 5.56 gold recipe. No regression occurred. The One-Body hybrid recurrent engine + persistent RI-4 slot carry invariants hold at 510 steps.
+
+**Artifacts for this cycle:**
+- Continuation: checkpoints/hybrid_ri4_cont_today/hybrid_ri4_cont_step510.pt (and 390/420/450/480)
+- Measurements: the four ri4_step510_*_1720.log files + their JSON blocks
+- This verbatim section in the decision record
+
+All actions executed under strict A-Mode (holistic one-move execution → immediate matched experiment → quantitative result → re-assessment), Most-Deficient + Highest-Value-First prioritization, and the user's explicit "오늘은 RI-4만" + "작업 진행해" directive. Safe execution only; no code changes in this cycle.
+
+This cycle is now closed.
+
