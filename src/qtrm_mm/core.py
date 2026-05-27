@@ -254,7 +254,9 @@ class QTRMRecursiveCore(nn.Module):
         transition_feedback_finality_targets: Optional[torch.Tensor] = None,
         transition_feedback_teacher_forcing: bool = False,
         transition_order_conditioning: Optional[torch.Tensor] = None,
-        provenance_register: Optional[torch.Tensor] = None,  # Phase 3: external provenance/graph register
+        provenance_register: Optional[torch.Tensor] = None,  # Phase 3: external provenance/graph register (tensor path)
+        provenance_graph_features: Optional[dict] = None,   # For real WorldModelGatedAnswerRegister
+        provenance_world_example: Optional[dict] = None,    # For real WorldModelGatedAnswerRegister
     ) -> tuple[torch.Tensor, torch.Tensor, list[torch.Tensor], dict[str, torch.Tensor]]:
         b, w, d = workspace.shape
         fresh_z_l = workspace + self.z_l_init
@@ -750,12 +752,20 @@ class QTRMRecursiveCore(nn.Module):
                     # This is the direct analogue of the 570 monotonic pressure
                     z_h = z_h + (strength + depth_bonus) * push_dir.unsqueeze(0).unsqueeze(0)
 
-        # === Phase 3: Provenance Register Fusion (real components wired in core) ===
-        # The core now holds self.provenance_register_module (from .provenance)
-        # when the flag is enabled. The tensor path below is kept for compatibility
-        # and external injection. Full end-to-end use of the module (with graph/world
-        # inputs) is available via self.provenance_register_module for callers that
-        # provide the proper features.
+        # === Phase 3: Provenance Register Fusion (real components now active in path) ===
+        # If the native module is wired and proper graph/world features are provided,
+        # use the real WorldModelGatedAnswerRegister to compute the register.
+        # Falls back to external tensor for compatibility.
+        if self.provenance_register_module is not None and provenance_graph_features is not None and provenance_world_example is not None:
+            device = workspace.device
+            reg_tensor, _ = self.provenance_register_module(
+                provenance_graph_features,
+                provenance_world_example,
+                device=device,
+                world_off=getattr(self.cfg, "core_provenance_register_ablation_zero", False),
+            )
+            provenance_register = reg_tensor.detach()
+
         if provenance_register is None and getattr(self.cfg, "core_provenance_register_enabled", False):
             if carry is not None and getattr(carry, 'provenance_register', None) is not None:
                 provenance_register = carry.provenance_register

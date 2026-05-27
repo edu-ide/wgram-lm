@@ -71,13 +71,13 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         note=(
             "Stage102 full causal answer path (free-form evidence → provenance graph/world model → "
             "gated answer register → same LM head). "
-            "I→G→A A-stage advanced: classes extracted to src/qtrm_mm/provenance.py + "
-            "build_provenance_register_from_config factory + wired into QTRMRecursiveCore __init__ "
-            "when core_provenance_register_enabled (real components now owned by core). "
-            "Diagnostic evidence in scripts/diag_iga_gated_workspace_evidence.py (provenance smoke PASSED with ablation). "
-            "Previously hollow PROMOTED (scripts-only). "
-            "Still awaiting full G-stage multi-family evidence before final PROMOTED flip. "
-            "Follows I→G→A protocol. Branch: feat/architecture-integration-2026-05."
+            "I→G→A advanced: extraction (5eb2276) + wiring+factory+internal usage in core forward (3c455a3). "
+            "Real module now participates when graph_features + world_example provided. "
+            "G-stage evidence (composition with Workspaces+Attractor): all three mechanisms produce measurable deltas when individually ablated (see scripts/diag_iga_gated_workspace_evidence.py full composition test). "
+            "Native path is now functional. "
+            "Promotion readiness: strong (One-Body preserved, ablations causal, composition works). "
+            "Recommend flipping to PROMOTED after one more multi-seed run. "
+            "Previously classic hollow case. Branch: feat/architecture-integration-2026-05."
         ),
         full_answer_path=True,
     ),

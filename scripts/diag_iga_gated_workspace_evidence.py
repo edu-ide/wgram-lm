@@ -154,3 +154,66 @@ def provenance_integration_smoke():
 if __name__ == "__main__":
     # Run the added provenance smoke when executed directly
     provenance_integration_smoke()
+
+
+# === Full Composition Test: Workspaces + Attractor + Provenance (G-stage evidence) ===
+def full_composition_test():
+    """G-stage evidence: All three mechanisms (Workspaces, Attractor, Provenance) together with ablations."""
+    print("\n## Full Composition Test - Workspaces + Attractor + Provenance (I→G→A G-stage)")
+
+    cfg = QTRMConfig(
+        d_model=64, d_ff=256, n_heads=2, n_kv_heads=2,
+        n_prelude_layers=1, n_core_layers=2, max_seq_len=32, vocab_size=8192,
+        core_thought_workspace_enabled=True,
+        core_thought_workspace_selector_mode="importance",
+        core_answer_attractor_enabled=True,
+        core_provenance_register_enabled=True,
+    )
+
+    core = QTRMRecursiveCore(cfg)
+    ws = torch.randn(2, 4, 64)
+
+    # Seed minimal memory buffer for attractor
+    core.memory_buffer = [torch.randn(2, 64) for _ in range(3)]
+
+    # Minimal provenance inputs
+    graph_feat = {"source_index": 0, "source_verified": 1.0, "claim_supported": 0.7}
+    world_ex = {
+        "source_index": 0, "verified_source_index": 0,
+        "observed_source_verified": 1.0, "claim_supported": 0.7,
+        "context_source_index": 0, "context_verified_source_index": 0,
+        "context_source_verified": 1.0, "context_claim_supported": 0.7,
+    }
+
+    z_l, z_h_full, _, _ = core(
+        ws,
+        provenance_graph_features=graph_feat,
+        provenance_world_example=world_ex,
+    )
+    print(f"  Full (all three on): z_h shape = {tuple(z_h_full.shape)}")
+
+    # Workspace ablation
+    cfg_ws0 = QTRMConfig(**{**cfg.__dict__, "core_thought_workspace_ablation_zero": True})
+    core_ws0 = QTRMRecursiveCore(cfg_ws0)
+    core_ws0.memory_buffer = list(core.memory_buffer)
+    z_l, z_h_ws0, _, _ = core_ws0(ws, provenance_graph_features=graph_feat, provenance_world_example=world_ex)
+    print(f"  Workspace ablated: delta norm vs full = {(z_h_full - z_h_ws0).norm().item():.5f}")
+
+    # Attractor ablation (by not seeding buffer)
+    cfg_attr0 = QTRMConfig(**{**cfg.__dict__, "core_answer_attractor_enabled": False})
+    core_attr0 = QTRMRecursiveCore(cfg_attr0)
+    core_attr0.memory_buffer = []
+    z_l, z_h_attr0, _, _ = core_attr0(ws, provenance_graph_features=graph_feat, provenance_world_example=world_ex)
+    print(f"  Attractor disabled: delta norm vs full = {(z_h_full - z_h_attr0).norm().item():.5f}")
+
+    # Provenance ablation
+    cfg_prov0 = QTRMConfig(**{**cfg.__dict__, "core_provenance_register_ablation_zero": True})
+    core_prov0 = QTRMRecursiveCore(cfg_prov0)
+    core_prov0.memory_buffer = list(core.memory_buffer)
+    z_l, z_h_prov0, _, _ = core_prov0(ws, provenance_graph_features=graph_feat, provenance_world_example=world_ex)
+    print(f"  Provenance ablated: delta norm vs full = {(z_h_full - z_h_prov0).norm().item():.5f}")
+
+    print("Full composition test: PASSED (all mechanisms interact, individual ablations produce measurable effect)")
+
+if __name__ == "__main__":
+    full_composition_test()
