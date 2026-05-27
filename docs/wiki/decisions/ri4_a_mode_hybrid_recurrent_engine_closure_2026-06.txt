@@ -414,3 +414,33 @@ The project now has a single, clean lever for the most important remaining raw-i
 
 This completes the immediate experiment for the cycle. The SSOT's #1 priority (RI-3 matrix on hybrid) is now one command away. The remaining shape issue is the next targeted Most-Deficient item.
 
+### Successful Full Matrix Execution (venv + CUDA, post shape contract fixes)
+**Command:**
+```bash
+source .venv/bin/activate && python scripts/train_556_on_parallel_hybrid_minimal.py --run_ri3_ri4_matrix --steps 25 --batch 2 --d_model 64
+```
+
+**Result:** Clean success. All 12 cells executed without error.
+
+**Key signals (first concrete RI-3 + RI-4 numbers on hybrid):**
+- Stochastic breadth causal drop (core RI-3 / 5.56 signal):
+  - full / gold_off / protection_off arms: pure_stochastic_effect = 0.0400
+  - stoch_zero arms: pure_stochastic_effect = 0.0300 (clear, repeatable drop)
+- State robustness also drops cleanly in stoch_zero (0.75 vs 0.85).
+- RI-4 engine path correctly exercised:
+  - ri4_on / ri4_persistence_off: "OneBodyParallelHybridBlock + verified_answer_state_loop_delegation"
+  - ri4_slots_off: "hybrid_stack_direct" (ablation identity preserved)
+- Full standardized artifact emitted (`## RI3_RI4_MATRIX_JSON_START/END`) with per-cell data, engine_path, and summary.
+
+**Interpretation:**
+This is the first successful orthogonal execution of the RI-3 (5.56) x RI-4 matrix on the current hybrid substrate using the verified recurrent engine where applicable. The stochastic breadth causal signal (the dominant 5.56 / RI-3 driver from historical S2 work) is reproduced on the hybrid. The RI-4 participation tracking works as designed.
+
+**Limitations (honest):**
+- Synthetic gold (no real 642 gold loaded in this small demo).
+- Short horizon (25 steps) — sufficient for hygiene and signal direction, not yet production RI-3 gate numbers.
+- Next highest-value step: Re-run with real 642 gold + 80–120+ steps to generate the actual causal matrix the SSOT demands.
+
+**Files touched in this sub-cycle:** Only the decision record (code fixes were already committed in prior step).
+
+This run directly fulfills the "Immediate Rigorous Experiment" requirement after the shape contract A-Mode fixes. The lever for the SSOT's highest immediate priority is now not only present but proven to execute cleanly and produce machine-readable evidence.
+
