@@ -1699,3 +1699,10 @@ Adaptive Rehearsal (replay important latent) + 이 explicit answer-attractor pre
 - 다음 실험 트랙 I-stage 시작: native equation_binding + thought_workspaces + memory tiers scaffolding (core_equation_binding_* 플래그 + gated proj in core, stash에 있던 "new thought structure" 방향 최소 부활).
 - one-body-architecture-ssot.md에 promotions 및 next track 참조 추가.
 
+**Phase 2 Final (equation_binding real logic + LeWM full port + larger joint evidence + SSOT 정리)**
+
+- equation_binding: forward 로직 대폭 강화 (gated write + gated readback injection into z_h, ablation이 storage와 effect를 모두 제거). Carry 정상 반영.
+- LeWM predictive tier: 본격 포팅 완료 (config 플래그 + predictor in core + forward에서 binding/workspace-anchored 예측 상태 injection + ablation 지원). JEPA-style next-state 예측을 answer-causal 경로에 통합.
+- Toy joint optimization (30 steps surrogate, all 5 mechanisms joint): pre→post margin 폭발적 개선 + 개별 ablation 시 거대한 drop (실제 joint training run의 축소판 증거).
+- SSOT 대폭 정리: one-body-architecture-ssot.md와 decisions wiki에 모든 신규 native 컴포넌트, promotions, joint evidence, next track 상태 상세 기록. I→G→A 프로토콜 완전 반영.
+

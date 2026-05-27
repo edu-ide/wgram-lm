@@ -136,6 +136,12 @@ class QTRMConfig:
     core_equation_binding_gate_init_bias: float = -4.0
     core_equation_binding_ablation_zero: bool = False
 
+    # LeWM predictive memory tier (full port as native answer-causal predictive working memory)
+    core_lewm_enabled: bool = False
+    core_lewm_predictor_dim: Optional[int] = None
+    core_lewm_horizon: int = 1
+    core_lewm_ablation_zero: bool = False
+
     # Phase 2 groundwork: Answer Attractor pressure (depth-wise monotonic)
     core_answer_attractor_enabled: bool = False
     core_answer_attractor_weight: float = 0.02

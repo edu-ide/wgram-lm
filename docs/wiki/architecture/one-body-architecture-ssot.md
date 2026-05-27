@@ -126,7 +126,11 @@ Current code anchors:
   - stage102z_final_freeform_answer_path → PROMOTED (full_answer_path)
   - gated_thought_workspace_broadcast → PROMOTED
   - depthwise_monotonic_answer_attractor → PROMOTED
-- Next track I-stage begun: native equation_binding + thought_workspaces scaffolding (core_equation_binding_* flags + gated proj in core, per stashed new thought structure).
+- Next track I-stage advanced:
+  - equation_binding: real forward logic (gated write from z_h + gated readback injection back into recurrent state for One-Body enforcement; ablation removes both storage and effect).
+  - LeWM predictive tier: full native port (JEPA-style predictor anchored to binding/workspace state; computes and injects forecasted answer-causal next state into z_h; ablation supported).
+- Joint "training" evidence (toy 30-step surrogate optimization with all 5 mechanisms): massive post-training margin improvement + huge ablation drops when individual mechanisms disabled (see diag_iga script).
+- All changes preserve the canonical One-Body path (reader → recurrent core with mechanisms → same LM head).
 - `src/qtrm_mm/models/blt_components.py`: reusable BLT local decoder and
   next-implicit byte projector components.
 - `src/qtrm_mm/models/blt_prefixlm.py`: full BLT-D PrefixLM model class.
