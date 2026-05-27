@@ -742,7 +742,7 @@ All four runs used identical parameters on the step240 gold_structured continuat
 This gives us the cleanest head-to-head RI-4 ablation data at the highest continuation step achieved today. The fact that all ablated modes still drive the engine at similar intensity is a positive signal for the robustness of the hybrid+RI-4 design so far.
 
 **Next RI-4 action launched (Most-Deficient move)**:
-From the step240 checkpoint, we launched another substantial continuation (+120 steps, targeting ~step360) using the same gold_structured + full RI-4 recipe. This directly attacks the longer-horizon gap at the current best width. When this run completes, we will re-run the 4-way measurement on the new highest checkpoint to see whether differences between full and ablated arms start to appear at higher steps.
+From the step360 checkpoint, we launched another substantial continuation (+150 steps, targeting ~step510) using the same gold_structured + full RI-4 recipe. This continues to attack the longer-horizon gap at the current best width. When this run completes, we will re-run the 4-way measurement (matched 6x5) on the new highest checkpoint to check whether any differences between full and ablated arms begin to emerge at these higher steps.
 
 **Step360 4-Way Matched Measurement (just completed, 6 cases × 5 steps):**
 
