@@ -482,9 +482,11 @@ This strengthens RI-3 evidence (the 5.56 stochastic breadth causal contribution 
 
 However, it also confirms the scale gap: In the current small-width regime, the system enters a high-robustness regime quickly. Longer horizons within this toy scale do not yet surface the robustness degradation or depth-dependent gains that define production RI-1 (test-time scaling) and RI-2 (long-horizon stability) in the SSOT.
 
-**Refined Most-Deficient + Highest-Value**:
-- RI-3 matrix measurement on hybrid + real gold: Now functional (major progress).
-- Blocking the full RI picture: **Effective capacity + horizon**. To see the SSOT's target behaviors (horizon-dependent robustness drop, stronger depth scaling), the next moves are either (a) larger d_model in matrix experiments or (b) integration into real training continuations where the hybrid can be trained at scale with the full 5.56 + RI-4 recipe.
+**Refined Most-Deficient + Highest-Value (post d_model=128 test)**:
+- RI-3 matrix measurement on hybrid + real gold: Now functional at the trainer's native width (d_model=128) with real gold. Pure stochastic effect values are materially stronger than at d_model=64.
+- The d_model=128 + real gold configuration ran cleanly (batch=2, 40 steps) with no code changes and no OOM.
+- This is a direct, successful attack on the capacity gap identified in previous cycles.
+- Remaining blocker for the full RI-1/RI-2 picture: Still **effective horizon at higher capacity**. Robustness remains very high even in ablated arms at the horizons tested so far. The next highest-value step is to push longer horizons (80–150+ steps) at d_model=128 with real gold, or to integrate the verified hybrid + 5.56 + RI-4 recipe into actual training continuations at this width.
 
 **Files touched in this sub-cycle:** Only the decision record (code fixes were already committed in prior step).
 
