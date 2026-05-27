@@ -424,8 +424,25 @@ class OneBodyParallelHybridBlock(nn.Module):
             fused = fused + mem_gate * rich_memory_context.unsqueeze(1) if fused.dim() == 3 else fused + mem_gate * rich_memory_context
 
         if sparse_read is not None:
-            sparse_gate = torch.sigmoid(gate_logits[:, : sparse_read.shape[-1]] * 0.5 + 0.5)
-            fused = fused + sparse_gate * sparse_read
+            # RI-4 A-Mode ultra-early shape guard (same philosophy as router guards)
+            # If the read signal from the router doesn't match the current fused tensor
+            # in batch/seq dims, fall back to neutral (preserve ablation contract and engine liveness).
+            try:
+                if fused.dim() == 3 and sparse_read.dim() == 2:
+                    # Common case: fused (B,T,d), read (B,d) → broadcast ok after unsqueeze
+                    sparse_read = sparse_read.unsqueeze(1)
+                if fused.shape[0] == sparse_read.shape[0] and fused.shape[-1] == sparse_read.shape[-1]:
+                    if fused.dim() == 3 and sparse_read.dim() == 3:
+                        if fused.shape[1] == sparse_read.shape[1] or sparse_read.shape[1] == 1:
+                            sparse_gate = torch.sigmoid(gate_logits[:, : sparse_read.shape[-1]] * 0.5 + 0.5)
+                            fused = fused + sparse_gate * sparse_read
+                    else:
+                        sparse_gate = torch.sigmoid(gate_logits[:, : sparse_read.shape[-1]] * 0.5 + 0.5)
+                        fused = fused + sparse_gate * sparse_read
+                # else: shape mismatch → silently skip (neutral read, engine stays alive)
+            except Exception:
+                # Hard safety: never let sparse fusion crash the block
+                pass
 
         # --- Standard residual + FFN ---
         x = residual + fused

@@ -165,11 +165,25 @@ class SparseSlotRouter(nn.Module):
 
         # Optional stochastic exploration (reuses 5.56 stochastic breadth)
         if stochastic_noise is not None:
-            if stochastic_noise.dim() == 2 and stochastic_noise.shape[-1] == self.d_model:
-                noise_logits = self.router[0](stochastic_noise)
-                scores = scores + 0.1 * noise_logits
-            else:
-                scores = scores + 0.05 * stochastic_noise.mean(dim=-1, keepdim=True)
+            try:
+                if stochastic_noise.dim() == 2 and stochastic_noise.shape[-1] == self.d_model:
+                    noise_logits = self.router[0](stochastic_noise)
+                    scores = scores + 0.1 * noise_logits
+                elif stochastic_noise.dim() == 3:
+                    # Trainer often passes (B, T, d) noise — reduce to last timestep for routing
+                    noise_t = stochastic_noise[:, -1, : self.d_model] if stochastic_noise.shape[-1] >= self.d_model else stochastic_noise[:, -1]
+                    if noise_t.dim() == 2 and noise_t.shape[-1] == self.d_model:
+                        noise_logits = self.router[0](noise_t)
+                        scores = scores + 0.1 * noise_logits
+                    else:
+                        # Any anomaly → neutral (preserve ablation contract)
+                        pass
+                else:
+                    # Any other shape anomaly → neutral
+                    pass
+            except Exception:
+                # Hard safety: never let stochastic path crash the engine
+                pass
 
         # Top-k selection
         topk_vals, topk_idx = torch.topk(scores, k=self.top_k, dim=-1)

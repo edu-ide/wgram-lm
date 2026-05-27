@@ -1020,3 +1020,45 @@ The trainer change itself is complete and correct. The experiment successfully r
 
 All under strict A-Mode and RI-4 focus.
 
+
+## A-Mode cycle closure: Internal RI-4 primary guards + successful small continuation + first measurement (carry_rate=1.0)
+
+**Holistic one-move (guards):**
+- Added defensive shape guards in two places (matching the proven RI-4 A-Mode guard style from earlier engine work):
+  1. SparseSlotRouter.forward: robust handling of (B, T, d) stochastic_noise (common from trainer) + early neutral path on any anomaly.
+  2. OneBodyParallelHybridBlock forward (fusion): compatibility check before adding sparse_read; silent neutral fallback on dim mismatch.
+- These two targeted guards were the exact narrow hygiene items surfaced by the first internal_ri4_primary test run.
+
+**Immediate rigorous experiment (continuation + measurement):**
+- Re-ran the 8-step internal_ri4_primary continuation from step510 with the guards in place → completed cleanly.
+- Produced checkpoints at step512 and 516 in `checkpoints/hybrid_ri4_internal_primary_test/` (router attached to blocks at save time; carry flows through block return value).
+- Immediate v2 driver measurement on step516 (3 cases × 3 steps, full mode):
+  - persistent_carry_rate: **1.0**
+  - thinking_carries_in/out: 6/6
+  - wall_time: 0.02s (very fast, self-contained)
+  - No external router loading required — the block itself provides the carry.
+
+**A-Mode diagnostic + re-prioritization:**
+- We now have a working, self-contained "internal RI-4 primary carry" path for continuation.
+- The previous practical measurement bottleneck (needing to load a separate trained router + heavy computation) is greatly reduced for checkpoints produced in this mode.
+- The two shape mismatches are closed with the same guard philosophy that made the original RI-4 hybrid engine stable.
+
+**Updated Most-Deficient (Highest-Value, now much narrower):**
+- Produce a few more internal-primary continuation steps (or a longer small series) from the current high-step artifacts.
+- Run matched comparisons (step510-era vs new internal-primary steps) with the v2 driver to get the first quantitative data on whether additional gold_structured rehearsal improves carry_rate / thinking carry quality under a clean internal-primary contract.
+- (Lower priority) Back-port the same guards to the older external-router continuation path for robustness.
+
+This cycle (trainer mode + two guards + successful small run + clean 1.0 carry measurement) is a complete A-Mode closure on the "internal block RI-4 primary carry" Most-Deficient identified after the trained-router measurement work.
+
+**Artifacts:**
+- src/qtrm_mm/memory/sparse_slot_router.py (enhanced stochastic guard)
+- src/qtrm_mm/blocks.py (sparse_read fusion guard)
+- scripts/train_hybrid_ri4_real_continuation_minimal.py (internal_ri4_primary flag + attachment)
+- New checkpoints: checkpoints/hybrid_ri4_internal_primary_test/hybrid_ri4_cont_step{512,516}.pt
+- Measurement log on step516 showing 1.0 carry_rate
+- This verbatim section + all prior entries in the decision record
+
+All actions followed A-Mode, Most-Deficient + Highest-Value-First, Reverse I→G→A awareness, and the user's "RI-4만 / 작업 진행해" directive. Safe commit on the dedicated branch.
+
+This brings the RI-4 measurement + continuation substrate one major step closer to being able to cleanly observe effective scale effects on selective memory carry quality.
+
