@@ -174,6 +174,7 @@ def main():
     parser.add_argument("--steps_per_case", type=int, default=4)
     parser.add_argument("--persistence_ablate", action="store_true", help="RI-4 ablation: disable selective persistence")
     parser.add_argument("--slots_off", action="store_true", help="RI-4 ablation: disable sparse slots (dense baseline)")
+    parser.add_argument("--router_ablate", action="store_true", help="RI-4 ablation: disable selective router (force less selective memory updates)")
     args = parser.parse_args()
 
     print("=" * 72)
@@ -195,10 +196,15 @@ def main():
                 if hasattr(layer, "sparse_slot_router") and layer.sparse_slot_router is not None:
                     layer.sparse_slot_router.set_ablation(enabled=False, ablation_zero=True)
                 layer._ri4_slots_on = False
+            if args.router_ablate:
+                if hasattr(layer, "sparse_slot_router") and layer.sparse_slot_router is not None:
+                    # Force the router into a non-selective mode (updates are less targeted)
+                    layer.sparse_slot_router.set_ablation(enabled=True, ablation_zero=True)
 
     ablation_name = []
     if args.persistence_ablate: ablation_name.append("persistence_ablate")
     if args.slots_off: ablation_name.append("slots_off")
+    if args.router_ablate: ablation_name.append("router_ablate")
     mode_name = "full" if not ablation_name else "+".join(ablation_name)
 
     print(f"Running in mode: {mode_name}")
@@ -212,6 +218,7 @@ def main():
     result["mode"] = mode_name
     result["persistence_ablation"] = args.persistence_ablate
     result["slots_off"] = args.slots_off
+    result["router_ablation"] = args.router_ablate
 
     print("\n=== RESULT ===")
     for k, v in result.items():

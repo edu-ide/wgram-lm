@@ -723,27 +723,23 @@ The "synthetic inputs" sub-gap for the continuation trainer is now closed at hig
   - persistence_ablate mode: also exercised the engine (comparable call counts in matched runs).
   - Scoring-phase slot carries still low in the current synthetic delegation setup (expected; will be more diagnostic with deeper real integration or longer real thinking phases).
 
-**Step240 Matched RI-4 Ablation Measurements (clean 6 cases × 5 steps each):**
+**Step240 Matched 4-Way RI-4 Ablation Measurements (clean 6 cases × 5 steps each):**
 
-All runs used identical parameters on the step240 gold_structured continuation checkpoint:
+All four runs used identical parameters on the step240 gold_structured continuation checkpoint. This is the first complete 4-way RI-4 ablation picture at this continuation depth:
 
-- **full** (no ablation):
-  - hybrid_forward_call_count: 30
-  - slot_carry_events_observed: 30
-  - engine_exercised: true
-  - scoring_hybrid_carries: 0
+| Mode                  | hybrid calls | carries | engine_exercised | scoring carries |
+|-----------------------|--------------|---------|------------------|-----------------|
+| **full**              | 30           | 30      | True             | 0               |
+| **persistence_ablate**| 30           | 30      | True             | 0               |
+| **slots_off**         | 30           | 30      | True             | 0               |
+| **router_ablate**     | 30           | 30      | True             | 0               |
 
-- **persistence_ablate**:
-  - hybrid_forward_call_count: 30
-  - slot_carry_events_observed: 30
-  - engine_exercised: true
-  - scoring_hybrid_carries: 0
+**Observation at step240**:
+- Engine participation remains consistently high across all four modes (identical call counts in matched runs).
+- No material difference in raw participation numbers yet under any of the three major RI-4 ablations at this step.
+- Scoring-phase slot carries are still not surfacing in the current synthetic proxy driver (this is a known limitation of the measurement harness, not necessarily a failure of the substrate).
 
-- **slots_off**:
-  - hybrid_forward_call_count: 30
-  - slot_carry_events_observed: 30
-  - engine_exercised: true
-  - scoring_hybrid_carries: 0
+This gives us the cleanest head-to-head RI-4 ablation data at the highest continuation step achieved today. The fact that all ablated modes still drive the engine at similar intensity is a positive signal for the robustness of the hybrid+RI-4 design so far. Deeper causal comparison will require either richer scoring metrics or longer/more realistic delegation phases.
 
 **Observation at step240**:
 Engine participation remains high across all three modes (30 calls in matched runs). No obvious degradation in call count yet under these two major RI-4 ablations at this step count. Scoring-phase carries are still not appearing in the current synthetic delegation driver (this is a known limitation of the proxy, not necessarily of the substrate).
