@@ -52,12 +52,12 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
     """
     Load the exact hybrid stack + router + initial slots from a continuation checkpoint.
 
-    A-Mode v2 load hygiene: after state_dict load, explicitly force-enable the
-    RI-4 SparseSlotRouter return path inside each OneBodyParallelHybridBlock
-    (the continuation trainer exercised the blocks with external + internal router
-    paths; the fresh build from minimal cfg often has the internal flag False).
-    This is required for the measurement driver to observe real persistent slot
-    carry (new_slot_state returned from the block) instead of always getting None.
+    A-Mode v2 load hygiene (trainer-contract faithful version):
+    - Force-enable internal RI-4 path flags.
+    - If the checkpoint contains a saved "router" (the exact SparseSlotRouter
+      the trainer used for apply_rehearsal_update during continuation), load it
+      and attach it. This makes the driver observe carry under the *actual*
+      training dynamics instead of assuming a pure internal block return path.
     """
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
 
@@ -110,9 +110,40 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
     if initial_slots is not None:
         initial_slots = initial_slots.to(device=device, dtype=dtype)
 
+    # === Faithful trainer contract restoration (the missing piece after v2 blind runs) ===
+    # The continuation trainer created ONE external SparseSlotRouter and passed
+    # slot_state into the hybrid blocks while doing manual carry + router.apply_rehearsal_update
+    # outside the blocks. We now load that exact saved router (if present in the ckpt)
+    # and attach it robustly. This lets the v2 thinking loop observe carry behavior under
+    # the actual training dynamics instead of a blind internal-only assumption.
+    saved_router_sd = ckpt.get("router")
+    loaded_router = None
+    if saved_router_sd is not None and make_sparse_slot_router is not None:
+        try:
+            loaded_router = make_sparse_slot_router(
+                d_model=getattr(cfg, "d_model", 128),
+                num_slots=16,
+                top_k=4,
+            )
+            loaded_router.load_state_dict(saved_router_sd)
+            _force_to(loaded_router, device, dtype)
+            if device == "cuda":
+                torch.cuda.synchronize()
+
+            # Attach the *trained* router to the blocks (this is what the substrate actually saw)
+            for layer in model:
+                if isinstance(layer, OneBodyParallelHybridBlock):
+                    layer.sparse_slot_router = loaded_router
+                    layer._sparse_slot_enabled = True
+                    layer._sparse_slot_ablation_zero = False
+
+            print(f"[measure v2] Loaded and attached TRAINED router from checkpoint (device={device}) — now faithful to continuation trainer contract")
+        except Exception as e:
+            print(f"[measure v2] Warning: failed to load/attach saved router from ckpt: {e}")
+
     actual_step = ckpt.get("step", "unknown")
 
-    return model, initial_slots, cfg, actual_step
+    return model, initial_slots, cfg, actual_step, loaded_router
 
 
 def run_192_proxy_on_continuation(
@@ -273,9 +304,9 @@ def main():
     print(f"Checkpoint: {args.checkpoint}")
     print("=" * 72)
 
-    # Prefer CUDA when available (continuation checkpoints and routers were exercised
-    # in environments where GPU was present; CPU-only runs easily hit device skew
-    # with freshly attached SparseSlotRouter submodules).
+    # Prefer CUDA when available. The hybrid blocks in these continuation checkpoints
+    # use official FLA MLA (Triton kernels) which require CUDA. CPU is not viable for
+    # faithful measurement of the trained substrate.
     if torch.cuda.is_available():
         device = "cuda"
         dtype = torch.bfloat16
@@ -283,7 +314,7 @@ def main():
         device = "cpu"
         dtype = torch.float32
 
-    hybrid_blocks, initial_slots, cfg, actual_step = load_continuation_hybrid(args.checkpoint, device, dtype)
+    hybrid_blocks, initial_slots, cfg, actual_step, loaded_router = load_continuation_hybrid(args.checkpoint, device, dtype)
 
     # Apply RI-4 ablations if requested (preserves the full contract for measurement)
     for layer in hybrid_blocks:

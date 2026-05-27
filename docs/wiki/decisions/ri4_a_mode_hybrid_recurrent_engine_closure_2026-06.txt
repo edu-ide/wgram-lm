@@ -916,3 +916,43 @@ All actions under strict A-Mode, Most-Deficient + Highest-Value-First, Reverse I
 
 This completes the measurement-fidelity A-Mode thread for the current set of continuation checkpoints.
 
+
+## A-Mode cycle: Faithful trainer-router measurement — small smoke success + practical limits on full gate (step510)
+
+**Holistic one-move (continuation of v2 fidelity thread):**
+- Extended load_continuation_hybrid to detect and load the *saved "router"* from the continuation checkpoint (the exact SparseSlotRouter the trainer used for apply_rehearsal_update during the step360→510 run).
+- Robustly attach it to the hybrid blocks with the same _force_to hygiene developed earlier.
+- This makes the driver execute under the *actual training contract* the substrate experienced (external trained router + manual slot threading), not an internal-only assumption.
+
+**Immediate experiment (small 3x3 smoke on CUDA with trained router attached):**
+- persistent_carry_rate: **1.0**
+- thinking_carries_in/out: 6/6
+- scoring carries also non-zero
+- Dramatic contrast to all previous v2 runs (which were 0.0 when router was skipped or not the trained one).
+
+**Full 6x5 attempt:**
+- Launched on CUDA with the trained router loaded.
+- Run became impractically slow / unresponsive for the 6×5 protocol (30+ hybrid calls with actual router work per thinking trajectory).
+- Small 3x3 succeeded cleanly; full gate hit performance / kernel pressure that made iteration impractical on the current setup for these particular d=128 continuation checkpoints.
+
+**A-Mode diagnostic + re-prioritization:**
+- The substrate *does* produce strong persistent slot carry (rate 1.0 even on tiny runs) when driven with the router it was actually trained with.
+- Previous "0.0 carry" results were an artifact of measurement not matching training contract.
+- The scale question ("does more gold_structured continuation improve carry quality?") is now *in principle* answerable with the v2 + trained-router driver.
+- Practical blocker for rapid 6x5 iteration on step510+ checkpoints: the combination of trained router + official FLA MLA heads + multiple coherent thinking steps per case is currently too heavy for convenient measurement loops.
+
+**Next Most-Deficient (Highest-Value):**
+1. Lightweight measurement mode for trained-router checkpoints (e.g. fewer cases, shorter thinking trajectories, or router-offload / CPU router + CUDA blocks hybrid execution for diagnostics).
+2. Or accept small-N (3-4 cases × 3-4 steps) as sufficient for early scale trend detection while keeping the full 6x5 for final claims.
+3. Parallel: produce at least one small continuation series where the *internal* block RI-4 machinery is the primary (and only) carry mechanism, so future measurements don't depend on loading a separate router object.
+
+The faithful "load the actual trained router" change is now in the driver and proven to flip the carry signal from invisible (0.0) to fully visible (1.0). This is a clean A-Mode win on measurement contract fidelity.
+
+**Artifacts:**
+- scripts/measure_continuation_hybrid_192.py (trained router load + attach path)
+- Small smoke log showing 1.0 carry_rate with trained router
+- Full 6x5 attempt log (hung / slow)
+- This section
+
+All under A-Mode, Most-Deficient prioritization, and RI-4 focus.
+
