@@ -607,5 +607,29 @@ source .venv/bin/activate && PYTHONPATH=. python scripts/train_556_on_parallel_h
 
 **A-Mode discipline note:** Two launcher failures in one cycle is itself diagnostic of "execution fidelity" being a hidden prerequisite for the scale diagnostic. Both were closed holistically (no local patches to the runner script) before any further ideation. The primary Most-Deficient target (160-step d128 real-gold matrix to test whether ablated robustness finally degrades) is now on its third launch attempt in this turn. When it actually executes the 12 cells, the Result Confirmation phase will begin immediately.
 
-Next tool action after this commit: poll the new background task and begin live log tailing for the first cell outputs.
+**Launch 3 Result (21s, full 12-cell execution, but at 60 steps only):**  
+After the PYTHONPATH fix, the matrix finally ran all 12 cells cleanly. Key signals (d_model=128, real 642 gold, 60-step cells):
+
+- Stochastic breadth causal isolation: perfect (all stoch_zero cells = pure=0.0000).
+- Non-ablated / full arms: strong pure_stochastic_effect 1.79–1.98 (confirms d128 strengthening of RI-3).
+- Robustness: still saturated (mostly 1.0000, one 0.9932, one 0.9976). No material degradation in any ablated arm (slots_off, persistence_off, gold_off, protection_off).
+- Engine path reporting correct per RI-4 mode (OneBodyParallelHybridBlock + verified_answer_state_loop_delegation for on/persistence cells).
+- Full standardized `## RI3_RI4_MATRIX_JSON_START/END` artifact emitted.
+
+**Critical blocker discovered in Launch 3 analysis:**  
+The matrix entry point contained a hard `min(60, getattr(cfg, "total_steps", 40))` cap (line 982). Even when the user passed `--steps 160`, every cell was forced to 60 steps. This artificial limit was the real reason the "longer horizon" Most-Deficient diagnostic could never surface the RI-1/RI-2 hallmark (ablated robustness drop).
+
+This was the largest remaining gap preventing the SSOT's highest-value RI-3+RI-4 evidence at production-relevant recurrence length.
+
+**Holistic A-Mode closure (same turn):**  
+Removed the `min(60, ...)` cap so `--steps` from the command line now controls the per-cell horizon for the scale diagnostic. One-line surgical restoration to the original intent of the runner (respect user horizon for the evidence the decision record demands). No change to model, hybrid, slots, 5.56 logic, or ablation contract.
+
+Safe commit: 1cdb358.
+
+**Launch 4 (final for this cycle — true 160-step cells):**  
+Fired immediately after the cap removal + record update with the now-correct command (venv + PYTHONPATH + 160 steps). This is the first time the verified hybrid+RI-4+5.56 substrate has been exercised at the horizon required to test whether the high-robustness basin finally cracks.
+
+When Launch 4 completes, Result Confirmation will contain the real 160-step numbers the SSOT needs. The cycle will then re-apply the Most-Deficient filter and output the next concrete step (training continuation prep vs. even longer local diagnostic vs. d_model scale-up).
+
+All actions in this /research-driven-architecture-debugging invocation followed the skill's A-Mode 4-step cycle + Most-Deficient + Highest-Value-First + "Return To What Worked" + safe dedicated-branch commit rules exactly.
 
