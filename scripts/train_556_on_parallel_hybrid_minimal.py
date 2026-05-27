@@ -42,6 +42,7 @@ import math
 from dataclasses import dataclass
 from typing import Optional, Any
 import os
+import sys
 
 import torch
 import torch.nn as nn
@@ -612,7 +613,8 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
         cell_cfg.ri4_persistence_ablation = ri4_flags["ri4_persistence_off"]
 
         # Run the existing long-run logic (re-uses all 5.56 + RI-4 wiring)
-        pure, rob = long_run_5p56(cell_cfg)
+        # Use the existing curriculum runner for each cell (it performs the faithful 5.56 long run on hybrid)
+        pure, rob = run_556_curriculum(cell_cfg)  # returns (final_pure, final_rob) in current implementation
 
         # Lightweight RI-4 participation signal (engine exercised if slots path taken)
         engine_used = (not ri4_flags["ri4_slots_off"]) or ri4_flags["ri4_persistence_off"]
@@ -877,7 +879,7 @@ if __name__ == "__main__":
         print("=" * 72)
         print("This is now using the project's canonical strict answer scoring (192_eval contract).")
         print("Next: run full multi-seed + longer horizon + real LM-head completion when available.")
-    elif getattr(cfg, "run_ri3_ri4_matrix", False):
+    elif getattr(cfg, "run_ri3_ri4_matrix", False) or "--run_ri3_ri4_matrix" in sys.argv:
         print("[A-Mode] RI-3 (5.56) x RI-4 orthogonal matrix — SSOT highest-value evidence path on hybrid.")
         run_ri3_ri4_matrix(cfg, steps=min(60, getattr(cfg, "total_steps", 40)))
     else:

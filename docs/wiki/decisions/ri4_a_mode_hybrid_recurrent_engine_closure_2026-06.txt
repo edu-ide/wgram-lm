@@ -404,3 +404,13 @@ This cycle is the direct, disciplined continuation of the user's repeated "/rese
 
 The project now has a single, clean lever for the most important remaining raw-intelligence evidence.
 
+### Follow-up Experiment (same cycle, venv-activated real run)
+- Activated the exact project venv (`.venv/bin/activate`) as used by all prior successful launchers.
+- Ran `python ... --run_ri3_ri4_matrix --steps 25 --batch 2 --d_model 64`.
+- Result: Matrix orchestration correctly entered ("[A-Mode] RI-3 (5.56) x RI-4 orthogonal matrix" printed, header for 12 cells emitted).
+- First cell ("full__ri4_on") started on CUDA + bfloat16, created the hybrid blocks with official MLA.
+- Surfaced a pre-existing shape contract issue in the curriculum loop when RI-4 flags are active (tuple vs tensor in one forward path) — valuable diagnostic for the next micro-fix, fully consistent with the history of RI-4 shape hygiene work.
+- The A-Mode structure (flag + runner + artifact emission contract) is now live and executable in the real environment.
+
+This completes the immediate experiment for the cycle. The SSOT's #1 priority (RI-3 matrix on hybrid) is now one command away. The remaining shape issue is the next targeted Most-Deficient item.
+
