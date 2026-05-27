@@ -140,3 +140,106 @@ class CrossAttention(nn.Module):
         out = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=self.dropout if self.training else 0.0)
         out = out.transpose(1, 2).contiguous().view(b, w, d)
         return self.o_proj(out)
+
+
+# =============================================================================
+# Multi-Head Latent Attention (MLA) - Simplified version for hybrid experiments
+# Inspired by DeepSeek-V2 MLA (arXiv:2405.04434)
+#
+# Key ideas implemented here (minimal viable for our scale):
+# - Low-rank latent compression for KV (kv_lora_rank << d_model)
+# - Separate projection for Q
+# - Standard RoPE applied after latent expansion (for compatibility)
+# - This gives better KV cache efficiency than GQA while keeping One-Body path.
+#
+# Note: Full DeepSeek MLA has "decoupled RoPE" and absorption tricks.
+# This is a practical starting point for the Parallel Hybrid attention branch.
+# =============================================================================
+
+class MultiHeadLatentAttention(nn.Module):
+    """Simplified Multi-Head Latent Attention for the hybrid block attention branch.
+
+    Use this as a stronger alternative to plain GQA in the attention side of
+    OneBodyParallelHybridBlock when we want better compression/quality.
+    """
+
+    def __init__(
+        self,
+        d_model: int,
+        n_heads: int,
+        kv_lora_rank: int = 64,           # Latent dimension for KV compression (main MLA knob)
+        q_lora_rank: Optional[int] = None, # Optional low-rank for Q (can be None for full Q)
+        max_seq_len: int = 4096,
+        rope_theta: float = 10000.0,
+        dropout: float = 0.0,
+        causal: bool = True,
+        backend: str = "sdpa",
+    ):
+        super().__init__()
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.head_dim = d_model // n_heads
+        self.kv_lora_rank = kv_lora_rank
+        self.q_lora_rank = q_lora_rank
+        self.max_seq_len = max_seq_len
+        self.rope_theta = rope_theta
+        self.dropout_p = dropout
+        self.causal = causal
+
+        # Q projection (can be low-rank or full)
+        if q_lora_rank is not None:
+            self.q_a_proj = nn.Linear(d_model, q_lora_rank, bias=False)
+            self.q_b_proj = nn.Linear(q_lora_rank, n_heads * self.head_dim, bias=False)
+        else:
+            self.q_a_proj = None
+            self.q_b_proj = nn.Linear(d_model, n_heads * self.head_dim, bias=False)
+
+        # KV latent compression (core of MLA)
+        self.kv_a_proj = nn.Linear(d_model, kv_lora_rank, bias=False)           # input -> latent
+        self.kv_b_proj = nn.Linear(kv_lora_rank, 2 * n_heads * self.head_dim, bias=False)  # latent -> K+V
+
+        self.o_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        b, t, d = x.shape
+
+        # Q path
+        if self.q_a_proj is not None:
+            q = self.q_b_proj(self.q_a_proj(x))
+        else:
+            q = self.q_b_proj(x)
+        q = q.view(b, t, self.n_heads, self.head_dim).transpose(1, 2)
+
+        # KV latent path (MLA compression)
+        kv_latent = self.kv_a_proj(x)                    # (B, T, kv_lora_rank)
+        kv = self.kv_b_proj(kv_latent)                   # (B, T, 2 * n_heads * head_dim)
+
+        # Split into K and V
+        k = kv[..., :self.n_heads * self.head_dim].view(b, t, self.n_heads, self.head_dim).transpose(1, 2)
+        v = kv[..., self.n_heads * self.head_dim:].view(b, t, self.n_heads, self.head_dim).transpose(1, 2)
+
+        # Apply RoPE (simplified - full MLA often decouples this)
+        cos, sin = build_rope_cache(t, self.head_dim, self.rope_theta, x.device, x.dtype)
+        q = apply_rope(q, cos, sin)
+        k = apply_rope(k, cos, sin)
+
+        # Attention
+        dropout_p = self.dropout_p if self.training else 0.0
+
+        if self.causal:
+            out = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=dropout_p,
+                is_causal=True,
+            )
+        else:
+            out = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=dropout_p,
+                is_causal=False,
+            )
+
+        out = out.transpose(1, 2).contiguous().view(b, t, d)
+        return self.o_proj(out)

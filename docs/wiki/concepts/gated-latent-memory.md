@@ -1,5 +1,7 @@
 # Gated Latent Memory
 
+> **Context (2026-06)**: This mechanism is now interpreted as one component of the MSA + 5.56 Adaptive Rehearsal latent memory policy inside the OneBodyParallelHybridBlock. See canonical [Memory Architecture (MSA First-Class)](memory-architecture-msa.md) for the integrated view and current experimental status.
+
 QTRM now has a first local implementation of gated latent memory inside
 `LatentWorkspace`.
 

@@ -43,7 +43,7 @@
 - [Workspace And Memory References](sources/workspace-memory.md): Perceiver, Q-Former, Flamingo, RMT, and ARMT references for QTRM workspace/memory.
 - [Harrier Memory Retrieval](sources/harrier-memory-retrieval.md): Harrier 270M embedding default and FAISS retrieval decision.
 - [Rerankers](sources/rerankers.md): Qwen3-Reranker, BGE, NVIDIA Nemotron, ContextualAI, and Jina reranking candidates.
-- [Memory Sparse Attention](sources/memory-sparse-attention.md): MSA 100M-token latent-memory reference and QTRM mapping.
+- **[Memory Sparse Attention](sources/memory-sparse-attention.md)**: MSA 100M-token latent-memory reference and QTRM mapping. **Elevated to first-class reference architecture for the internal memory pillar (2026-06)**. See new canonical [Memory Architecture (MSA First-Class)](concepts/memory-architecture-msa.md).
 - [Long-Horizon Agent References](sources/long-horizon-agent-references.md): Externalization, MemGPT, Memex, RLM, ReAct, Reflexion, Voyager, SWE-agent, Self-RAG, CRAG, and RAPTOR reference map.
 - [Agentic Closed-Loop Planning](sources/agentic-closed-loop-planning.md): Agent Lightning, RAGEN, RAGEN-2, AgentGym, LATS, ACE, SkillRL, Agent-World, and executable world-model references.
 - [Internalized Context Engineering](sources/internalized-context-engineering.md): ACE, REALM, RETRO, DSI, Atlas, LM2, G-MemLLM, MSA, and context-engineering references for moving context routing into trainable memory paths.
@@ -52,6 +52,23 @@
 - [2026 Memory And Context Architecture Update](sources/2026-memory-context-architecture.md): current correction that QTRM should use prompt-conditioned memory readers rather than a workspace-only sidecar.
 - [Role-Filler Variable Slots](sources/role-filler-variable-slots.md): Slot Attention, TPR, transformer variable-binding, CLRS, and Open-Book NAR references for role-conditioned algorithmic value state.
 - [Pointer/Copy Renderer](sources/pointer-copy-renderer.md): Pointer Networks, CopyNet, and pointer-generator prior for replacing brittle absolute value classes with source-position pointer state plus copy/edit generation.
+
+## Memory Architecture Pillar (MSA First-Class) — NEW SSOT
+
+**2026-06 Reorganization**: Per explicit project direction ("memory sparse attention MSA 임"), Memory Architecture is now treated as a **first-class pillar** for the 1B >> 27B thesis (see [S2 PoC Verification Plan](../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md)).
+
+- **[Memory Architecture (MSA First-Class)](concepts/memory-architecture-msa.md)**: Canonical SSOT. MSA as the reference for selective/sparse latent memory scaling + 5.56 Adaptive Rehearsal (stochastic breadth, real-gold injection, attractor protection) realized inside OneBodyParallelHybridBlock. Links all current evidence (~5.5× real-gold gap at 120 steps), necessary conditions, ALRMC track, and One-Body Covenant.
+- Legacy context (pre-MSA elevation): [Workspace Memory Architecture](concepts/workspace-memory-architecture.md), [Gated Latent Memory](concepts/gated-latent-memory.md), [Neural Long-Term Memory](concepts/neural-long-term-memory.md), [Memory Evaluation Metrics](concepts/memory-evaluation-metrics.md)
+
+**Active Research Navigation (highest-value work as of 2026-06)**:
+- [PHASE S: Surpassing 5.6 Experiments](../roadmaps/PHASE_S_Surpassing_5.6_Experiments.md) (S0~S5 full strategy)
+- [S2 PoC Verification Plan for 1B vs 27B](../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md) (7 necessary conditions + PoC matrix)
+- [Raw Intelligence / Actual Reasoning Necessary Conditions (2026-06 SSOT)](../wiki/decisions/raw-intelligence-necessary-conditions-2026-06.md) + [RI PoC Execution Plan](../roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md)
+- [S2 Interim Verdict Report](../roadmaps/S2_Interim_Verdict_Report.md) (current 1.496 vs 0.2714 real-gold direct comparison)
+- 5.56 Evidence Package: `docs/5.56_Promotion_Gate_Evidence_2026-05-30/`
+- Implementation: `src/qtrm_mm/blocks.py` (OneBodyParallelHybridBlock), `scripts/train_556_on_parallel_hybrid_minimal.py`, `scripts/run_s2_historical_baseline.py`
+
+---
 
 ## Concepts
 
@@ -67,9 +84,9 @@
 - [Compositional Architecture](concepts/compositional-architecture.md): how to combine Qwen, GatedDeltaNet, JEPA/world-model, and recursion without hiding interference.
 - [Recurrent-Depth Transformers](concepts/recurrent-depth-transformers.md): looped transformer design, stable injection, depth sweeps, and telemetry.
 - [CoT To Latent Transfer](concepts/cot-to-latent-transfer.md): QTRM plan for using explicit traces as supervision while running latent workspace loops with halt telemetry.
-- [Workspace Memory Architecture](concepts/workspace-memory-architecture.md): separates QTRM working memory, donor-logit residuals, and future persistent memory.
-- [Gated Latent Memory](concepts/gated-latent-memory.md): LM2/G-MemLLM-inspired gated workspace update and required gate-off ablation.
-- [Workspace Evidence Path](concepts/workspace-evidence-path.md): corrected SSOT evidence design where MemoryOS retrieval is compiled into one canonical token stream; workspace/dual paths are ablation probes.
+- [Workspace Memory Architecture](concepts/workspace-memory-architecture.md): **Historical** (pre-2026-06 MSA elevation). See new canonical [Memory Architecture (MSA First-Class)](concepts/memory-architecture-msa.md) for current direction.
+- [Gated Latent Memory](concepts/gated-latent-memory.md): LM2/G-MemLLM-inspired gated workspace update (now interpreted as part of the MSA + 5.56 rehearsal substrate inside One-Body Hybrid).
+- [Workspace Evidence Path](concepts/workspace-evidence-path.md): corrected SSOT evidence design where MemoryOS retrieval is compiled into one canonical token stream; workspace/dual paths are ablation probes (still valid for runtime boundary).
 - [Gated Core Context Injection](concepts/gated-core-context-injection.md): lets the recursive core read prelude prompt/evidence context through an ablatable gated cross-attention path.
 - [Test-Time Adaptation](concepts/test-time-adaptation.md): separates donor base policy, QTRM residuals, and In-Place TTT donor adaptation.
 - [Donor Annealing Roadmap](concepts/donor-annealing-roadmap.md): staged path from Qwen donor-logit sidecar to low-donor-scale QTRM student behavior.
@@ -83,10 +100,10 @@
 - [Truth-Gated Evidence Answer Channel](concepts/truth-gated-evidence-answer-channel.md): answer-path gate that copies hidden-workspace spans only when support/causal heads allow and refute/missing heads do not block.
 - [Memory Evaluation Metrics](concepts/memory-evaluation-metrics.md): layered hit/exact/normalized/audit scoring for MemoryOS evidence tasks.
 - [Critical Synthesis Reasoning](concepts/critical-synthesis-reasoning.md): critique, preserve, risk-check, reframe, and positive conclusion loop for religion/value questions.
-- [Neural Long-Term Memory](concepts/neural-long-term-memory.md): Titans-style memory axis and precise latent-space inference wording.
+- [Neural Long-Term Memory](concepts/neural-long-term-memory.md): Titans-style memory axis (now subsumed under MSA-first-class latent memory + ALRMC rehearsal inside One-Body recurrence).
 - [Long-Horizon Agent Architecture](concepts/long-horizon-agent-architecture.md): QTRM/MemoryOS runtime modes for long-running agent work, RLM, trace memory, skills, and verification gates.
 - [Agentic Closed-Loop Planner](concepts/agentic-closed-loop-planner.md): staged path from scripted MemoryOS loops to learned action controllers, turn-level RL, and latent model-based planning.
-- [Internalized Context Engineering](concepts/internalized-context-engineering.md): staged plan for using compiled context better while keeping MemoryOS outside the model boundary.
+- [Internalized Context Engineering](concepts/internalized-context-engineering.md): staged plan for using compiled context better while keeping MemoryOS outside the model boundary (MSA provides the internal selective routing complement).
 
 ## Architecture
 
@@ -140,7 +157,7 @@
 - [Latent Workspace Prior Decision](decisions/latent-workspace-prior-decision.md): keep Perceiver/Q-Former slots as connector baseline, move memory claims to gated causality and sparse routing.
 - [Expanded Workspace/Core Ablation](decisions/expanded-workspace-core-ablation.md): expanded 72-case causality ablation covering workspace/core, coda, residual-head, donor-hidden, and workspace-only paths.
 - [Root Architecture Causality Gate](decisions/root-architecture-causality-gate.md): automated accept/reject gate for whether workspace/core/evidence paths are causally necessary on ablation evals.
-- [Raw Intelligence Gates](decisions/raw-intelligence-gates.md): first-priority ASI gates for no-retrieval recursive-depth reasoning, trainable memory on/off, and reasoning-memory composition.
+- **[Raw Intelligence / Actual Reasoning Necessary Conditions (2026-06 SSOT)](decisions/raw-intelligence-necessary-conditions-2026-06.md)**: Updated canonical conditions for raw intelligence on the OneBodyParallelHybridBlock + MSA memory + 5.56 rehearsal substrate. Supersedes the 2026-05 gates for all new work; maps directly to the 7 S2 1B>>27B necessary conditions. Historical version: [raw-intelligence-gates.md](decisions/raw-intelligence-gates.md).
 - [QTRM-Native Dual-Path Reverse Active Architecture](decisions/qtrm-native-dual-path-reverse-active-architecture.md): freezes `dual_path_reverse` as the active native core hypothesis and defines the length/depth promotion gate.
 - [Qwen Donor Risk And Metacognition Boundary](decisions/qwen-donor-risk-and-metacognition.md): clarifies when Qwen donor use is valid scaffold versus a crutch hiding QTRM raw-intelligence or calibration failures.
 - [Noise Warmup Metacognitive Calibration Smoke S001](decisions/noise-warmup-metacognitive-calibration-smoke-s001.md): matched 1-case no-warmup versus random-noise-warmup calibration smoke using choice-score ECE/Brier.

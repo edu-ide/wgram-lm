@@ -46,12 +46,15 @@ def score_answer(
     aliases: Iterable[str],
     *,
     expected_unknown: bool = False,
+    strict_exact: bool = False,
 ) -> dict[str, Any]:
     """Return layered deterministic answer scores and audit flags.
 
     `hit` preserves the old permissive answer check so historical runs remain
     comparable. The stricter fields make it clear whether a hit was exact,
     normalized exact, or only a loose substring match that should be audited.
+    When strict_exact=True, only exact or normalized_exact (or unknown_exact)
+    count as hit; loose contains is rejected (used by pure recursive RI gates).
     """
     alias_list = [str(alias) for alias in aliases]
     canonical = canonical_answer_text(text)
@@ -79,7 +82,11 @@ def score_answer(
     unknown_exact = normalized_compact == "unknown"
     unknown_correct = bool(expected_unknown and unknown_contains)
 
-    hit = unknown_correct if expected_unknown else normalized_contains
+    if bool(strict_exact):
+        hit = unknown_exact if expected_unknown else bool(exact_match or normalized_exact)
+    else:
+        hit = unknown_correct if expected_unknown else normalized_contains
+
     if expected_unknown and unknown_exact:
         match_type = "unknown_exact"
     elif exact_match:
@@ -98,6 +105,8 @@ def score_answer(
         audit_reasons.append("loose_contains_match")
     if expected_unknown and unknown_correct and not unknown_exact:
         audit_reasons.append("unknown_with_extra_text")
+    if bool(strict_exact) and normalized_contains and not (exact_match or normalized_exact):
+        audit_reasons.append("strict_exact_miss")
     if not hit:
         audit_reasons.append("answer_miss")
 

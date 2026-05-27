@@ -126,6 +126,12 @@ Current code anchors:
   - stage102z_final_freeform_answer_path → PROMOTED (full_answer_path)
   - gated_thought_workspace_broadcast → PROMOTED
   - depthwise_monotonic_answer_attractor → PROMOTED
+
+**2026-05-29 note (I→G→A on remaining tracks)**:
+- Highest priority unpromoted: "adaptive_rehearsal_556_gold_recipe" (PENDING_EXTRACTION) + "restoration_gate" (SCAFFOLD).
+- Full analysis + concrete I→G→A restoration plans (stashed +154 new thought structure diff, "binding probe weak vs 5.56 curriculum" diagnosis, why the 2026-05-28 wiki explicitly required Restoration Gate before more ALRMC, and step-by-step revival contracts) recorded in docs/wiki/decisions/2026-05-28-ablation-study-plan-literature-extensions.md (2026-05-29 section).
+- Per user request "Adaptive Rehearsal 복원 계획, stashed new structure 전체 diff 분석, Restoration Gate 현재 상태 등 다 진행해봐" + the project's own declared "1번 먼저 (Restoration Gate) → 2번 (ALRMC)" rule.
+- Next mandatory: execute the Restoration Gate reproduction on 642_adaptive_fine_tuned_200step using preserved 627/625 before further deepening.
 - Next track I-stage advanced:
   - equation_binding: real forward logic (gated write from z_h + gated readback injection back into recurrent state for One-Body enforcement; ablation removes both storage and effect).
   - LeWM predictive tier: full native port (JEPA-style predictor anchored to binding/workspace state; computes and injects forecasted answer-causal next state into z_h; ablation supported).

@@ -1461,6 +1461,11 @@ IMTA-K smoke
 
 ## Hard Rejects
 
+**2026-05-29 Note (Ablation Discipline)**: 
+All claims related to "answer-attractor", "정답 정렬", multi-trajectory selection, or One-Body causal contribution must survive the Master Ablation Milestone Plan documented in:
+`docs/wiki/decisions/2026-05-28-ablation-study-plan-literature-extensions.md` (Ablation Milestone Plan section).
+In particular, independent "answer-attractor loss/off" and "one-body state off" ablations are mandatory before any promotion or paper claim. See Phase 2 and Phase 4 of the plan.
+
 Reject before launch if the proposal says:
 
 ```text

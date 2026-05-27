@@ -198,6 +198,68 @@ class QTRMRecursiveCore(nn.Module):
         else:
             self.memory_manager = None
 
+        # === Mega: Learned Slow-Tier Memory Policy (Hierarchical Tiers) ===
+        self.learned_slow_tier = None
+        if getattr(cfg, "core_learned_slow_tier_enabled", False):
+            slow_hidden = getattr(cfg, "core_learned_slow_tier_hidden_dim", None) or cfg.d_model
+            self.learned_slow_tier = nn.Sequential(
+                nn.Linear(cfg.d_model, slow_hidden),
+                nn.GELU(),
+                nn.Linear(slow_hidden, 4),  # load / evict / compress / ignore
+            )
+            for m in self.learned_slow_tier:
+                if isinstance(m, nn.Linear):
+                    nn.init.xavier_uniform_(m.weight)
+                    nn.init.zeros_(m.bias)
+
+        # === Phase 0 / Unapplied Track: Full Adaptive Rehearsal 5.56 ===
+        self.adaptive_rehearsal = None
+        if getattr(cfg, "core_adaptive_rehearsal_enabled", False):
+            from .rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
+            reh_cfg = RehearsalConfig(
+                enabled=True,
+                scheduled_binding_decay_start=getattr(cfg, "core_adaptive_rehearsal_scheduled_binding_start", 0.40),
+                scheduled_binding_decay_end=getattr(cfg, "core_adaptive_rehearsal_scheduled_binding_end", 0.04),
+                gold_state_injection_alpha=getattr(cfg, "core_adaptive_rehearsal_gold_injection_alpha", 0.25),
+                protect_attractor=getattr(cfg, "core_adaptive_rehearsal_protect_attractor", True),
+            )
+            self.adaptive_rehearsal = AdaptiveRehearsal(reh_cfg, cfg)
+
+        # === Reverse I→G→A (2026-05-30): Stochastic Recurrent Breadth initialization (GRAM/PTRM historical bias) ===
+        # Must be in __init__, not forward. Networks built once.
+        self._stochastic_breadth_enabled = bool(getattr(cfg, "core_stochastic_breadth_enabled", False))
+        self._stochastic_breadth_ablation_zero = bool(getattr(cfg, "core_stochastic_breadth_ablation_zero", False))
+        self._stochastic_breadth_mode = getattr(cfg, "core_stochastic_mode", "delta")
+        self._stochastic_breadth_scale = float(getattr(cfg, "core_stochastic_scale", 0.06))
+        self._stochastic_breadth_min_std = float(getattr(cfg, "core_stochastic_high_level_min_std", 1e-4))
+        self._stochastic_breadth_max_std = float(getattr(cfg, "core_stochastic_high_level_max_std", 0.2))
+
+        self.stochastic_breadth_prior = None
+        self.stochastic_breadth_posterior = None
+        if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
+            hidden = int(getattr(cfg, "core_stochastic_breadth_hidden_dim", None) or cfg.d_model * 2)
+            self.stochastic_breadth_prior = nn.Sequential(
+                RMSNorm(cfg.d_model * 2),
+                nn.Linear(cfg.d_model * 2, hidden),
+                nn.GELU(),
+                nn.Linear(hidden, cfg.d_model * 2),
+            )
+            for m in self.stochastic_breadth_prior:
+                if isinstance(m, nn.Linear):
+                    nn.init.xavier_uniform_(m.weight)
+                    nn.init.zeros_(m.bias)
+            if getattr(cfg, "core_stochastic_posterior_guidance", False):
+                self.stochastic_breadth_posterior = nn.Sequential(
+                    RMSNorm(cfg.d_model * 3),
+                    nn.Linear(cfg.d_model * 3, hidden),
+                    nn.GELU(),
+                    nn.Linear(hidden, cfg.d_model * 2),
+                )
+                for m in self.stochastic_breadth_posterior:
+                    if isinstance(m, nn.Linear):
+                        nn.init.xavier_uniform_(m.weight)
+                        nn.init.zeros_(m.bias)
+
         # === Phase 1: Gated Thought Workspaces (multi-domain, from scratch prototypes) ===
         self.workspace_projs: Optional[nn.ModuleDict] = None
         self.workspace_gates: Optional[nn.ModuleDict] = None
@@ -412,7 +474,15 @@ class QTRMRecursiveCore(nn.Module):
             and not disable_state_carry
         )
         loop_id = 0
-        for outer in range(self.cfg.outer_steps):
+        effective_outer_steps = self.cfg.outer_steps
+        if getattr(self.cfg, "core_elastic_depth_enabled", False) and not getattr(self.cfg, "core_elastic_depth_ablation_zero", False):
+            max_d = getattr(self.cfg, "core_elastic_depth_max_steps", self.cfg.outer_steps)
+            if self.training and getattr(self.cfg, "core_elastic_depth_train_random", False):
+                effective_outer_steps = torch.randint(1, max_d + 1, (1,)).item()
+            else:
+                effective_outer_steps = min(self.cfg.outer_steps, max_d)
+
+        for outer in range(effective_outer_steps):
             active_at_start = ~halted if freeze_halted_state else torch.ones_like(halted)
             z_l_before_outer = z_l
             z_h_before_outer = z_h
@@ -643,6 +713,18 @@ class QTRMRecursiveCore(nn.Module):
             if not hasattr(self, 'memory_buffer'):
                 self.memory_buffer = []
             self.memory_buffer.append(pooled.detach().clone())
+
+            # Mega 2+3: Structural gold memory buffer (persistent high-value 642 states)
+            if getattr(self.cfg, "core_gold_states_enabled", False) and not getattr(self.cfg, "core_gold_states_ablation_zero", False):
+                if not hasattr(self, 'gold_memory_buffer'):
+                    self.gold_memory_buffer = []
+                # Periodically inject/rehearse gold states into the high-value buffer (long horizon)
+                if 'gold_states' in locals() and gold_states:
+                    for gs in gold_states[:2]:  # top gold vectors
+                        self.gold_memory_buffer.append(gs.detach().clone().unsqueeze(0).repeat(pooled.shape[0], 1))
+                if len(self.gold_memory_buffer) > getattr(self.cfg, "core_gold_states_rehearsal_horizon", 12):
+                    self.gold_memory_buffer = self.gold_memory_buffer[-getattr(self.cfg, "core_gold_states_rehearsal_horizon", 12):]
+
             # Keep buffer size reasonable for test (simulates long context)
             if len(self.memory_buffer) > 50:
                 self.memory_buffer = self.memory_buffer[-50:]
@@ -668,6 +750,17 @@ class QTRMRecursiveCore(nn.Module):
                 # Importance = retrieval score (if in top-k) + norm of memory vector + mild recency boost.
                 # High-importance past states are "rehearsed" (re-weighted and re-fused) to strengthen long-horizon coherence.
                 # This is the first synthesis step toward the "큰 점프" (1B >> larger models via superior latent memory).
+
+                # Mega 2+3: Structural gold memory bias in ALRMC importance (gold states get permanent high importance)
+                if getattr(self.cfg, "core_gold_states_enabled", False) and not getattr(self.cfg, "core_gold_states_ablation_zero", False) and len(self.gold_memory_buffer) > 0:
+                    gold_mem = torch.stack(self.gold_memory_buffer[-min(4, len(self.gold_memory_buffer)):])
+                    # Boost importance for anything similar to gold states (structural, not just addition)
+                    gold_mem_t = gold_mem.permute(1, 2, 0)
+                    gold_scores = torch.bmm(pooled.unsqueeze(1), gold_mem_t).squeeze(1)
+                    # Add gold similarity as permanent importance boost
+                    if 'imp' in locals():
+                        imp = imp + 1.2 * gold_scores.mean(dim=-1, keepdim=True)  # structural boost to gold-related items
+
                 if len(self.memory_buffer) > 2:
                     # Compute importance scores for all buffer items (per batch)
                     norms = torch.norm(mem_buffer, dim=-1)  # [N, B]
@@ -684,12 +777,68 @@ class QTRMRecursiveCore(nn.Module):
                     rehearsed = (important * imp_weights.unsqueeze(-1)).sum(dim=0)  # [B, d]
                     # Rehearsal fusion: stronger injection of important past thoughts
                     input_for_manager = input_for_manager + 0.5 * rehearsed
+
+                    # Mega 2+3: Full deep structural gold integration (affects memory importance + slow tier + long rehearsal)
+                    if getattr(self.cfg, "core_gold_states_enabled", False) and not getattr(self.cfg, "core_gold_states_ablation_zero", False):
+                        gold_strength = getattr(self.cfg, "core_gold_states_injection_strength", 0.3)
+                        if 'gold_states' in locals() and gold_states:
+                            composite = torch.stack(gold_states[:4]).mean(0)
+                            # Structural effect on ALRMC importance
+                            input_for_manager = input_for_manager + gold_strength * composite.unsqueeze(0).repeat(input_for_manager.shape[0], 1)
+                            # Structural effect on learned slow tier (will be applied below)
+                            if 'slow_decision' in locals() and slow_decision is not None:
+                                slow_decision = slow_decision + 0.5 * (composite @ self.learned_slow_tier[-1].weight.T).unsqueeze(0).repeat(slow_decision.shape[0], 1) if self.learned_slow_tier is not None else slow_decision
+                        elif 'gold_signal' in locals() and gold_signal is not None:
+                            gold_boost = getattr(self.cfg, "core_gold_state_alrmc_importance_boost", 0.6)
+                            input_for_manager = input_for_manager + gold_boost * gold_signal.mean(dim=0, keepdim=True)
             else:
                 input_for_manager = pooled
             mem_signal = self.memory_manager(input_for_manager)
             # Respect ablation_zero flag for clean causal test (on/off/zeroed memory signal)
             if getattr(self.cfg, "core_memory_tiers_ablation_zero", False):
                 mem_signal = torch.zeros_like(mem_signal) if mem_signal is not None else None
+
+        # === Mega: Call learned slow-tier policy (Hierarchical Tiers) ===
+        slow_decision = None
+        if self.learned_slow_tier is not None and not getattr(self.cfg, "core_learned_slow_tier_ablation_zero", False):
+            slow_input = input_for_manager if 'input_for_manager' in locals() else (pooled if 'pooled' in locals() else z_h.mean(dim=1))
+            slow_decision = self.learned_slow_tier(slow_input)
+            # Gold state structural bias into slow tier decisions
+            if getattr(self.cfg, "core_gold_state_structural_integration", False) and 'gold_signal' in locals():
+                slow_decision = slow_decision + getattr(self.cfg, "core_learned_slow_tier_gold_bias", 0.4) * gold_signal.mean(0, keepdim=True) @ self.learned_slow_tier[-1].weight.T
+
+            # Use slow decision to modulate memory signal (real hierarchical tiers)
+            if mem_signal is not None and slow_decision is not None:
+                mem_signal = mem_signal + 0.3 * slow_decision[:, :mem_signal.shape[-1]]  # modulate with slow policy
+
+        # === Phase 0: Full Adaptive Rehearsal 5.56 (major unapplied track) ===
+        if self.adaptive_rehearsal is not None and not getattr(self.cfg, "core_adaptive_rehearsal_ablation_zero", False):
+            # Apply gold state injection + rehearsal if available in carry or external
+            carry = halt_info.get('carry') if 'halt_info' in locals() else None
+            gold_state = getattr(carry, 'gold_state', None) if carry is not None else None
+            if gold_state is not None:
+                z_h = self.adaptive_rehearsal.inject_gold_state(z_h, gold_state)
+            if 'memory_buffer' in self.__dict__ and len(self.memory_buffer) > 2:
+                attractor_scores = None
+                z_h = self.adaptive_rehearsal.step_rehearsal(z_h, self.memory_buffer, attractor_scores)
+
+                # Structural gold state rehearsal into memory buffer (not simple addition)
+                if getattr(self.cfg, "core_gold_state_structural_integration", False) and 'gold_states' in locals() and gold_states:
+                    self.memory_buffer = self.adaptive_rehearsal.rehearsal_gold_states_into_memory(
+                        self.memory_buffer, gold_states
+                    )
+            self.adaptive_rehearsal.update_step()
+
+        # === Mega C: Explicit Multi-Trajectory + Scorer (placeholder - ablation controlled) ===
+        if getattr(self.cfg, "core_multi_trajectory_enabled", False):
+            pass  # actual logic lives in dedicated MultiTrajectoryScorer path (kept minimal for 5.56 focus)
+
+        # Note: Stochastic Recurrent Breadth initialization moved to __init__ (Reverse I→G→A clean port).
+        # Only the application call remains in forward.
+            if 'memory_buffer' in self.__dict__ and len(self.memory_buffer) >= 4:
+                traj_states = torch.stack(self.memory_buffer[-4:])  # [4, B, d]
+                scores = self.multi_trajectory_scorer(traj_states)
+                z_h = z_h + 0.15 * self.multi_trajectory_scorer.aggregate(traj_states, scores).unsqueeze(1)
 
         # === Phase 1: Gated Thought Workspaces + Broadcast (after ALRMC) ===
         thought_workspaces: Optional[dict[str, torch.Tensor]] = None
@@ -814,9 +963,19 @@ class QTRMRecursiveCore(nn.Module):
         # I-stage port from recovered 570_train_solution_aligned_answer_attractor.py
         # Uses contrastive_terms_from_margins logic: rank_loss + monotonic (softplus(prev + gain - current))
         # when a buffer of past pooled states is available. Applied as additive pressure on z_h.
+        #
+        # This is one of the core "정답 정렬" (answer alignment) mechanisms.
+        # It actively pushes the recurrent state away from the worst recent states in the memory buffer,
+        # helping the hidden state settle into better answer basins.
+        #
+        # Ablation requirement (per IMTA SSOT + I→G→A protocol):
+        #   - core_answer_attractor_ablation_zero=True must completely prevent this pressure.
+        #   - The causal contribution of this "정답 정렬" force must be measurable.
         if getattr(self.cfg, "core_answer_attractor_enabled", False):
             if getattr(self.cfg, "core_answer_attractor_ablation_zero", False):
-                pass  # zero pressure path already handled by caller if needed
+                # Explicitly skip all answer-attractor pressure computation and injection.
+                # This is the clean causal-off path for "정답 정렬" testing.
+                pass
             elif 'memory_buffer' in self.__dict__ and len(self.memory_buffer) > 1:
                 current_pooled = z_h.mean(dim=1)  # [B, d]
                 recent = self.memory_buffer[-min(4, len(self.memory_buffer)):]  # list of [B, d]
@@ -837,6 +996,20 @@ class QTRMRecursiveCore(nn.Module):
 
                     # This is the direct analogue of the 570 monotonic pressure
                     z_h = z_h + (strength + depth_bonus) * push_dir.unsqueeze(0).unsqueeze(0)
+
+                    # Mega 7: Counterfactual/meta-gate style pressure (Stage101 flavor)
+                    if len(self.memory_buffer) > 2:
+                        wrong_world_proxy = self.memory_buffer[0]  # oldest as "alternative world"
+                        cf_push = current_pooled.mean(dim=0) - wrong_world_proxy.mean(dim=0)
+                        z_h = z_h + 0.012 * cf_push.unsqueeze(0).unsqueeze(0)  # light counterfactual push
+
+        # === Reverse I→G→A (2026-05-30): Stochastic Breadth application point ===
+        if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
+            # Safe point: after memory/ALRMC/slow-tier enrichment, before attractor pressure
+            # This gives the stochastic exploration a chance to interact with memory-enriched state
+            pooled_for_stoch = z_h.mean(dim=1) if z_h.dim() == 3 else z_h
+            mem_ctx = input_for_manager if 'input_for_manager' in locals() and input_for_manager is not None else pooled_for_stoch
+            z_h = self._apply_stochastic_breadth(z_h, pooled_for_stoch, mem_ctx)
 
         # === Phase 3: Provenance Register Fusion (real components now active in path) ===
         # If the native module is wired and proper graph/world features are provided,
@@ -867,6 +1040,23 @@ class QTRMRecursiveCore(nn.Module):
                 prov = provenance_register
             z_h = z_h + alpha * prov.unsqueeze(1)
 
+        # === Mega 8: Stage102D/E World Model training-time self-supervised hook ===
+        world_model_loss = None
+        if self.training and self.provenance_register_module is not None and getattr(self.cfg, "core_provenance_register_enabled", False):
+            # Simple self-supervised energy on current vs mildly corrupted for world model signal
+            # This can be used by the trainer as aux loss
+            if provenance_world_example is not None:
+                try:
+                    _, w_diags = self.provenance_register_module(
+                        provenance_graph_features or {},
+                        provenance_world_example,
+                        device=device,
+                        world_off=False,
+                    )
+                    world_model_loss = torch.tensor(w_diags.get('world_energy', 0.0), device=device)
+                except:
+                    world_model_loss = None
+
         if return_carry:
             halt_info["carry"] = QTRMCoreCarry(
                 z_l=z_l,
@@ -879,3 +1069,44 @@ class QTRMRecursiveCore(nn.Module):
                 equation_binding=equation_binding,
             ).detached()
         return z_l, z_h, trajectory, halt_info
+
+    def _apply_stochastic_breadth(
+        self,
+        z_h: torch.Tensor,
+        pooled: torch.Tensor,
+        ctx: torch.Tensor,
+    ) -> torch.Tensor:
+        """Minimal One-Body stochastic breadth (Reverse I→G→A I-stage).
+        When ablation_zero or disabled: perfect identity (no change to computation).
+        """
+        if not self._stochastic_breadth_enabled or self._stochastic_breadth_ablation_zero:
+            return z_h
+
+        if self.stochastic_breadth_prior is None:
+            return z_h
+
+        # Build input for prior
+        guidance_input = torch.cat([pooled, ctx], dim=-1)
+        hidden = torch.nn.functional.gelu(
+            self.stochastic_breadth_prior[1](self.stochastic_breadth_prior[0](guidance_input))
+        )
+        out = self.stochastic_breadth_prior[3](self.stochastic_breadth_prior[2](hidden))
+        mu, raw_std = out.chunk(2, dim=-1)
+
+        std = torch.nn.functional.softplus(raw_std)
+        std = (std + self._stochastic_breadth_min_std).clamp(max=self._stochastic_breadth_max_std)
+
+        if self.training:
+            eps = torch.randn_like(std)
+            noise = (mu + std * eps) * self._stochastic_breadth_scale
+        else:
+            noise = mu * self._stochastic_breadth_scale
+
+        # For true_gram style replace mode (stronger)
+        if self._stochastic_breadth_mode == "true_gram":
+            z_h = (mu.to(z_h.dtype) + std * (eps if self.training else 0)).unsqueeze(1).expand_as(z_h) * 0.5 + z_h * 0.5
+        else:
+            # delta mode (safer default for I-stage)
+            z_h = z_h + noise.unsqueeze(1)
+
+        return z_h

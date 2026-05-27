@@ -2,7 +2,7 @@
 
 Available backends:
   attention: sdpa, flash_attn
-  delta:     torch_gated_delta, fla_kda, fla_gated_delta,
+  delta:     torch_gated_delta, torch_gated_delta2_v2 (recommended for new work), fla_kda, fla_gated_delta, official_gated_delta2
              official_gated_delta2 / official_gdn2
 
 FlashAttention is optional; if not installed, falls back to SDPA.
@@ -179,3 +179,13 @@ __all__ = [
     "HAS_FLA_KDA",
     "HAS_OFFICIAL_GDN2",
 ]
+
+    # === Gating v2 (2026-05-30) - Torch reference ===
+    if name == "torch_gated_delta2_v2":
+        from ..mixers import TorchGatedDeltaNet2MixerV2
+        return TorchGatedDeltaNet2MixerV2
+
+    # Allow alias
+    if name in {"gated_delta2_v2", "gdn2_v2"}:
+        from ..mixers import TorchGatedDeltaNet2MixerV2
+        return TorchGatedDeltaNet2MixerV2

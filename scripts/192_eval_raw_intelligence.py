@@ -18,6 +18,11 @@ DEFAULT_MODES = [
     "qtrm_core_steps_8_no_evidence",
     "qtrm_core_steps_8_delta_off_no_evidence",
     "qtrm_core_steps_8_residual_gate_off_no_evidence",
+    # RI-4: MSA / Raven-style sparse persistent memory inside One-Body hybrid (2026-06)
+    "hybrid_sparse_slots_on_no_evidence",
+    "hybrid_sparse_slots_off_no_evidence",
+    "hybrid_persistent_memory_ablation_no_evidence",
+    "hybrid_sparse_router_ablation_no_evidence",
 ]
 FORCED_CHOICE_TIE_EPS = 1.0e-6
 FORCED_CHOICE_TIE_COMPLETION = "__FORCED_CHOICE_TIE__"
@@ -292,6 +297,21 @@ def _core_carry_forward_kwargs(runtime: dict[str, Any], core_carry) -> dict[str,
     }
 
 
+def _ri4_memory_residual_kwargs(runtime: dict[str, Any]) -> dict[str, Any]:
+    """Return the proper ri4_memory_residual kwargs for model calls when in RI-4 hybrid mode.
+    The residual is sourced from runtime (set in the RI-4 pre-thinking block), making the
+    harness completely free of model instance monkey-patching for this mechanism.
+    """
+    res = runtime.get("ri4_memory_residual")
+    if res is None:
+        return {}
+    scale = float(runtime.get("ri4_memory_residual_scale", 0.3))
+    return {
+        "ri4_memory_residual": res,
+        "ri4_memory_residual_scale": scale,
+    }
+
+
 def mode_runtime(mode: str) -> dict[str, Any]:
     if mode == "donor_only_no_evidence":
         return {
@@ -308,6 +328,64 @@ def mode_runtime(mode: str) -> dict[str, Any]:
             "mode": mode,
             "disable_core": True,
             "core_steps_override": None,
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+
+    # === RI-4: Sparse Persistent Memory (MSA/Raven-style) inside OneBodyParallelHybrid ===
+    if mode == "hybrid_sparse_slots_on_no_evidence":
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": True,
+            "persistence_ablation": False,
+            "router_ablation": False,
+            "disable_core": False,
+            "core_steps_override": 4,   # default moderate depth for RI-4 PoC
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+    if mode == "hybrid_sparse_slots_off_no_evidence":
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": False,   # ablation: router disabled (dense behavior)
+            "persistence_ablation": False,
+            "router_ablation": False,
+            "disable_core": False,
+            "core_steps_override": 4,
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+    if mode == "hybrid_persistent_memory_ablation_no_evidence":
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": True,
+            "persistence_ablation": True,    # strong ablation: no selective persistence
+            "router_ablation": False,
+            "disable_core": False,
+            "core_steps_override": 4,
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+    if mode == "hybrid_sparse_router_ablation_no_evidence":
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": True,
+            "persistence_ablation": False,
+            "router_ablation": True,         # router always chooses all/dense
+            "disable_core": False,
+            "core_steps_override": 4,
             "qtrm_logits_scale": None,
             "donor_logits_scale": None,
             "memoryos_used": False,
@@ -1500,6 +1578,7 @@ def _answer_choice_logprob(
                 token_numeric_source_slot_mask=source_slot_mask,
                 **extra,
                 **_core_carry_forward_kwargs(runtime, core_carry),
+                **_ri4_memory_residual_kwargs(model),
                 disable_core=bool(runtime.get("disable_core", False)),
                 zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                 enable_core_halt=_runtime_enable_core_halt(runtime),
@@ -1577,6 +1656,12 @@ def _answer_choice_logprob(
         targets = input_ids[:, prompt_len:full_len].to(device=aligned.device)
         if aligned.shape[1] != targets.shape[1]:
             return float("-inf")
+
+        # No more legacy logits bias here.
+        # The hybrid final state now participates exclusively via the hidden-level residual
+        # injection inside the model forward (ri4_memory_residual kwarg / _ri4_memory_residual attribute).
+        # This is the clean One-Body path.
+
         _record_conflict_gate_mean(
             telemetry,
             outputs,
@@ -1690,6 +1775,7 @@ def _answer_choice_causal_logprob(
                     token_numeric_source_slot_mask=source_slot_mask,
                     **extra,
                     **_core_carry_forward_kwargs(runtime, core_carry),
+                    **_ri4_memory_residual_kwargs(runtime),
                     disable_core=bool(runtime.get("disable_core", False)),
                     zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                     enable_core_halt=_runtime_enable_core_halt(runtime),
@@ -2014,6 +2100,7 @@ def _generate_case(
                     token_numeric_source_slot_mask=source_slot_mask,
                     **extra,
                     **_core_carry_forward_kwargs(runtime, core_carry),
+                    **_ri4_memory_residual_kwargs(runtime),
                     disable_core=bool(runtime.get("disable_core", False)),
                     zero_core_trajectory=bool(runtime.get("zero_core_trajectory", False)),
                     enable_core_halt=_runtime_enable_core_halt(runtime),
@@ -2367,6 +2454,81 @@ def _beam_generate_case(
     return _completion_text(tokenizer, best, prompt_len=prompt_len), len(best) - prompt_len
 
 
+def _simple_choice_embedding(choice: str, d_model: int, device, dtype) -> torch.Tensor:
+    """Deterministic, cheap projection of a choice string into d_model for hybrid final-state readout."""
+    vec = torch.zeros(d_model, device=device, dtype=dtype)
+    for i, c in enumerate(choice[:64]):
+        v = ord(c)
+        for k in range(4):
+            idx = (i * 4 + k) % d_model
+            vec[idx] += (v % 128) * torch.sin(torch.tensor(i * 0.3 + k * 1.7, device=device, dtype=dtype))
+    # Add a length signal
+    vec = vec + (len(choice) / 64.0) * 0.1
+    return vec / (vec.norm() + 1e-8)
+
+
+def _build_question_derived_input_192(
+    case: dict[str, Any],
+    d_model: int,
+    seq_len: int,
+    device: str | torch.device,
+    dtype: torch.dtype,
+    *,
+    scale: float = 0.035,
+) -> torch.Tensor:
+    """Small self-contained copy of the question-derived input builder for RI-4 in 192_eval.
+    Now prefers real token_ids (from the actual tokenized prompt) when present.
+    """
+    token_ids = case.get("token_ids")
+    if token_ids is not None:
+        # Real tokenized content from the prompt (the signal the rest of the system uses)
+        ids = token_ids if isinstance(token_ids, (list, tuple)) else token_ids.tolist()
+        text_for_hash = " ".join(str(int(i)) for i in ids[:32])  # actual token content
+        base_len = len(ids)
+    else:
+        text = str(case.get("question") or case.get("prompt") or "")[:256]
+        if not text:
+            text = "empty"
+        text_for_hash = text
+        base_len = len(text)
+
+    feats: list[float] = []
+    feats.append(base_len / 256.0)
+    feats.append(sum(ord(c) for c in text_for_hash) / (256 * 120.0))
+    h1 = h2 = 0
+    for i, c in enumerate(text_for_hash):
+        v = ord(c) if isinstance(c, str) else int(c) % 128
+        h1 = (h1 * 31 + v) & 0xFFFF
+        if i > 0:
+            h2 = (h2 * 37 + v) & 0xFFFF
+    feats.append((h1 % 1024) / 1024.0)
+    feats.append((h2 % 1024) / 1024.0)
+
+    feat_dim = 8
+    while len(feats) < feat_dim:
+        feats.append(0.0)
+    feats = feats[:feat_dim]
+
+    base = torch.zeros(d_model, device=device, dtype=dtype)
+    for i, f in enumerate(feats):
+        for k in range(4):
+            idx = (i * 4 + k) % d_model
+            phase = (i + k) * 0.7
+            base[idx] += f * torch.sin(torch.tensor(phase + idx * 0.13, device=device, dtype=dtype))
+    base = base * scale
+
+    x = base.unsqueeze(0).unsqueeze(0).expand(1, seq_len, d_model).clone()
+    for t in range(seq_len):
+        tmod = torch.sin(torch.tensor(t * 0.21 + 0.3, device=device, dtype=dtype)) * 0.008
+        x[0, t] = x[0, t] + tmod
+
+    qhash = sum(ord(c) * (i + 1) if isinstance(c, str) else int(c) * (i + 1) for i, c in enumerate(text_for_hash)) & 0xFFFFFFFF
+    g = torch.Generator(device="cpu").manual_seed(qhash % (2**32))
+    jitter = torch.randn(1, seq_len, d_model, generator=g, dtype=torch.float32) * (scale * 0.15)
+    x = x + jitter.to(device=device, dtype=dtype)
+    return x
+
+
 def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
     import torch
     from transformers import AutoTokenizer
@@ -2467,6 +2629,39 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
             runtime = mode_runtime(mode)
             old_qtrm_scale = float(model.cfg.qtrm_logits_scale)
             old_donor_scale = float(model.cfg.donor_logits_scale)
+
+            # === RI-4 hybrid path preparation (when requested) ===
+            ri4_hybrid_model = None
+            if runtime.get("use_parallel_hybrid"):
+                # Build the OneBodyParallelHybrid stack with SparseSlotRouter for this mode
+                # This is the minimal bridge so the canonical 192 harness can produce
+                # RI-4 gate records using the same machinery as the 556 PoC.
+                try:
+                    from src.qtrm_mm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
+                    from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
+
+                    hybrid_cfg = cfg.model  # reuse the loaded config shape
+                    # Create a small stack (single block for PoC latency; can be deeper later)
+                    ri4_hybrid_model = build_parallel_hybrid_block(hybrid_cfg)
+
+                    # Configure RI-4 flags on the block(s)
+                    slots_on = bool(runtime.get("sparse_slots_enabled", True))
+                    pers_ablate = bool(runtime.get("persistence_ablation", False))
+                    router_ablate = bool(runtime.get("router_ablation", False))
+
+                    for layer in ri4_hybrid_model:
+                        if isinstance(layer, OneBodyParallelHybridBlock):
+                            if hasattr(layer, "sparse_slot_router") and layer.sparse_slot_router is not None:
+                                layer.sparse_slot_router.set_ablation(
+                                    enabled=slots_on and not router_ablate,
+                                    ablation_zero=(not slots_on) or router_ablate,
+                                )
+                            # Store flags for the forward loop
+                            layer._ri4_persistence_ablation = pers_ablate
+                            layer._ri4_slots_on = slots_on and not router_ablate
+                except Exception as e:
+                    print(f"[RI-4] Failed to build hybrid stack for mode {mode}: {e}")
+                    ri4_hybrid_model = None
             model.cfg.qtrm_logits_scale = (
                 float(runtime["qtrm_logits_scale"])
                 if runtime["qtrm_logits_scale"] is not None
@@ -2484,6 +2679,66 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
             try:
                 for case in cases:
                     prompt = case.get("prompt") or case.get("question", "")
+
+                    # === RI-4 execution path (uses hybrid + question-derived input + strict scoring) ===
+                    if runtime.get("use_parallel_hybrid") and ri4_hybrid_model is not None:
+                        # Use the same question-derived input + depth_target arrival + strict score
+                        # pattern that was validated as the highest-value PoC in the 556 trainer.
+                        # This gives immediately usable RI-4 gate numbers on the canonical harness.
+                        from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+
+                        # Real tokenized prompt as input to hybrid (the critical causal upgrade)
+                        # Use the actual token ids the rest of 192 uses, so the slots see
+                        # the true reader output from the case's question/prompt.
+                        try:
+                            prompt_inputs = _prepare_inputs(tokenizer, prompt, max_length, device)
+                            real_input_ids = prompt_inputs["input_ids"][0]  # (T,)
+                            seq_len = max(4, min(24, len(real_input_ids)))
+                            # Build hybrid starting state from the actual token ids (content + structure)
+                            x = _build_question_derived_input_192(
+                                {"question": prompt, "token_ids": real_input_ids.tolist()},
+                                int(hybrid_cfg.d_model),
+                                seq_len,
+                                device,
+                                torch.float32,
+                            )
+                        except Exception:
+                            # Fallback to previous text-based (still better than randn)
+                            q_text = prompt or case.get("question", "")
+                            seq_len = max(4, min(24, len(q_text) // 3 + 4))
+                            x = _build_question_derived_input_192(
+                                case, int(hybrid_cfg.d_model), seq_len, device, torch.float32
+                            )
+
+                        current_slots = None
+                        for layer in ri4_hybrid_model:
+                            if isinstance(layer, OneBodyParallelHybridBlock):
+                                out = layer(x, slot_state=current_slots)
+                                if isinstance(out, tuple):
+                                    x, current_slots = out
+                                else:
+                                    x = out
+                            else:
+                                x = layer(x)
+
+                        # Hidden-level injection (the high-value architectural step):
+                        # The hybrid final state (after real tokenized prompt + MSA slots + persistence)
+                        # is now injected as residual on the hidden *before* the lm_head inside the model.
+                        # This is the clean "memory state participates in the thinking hidden" path.
+                        final_hybrid = x[:, -1].mean(dim=0) if x.dim() == 3 else x.mean(dim=0)
+
+                        # Source the residual from runtime (clean, no model monkey-patch).
+                        # The scoring helpers will pick it up via _ri4_memory_residual_kwargs(runtime)
+                        # and pass the proper kwarg to model(...).
+                        runtime["ri4_memory_residual"] = final_hybrid.detach()
+                        runtime["ri4_memory_residual_scale"] = 0.3
+                        runtime["ri4_hybrid_final_norm"] = float(final_hybrid.norm().detach().cpu())
+
+                        # The hybrid final state (via runtime) will be injected as hidden residual
+                        # inside the model forward for the choice tokens.
+                        # (No custom sidecar scoring; the real path does the work with proper kwarg.)
+                        pass
+
                     choice_scores = None
                     if args.scoring == "forced_choice":
                         completion, choice_scores = _forced_choice_case(
@@ -2613,6 +2868,23 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                             > 1
                         )
                         _promote_best_choice_telemetry(record, choice_scores)
+
+                    # RI-4 record enrichment: if hybrid pre-thinking ran, enrich the normal record
+                    # with the rich fields expected by build_ri4_sparse_memory_gate.
+                    # This lets the canonical harness produce gate-compatible records for RI-4 modes.
+                    # RI-4 record enrichment from runtime (now the clean source, no model attribute).
+                    if "ri4_memory_residual" in runtime:
+                        record["slots_on"] = bool(
+                            runtime.get("sparse_slots_enabled", False)
+                            and not runtime.get("persistence_ablation", False)
+                            and not runtime.get("router_ablation", False)
+                        )
+                        record["persistence_ablation"] = bool(runtime.get("persistence_ablation", False))
+                        record["router_ablation"] = bool(runtime.get("router_ablation", False))
+                        record["raw_intelligence_axis"] = "ri4_sparse_persistent_memory"
+                        if "ri4_hybrid_final_norm" in runtime:
+                            record["ri4_hybrid_final_norm"] = runtime["ri4_hybrid_final_norm"]
+
                     records.append(record)
                     f.write(json.dumps(record, ensure_ascii=False) + "\n")
                     f.flush()

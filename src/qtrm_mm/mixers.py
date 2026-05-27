@@ -437,3 +437,176 @@ def build_delta_mixer(d_model: int, n_heads: int, backend: str, strict: bool, dr
             **kwargs,
         )
     raise ValueError(f"Unknown delta backend: {backend}")
+
+# ============================================================
+# Gating v2 (2026-05-30) - Torch Reference Implementation
+# Based on: ReGLA (arXiv:2502.01578), RWKV-7 (arXiv:2503.14456),
+#           Gated DeltaNet improvements (2025-2026)
+#
+# This is a drop-in improved version of TorchGatedDeltaMixer
+# with:
+#   - Vector-valued gating (per dimension)
+#   - Refined delta rule + in-context learning rate
+#   - Additional normalization for long recurrence stability
+#
+# Fully One-Body compatible. No side organs.
+# ============================================================
+
+class TorchGatedDeltaNet2MixerV2(nn.Module):
+    """
+    Improved PyTorch reference for Gated DeltaNet-2 style recurrence (v2).
+
+    Key upgrades over original TorchGatedDeltaMixer:
+    - Vector-valued gating (per-channel)
+    - Explicit in-context learning rate in the delta update
+    - Better normalization for training stability at depth
+
+    This version is intended for architecture exploration and debugging.
+    Production use should eventually move to optimized FLA / official kernels.
+    """
+
+    def __init__(self, d_model: int, n_heads: int, dropout: float = 0.0):
+        super().__init__()
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.head_dim = d_model // n_heads
+
+        # Expanded projection: u, v, decay, in_context_lr
+        self.in_proj = nn.Linear(d_model, 4 * d_model, bias=False)
+
+        # Vector-valued gate (per dimension)
+        self.gate_proj = nn.Linear(d_model, d_model, bias=True)
+
+        # Optional: separate forget gate (RWKV-7 style vector forgetting)
+        # Can be enabled later via config
+        self.use_vector_forget = False
+        if self.use_vector_forget:
+            self.forget_proj = nn.Linear(d_model, d_model, bias=True)
+
+        self.out_proj = nn.Linear(d_model, d_model, bias=False)
+        self.dropout = nn.Dropout(dropout)
+
+        # Extra normalization for long recurrence stability (ReGLA-inspired)
+        self.norm = nn.LayerNorm(d_model)
+
+    def forward(self, x: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        b, t, d = x.shape
+
+        proj = self.in_proj(x)
+        u, v, decay, in_context_lr = proj.chunk(4, dim=-1)
+
+        u = torch.tanh(u)
+        v = torch.tanh(v)
+        decay = torch.sigmoid(decay)
+        in_context_lr = torch.sigmoid(in_context_lr)
+
+        # Vector gate (per dimension)
+        gate = torch.sigmoid(self.gate_proj(x))
+
+        # Optional vector forget gate
+        forget = None
+        if self.use_vector_forget and hasattr(self, 'forget_proj'):
+            forget = torch.sigmoid(self.forget_proj(x))
+
+        # Sequential reference (for correctness & debugging)
+        state = torch.zeros(b, d, dtype=x.dtype, device=x.device)
+        outs = []
+        mask = attention_mask.to(x.dtype) if attention_mask is not None else None
+
+        for i in range(t):
+            m = mask[:, i : i + 1] if mask is not None else 1.0
+
+            # Refined delta update with in-context learning rate
+            update = in_context_lr[:, i] * u[:, i] * m
+
+            if forget is not None:
+                state = forget[:, i] * state + (1.0 - forget[:, i]) * update
+            else:
+                state = decay[:, i] * state + (1.0 - decay[:, i]) * update
+
+            y = gate[:, i] * v[:, i] + (1.0 - gate[:, i]) * state
+            outs.append(y)
+
+        y = torch.stack(outs, dim=1)
+        y = self.norm(y)                    # Stability normalization
+        return self.out_proj(self.dropout(y))
+
+
+# =============================================================================
+# Optional: Sparse Slot Router integration (for RI-4 PoC)
+# =============================================================================
+# This allows TorchGatedDeltaNet2MixerV2 to use the new Raven/MSA-style
+# sparse persistent slots. The router is intentionally optional and has
+# perfect ablation hooks so it can be turned on/off cleanly during experiments.
+#
+# When enabled:
+#   - A small number of persistent slots live alongside the dense state.
+#   - The router (from the new sparse_slot_router module) decides which slots
+#     participate in the current update.
+#   - Non-selected slots get near-perfect persistence (key for long-horizon
+#     raw intelligence stability).
+#   - Stochastic breadth noise can be injected into the router for exploration.
+#
+# This is the concrete first implementation step for RI-4.
+# =============================================================================
+
+try:
+    from .memory.sparse_slot_router import SparseSlotRouter
+except Exception:
+    SparseSlotRouter = None  # graceful fallback if module not present
+
+
+def _add_sparse_slot_router_support(mixer_cls):
+    """
+    Monkey-patch style extension to add optional sparse slot router
+    to any DeltaNet-style mixer that maintains a recurrent state.
+
+    In practice we call this on TorchGatedDeltaNet2MixerV2 after definition.
+    """
+    original_forward = mixer_cls.forward
+
+    def forward_with_sparse_router(
+        self,
+        x: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        stochastic_breadth_noise: Optional[torch.Tensor] = None,
+        use_sparse_slots: bool = False,
+        slot_router: Optional["SparseSlotRouter"] = None,
+    ) -> torch.Tensor:
+        if not use_sparse_slots or slot_router is None or SparseSlotRouter is None:
+            return original_forward(self, x, attention_mask=attention_mask)
+
+        # Run normal dense recurrence first (keeps backward compatibility)
+        y_dense = original_forward(self, x, attention_mask=attention_mask)
+
+        # Ask the router for a read signal + selection mask
+        # We use the last timestep of the input as query context
+        read_signal, slot_mask, _ = slot_router(
+            x,
+            stochastic_noise=stochastic_breadth_noise,
+        )
+
+        # Simple gated fusion of the sparse memory read into the dense output.
+        # This keeps everything inside the One-Body path.
+        # The caller (hybrid block) can later make this fusion more sophisticated
+        # using the existing vector-valued gate.
+        gate = torch.sigmoid(self.gate_proj(x) if hasattr(self, 'gate_proj') else 0.1)
+        if gate.dim() == 2:
+            gate = gate.unsqueeze(1)
+        y = y_dense + gate * read_signal.unsqueeze(1) if y_dense.dim() == 3 else y_dense + gate * read_signal
+
+        # NOTE: True selective *write* to slots (Raven persistence) should be
+        # performed in the rehearsal logic or a dedicated memory manager step
+        # that also receives the slot_mask. This forward only demonstrates the
+        # read + causal injection path for the first RI-4 smoke.
+
+        return y
+
+    mixer_cls.forward = forward_with_sparse_router
+    mixer_cls._supports_sparse_slots = True
+    return mixer_cls
+
+
+# Apply the extension to the active V2 mixer
+if TorchGatedDeltaNet2MixerV2 is not None:
+    TorchGatedDeltaNet2MixerV2 = _add_sparse_slot_router_support(TorchGatedDeltaNet2MixerV2)

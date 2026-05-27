@@ -344,6 +344,9 @@ def main():
     p.add_argument("--lr", type=float, default=3e-3)
     p.add_argument("--device", default="cuda")
     p.add_argument("--out-dir", default="/tmp/stage119_probe")
+    # Option 2 M2: Isolated memory tiers ablation support
+    p.add_argument("--core-memory-tiers-enabled", action="store_true", help="Enable memory tiers scaffolding (for Option 2 isolation test on real core).")
+    p.add_argument("--core-memory-tiers-ablation-zero", action="store_true", help="Zero memory tiers signal for causal ablation test.")
     args = p.parse_args()
 
     print("=== Stage119 Equation-State Binding Probe (direct runnable) ===")

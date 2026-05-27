@@ -24,6 +24,14 @@ DEFAULT_TEMPORAL_SPATIAL_CONTEXT_OFF_MODE = (
 )
 DEFAULT_TRANSITION_STATE_OFF_MODE = "qtrm_core_steps_8_transition_state_off_no_evidence"
 
+# === RI-4: Sparse Persistent Memory Ablations (new for 2026-06) ===
+# These are the highest-value new modes for proving causal contribution of
+# MSA/Raven-style sparse memory inside the One-Body recurrence.
+DEFAULT_HYBRID_SLOTS_ON_MODE = "hybrid_sparse_slots_on_no_evidence"
+DEFAULT_HYBRID_SLOTS_OFF_MODE = "hybrid_sparse_slots_off_no_evidence"
+DEFAULT_HYBRID_PERSISTENCE_ABLATION_MODE = "hybrid_persistent_memory_ablation_no_evidence"
+DEFAULT_HYBRID_ROUTER_ABLATION_MODE = "hybrid_sparse_router_ablation_no_evidence"
+
 
 PURE_RECURSIVE_MODE_SEMANTICS: dict[str, str] = {
     "donor": (
@@ -43,6 +51,19 @@ PURE_RECURSIVE_MODE_SEMANTICS: dict[str, str] = {
         "QTRM candidate with the recursive core still enabled but the explicit "
         "transition-state/code path disabled; this tests whether that state path "
         "is answer-causal."
+    ),
+    # RI-4 new semantics
+    "hybrid_sparse_slots_on": (
+        "RI-4 candidate: OneBodyParallelHybridBlock with persistent sparse memory slots enabled. "
+        "Slots are carried across recurrence steps and actively read/injected into the recurrent computation."
+    ),
+    "hybrid_sparse_slots_off": (
+        "RI-4 ablation: Same hybrid architecture but sparse slot router is disabled (dense behavior). "
+        "Used to prove causal contribution of the persistent sparse memory mechanism."
+    ),
+    "hybrid_persistent_memory_ablation": (
+        "RI-4 strong ablation: Persistent slots are carried but receive no selective update / persistence protection "
+        "(effectively dense rehearsal on all slots). Tests the value of selective write + strong persistence."
     ),
 }
 
@@ -362,6 +383,71 @@ def build_pure_recursive_reasoning_gate(
         "failed_checks": failed_checks,
         "passed_checks": passed_checks,
         "recommendation": _recommendation_for_gate("pure_recursive_reasoning", status, failed_checks),
+    }
+
+
+def build_ri4_sparse_memory_gate(
+    records: Iterable[dict[str, Any]],
+    *,
+    slots_on_mode: str = DEFAULT_HYBRID_SLOTS_ON_MODE,
+    slots_off_mode: str = DEFAULT_HYBRID_SLOTS_OFF_MODE,
+    persistence_ablation_mode: str = DEFAULT_HYBRID_PERSISTENCE_ABLATION_MODE,
+    min_hit_advantage: int = 1,
+) -> dict[str, Any]:
+    """
+    RI-4 Gate: Proves that MSA/Raven-style sparse persistent memory inside the
+    One-Body recurrence causally improves raw intelligence (no retrieval).
+
+    This is currently the highest-value missing measurement infrastructure.
+    """
+    record_list = list(records)
+    by_mode = _records_by_mode(record_list)
+
+    slots_on = _mode_summary(by_mode, slots_on_mode)
+    slots_off = _mode_summary(by_mode, slots_off_mode)
+
+    persistence_ablation = (
+        _mode_summary(by_mode, persistence_ablation_mode)
+        if persistence_ablation_mode in by_mode
+        else None
+    )
+
+    failed_checks: list[str] = []
+    passed_checks: list[str] = []
+
+    # Core RI-4 claim: sparse persistent memory on beats off
+    if int(slots_on["hits"]) - int(slots_off["hits"]) >= min_hit_advantage:
+        passed_checks.append("sparse_persistent_slots_beats_disabled")
+    else:
+        failed_checks.append("sparse_persistent_slots_do_not_beat_disabled")
+
+    if persistence_ablation is not None:
+        if int(slots_on["hits"]) - int(persistence_ablation["hits"]) >= min_hit_advantage:
+            passed_checks.append("selective_persistence_beats_dense_rehearsal")
+        else:
+            failed_checks.append("selective_persistence_does_not_beat_dense_rehearsal")
+
+    status = "accepted" if not failed_checks else "rejected"
+
+    return {
+        "gate_type": "ri4_sparse_persistent_memory",
+        "claim": (
+            "MSA/Raven-style sparse persistent memory slots inside OneBodyParallelHybridBlock "
+            "causally improve held-out raw reasoning when carried across steps with selective "
+            "5.56-style rehearsal and strong persistence on non-selected slots."
+        ),
+        "status": status,
+        "slots_on_mode": slots_on_mode,
+        "slots_off_mode": slots_off_mode,
+        "persistence_ablation_mode": persistence_ablation_mode,
+        "slots_on": slots_on,
+        "slots_off": slots_off,
+        "persistence_ablation": persistence_ablation or {},
+        "slots_on_vs_off": _compare(slots_on, slots_off),
+        "failed_checks": failed_checks,
+        "passed_checks": passed_checks,
+        "mode_semantics": PURE_RECURSIVE_MODE_SEMANTICS,
+        "recommendation": "Run with real gold + clean probes. This is the primary gate for RI-4.",
     }
 
 

@@ -1,6 +1,9 @@
-# Raw Intelligence Gates
+# Raw Intelligence Gates (Historical — Pre-2026-06)
 
-Status: implemented gate scaffold, 2026-05-02.
+> **Superseded**: See the canonical 2026-06 SSOT: [Raw Intelligence / Actual Reasoning Necessary Conditions](raw-intelligence-necessary-conditions-2026-06.md).
+> This document is preserved as historical context (defined the original pure recursive depth + memory on/off gates on the old QTRMRecursiveCore substrate, before OneBodyParallelHybridBlock, before MSA elevation as first-class memory, and before deep 5.56 rehearsal integration on the hybrid).
+
+**Status (original)**: implemented gate scaffold, 2026-05-02.
 
 ## Decision
 

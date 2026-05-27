@@ -21,6 +21,15 @@ class QTRMConfig:
     core_causal: bool = False
     attn_every: int = 4
     coda_attn_every: Optional[int] = None
+
+    # === Phase 0 Parallel Hybrid Experiment (under Prior Contract) ===
+    # Added 2026-05-30 after section 12 spec + A skeleton in blocks.py
+    # These flags are for experimental use only until full gates pass.
+    use_parallel_hybrid_block: bool = False
+    parallel_recurrence_head_count: int = 3
+    parallel_attention_head_count: int = 1
+    # When True, the hybrid block will be available via build_parallel_hybrid_block
+    # but will NOT be used in any default QTRMBlockStack path.
     workspace_tokens: int = 32
     workspace_layers: int = 1
     workspace_ff_mult: int = 0
@@ -32,7 +41,7 @@ class QTRMConfig:
     outer_steps: int = 2
     dropout: float = 0.0
     rope_theta: float = 10000.0
-    delta_backend: str = "torch_gated_delta"
+    delta_backend: str = "torch_gated_delta"  # Options: torch_gated_delta, torch_gated_delta2_v2 (Gating v2), gated_delta2_v2, gdn2_v2, fla_gated_delta, official_gated_delta2
     delta_head_dim: Optional[int] = None
     delta_num_v_heads: Optional[int] = None
     delta_expand_v: float = 1.0
@@ -119,6 +128,71 @@ class QTRMConfig:
     core_memory_manager_hidden_dim: Optional[int] = None
     core_memory_manager_num_actions: int = 8
     core_memory_tiers_ablation_zero: bool = False
+
+    # === Phase 0 / Unapplied Track: Full Adaptive Rehearsal 5.56 recipe ===
+    core_adaptive_rehearsal_enabled: bool = False
+    core_adaptive_rehearsal_scheduled_binding_start: float = 0.40
+    core_adaptive_rehearsal_scheduled_binding_end: float = 0.04
+    core_adaptive_rehearsal_gold_injection_alpha: float = 0.25
+    core_adaptive_rehearsal_protect_attractor: bool = True
+    core_adaptive_rehearsal_ablation_zero: bool = False
+
+    # === Mega Integration: Explicit Multi-Trajectory + Scorer (unapplied IMTA track) ===
+    core_multi_trajectory_enabled: bool = False
+    core_multi_trajectory_num_trajectories: int = 4
+
+    # === Reverse I→G→A: Stochastic Recurrent Breadth (historical GRAM/PTRM inductive bias) ===
+    # See 2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md
+    # and 2026-05-30-reverse-iga-stochastic-breadth-plan.md
+    # This restores training-time stochastic trajectory generation inside the recurrence
+    # (prior/posterior sampling + noise on z_h), which was dropped after the new-thought-structure pivot.
+    # Must remain fully One-Body (normal LM head path only) and have strong ablation_zero.
+    core_stochastic_breadth_enabled: bool = False
+    core_stochastic_mode: str = "delta"          # "delta" | "true_gram"
+    core_stochastic_scale: float = 0.05
+    core_stochastic_high_level_min_std: float = 1e-4
+    core_stochastic_high_level_max_std: float = 0.2
+    core_stochastic_apply_prob: float = 0.3
+    core_stochastic_posterior_guidance: bool = False
+    core_stochastic_breadth_ablation_zero: bool = False
+
+    # === Mega Integration: Elastic / Variable Recurrence Depth (previously unapplied) ===
+    core_elastic_depth_enabled: bool = False
+    core_elastic_depth_max_steps: int = 8
+    core_elastic_depth_train_random: bool = False
+    core_elastic_depth_ablation_zero: bool = False
+
+    # === Mega Integration: Learned Slow-Tier Memory Policy (Hierarchical Tiers) ===
+    core_learned_slow_tier_enabled: bool = False
+    core_learned_slow_tier_hidden_dim: Optional[int] = None
+    core_learned_slow_tier_gold_bias: float = 0.4
+    core_learned_slow_tier_ablation_zero: bool = False
+
+    # === Mega Integration: Deeper Gold State Integration into Memory/ALRMC ===
+    core_gold_state_structural_integration: bool = False
+    core_gold_state_memory_bias: float = 0.5
+    core_gold_state_alrmc_importance_boost: float = 0.6
+
+    # === RI-4: Sparse Selective Memory Access (Raven/MSA-style slots inside recurrence) ===
+    # This is the key missing piece for long-horizon raw intelligence stability.
+    # Enables persistent memory slots with learned sparse top-k routing.
+    # Must have perfect ablation_zero support and integrate with 5.56 stochastic breadth.
+    core_sparse_slot_router_enabled: bool = False
+    core_sparse_num_slots: int = 16
+    core_sparse_slot_top_k: int = 4
+    core_sparse_slot_router_hidden_dim: Optional[int] = None
+    core_sparse_slot_ablation_zero: bool = False
+
+    # === RI-4 Clean Ablation Flags (for generating comparable records) ===
+    ri4_sparse_slots_ablation: bool = False          # Force slots completely off (dense baseline)
+    ri4_persistence_ablation: bool = False           # Carry slots but disable selective persistence (dense rehearsal)
+    ri4_memory_residual_scale: float = 0.3           # Default scale for RI-4 external memory residual (hidden-level)
+
+    # === Full Gold State Deep Integration (for all unapplied tracks) ===
+    core_gold_states_enabled: bool = False
+    core_gold_states_injection_strength: float = 0.3
+    core_gold_states_rehearsal_horizon: int = 12  # how long to rehearse gold states
+    core_gold_states_ablation_zero: bool = False
 
     # Phase 1: Gated multi-domain Thought Workspaces + Broadcast (뇌량)
     core_thought_workspace_enabled: bool = False

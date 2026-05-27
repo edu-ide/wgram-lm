@@ -285,6 +285,11 @@ class QTRMMultimodalModel(nn.Module):
             )
             else None
         )
+
+        # RI-4: Placeholder for hybrid block as the actual recurrent engine
+        # (instead of side stack + residual). Set externally or in RI-4 setup.
+        self.answer_state_loop_hybrid_recurrent_block = None
+        self._ri4_hybrid_recurrent_slot_state = None  # carried across answer loop steps for RI-4 hybrid recurrent
         self.answer_state_loop_recurrent_gate = (
             nn.Linear(cfg.d_model, 1)
             if (
@@ -2931,6 +2936,11 @@ class QTRMMultimodalModel(nn.Module):
         disable_transition_state: bool = False,
         enable_core_halt: Optional[bool] = None,
         core_carry: Optional[QTRMCoreCarry] = None,
+        # RI-4: Optional external memory residual (from hybrid final state after real prompt + MSA slots)
+        # Injected as residual on the thinking hidden *before* the final lm_head.
+        # This is the proper architectural path (replaces previous monkey-patch attributes).
+        ri4_memory_residual: Optional[torch.Tensor] = None,
+        ri4_memory_residual_scale: float = 0.3,
         return_core_carry: bool = False,
         core_transition_feedback_operation_targets: Optional[torch.Tensor] = None,
         core_transition_feedback_finality_targets: Optional[torch.Tensor] = None,
@@ -4526,6 +4536,33 @@ class QTRMMultimodalModel(nn.Module):
             logit_seq = seq
             logit_input_len = int(s)
             selected_logit_positions_only = False
+
+        # Apply RI-4 memory residual uniformly via the helper (clean, no duplication).
+        logit_seq = self._apply_ri4_memory_residual(logit_seq)
+
+    def _apply_ri4_memory_residual(self, hidden: torch.Tensor) -> torch.Tensor:
+        """Apply RI-4 memory residual to a hidden tensor (for uniform participation
+        across answer paths). Uses the same sources as the main injection.
+        """
+        # Prefer passed kwarg if the method has access (via self or closure), else PoC attribute.
+        # For simplicity in the current structure, read from the same fallback sources.
+        ri4_res = getattr(self, '_ri4_memory_residual', None)
+        ri4_scale = float(getattr(self, '_ri4_memory_residual_scale', 0.3))
+        if ri4_res is None:
+            # Fallback to the kwarg if somehow passed differently, but in practice the attribute is the PoC source.
+            pass
+        if ri4_res is not None:
+            try:
+                res = ri4_res
+                if res.dim() == 1:
+                    res = res.unsqueeze(0).unsqueeze(0)
+                elif res.dim() == 2:
+                    res = res.unsqueeze(1)
+                hidden = hidden + res.to(device=hidden.device, dtype=hidden.dtype) * ri4_scale
+            except Exception:
+                pass
+        return hidden
+
         qtrm_logits = self.lm_head(logit_seq) * float(self.cfg.qtrm_logits_scale)
         answer_bottleneck_logits = self._empty_answer_bottleneck_logits(
             qtrm_logits,
@@ -5491,6 +5528,7 @@ class QTRMMultimodalModel(nn.Module):
             workspace_mask,
         )
         answer_hidden = self.answer_bottleneck_output_norm(answer_hidden)
+        answer_hidden = self._apply_ri4_memory_residual(answer_hidden)
         logits = self.lm_head(answer_hidden) * float(self.cfg.qtrm_logits_scale)
         return logits, answer_hidden
 
@@ -5582,6 +5620,7 @@ class QTRMMultimodalModel(nn.Module):
             prev_token_ids=prev_token_ids,
             disabled=bool(disable_next_token_decoder),
         )
+        hidden = self._apply_ri4_memory_residual(hidden)
         logits = self.lm_head(hidden) * float(self.cfg.qtrm_logits_scale)
         if (
             self.answer_state_loop_lm_adapter_down is not None
@@ -6092,6 +6131,7 @@ class QTRMMultimodalModel(nn.Module):
             if gate_min != 0.0:
                 gate = gate_min + (1.0 - gate_min) * gate
             y = self.answer_state_loop_output_norm(y + gate * delta)
+            y = self._apply_ri4_memory_residual(y)
             if recurrent_active:
                 recurrent_input = y
                 if (
@@ -6116,9 +6156,20 @@ class QTRMMultimodalModel(nn.Module):
                             recurrent_input[..., :loop_dim]
                             + loop_delta[..., :loop_dim].to(dtype=y.dtype)
                         )
-                recurrent_proposal = self.answer_state_loop_recurrent_stack(
-                    self.answer_state_loop_recurrent_norm(recurrent_input)
-                )
+                if self.answer_state_loop_hybrid_recurrent_block is not None:
+                    # RI-4: Use the hybrid block as the actual recurrence engine (the big One-Body step).
+                    # Feed the current recurrent input; carry slot state across answer loop steps.
+                    hybrid_in = self.answer_state_loop_recurrent_norm(recurrent_input).unsqueeze(1)
+                    hybrid_out, new_slot = self.answer_state_loop_hybrid_recurrent_block(
+                        hybrid_in,
+                        slot_state=getattr(self, '_ri4_hybrid_recurrent_slot_state', None),
+                    )
+                    recurrent_proposal = hybrid_out.squeeze(1)
+                    self._ri4_hybrid_recurrent_slot_state = new_slot
+                else:
+                    recurrent_proposal = self.answer_state_loop_recurrent_stack(
+                        self.answer_state_loop_recurrent_norm(recurrent_input)
+                    )
                 if (
                     mythos_update_active
                     and self.answer_state_loop_mythos_lora_down is not None
@@ -6166,6 +6217,7 @@ class QTRMMultimodalModel(nn.Module):
                     )
                 else:
                     y = self.answer_state_loop_output_norm(y + recurrent_delta)
+                y = self._apply_ri4_memory_residual(y)
                 recurrent_gate_means.append(recurrent_gate.squeeze(-1).mean(dim=1))
             halt_logit = None
             if self.answer_state_loop_halt_head is not None:

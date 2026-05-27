@@ -622,7 +622,7 @@ def build_qtrm_core_config_from_qwen(
     l_cycles: int = 1,
     outer_steps: int = 1,
     dropout: float = 0.0,
-    delta_backend: str = "fla_gated_delta",
+    delta_backend: str = "fla_gated_delta",  # also accepts: torch_gated_delta2_v2, gdn2_v2
     strict_backends: bool = True,
     core_causal: bool = True,
     core_convergence_halt_enabled: bool = False,
@@ -661,7 +661,7 @@ def build_qtrm_core_config_from_qwen(
         outer_steps=int(outer_steps),
         dropout=float(dropout),
         rope_theta=rope_theta,
-        delta_backend=str(delta_backend),
+        delta_backend=_normalize_delta_backend(str(delta_backend)),
         delta_head_dim=int(head_dim),
         delta_num_v_heads=int(num_value_heads),
         delta_conv_size=int(conv_size),
@@ -955,7 +955,7 @@ class QwenBackboneQTRM(nn.Module):
                 l_cycles=int(kwargs.pop("l_cycles", 1)),
                 outer_steps=int(kwargs.pop("outer_steps", 1)),
                 dropout=float(kwargs.pop("dropout", 0.0)),
-                delta_backend=str(kwargs.pop("delta_backend", "fla_gated_delta")),
+                delta_backend=_normalize_delta_backend(str(kwargs.pop("delta_backend", "fla_gated_delta"))),
                 strict_backends=bool(kwargs.pop("strict_backends", True)),
                 core_causal=bool(kwargs.pop("core_causal", True)),
                 core_convergence_halt_enabled=bool(

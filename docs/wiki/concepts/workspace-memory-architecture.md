@@ -1,6 +1,11 @@
-# Workspace Memory Architecture
+# Workspace Memory Architecture (Historical View)
 
-Current interpretation:
+> **Deprecated as primary reference (2026-06)**: This page reflects the pre-OneBodyParallelHybrid + pre-MSA-elevation framing.  
+> **Current canonical SSOT**: [Memory Architecture (MSA First-Class)](memory-architecture-msa.md) — MSA as first-class pillar, 5.56 Adaptive Rehearsal realized as latent memory policy inside One-Body Hybrid, tied directly to 1B >> 27B necessary conditions and S2 PoC evidence (~5.5× real-gold gap).
+
+---
+
+Current interpretation (retained for historical continuity):
 
 QTRM has two different memory concepts that should not be conflated.
 
@@ -102,6 +107,10 @@ Next ablations:
 - `workspace_layers=1` versus `3` versus `6`.
 - `workspace_include_latents_in_kv=false` versus `true`.
 - `workspace_memory_gate_enabled=false` versus `true`.
+
+---
+
+**Forward pointer**: All new memory architecture work (including gated latent updates, sparse routing, and long-horizon rehearsal) is now documented and governed by the MSA-first-class SSOT page. This document is preserved only as historical context for the evolution of the project's memory thinking.
 - `qtrm_workspace_gate_off_with_evidence`: runtime gate ablation for trained
   gated-workspace checkpoints.
 - `--evidence-injection workspace` plus
