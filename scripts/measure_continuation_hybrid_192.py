@@ -68,7 +68,9 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
     if initial_slots is not None:
         initial_slots = initial_slots.to(device=device, dtype=dtype)
 
-    return model, initial_slots, cfg
+    actual_step = ckpt.get("step", "unknown")
+
+    return model, initial_slots, cfg, actual_step
 
 
 def run_192_proxy_on_continuation(
@@ -153,7 +155,6 @@ def run_192_proxy_on_continuation(
             pass
 
     result = {
-        "checkpoint_step": "60 (gold_structured)",
         "hybrid_forward_call_count": call_count["count"],
         "slot_carry_events_observed": call_count["carries"],
         "scoring_hybrid_calls": total_scoring_calls,
@@ -183,7 +184,7 @@ def main():
     device = "cpu"
     dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
-    hybrid_blocks, initial_slots, cfg = load_continuation_hybrid(args.checkpoint, device, dtype)
+    hybrid_blocks, initial_slots, cfg, actual_step = load_continuation_hybrid(args.checkpoint, device, dtype)
 
     # Apply RI-4 ablations if requested (preserves the full contract for measurement)
     for layer in hybrid_blocks:
@@ -207,6 +208,7 @@ def main():
         num_cases=args.num_cases,
         steps_per_case=args.steps_per_case,
     )
+    result["checkpoint_step"] = actual_step
     result["mode"] = mode_name
     result["persistence_ablation"] = args.persistence_ablate
     result["slots_off"] = args.slots_off

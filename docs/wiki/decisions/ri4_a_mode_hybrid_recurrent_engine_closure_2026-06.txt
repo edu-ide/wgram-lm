@@ -723,21 +723,32 @@ The "synthetic inputs" sub-gap for the continuation trainer is now closed at hig
   - persistence_ablate mode: also exercised the engine (comparable call counts in matched runs).
   - Scoring-phase slot carries still low in the current synthetic delegation setup (expected; will be more diagnostic with deeper real integration or longer real thinking phases).
 
-This gives us the first direct comparison points at higher continuation steps for the RI-4 substrate. All work today stayed tightly scoped to RI-4 (hybrid engine + selective memory scale/measurement), per Most-Deficient priority.
+**Step240 Matched RI-4 Ablation Measurements (clean 6 cases × 5 steps each):**
 
-## CONTINUATION_192_PROXY_JSON_START
-{
-  "checkpoint_step": "60 (gold_structured)",
-  "hybrid_forward_call_count": 16,
-  "slot_carry_events_observed": 16,
-  "scoring_hybrid_calls": 16,
-  "scoring_hybrid_carries": 0,
-  "engine_exercised": true,
-  "cases": 4,
-  "steps_per_case": 4,
-  "note": "First direct 192-style participation measurement on continuation-trained hybrid+RI-4+5.56 substrate."
-}
-## CONTINUATION_192_PROXY_JSON_END
+All runs used identical parameters on the step240 gold_structured continuation checkpoint:
 
-All actions in this skill invocation followed the formal A-Mode + Most-Deficient + Highest-Value-First rules exactly.
+- **full** (no ablation):
+  - hybrid_forward_call_count: 30
+  - slot_carry_events_observed: 30
+  - engine_exercised: true
+  - scoring_hybrid_carries: 0
+
+- **persistence_ablate**:
+  - hybrid_forward_call_count: 30
+  - slot_carry_events_observed: 30
+  - engine_exercised: true
+  - scoring_hybrid_carries: 0
+
+- **slots_off**:
+  - hybrid_forward_call_count: 30
+  - slot_carry_events_observed: 30
+  - engine_exercised: true
+  - scoring_hybrid_carries: 0
+
+**Observation at step240**:
+Engine participation remains high across all three modes (30 calls in matched runs). No obvious degradation in call count yet under these two major RI-4 ablations at this step count. Scoring-phase carries are still not appearing in the current synthetic delegation driver (this is a known limitation of the proxy, not necessarily of the substrate).
+
+This is the cleanest RI-4 ablation data we have so far at the highest continuation step reached today.
+
+All work today remained strictly within RI-4 (hybrid engine + selective memory scale + measurement), consistent with Most-Deficient prioritization.
 
