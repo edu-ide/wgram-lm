@@ -305,13 +305,22 @@ def compute_pure_stochastic_contribution(
         noise = torch.randn_like(x_in) * noise_scale if cfg.enable_stochastic_breadth else None
 
         h_with = x_in
+        current_slots = getattr(model, '_ri4_current_slots', None) if hasattr(model, '_ri4_current_slots') else None
         for layer in model:
-            h_with = layer(h_with, stochastic_breadth_noise=noise)
+            out = layer(h_with, stochastic_breadth_noise=noise, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
+            if isinstance(out, tuple):
+                h_with, current_slots = out
+            else:
+                h_with = out
 
         # Arm 2: Without noise (forced ablation)
         h_without = x_in
         for layer in model:
-            h_without = layer(h_without, stochastic_breadth_noise=None)
+            out = layer(h_without, stochastic_breadth_noise=None, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
+            if isinstance(out, tuple):
+                h_without, current_slots = out
+            else:
+                h_without = out
 
         # Pure effect size caused by the stochastic noise path
         diff = (h_with - h_without).norm(dim=-1).mean().item()
