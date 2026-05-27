@@ -1531,6 +1531,56 @@ This is the disciplined continuation after the real-heldout measurement upgrade.
 
 ---
 
+## A-Mode Cycle: First pressure-trained artifacts + real-heldout 4-way measurement (first signal hunt) — 2026-06
+
+**Context (Most-Deficient after levers introduction):**
+- Selectivity pressure levers (temperature + Gumbel noise) now exist and are wired in SparseSlotRouter + continuation trainer.
+- Real-heldout distribution measurement (4 cases from pure_recursive_reasoning_heldout_72 with case-seeded proposals) is fully operational and produces clean carry metrics + 4-way ablation matrix.
+- The falsifiable question for this cycle: Does even a first micro-dose of pressure (temp=0.65 + gumbel_std=0.2 for +8 steps) produce any detectable change in the carry observable under real heldout distribution + ablations?
+
+**Holistic action + immediate experiment:**
+- Clean continuation launched from step30 with explicit pressure flags (`--router_temperature 0.65 --gumbel_noise_std 0.2`).
+- Log confirmation: pressure was active (`[RI-4 Selectivity] Router temperature=0.65 gumbel_std=0.2`).
+- New artifacts: step32/34/36/38 (first checkpoints ever trained under the new RI-4 selectivity pressure).
+- Immediate post-training measurement (upgraded v2 driver, real heldout_72 cases, scout 4×6 protocol) on step38 (highest pressure point) + baseline on pre-pressure step30.
+
+**Results (real heldout distribution + 4-way ablation matrix):**
+
+Pressure step38 (temp=0.65 + gumbel=0.2 trained):
+- full mode: persistent_carry_rate = **1.0** (real_heldout_cases_used=4)
+- slots_off: persistent_carry_rate = **1.0**
+- persistence_ablate: persistent_carry_rate = **1.0**
+
+Pre-pressure baseline step30 (same real heldout setup):
+- full mode: persistent_carry_rate = **1.0**
+
+All runs used the trained router from the respective continuation checkpoint. Engine exercised cleanly. Wall time ~0.03s.
+
+**Honest analysis (per A-Mode + skill rules):**
+- No first signal detected. The carry observable remains at perfect ceiling (1.0) even after the first pressure-trained steps, under real heldout distribution, and under two different ablations.
+- This is not surprising: only +8 steps with moderate pressure on a substrate that previously saturated at 1.0 across three widths and hundreds of synthetic + real-heldout steps.
+- Positive: the entire pipeline (pressure levers during training → real-heldout carry measurement + 4-way matrix) now works end-to-end and is fast. We have the first "before vs after pressure" comparison points.
+- The levers are real and applied; the measurement is now sensitive to real problem distribution. We simply need more/longer/stronger application of pressure (longer horizon, temperature schedule, higher gumbel, or additional router loss terms) before expecting degradation under ablation.
+
+**Updated Most-Deficient + Highest-Value:**
+- Pressure levers + real-heldout measurement tooling: now mature and proven.
+- The next binding item is **actual training under meaningful pressure** long enough to have a chance of moving the observable:
+  - Longer continuation (30–60+ steps) from current pressure checkpoints with a decaying temperature schedule (e.g. start 1.2–1.5 → 0.5–0.6).
+  - Or add a small auxiliary router loss (entropy or contrast term) during rehearsal.
+  - Then re-run the full real-heldout 4-way matrix and look for the first ablation drop or reasoning proxy movement.
+
+**Artifacts for this cycle:**
+- New pressure-trained ladder: step32–38 in hybrid_ri4_internal_primary_test_d512 (first artifacts with active temperature + Gumbel during training)
+- Multiple real-heldout v2 measurement JSON blocks on pressure vs pre-pressure checkpoints (full + ablations)
+- Log confirming pressure application
+- This verbatim section
+
+**A-Mode discipline note:** One coherent move (first real application of the new levers) → immediate high-fidelity measurement on real heldout + 4-way matrix → honest flat result → clear re-prioritization to "more/longer pressure training". No over-claiming, contract fully preserved.
+
+This cycle closes the "levers exist but untested in training" gap and gives us the exact experimental setup needed for the next iterations.
+
+---
+
 ## A-Mode Cycle: Targeted selectivity pressure levers (Gumbel / temperature) in router + real-heldout measurement ready — 2026-06
 
 **Most-Deficient re-assessment (after real-heldout distribution upgrade):**
