@@ -440,6 +440,18 @@ This is the first successful orthogonal execution of the RI-3 (5.56) x RI-4 matr
 - Short horizon (25 steps) — sufficient for hygiene and signal direction, not yet production RI-3 gate numbers.
 - Next highest-value step: Re-run with real 642 gold + 80–120+ steps to generate the actual causal matrix the SSOT demands.
 
+**Real 642 Gold Matrix Run (immediate follow-up experiment)**
+- Used a real historical gold checkpoint from the most recent successful 5.56 real-gold matrix run:
+  `./local_556_real642_full_gstage_matrix_fixed_20260527_1256/01_full_556_real_gold_stoch_on/last.pt`
+- Command: `--run_ri3_ri4_matrix --steps 40 --batch 2 --d_model 64 --gold_path <above>`
+- Result: All 12 cells executed cleanly with real gold injected.
+- Gold loading succeeded via the existing `load_gold_proxy_robust` path.
+- Numbers remained directionally consistent with synthetic (strong stoch_zero drop), confirming the matrix + real-gold path is now functional.
+- RI-4 engine participation tracking continued to work correctly.
+- This validates that the A-Mode RI-3+RI-4 matrix infrastructure can now consume real 642 gold without modification.
+
+This run closes the "synthetic-only" limitation for the matrix. The path is ready for production-scale runs (longer horizon + larger d_model) whenever compute is available.
+
 **Files touched in this sub-cycle:** Only the decision record (code fixes were already committed in prior step).
 
 This run directly fulfills the "Immediate Rigorous Experiment" requirement after the shape contract A-Mode fixes. The lever for the SSOT's highest immediate priority is now not only present but proven to execute cleanly and produce machine-readable evidence.
