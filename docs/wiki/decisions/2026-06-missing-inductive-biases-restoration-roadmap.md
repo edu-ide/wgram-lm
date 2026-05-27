@@ -182,3 +182,19 @@ Safety gates at every step: Pivot Safety review, loud warnings, registry updates
 ---
 
 This document is the single place to track progress on "solving the missing pieces." All future work on these biases must reference and update it.
+---
+
+## 7. Progress Log (Live Updates)
+
+**2026-06 (current session)**:
+- M0: Fully completed and documented (safety processes + first RIGA record).
+- M1:
+  - I-stage: Learned prior self-generation implemented inside OneBodyParallelHybridBlock.
+  - First smoke (60 steps, real 642 gold, `--enable_stochastic_breadth`): Success. Checkpoints produced in `hybrid_ri4_learned_prior_test/`.
+  - M1 measurement (v2 192 harness on step60.pt): Launched with corrected flags (previous attempt failed on unsupported `--out_dir`).
+  - Pivot Safety warnings firing correctly throughout all runs.
+- M2–M4: Concrete starter sub-tasks and decision criteria already added to this document (sections 5.1–5.3).
+- All work committed (including roadmap creation) and recorded verbatim in main RI-4 living log.
+
+**Current State**: M1 measurement running in background. While it completes, M2–M4 planning is already live in this roadmap. Sequential milestone progression is active.
+
