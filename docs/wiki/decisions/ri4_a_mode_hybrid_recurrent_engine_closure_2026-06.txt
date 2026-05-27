@@ -2007,3 +2007,75 @@ This record closes the "full RI-1~RI-7 re-evaluation" action requested by the us
 - Cross-reference to raw-intelligence-necessary-conditions-2026-06.md (SSOT definitions) and RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md (P1.2 as declared priority).
 - All prior measurement JSON artifacts, logs, and checkpoints from the GSMU/Surprise/pressure falsification campaigns (already recorded in this file).
 
+
+---
+
+## Latest-First Literature Sweep + New Big-Jump Candidate: Decoupled Latent Memory Bank (2026-06)
+
+**Trigger**: After repeated falsification of embedded per-block slot designs (selection pressure, GSMU gated write, Surprise trigger, aux loss), the project diagnosed the root issue as "sparse slots tightly coupled inside every hybrid recurrence step". Per skill, further local tuning on this topology is a local minimum. The user explicitly requested "최신 논문 참고해서 해결해 봐".
+
+**Method**: Strict latest-first sweep (2026 → 2025), focused on the precise bottleneck: how to make memory write decisions depend on actual downstream utility inside a tight recurrent latent loop (LoopLM / answer_state_loop style), avoiding high-frequency per-micro-step updates that dilute the learning signal for selectivity.
+
+### 1. Most Relevant 2025–2026 Papers (Primary Sources Verified)
+
+| Date | Paper | Key Mechanism | How it attacks our failure | Relevance |
+|------|-------|---------------|---------------------------|---------|
+| May 2026 | **MELT** (arXiv:2605.07721) "Memory-Efficient Looped Transformer: Decoupling Compute from Memory in Looped Language Models" | In LoopLM/Ouro-style recurrent latent models, replace per-iteration growing KV/memory with a **single shared evolving cache per layer + learnable gating** that controls update across loops. Enables constant-memory iterative reasoning. | Directly solves "memory churn / forced update at every thinking step" in looped latent architectures. The gating acts as a slow-evolving latent memory that the recurrence queries rather than synchronously mutates every micro-step. | **Highest** — exact problem class (LoopLM + memory in recurrent depth) |
+| Jan 2026 | **G-MemLLM** (arXiv:2602.00015) | Trainable **Latent Memory Bank** separate from main LLM, controlled by GRU-style **gated updates** (preserve / selective overwrite). Cross-attention retrieval. | Explicit bank + learned gates for write control, not automatic per-token or per-step update. Prevents drift and makes writes more utility-aware. | Very high |
+| Feb 2025 | **LM2** (arXiv:2502.06049) "Large Memory Models" | Auxiliary memory module with explicit **input/forget/output gates** + cross-attention. Memory slots specialize. | Decoupled auxiliary memory with gating, designed for multi-step relational reasoning. | High |
+| 2024–2025 (ATLAS May 2025 follow-up) | **Titans / ATLAS** (arXiv:2501.00663, 2505.23735) | Neural long-term memory updated at test time based on **surprise / prediction error** (gradient magnitude or windowed loss). Momentum + forget. | Write decisions driven by actual novelty/utility relative to current model expectations, not frequency of opportunity. | High (our minimal surprise attempt was in the wrong topology) |
+| 2025–2026 | Global Workspace Theory papers (UMM arXiv:2503.03459, Theater of Mind / GWA arXiv:2604.08206) | Central broadcast workspace + specialist memory modules + recurrent cognitive cycles. Limited write access for coherence. | Memory as a coordinated, broadcast-accessible resource rather than something mutated inside every low-level computation step. | Medium-High (philosophical + architectural alignment) |
+
+**Synthesis**: The strongest recent signal (MELT 2026) is that for looped/latent recurrent reasoning, the winning pattern is **decoupling the memory state evolution from the tight per-step recurrence**. G-MemLLM/LM2 add concrete gated bank implementations. Titans shows that utility/surprise (not opportunity frequency) is a powerful write trigger when placed at the right level of abstraction.
+
+### 2. Mapping to Our Exact Failure (Humanistic + Causal)
+
+**Current topology (embedded per-block slots)**:
+- Every time the hybrid block runs one micro-step of thinking inside answer_state_loop, the SparseSlotRouter gets to read + potentially write.
+- Write opportunity is almost continuous.
+- The training signal "did this specific write improve the final answer quality many steps later?" is extremely weak and noisy.
+- Result: Model learns excellent persistence (the notebook never falls apart) but almost no selective utility (removing the notebook doesn't hurt).
+
+**What the papers suggest instead**:
+- Memory lives as a somewhat slower, separate "bank" or evolving cache.
+- The recurrent thinker (our OneBodyParallelHybridBlock) can **query** it when it needs context.
+- A controller (gating, surprise, or learned policy) decides write timing and strength at a coarser granularity (after a burst of thinking, or during explicit rehearsal with clear utility signal).
+- This gives the learning signal a chance to see "when I chose to write this, the later answer was better/worse."
+
+This matches the project's own earlier diagnosis in the Big-Jump Assessment sections.
+
+### 3. Proposed Architecture Candidate (Decoupled Latent Memory Bank)
+
+**Name**: DecoupledLatentMemoryBank (MELT-inspired shared evolving bank + G-MemLLM/LM2-style explicit controller gates)
+
+**High-level contract**:
+- Separate module (not inside every hybrid block forward).
+- `read(current_thought_state)` → rich context injected into the normal recurrent path (preserves One-Body).
+- `controller_maybe_write(current_state, utility_or_surprise_signal, rehearsal_target)` → only called at meaningful moments (rehearsal steps, end of thinking bursts, or via learned halting).
+- Strong persistence on non-written slots (preserve Raven/MSA inductive bias).
+- Full ablation: `--use_decoupled_memory_bank` or equivalent flag + clean bank_off path (identical to current embedded behavior when disabled).
+
+**Why this is a true Big Jump (per skill)**:
+- Changes the causal route of memory participation from "synchronous side-effect of every recurrence step" → "explicit, utility-gated interaction between thinker and a separate memory resource".
+- Directly attacks the "too many write opportunities → no utility learning" problem identified in all previous RI-4 rejects.
+
+**Preservation commitments**:
+- One-Body: Final answer still comes from the normal LM head after recurrent state (now potentially enriched by bank reads).
+- Existing 5.56 rehearsal + RI-4 4-way contract remain executable (the new bank can be used orthogonally or as a replacement for the embedded router in future experiments).
+- Reverse I→G→A for stochastic breadth and attractor protection.
+
+### 4. Smallest Falsifying Experiment (Skill-Mandated)
+
+1. Minimal implementation created: `src/qtrm_mm/memory/decoupled_latent_memory_bank.py` (DecoupledLatentMemoryBank + controller + read/write methods).
+2. Add optional attachment in the hybrid recurrent path and/or answer_state_loop (behind a flag, zero behavior change when off).
+3. During 5.56-style rehearsal on real gold, route the rehearsal updates through the bank's controller_write instead of (or in addition to) the per-step router.
+4. Run a short continuation (20–40 steps) from a recent internal_ri4_primary checkpoint with the decoupled bank active.
+5. Immediate measurement using the existing v2 real-heldout driver (4+ cases from heldout_72, 8–12 thinking steps) with clean bank_on vs bank_off (plus legacy embedded router as reference).
+6. **Falsification gate**:
+   - Success signal: bank_on shows measurable improvement in reasoning proxy (forced-choice or logprob on candidates) **and/or** a clear ablation drop (bank_off hurts more than previous embedded ablations).
+   - Failure: Still flat carry + no reasoning movement under ablation → archive and consider even higher-level controller (e.g., RL memory manager or full GWT-style broadcast) or return to RI-3 matrix as primary.
+
+This is the smallest experiment that can reject the "decoupled bank on current hybrid substrate" candidate before any larger investment.
+
+**Literature table + this proposal** constitute the required skill output before implementing further.
+

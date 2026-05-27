@@ -17,6 +17,14 @@ except Exception:
     SparseSlotRouter = None
     make_sparse_slot_router = None
 
+# RI-4 Next Big Jump (2026-06): Decoupled Latent Memory Bank (MELT + G-MemLLM inspired)
+# Optional import - zero behavior change when not used.
+try:
+    from .memory.decoupled_latent_memory_bank import DecoupledLatentMemoryBank, make_decoupled_latent_memory_bank
+except Exception:
+    DecoupledLatentMemoryBank = None
+    make_decoupled_latent_memory_bank = None
+
 
 CANONICAL_LT2_ATTN_EVERY = 4
 
@@ -282,6 +290,25 @@ class OneBodyParallelHybridBlock(nn.Module):
             )
             print(f"[HybridBlock] RI-4: SparseSlotRouter enabled (slots={num_slots}, top_k={top_k})")
 
+        # === RI-4 Decoupled Latent Memory Bank (MELT + gated bank Big Jump) ===
+        # Attached externally (like the hybrid block itself). Not created inside.
+        # When set, the block can read context from it (injected into recurrent path).
+        # Writes are expected to be called from higher level (trainer / rehearsal) for decoupling.
+        self.decoupled_memory_bank = None
+        self._decoupled_bank_enabled = False
+        self._decoupled_bank_ablation_zero = False
+
+    def set_decoupled_memory_bank(self, bank: Optional["DecoupledLatentMemoryBank"], ablation_zero: bool = False):
+        """Attach a Decoupled Latent Memory Bank (new 2026-06 topology).
+        This is the external, controller-driven memory (not updated inside every forward).
+        Clean ablation supported.
+        """
+        self.decoupled_memory_bank = bank
+        self._decoupled_bank_enabled = bank is not None and not ablation_zero
+        self._decoupled_bank_ablation_zero = ablation_zero
+        if bank is not None:
+            bank.set_ablation(enabled=not ablation_zero, ablation_zero=ablation_zero)
+
     def forward(
         self,
         x: torch.Tensor,
@@ -376,6 +403,28 @@ class OneBodyParallelHybridBlock(nn.Module):
                     x_norm = x_norm + rich_memory_context.unsqueeze(1) * strength
                 else:
                     x_norm = x_norm + rich_memory_context * strength
+
+        # --- RI-4 Decoupled Bank read (new 2026-06 topology, minimal integration) ---
+        # Read happens at the same early point as sparse slots. Context is injected
+        # into the recurrent thinking path (One-Body preserved).
+        # Writes are deliberately NOT done here — they come from controller at higher level
+        # (rehearsal or explicit utility moments). This is the decoupling.
+        if (
+            self.decoupled_memory_bank is not None
+            and self._decoupled_bank_enabled
+            and not self._decoupled_bank_ablation_zero
+        ):
+            try:
+                bank_context, _ = self.decoupled_memory_bank.forward_read(x_norm)
+                if bank_context is not None and bank_context.abs().sum() > 0:
+                    bank_strength = 0.35
+                    if x_norm.dim() == 3:
+                        x_norm = x_norm + bank_context.unsqueeze(1) * bank_strength
+                    else:
+                        x_norm = x_norm + bank_context * bank_strength
+            except Exception:
+                # Never crash the engine
+                pass
 
         # --- Recurrence branch (Gating v2 heads in parallel) ---
         rec_outs = []
