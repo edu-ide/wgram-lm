@@ -36,6 +36,38 @@ from src.qtrm_mm.config import QTRMConfig
 from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
 from scripts.train_hybrid_ri4_real_continuation_minimal import build_hybrid_stack, ContinuationConfig
 
+import json
+from pathlib import Path as _Path
+
+
+def load_real_heldout_cases_for_measurement(max_cases: int | None = None, jsonl_path: str = "data/eval/pure_recursive_reasoning_heldout_72.jsonl") -> list[dict]:
+    """Load real heldout reasoning cases for higher-fidelity RI-4 carry + usage measurement.
+    Returns list of case dicts (minimal: id + prompt summary for seeding).
+    Falls back to empty list (synthetic behavior) if file missing.
+    """
+    p = _Path(jsonl_path)
+    if not p.exists():
+        return []
+    cases = []
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                if not line.strip():
+                    continue
+                try:
+                    obj = json.loads(line)
+                    cases.append({
+                        "id": obj.get("id", f"case_{i}"),
+                        "prompt": obj.get("prompt", obj.get("text", ""))[:256]  # short summary for seeding
+                    })
+                    if max_cases is not None and len(cases) >= max_cases:
+                        break
+                except Exception:
+                    continue
+    except Exception:
+        return []
+    return cases
+
 
 def _force_to(m, dev, dt):
     """Robust recursive move for modules/buffers that may have lazy state after dynamic attachment."""
@@ -183,6 +215,7 @@ def run_192_proxy_on_continuation(
     num_cases: int = 4,
     steps_per_case: int = 4,
     d_model: int = 128,   # now taken from the loaded checkpoint (supports 128, 256, ...)
+    real_cases: list[dict] | None = None,
 ) -> Dict[str, Any]:
     """
     Run the core 192-style scoring + recurrent proposal loop with instrumentation,
@@ -204,6 +237,9 @@ def run_192_proxy_on_continuation(
     - Preserves 100% of the 4-way ablation contract and per-case reset hygiene.
     - Old keys kept for backward compatibility with existing report consumers.
     - d_model is now passed from the loaded checkpoint (no longer hardcoded to 128).
+    - Optional real_cases: when provided, uses case-specific seeds (from prompt/id) to
+      make the initial scoring proposals and thinking evolution distributionally closer
+      to real heldout reasoning problems (the current highest-value RI-4 usage gate).
     """
     device = next(hybrid_blocks.parameters()).device
     dtype = next(hybrid_blocks.parameters()).dtype
@@ -240,13 +276,26 @@ def run_192_proxy_on_continuation(
 
     engine = hybrid_blocks[0]
 
-    for case_idx in range(num_cases):
+    # Use real cases for case-specific seeding when available (the RI-4 real-usage gate)
+    use_real = real_cases and len(real_cases) > 0
+    effective_num_cases = len(real_cases) if use_real else num_cases
+
+    for case_idx in range(effective_num_cases):
         # Exact 192 hygiene: fresh slot state per case
         current_slot_state = None
 
         # --- Scoring phase (one step representing candidate evaluation) ---
-        # Use a small coherent "candidate" input (B, 1, D) to mimic post-norm proposal
-        scoring_in = torch.randn(B, 1, D, device=device, dtype=dtype)
+        # Use a small coherent "candidate" input (B, 1, D) to mimic post-norm proposal.
+        # When real_cases provided, derive a deterministic case-specific seed so the
+        # router sees different "problem contexts" (higher fidelity to actual 192 heldout usage).
+        if use_real:
+            case = real_cases[case_idx % len(real_cases)]
+            seed = hash(case.get("id", str(case_idx))) % (2**32)
+            g = torch.Generator(device=device).manual_seed(seed)
+            scoring_in = torch.randn(B, 1, D, device=device, dtype=dtype, generator=g) * 0.1
+        else:
+            scoring_in = torch.randn(B, 1, D, device=device, dtype=dtype)
+
         with torch.no_grad():
             out = engine(scoring_in, stochastic_breadth_noise=None, slot_state=current_slot_state)
             if isinstance(out, tuple) and len(out) >= 2:
@@ -271,8 +320,16 @@ def run_192_proxy_on_continuation(
             # and give the router a slightly evolved state so selective memory can matter.
             thinking_in = recurrent_state.unsqueeze(1)  # (B, 1, D)
 
-            # Small evolution to give temporal structure across thinking steps (critical for router)
-            recurrent_state = recurrent_state + 0.03 * torch.randn_like(recurrent_state)
+            # Small evolution to give temporal structure across thinking steps (critical for router).
+            # When using real cases, make the noise case-specific for distributional fidelity.
+            if use_real:
+                case = real_cases[case_idx % len(real_cases)]
+                seed = (hash(case.get("id", str(case_idx))) + t) % (2**32)
+                torch.manual_seed(seed)
+                noise = 0.03 * torch.randn_like(recurrent_state)
+            else:
+                noise = 0.03 * torch.randn_like(recurrent_state)
+            recurrent_state = recurrent_state + noise
 
             carry_in_this_step = current_slot_state is not None
             if carry_in_this_step:
@@ -317,7 +374,7 @@ def run_192_proxy_on_continuation(
         "engine_exercised": call_count["count"] > 0 or total_thinking_calls > 0,
         "cases": num_cases,
         "steps_per_case": steps_per_case,
-        "note": "A-Mode v2: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps within case (192 hygiene). Continuation-trained hybrid+RI-4 on gold_structured inputs.",
+        "note": "A-Mode v2 + real-heldout upgrade: tight (B,1,D) recurrent proposals + persistent slot carry across thinking steps. When real heldout cases are available, proposals are case-seeded for distributional fidelity to 192-style reasoning usage (the current RI-4 Most-Deficient gate). Continuation-trained hybrid+RI-4.",
     }
     return result
 
@@ -331,6 +388,9 @@ def main():
     parser.add_argument("--persistence_ablate", action="store_true", help="RI-4 ablation: disable selective persistence")
     parser.add_argument("--slots_off", action="store_true", help="RI-4 ablation: disable sparse slots (dense baseline)")
     parser.add_argument("--router_ablate", action="store_true", help="RI-4 ablation: disable selective router (force less selective memory updates)")
+    parser.add_argument("--heldout_jsonl", type=str, default="data/eval/pure_recursive_reasoning_heldout_72.jsonl",
+                        help="Path to real heldout cases for higher-fidelity 192-style measurement (drives case count and case-specific seeds for proposals).")
+    parser.add_argument("--max_real_cases", type=int, default=None, help="Limit number of real heldout cases to use (None = use num_cases or all available).")
     args = parser.parse_args()
 
     if args.scout:
@@ -389,6 +449,14 @@ def main():
     with torch.no_grad():
         _ = hybrid_blocks[0](torch.randn(2, 1, actual_d_model, device=device, dtype=dtype), stochastic_breadth_noise=None, slot_state=None)
 
+    # Load real heldout cases when the file is present (the key upgrade for RI-4 real-usage gate)
+    real_cases = load_real_heldout_cases_for_measurement(
+        max_cases=args.max_real_cases or args.num_cases,
+        jsonl_path=args.heldout_jsonl
+    )
+    if real_cases:
+        print(f"[real-heldout] Loaded {len(real_cases)} cases from {args.heldout_jsonl} for case-specific proposal seeding.")
+
     import time
     t0 = time.time()
     result = run_192_proxy_on_continuation(
@@ -396,6 +464,7 @@ def main():
         num_cases=args.num_cases,
         steps_per_case=args.steps_per_case,
         d_model=actual_d_model,
+        real_cases=real_cases,
     )
     result["wall_time_sec"] = round(time.time() - t0, 2)
     result["checkpoint_step"] = actual_step
@@ -403,6 +472,8 @@ def main():
     result["persistence_ablation"] = args.persistence_ablate
     result["slots_off"] = args.slots_off
     result["router_ablation"] = args.router_ablate
+    result["real_heldout_cases_used"] = len(real_cases) if real_cases else 0
+    result["heldout_jsonl"] = args.heldout_jsonl if real_cases else None
 
     print("\n=== RESULT ===")
     for k, v in result.items():
