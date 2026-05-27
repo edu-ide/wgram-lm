@@ -313,6 +313,10 @@ class OneBodyParallelHybridBlock(nn.Module):
         # Both recurrence and (especially official MLA) attention branches expect clean 3D.
         # This single normalization guarantees the hybrid block always sees strict 3D input
         # regardless of how answer_state_loop or diagnostics call it.
+        #
+        # Defensive guard: some curriculum paths may still pass a (tensor, slot) tuple in combined 5.56+RI-4 runs.
+        if isinstance(x, tuple):
+            x = x[0]  # take the hidden state; slot carry is handled by the caller
         if x.dim() == 2:
             x = x.unsqueeze(1)
         while x.dim() > 3:
