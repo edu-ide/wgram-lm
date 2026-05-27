@@ -744,8 +744,25 @@ This gives us the cleanest head-to-head RI-4 ablation data at the highest contin
 **Next RI-4 action launched (Most-Deficient move)**:
 From the step240 checkpoint, we launched another substantial continuation (+120 steps, targeting ~step360) using the same gold_structured + full RI-4 recipe. This directly attacks the longer-horizon gap at the current best width. When this run completes, we will re-run the 4-way measurement on the new highest checkpoint to see whether differences between full and ablated arms start to appear at higher steps.
 
-**Observation at step240**:
-Engine participation remains high across all three modes (30 calls in matched runs). No obvious degradation in call count yet under these two major RI-4 ablations at this step count. Scoring-phase carries are still not appearing in the current synthetic delegation driver (this is a known limitation of the proxy, not necessarily of the substrate).
+**Step360 4-Way Matched Measurement (just completed, 6 cases × 5 steps):**
+
+| Mode                  | hybrid calls | carries | engine_exercised | scoring carries |
+|-----------------------|--------------|---------|------------------|-----------------|
+| **full**              | 30           | 30      | True             | 0               |
+| **persistence_ablate**| 30           | 30      | True             | 0               |
+| **slots_off**         | 30           | 30      | True             | 0               |
+| **router_ablate**     | 30           | 30      | True             | 0               |
+
+**Step240 vs Step360 comparison (matched runs)**:
+- Raw participation numbers remained essentially identical from step240 to step360 across all four modes.
+- No visible degradation under any RI-4 ablation even after another 120 steps of gold_structured continuation.
+- This is a reasonably encouraging robustness signal for the current hybrid+RI-4+5.56 recipe at this scale in the current proxy. Deeper differences (if any) are not yet surfacing well with the synthetic driver.
+
+**Current RI-4 status (end of today’s focused session)**:
+- Good continuation progress (up to step360 on the verified recipe).
+- First multi-depth 4-way ablation comparison (step240 vs step360).
+- Engine remains highly exercised under all ablations so far.
+- Next natural Most-Deficient moves within RI-4: (1) push continuation even longer, (2) improve the measurement harness to surface scoring quality / carries better, or (3) move toward real data.
 
 This is the cleanest RI-4 ablation data we have so far at the highest continuation step reached today.
 
