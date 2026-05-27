@@ -282,9 +282,17 @@ class OneBodyParallelHybridBlock(nn.Module):
         self._stochastic_breadth_max_std = float(getattr(cfg, "core_stochastic_high_level_max_std", 0.2))
 
         # M2 starter (Elastic Depth policy learning)
-        # Basic scaffolding for learnable depth policy (beyond pure random).
-        # Full implementation will be done after M1 causal data.
+        # Basic learnable depth policy head (simple linear projection from pooled state).
+        # When enabled, the block can learn to choose effective recurrence depth instead of pure random.
         self._elastic_depth_learn_policy = bool(getattr(cfg, "core_elastic_depth_learn_policy", False))
+        self.elastic_depth_policy = None
+        if self._elastic_depth_learn_policy:
+            self.elastic_depth_policy = nn.Sequential(
+                RMSNorm(d),
+                nn.Linear(d, 32),
+                nn.GELU(),
+                nn.Linear(32, 1),
+            )
 
         # Learned prior for self-contained stochastic breadth generation inside the hybrid engine.
         # This was the missing piece: the active RI-4 recurrent engine (this block) could only

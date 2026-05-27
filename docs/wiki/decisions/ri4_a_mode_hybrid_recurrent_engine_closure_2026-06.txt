@@ -3266,3 +3266,61 @@ Links added to index.md, inductive-bias-map.md, and substrate doubt synthesis.
 
 **Next per roadmap**: Immediately wire these checkpoints into v2 192 real-heldout measurement + stochastic_breadth on vs zero contrast. This is the first real test of whether restoring the bias moves persistent_carry_rate away from 1.0.
 
+
+**M1 Measurement Launch Correction (same session)**:
+- Previous measurement attempt failed with "unrecognized arguments: --out_dir" (the v2 192 measurement script does not support --out_dir).
+- Corrected launch (no --out_dir) is now running in background:
+  python scripts/measure_continuation_hybrid_192.py \
+    --checkpoint checkpoints/hybrid_ri4_learned_prior_test/hybrid_ri4_cont_step60.pt \
+    --num_cases 8 --steps_per_case 6
+
+This is the first measurement on a checkpoint where the restored internal learned stochastic breadth was active during continuation.
+
+Pivot Safety Warning continues to fire correctly.
+
+
+**M1 Measurement Result (v2 192 on restored-bias checkpoint)**:
+Checkpoint: hybrid_ri4_learned_prior_test/hybrid_ri4_cont_step60.pt (from 60-step continuation with --enable_stochastic_breadth + internal learned prior)
+
+Result (full mode, 8 real heldout cases, 6 steps each):
+- persistent_carry_rate: 1.0
+- engine_exercised: True
+- hybrid_forward_call_count: 48
+- slot_carry_events_observed: 88
+- thinking_carries_in/out: 40/40
+- real_heldout_cases_used: 8
+
+This is the first measurement on a checkpoint where the historically missing training-time stochastic breadth bias was active during continuation training.
+
+Still flat at 1.0 (same as all previous RI-4 baselines).
+
+Note: This run was "full" mode only. Proper on/off contrast for the restored bias (continuation with breadth vs without, or measurement ablations) is still needed for causal evidence.
+
+Recorded: 2026-06
+
+
+**M1 Next Sub-Step Launched (2026-06)**:
+Per the defined M1 sub-step in the restoration roadmap:
+
+- Launched 200-step continuation with restored internal learned stochastic breadth (via --enable_stochastic_breadth, which now exercises the hybrid block's own prior).
+- Real 642 gold.
+- Out dir: checkpoints/hybrid_ri4_m1_longer_restored
+- Save every 40 steps.
+
+This is the direct follow-up to the 60-step smoke that still showed 1.0. Goal is to generate longer checkpoints where the restored bias had more time to influence learning, then measure with full on/off contrast.
+
+Background task active. Existing monitors will capture results.
+
+
+**M1 Longer Run Result (200 steps, restored internal learned prior)**:
+- Command: 200 steps, d=128, real 642 gold, --enable_stochastic_breadth (internal prior active).
+- Completed successfully (exit 0).
+- Checkpoints saved: step40, 80, 120, 160, 200 in `checkpoints/hybrid_ri4_m1_longer_restored/`.
+- Norms stable (~20.8 ~ 22.2).
+- Real 642 gold loaded and used.
+- Hybrid engine (MLA) exercised throughout.
+
+This produces the required longer checkpoints for the critical M1 contrast measurement (on vs stochastic_breadth ablation).
+
+Next defined sub-step: Run v2 192 measurement + explicit breadth on/off contrast on these checkpoints (especially step200.pt).
+

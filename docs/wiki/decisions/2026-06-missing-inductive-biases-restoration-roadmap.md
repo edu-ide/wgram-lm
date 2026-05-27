@@ -211,3 +211,52 @@ This document is the single place to track progress on "solving the missing piec
 
 This data point is now part of the official M1 record.
 
+
+**M2 Starter Code Initiated (2026-06)**:
+- First code change for M2: `core_elastic_depth_learn_policy` flag exposed in OneBodyParallelHybridBlock.
+- Commit: 745160d
+- This runs in parallel with M1 measurement analysis. Full M2 narrow gate will be built after M1 results are processed.
+
+All milestones are now being advanced sequentially with concrete artifacts and honest data recording.
+
+
+---
+
+## M1 Current Status & Next Sub-Step (as of latest measurement)
+
+**Latest Data Point (2026-06)**:
+- Checkpoint: 60-step continuation with internal learned prior active (true stochastic breadth restoration in the active RI-4 engine).
+- v2 192 measurement (8 real cases, 6 thinking steps): persistent_carry_rate = 1.0
+- Engine was fully exercised with proper RI-4 persistent carry (88 slot carry events).
+- Honest result: Short restoration + short continuation did not produce selectivity movement.
+
+**M1 Next Concrete Sub-Step (defined now)**:
+1. Launch longer continuation (minimum 200 steps, target 300+) using the restored internal learned prior (in true_gram mode where possible) on real 642 gold.
+2. Produce multiple checkpoints.
+3. Run full v2 192 measurement + explicit stochastic_breadth ablation contrast (on vs zero) on the longer checkpoints.
+4. Compare against historical "no internal prior" baselines.
+
+This sub-step must be completed before declaring M1 "first causal evidence achieved" or "needs higher intervention".
+
+**Status**: Sub-step 1 (longer run) is being prepared for immediate launch.
+
+
+**M1 Next Sub-Step Execution (2026-06)**:
+- 200-step continuation with the restored internal learned prior officially launched (real 642 gold, --enable_stochastic_breadth).
+- This directly follows the "longer run + later contrast" sub-step defined after the 60-step 1.0 measurement.
+- Expected to produce better checkpoints for the critical on/off measurement.
+
+M1 remains the current active milestone. M2–M4 planning artifacts exist and can receive light parallel work if M1 experiments are running in background.
+
+
+**M1 Sub-Step Execution Result (2026-06)**:
+- 200-step continuation with restored internal learned prior: **Completed successfully**.
+- 5 checkpoints produced (40~200 steps).
+- Stable training dynamics, real 642 gold used.
+- This directly fulfills the "longer run" part of the M1 sub-step defined after the 60-step 1.0 measurement.
+
+**Immediate Next Action for M1**:
+Launch v2 192 measurement + stochastic_breadth ablation contrast (full vs breadth_ablate) on the step200.pt (and ideally step120/160 for comparison).
+
+This contrast is the key to determining whether the restored bias is producing measurable selectivity improvement.
+
