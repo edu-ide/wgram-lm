@@ -114,6 +114,32 @@ class QTRMConfig:
     core_world_model_predictor_dim: Optional[int] = None
     core_world_model_horizon: int = 1
     core_world_model_sigreg_weight: float = 0.09
+    # Minimal isolated memory tiers scaffolding (Option 2 ablation track)
+    core_memory_tiers_enabled: bool = False
+    core_memory_manager_hidden_dim: Optional[int] = None
+    core_memory_manager_num_actions: int = 8
+    core_memory_tiers_ablation_zero: bool = False
+
+    # Phase 1: Gated multi-domain Thought Workspaces + Broadcast (뇌량)
+    core_thought_workspace_enabled: bool = False
+    core_thought_workspace_domains: list[str] = field(default_factory=lambda: ["equation", "algorithm_step"])
+    core_thought_workspace_hidden_dim: Optional[int] = None
+    core_thought_workspace_injection_alpha: float = 0.35
+    core_thought_workspace_ablation_zero: bool = False
+    core_thought_workspace_selector_mode: str = "sum"  # "sum", "importance", "learned"
+
+    # Phase 2 groundwork: Answer Attractor pressure (depth-wise monotonic)
+    core_answer_attractor_enabled: bool = False
+    core_answer_attractor_weight: float = 0.02
+    core_answer_attractor_monotonic_gain: float = 0.03
+    core_answer_attractor_ablation_zero: bool = False
+
+    # Phase 3 groundwork: Provenance / Graph reasoning register input
+    core_provenance_register_enabled: bool = False
+    core_provenance_register_dim: int = 64
+    core_provenance_register_fusion_alpha: float = 0.25
+    core_provenance_register_ablation_zero: bool = False
+
     qtrm_logits_scale: float = 1.0
     donor_logits_scale: float = 0.0
     qtrm_residual_clamp: Optional[float] = None
