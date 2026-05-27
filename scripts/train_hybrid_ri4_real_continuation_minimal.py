@@ -109,6 +109,21 @@ def main():
             top_k=4,
         ).to(device=cfg.device, dtype=cfg.dtype)
 
+    # === Resume support (A-Mode: close the "can actually continue from previous checkpoint" gap) ===
+    start_step = 0
+    if cfg.resume_from and os.path.exists(cfg.resume_from):
+        print(f"[Resume] Loading from {cfg.resume_from}")
+        # Trusted internal checkpoint — safe to use weights_only=False for our own custom objects
+        ckpt = torch.load(cfg.resume_from, map_location=cfg.device, weights_only=False)
+        model.load_state_dict(ckpt["model"])
+        if router is not None and ckpt.get("router") is not None:
+            router.load_state_dict(ckpt["router"])
+        start_step = ckpt.get("step", 0)
+        print(f"[Resume] Resumed at step {start_step}")
+        # Carry over slots if present in the checkpoint (for persistent RI-4 state)
+        if hasattr(model, '_ri4_current_slots') and ckpt.get('slots') is not None:
+            model._ri4_current_slots = ckpt['slots'].to(device=cfg.device, dtype=cfg.dtype)
+
     # Gold state (real 642 if provided) — exact same robust prep as the 160-step evidence run
     gold_state = None
     if cfg.gold_path and os.path.exists(cfg.gold_path):
@@ -134,7 +149,8 @@ def main():
     # In the next step this becomes a real DataLoader + AdamW + checkpointing
     x = torch.randn(cfg.batch_size, 8, cfg.d_model, device=cfg.device, dtype=cfg.dtype) * 0.02
 
-    for step in range(cfg.total_steps):
+    total_to_run = cfg.total_steps
+    for step in range(start_step, start_step + total_to_run):
         decay = scheduled_decay(step, cfg.total_steps, 0.40, 0.04)
 
         # Rehearsal-style update (exact faithful version from the proven matrix)
@@ -180,11 +196,13 @@ def main():
 
         if cfg.save_every > 0 and (step + 1) % cfg.save_every == 0:
             ckpt_path = os.path.join(cfg.out_dir, f"hybrid_ri4_cont_step{step+1}.pt")
+            slots = getattr(model, '_ri4_current_slots', None)
             torch.save({
                 "model": model.state_dict(),
                 "router": router.state_dict() if router is not None else None,
                 "step": step + 1,
                 "config": cfg,
+                "slots": slots.cpu() if slots is not None else None,
             }, ckpt_path)
             print(f"[Checkpoint] saved {ckpt_path}")
 
