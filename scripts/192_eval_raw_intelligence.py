@@ -2630,12 +2630,14 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
             old_qtrm_scale = float(model.cfg.qtrm_logits_scale)
             old_donor_scale = float(model.cfg.donor_logits_scale)
 
-            # === RI-4 hybrid path preparation (when requested) ===
+            # === RI-4 hybrid path preparation (A-mode: hybrid as real recurrent engine) ===
             ri4_hybrid_model = None
             if runtime.get("use_parallel_hybrid"):
-                # Build the OneBodyParallelHybrid stack with SparseSlotRouter for this mode
-                # This is the minimal bridge so the canonical 192 harness can produce
-                # RI-4 gate records using the same machinery as the 556 PoC.
+                # Build the OneBodyParallelHybrid stack with SparseSlotRouter for this mode.
+                # In A-mode we attach it directly to model.answer_state_loop_hybrid_recurrent_block
+                # so that it drives the actual recurrence *inside* answer_state_loop trajectory steps
+                # (cross-attn → hybrid recurrent proposal with persistent slots → gate).
+                # This replaces the previous side-car pre-run + residual injection.
                 try:
                     from src.qtrm_mm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
                     from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
@@ -2644,7 +2646,7 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                     # Create a small stack (single block for PoC latency; can be deeper later)
                     ri4_hybrid_model = build_parallel_hybrid_block(hybrid_cfg)
 
-                    # Configure RI-4 flags on the block(s)
+                    # Configure RI-4 flags on the block(s) — these are read by the block forward
                     slots_on = bool(runtime.get("sparse_slots_enabled", True))
                     pers_ablate = bool(runtime.get("persistence_ablation", False))
                     router_ablate = bool(runtime.get("router_ablation", False))
@@ -2656,12 +2658,23 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                                     enabled=slots_on and not router_ablate,
                                     ablation_zero=(not slots_on) or router_ablate,
                                 )
-                            # Store flags for the forward loop
+                            # Store flags (used by some internal paths)
                             layer._ri4_persistence_ablation = pers_ablate
                             layer._ri4_slots_on = slots_on and not router_ablate
                 except Exception as e:
                     print(f"[RI-4] Failed to build hybrid stack for mode {mode}: {e}")
                     ri4_hybrid_model = None
+
+            # Attach hybrid as the answer_state_loop recurrent engine for these modes (A-mode).
+            # Non-RI-4 modes and other runs see None → classic recurrent_stack (zero behavior change).
+            if ri4_hybrid_model is not None:
+                model.answer_state_loop_hybrid_recurrent_block = ri4_hybrid_model
+                model._ri4_hybrid_recurrent_slot_state = None  # will be reset per case
+                print(f"[RI-4 A-mode] Attached hybrid recurrent block for mode {mode} (slots_on={runtime.get('sparse_slots_enabled')}, persistence_ablation={runtime.get('persistence_ablation')})")
+            else:
+                model.answer_state_loop_hybrid_recurrent_block = None
+                model._ri4_hybrid_recurrent_slot_state = None
+
             model.cfg.qtrm_logits_scale = (
                 float(runtime["qtrm_logits_scale"])
                 if runtime["qtrm_logits_scale"] is not None
@@ -2680,64 +2693,22 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                 for case in cases:
                     prompt = case.get("prompt") or case.get("question", "")
 
-                    # === RI-4 execution path (uses hybrid + question-derived input + strict scoring) ===
+                    # Per-case fresh slot state for RI-4 hybrid recurrent engine.
+                    # Critical: prevents cross-case memory leakage in persistent slots.
                     if runtime.get("use_parallel_hybrid") and ri4_hybrid_model is not None:
-                        # Use the same question-derived input + depth_target arrival + strict score
-                        # pattern that was validated as the highest-value PoC in the 556 trainer.
-                        # This gives immediately usable RI-4 gate numbers on the canonical harness.
-                        from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+                        model._ri4_hybrid_recurrent_slot_state = None
 
-                        # Real tokenized prompt as input to hybrid (the critical causal upgrade)
-                        # Use the actual token ids the rest of 192 uses, so the slots see
-                        # the true reader output from the case's question/prompt.
-                        try:
-                            prompt_inputs = _prepare_inputs(tokenizer, prompt, max_length, device)
-                            real_input_ids = prompt_inputs["input_ids"][0]  # (T,)
-                            seq_len = max(4, min(24, len(real_input_ids)))
-                            # Build hybrid starting state from the actual token ids (content + structure)
-                            x = _build_question_derived_input_192(
-                                {"question": prompt, "token_ids": real_input_ids.tolist()},
-                                int(hybrid_cfg.d_model),
-                                seq_len,
-                                device,
-                                torch.float32,
-                            )
-                        except Exception:
-                            # Fallback to previous text-based (still better than randn)
-                            q_text = prompt or case.get("question", "")
-                            seq_len = max(4, min(24, len(q_text) // 3 + 4))
-                            x = _build_question_derived_input_192(
-                                case, int(hybrid_cfg.d_model), seq_len, device, torch.float32
-                            )
-
-                        current_slots = None
-                        for layer in ri4_hybrid_model:
-                            if isinstance(layer, OneBodyParallelHybridBlock):
-                                out = layer(x, slot_state=current_slots)
-                                if isinstance(out, tuple):
-                                    x, current_slots = out
-                                else:
-                                    x = out
-                            else:
-                                x = layer(x)
-
-                        # Hidden-level injection (the high-value architectural step):
-                        # The hybrid final state (after real tokenized prompt + MSA slots + persistence)
-                        # is now injected as residual on the hidden *before* the lm_head inside the model.
-                        # This is the clean "memory state participates in the thinking hidden" path.
-                        final_hybrid = x[:, -1].mean(dim=0) if x.dim() == 3 else x.mean(dim=0)
-
-                        # Source the residual from runtime (clean, no model monkey-patch).
-                        # The scoring helpers will pick it up via _ri4_memory_residual_kwargs(runtime)
-                        # and pass the proper kwarg to model(...).
-                        runtime["ri4_memory_residual"] = final_hybrid.detach()
-                        runtime["ri4_memory_residual_scale"] = 0.3
-                        runtime["ri4_hybrid_final_norm"] = float(final_hybrid.norm().detach().cpu())
-
-                        # The hybrid final state (via runtime) will be injected as hidden residual
-                        # inside the model forward for the choice tokens.
-                        # (No custom sidecar scoring; the real path does the work with proper kwarg.)
-                        pass
+                    # NOTE (A-mode transition):
+                    # The previous side-car block that pre-ran the hybrid on question-derived input
+                    # and injected via runtime["ri4_memory_residual"] has been removed for the 4
+                    # hybrid_* modes. The hybrid now participates natively as the recurrent
+                    # proposal engine inside _compute_answer_state_loop_outputs (see qtrm_model.py:6159).
+                    # All ablation flags, persistence, and stochastic breadth continue to work
+                    # because they live on the attached block.
+                    #
+                    # The ri4_memory_residual kwarg path remains available for other experiments
+                    # and fallback modes. For pure RI-4 hybrid-recurrent runs the memory effect
+                    # comes from inside the answer_state_loop trajectory via the slots.
 
                     choice_scores = None
                     if args.scoring == "forced_choice":
@@ -2891,6 +2862,12 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
             finally:
                 model.cfg.qtrm_logits_scale = old_qtrm_scale
                 model.cfg.donor_logits_scale = old_donor_scale
+                # Hygiene: clear RI-4 hybrid recurrent engine attachment after the mode
+                # so subsequent modes (or re-runs) never accidentally inherit it.
+                if hasattr(model, "answer_state_loop_hybrid_recurrent_block"):
+                    model.answer_state_loop_hybrid_recurrent_block = None
+                if hasattr(model, "_ri4_hybrid_recurrent_slot_state"):
+                    model._ri4_hybrid_recurrent_slot_state = None
     return records
 
 
