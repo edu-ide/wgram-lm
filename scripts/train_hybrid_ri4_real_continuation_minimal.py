@@ -76,6 +76,7 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--router_temperature", type=float, default=1.0, help="Starting temperature for router scores ( <1 sharper selectivity, >1 softer exploration)")
     p.add_argument("--router_temperature_end", type=float, default=None, help="Ending temperature for linear decay schedule over the run (None = constant)")
     p.add_argument("--gumbel_noise_std", type=float, default=0.0, help="Gumbel-style noise std for stochastic breadth in slot selection during training")
+    p.add_argument("--router_aux_loss_weight", type=float, default=0.0, help="Weight for auxiliary router selectivity loss (entropy/contrast) during rehearsal. >0 enables stronger training pressure on selection decisions.")
     args = p.parse_args()
 
     cfg = ContinuationConfig(
@@ -95,6 +96,7 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.router_temperature = args.router_temperature
     cfg.router_temperature_end = args.router_temperature_end if args.router_temperature_end is not None else args.router_temperature
     cfg.gumbel_noise_std = args.gumbel_noise_std
+    cfg.router_aux_loss_weight = args.router_aux_loss_weight
     return cfg
 
 
@@ -252,6 +254,19 @@ def main():
                 protection=cfg.attractor_protection,
                 decay=decay,
             )
+
+        # RI-4 auxiliary router selectivity loss (stronger training pressure on selection decisions)
+        if router is not None and getattr(cfg, 'router_aux_loss_weight', 0.0) > 0:
+            aux_loss = router.compute_selectivity_aux_loss(h, loss_weight=cfg.router_aux_loss_weight)
+            if aux_loss.requires_grad and aux_loss.item() > 0:
+                # Tiny optimizer just for the router (direct gradient pressure during rehearsal dynamics)
+                if not hasattr(cfg, '_router_aux_opt'):
+                    cfg._router_aux_opt = torch.optim.SGD(router.parameters(), lr=5e-4)
+                cfg._router_aux_opt.zero_grad()
+                aux_loss.backward(retain_graph=True)
+                cfg._router_aux_opt.step()
+                if (step + 1) % max(1, cfg.total_steps // 8) == 0:
+                    print(f"  [router aux loss] {aux_loss.item():.6f}")
 
         x = h.detach()
 

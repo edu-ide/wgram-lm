@@ -1581,6 +1581,55 @@ This cycle closes the "levers exist but untested in training" gap and gives us t
 
 ---
 
+## A-Mode Cycle: Stronger router selectivity pressure via auxiliary loss (entropy) during rehearsal + measurement — 2026-06
+
+**Most-Deficient driving this cycle:**
+After temperature + Gumbel (even with proper schedule and meaningful length) still produced 1.0 carry under real heldout + ablations, the binding constraint moved to needing **direct training signal** on the router's selection decisions during the exact 5.56 rehearsal dynamics.
+
+**Holistic one-move (A-Mode):**
+- Added `compute_selectivity_aux_loss` in `SparseSlotRouter`: simple negative-entropy (minimize entropy of softmax(scores) → more decisive/peaky top-k selection).
+- Wired in trainer: `--router_aux_loss_weight` flag. When >0, during the rehearsal loop we compute the aux loss on the current hidden state, backprop, and take a tiny SGD step on the router parameters only (direct gradient pressure on selection while the 5.56 gold + attractor rehearsal is happening).
+- Combined with the previous schedule support (decaying temp + gumbel).
+
+**Immediate experiment:**
+- 30-step continuation from step76 with aux loss 0.01 + decaying schedule (1.2 → 0.5, gumbel 0.15).
+- Log shows aux loss actively being computed and stepped (~0.027 range, small movement).
+- New artifacts up to step105 under the combined stronger pressure.
+- Immediate post-run measurement: upgraded real-heldout v2 driver + 4-way matrix on step105.
+
+**Results (real heldout distribution):**
+- step105 (aux loss + scheduled pressure):
+  - full: persistent_carry_rate = **1.0**
+  - slots_off: **1.0**
+- Same flat result as all previous baselines.
+
+**Honest analysis:**
+- The aux loss is live and being optimized during rehearsal.
+- However, on this d=512 internal_ri4_primary substrate, even the combination of scheduled temperature/Gumbel + direct entropy pressure on router scores over ~30 steps did not produce measurable degradation in the carry observable under real heldout distribution or ablations.
+- This is strong negative data for the current formulation of "selectivity pressure" (score temperature + Gumbel + entropy regularization on the router).
+
+**Updated Most-Deficient + Highest-Value:**
+- Current forms of router pressure (temp schedule + Gumbel + entropy aux loss on scores): tested at length → no movement in carry/ablation behavior.
+- The new frontier is either:
+  1. A more powerful/direct aux loss (e.g. explicit term on how much the *non-selected* slots are protected vs. how much the selected slots actually absorb the gold/rehearsal signal during `update_slots` / `apply_rehearsal_update`).
+  2. Much longer training with the current aux loss active from earlier.
+  3. Adding a reasoning accuracy proxy to the measurement driver so we can see downstream effects even if raw carry stays high.
+
+**Artifacts:**
+- Aux loss method + trainer wiring (`--router_aux_loss_weight`)
+- New artifacts step80–105 under aux+schedule pressure (d512 internal_primary)
+- Real-heldout 4-way measurements on step105
+- Log showing aux loss values during training
+- This verbatim section
+
+**A-Mode discipline note:** One coherent addition (direct aux loss with real gradient step on router during rehearsal) → run with previous schedule → immediate real-heldout 4-way matrix → honest flat result → clear re-prioritization to stronger/more direct forms of selectivity loss on the actual update impact. Contract preserved.
+
+This cycle completes the "add direct training pressure on the router" experiment requested by the previous Most-Deficient.
+
+---
+
+
+
 ## A-Mode Cycle: Longer scheduled pressure training (temp decay 1.3→0.55) + real-heldout 4-way matrix on new artifacts — 2026-06
 
 **Most-Deficient driving this cycle (from previous):**
