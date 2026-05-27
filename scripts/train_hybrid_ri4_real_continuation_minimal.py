@@ -73,7 +73,8 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--input_mode", type=str, default="gold_structured", choices=["random", "gold_structured"], help="Input generation mode for continuation (gold_structured = much more faithful to 5.56 rehearsal cases)")
     p.add_argument("--internal_ri4_primary", action="store_true", help="Attach the RI-4 router to the hybrid blocks themselves and use block return value as the primary slot carry mechanism (makes future measurement lighter and more self-contained; preserves exact 5.56 rehearsal logic)")
     # === RI-4 Most-Deficient selectivity pressure levers (A-Mode target after width saturation) ===
-    p.add_argument("--router_temperature", type=float, default=1.0, help="Temperature for router scores ( <1 sharper selectivity, >1 softer exploration)")
+    p.add_argument("--router_temperature", type=float, default=1.0, help="Starting temperature for router scores ( <1 sharper selectivity, >1 softer exploration)")
+    p.add_argument("--router_temperature_end", type=float, default=None, help="Ending temperature for linear decay schedule over the run (None = constant)")
     p.add_argument("--gumbel_noise_std", type=float, default=0.0, help="Gumbel-style noise std for stochastic breadth in slot selection during training")
     args = p.parse_args()
 
@@ -92,6 +93,7 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.ri4_persistence_ablation = args.ri4_persistence_off
     cfg.internal_ri4_primary = args.internal_ri4_primary
     cfg.router_temperature = args.router_temperature
+    cfg.router_temperature_end = args.router_temperature_end if args.router_temperature_end is not None else args.router_temperature
     cfg.gumbel_noise_std = args.gumbel_noise_std
     return cfg
 
@@ -207,6 +209,12 @@ def main():
     total_to_run = cfg.total_steps
     for step in range(start_step, start_step + total_to_run):
         decay = scheduled_decay(step, cfg.total_steps, 0.40, 0.04)
+
+        # RI-4 scheduled selectivity pressure (A-Mode: linear decay from start to end temp)
+        if router is not None:
+            progress = (step - start_step) / max(1, total_to_run)
+            cur_temp = cfg.router_temperature + (cfg.router_temperature_end - cfg.router_temperature) * progress
+            router.set_temperature(temperature=cur_temp, gumbel_noise_std=cfg.gumbel_noise_std)
 
         # Rehearsal-style update (exact faithful version from the proven matrix)
         gold_delta = torch.zeros(1, 1, cfg.d_model, device=cfg.device, dtype=cfg.dtype)
