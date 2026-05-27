@@ -122,7 +122,10 @@ def main():
         print(f"[Resume] Loading from {cfg.resume_from}")
         # Trusted internal checkpoint — safe to use weights_only=False for our own custom objects
         ckpt = torch.load(cfg.resume_from, map_location=cfg.device, weights_only=False)
-        model.load_state_dict(ckpt["model"])
+        # Internal-primary checkpoints serialize router weights inside the blocks.
+        # Use strict=False and let the later attachment logic re-bind the correct router object.
+        load_strict = not getattr(cfg, "internal_ri4_primary", False)
+        model.load_state_dict(ckpt["model"], strict=load_strict)
         if router is not None and ckpt.get("router") is not None:
             router.load_state_dict(ckpt["router"])
         start_step = ckpt.get("step", 0)

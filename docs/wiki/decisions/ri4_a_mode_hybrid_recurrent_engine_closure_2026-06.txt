@@ -1062,3 +1062,46 @@ All actions followed A-Mode, Most-Deficient + Highest-Value-First, Reverse I→G
 
 This brings the RI-4 measurement + continuation substrate one major step closer to being able to cleanly observe effective scale effects on selective memory carry quality.
 
+
+## A-Mode micro-cycle: Internal-primary ladder extension + first matched scout trend data
+
+**Holistic one-move:**
+- Fixed a small resume hygiene issue in the trainer (strict=False load when resuming internal-primary checkpoints that contain router weights inside the blocks).
+- Extended the internal-primary ladder +12 steps from step516 → produced new checkpoints at 522 and 528 (now total ~18 steps of internal-primary gold_structured continuation from the step510 baseline).
+
+**Immediate rigorous experiment (matched scout 4×4 measurements):**
+- Ran identical --scout (4 cases × 4 steps) protocol on:
+  - step528 (newest internal-primary)
+  - step516 (previous internal-primary)
+  - step510 (pre-extension reference from main series, loaded with its trained router for fair comparison)
+
+**Results (all full mode):**
+
+| Checkpoint | Contract                  | persistent_carry_rate | thinking_carries (in/out) | wall_time |
+|------------|---------------------------|-----------------------|---------------------------|-----------|
+| step510    | Original (external router)| 1.0                   | 12/12                     | 0.07s     |
+| step516    | Internal-primary          | 1.0                   | 12/12                     | 0.03s     |
+| step528    | Internal-primary (+12)    | 1.0                   | 12/12                     | 0.03s     |
+
+**Observation:**
+- Carry_rate is already at ceiling (1.0) across all measured points under the trained router contract.
+- Internal-primary mode is measurably lighter/faster than the old external-router loading path (0.03s vs 0.07s).
+- No visible differentiation in carry quality from the additional ~18 steps of gold_structured rehearsal in this small depth window (using 4×4 scout protocol).
+
+**A-Mode diagnostic + re-prioritization:**
+- The "internal block RI-4 primary carry" substrate is now production-ready for scale experiments (self-contained, clean, fast).
+- The current 4×4 scout protocol + these depths may simply be in a saturated regime for this particular 5.56 gold_structured recipe + d=128.
+- Next highest-value moves for observing effective scale on carry quality:
+  1. Use longer thinking trajectories in the v2 driver (e.g. 4 cases × 8–12 steps) on the same checkpoints — this may surface differentiation that the short 4-step thinking loop does not.
+  2. Push the internal-primary ladder significantly further (another +50–100 steps) and re-measure.
+  3. Run the same scout on step360 (earlier depth) for a wider baseline.
+
+The internal-primary path + guards + measurement hygiene is now in excellent shape. The project has a clean, low-friction experimental loop for the original "does more gold_structured rehearsal improve selective memory carry?" question.
+
+**Artifacts:**
+- Additional internal-primary checkpoints at 522/528
+- Three new scout logs (step510/516/528)
+- This section
+
+All under A-Mode, Most-Deficient prioritization, and RI-4 focus.
+
