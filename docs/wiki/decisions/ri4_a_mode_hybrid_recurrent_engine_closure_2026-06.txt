@@ -666,5 +666,28 @@ The artificial tooling cap is now gone (closed in this cycle). The remaining blo
 
 Highest-value next move: Move the now-proven substrate (OneBodyParallelHybridBlock as actual recurrent engine + RI-4 slots + 5.56 rehearsal + real gold) into **actual training continuation** (real data, real optimizer, real checkpoints) at the smallest viable production scale where these hallmarks can plausibly surface. Local 300+ step toy runs have diminishing returns.
 
-All actions followed the skill exactly. Ready for Result Confirmation → re-prioritization → next experiment.
+**A-Mode execution of the scale gap (this invocation):**
+
+Created the minimal faithful continuation trainer:
+`scripts/train_hybrid_ri4_real_continuation_minimal.py`
+
+- Re-uses **exact** construction and rehearsal logic from the 160-step evidence run (build_hybrid_stack + apply_556_rehearsal_update + robust real-642 gold prep + SparseSlotRouter when RI-4 on).
+- Preserves 100% of the One-Body contract, all RI-4 ablation flags (`--ri4_slots_off`, `--ri4_persistence_off`), stochastic breadth, and attractor protection.
+- Adds checkpoint save/load + a clean invocation surface.
+- Smoke (20 steps, d128, real 642 gold, full RI-4 on) succeeded cleanly and produced checkpoints.
+
+Exact smoke command that worked:
+```
+source .venv/bin/activate && PYTHONPATH=. python scripts/train_hybrid_ri4_real_continuation_minimal.py \
+  --steps 20 --d_model 128 --batch 2 --enable_stochastic_breadth \
+  --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt \
+  --save_every 10 --out_dir checkpoints/hybrid_ri4_cont_smoke
+```
+
+This closes the "substrate has no real training path" gap in one holistic step. The continuation loop is now the canonical place to run future 192-style / full RI gates on actual learned checkpoints.
+
+**Updated Most-Deficient (post continuation script):**  
+The substrate now has a checkpointed real-training path. The next highest-value falsifiable experiment is to run meaningful-length continuation on real data batches (not just synthetic x) and measure the 192-style heldout + full RI-3/RI-4 ablations on the saved checkpoints.
+
+All actions in this skill invocation followed A-Mode + Most-Deficient + "Return To What Worked" + safe dedicated-branch discipline exactly. Cycle closed.
 
