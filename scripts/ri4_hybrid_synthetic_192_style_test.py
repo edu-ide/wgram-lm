@@ -104,54 +104,53 @@ def run_synthetic_192_mode(name: str, slots_on: bool, persistence_ablate: bool, 
 
     hybrid.forward = instrumented
 
-    # Realistic "scoring-like" setup: run a forward to get authentic hidden states,
-    # then drive several steps of the recurrent proposal path (mimicking 192 scoring loop).
+    # 192-style scoring simulation: per-case reset + intra-case persistence (like real 192 hybrid modes).
+    # Drive multiple "cases", each with several recurrent proposal steps while carrying slot state within the case.
     device = next(model.parameters()).device
     B = 2
     T = 8
     D = cfg.d_model
+    ws = max(2, int(cfg.workspace_tokens or 4))
 
     input_ids = torch.randint(0, cfg.vocab_size, (B, T), device=device)
-
     with torch.no_grad():
         _ = model(input_ids)  # Produce authentic internal state
 
-    # Now drive a synthetic "scoring loop" that forces the answer_state_loop recurrent proposal
-    # using shapes the model would produce (mimicking what 192 does during forced-choice scoring).
-    num_steps = 4
-    for _ in range(num_steps):
-        # Simulate realistic tensors the answer_state_loop would see
-        text_context_seq = torch.randn(B, T, D, device=device)
-        trajectory = [torch.randn(B, max(2, cfg.workspace_tokens), D, device=device) for _ in range(2)]
-        text_context_mask = torch.ones(B, T, device=device, dtype=torch.bool)
-        workspace_mask = torch.ones(B, max(2, cfg.workspace_tokens), device=device, dtype=torch.bool)
-        query_token_indices = torch.tensor([3], device=device, dtype=torch.long)
+    num_cases = 3
+    steps_per_case = 3
 
-        # Fresh per-"case" slot state (192 hygiene)
+    for case_idx in range(num_cases):
+        # Per-case fresh slot state (exact 192 hygiene for hybrid modes)
         model._ri4_hybrid_recurrent_slot_state = None
 
-        try:
-            with torch.no_grad():
-                _ = model._compute_answer_state_loop_outputs(
-                    text_context_seq,
-                    trajectory=trajectory,
-                    text_context_mask=text_context_mask,
-                    workspace_mask=workspace_mask,
-                    input_seq_len=T,
-                    query_token_indices=query_token_indices,
-                    disable_recurrent_block=False,
-                    disable_selective_context=True,
-                    force_dense_context=True,
-                    disable_finality_gate=True,
-                    disable_halt_gate=True,
-                    disable_hidden_bridge=True,
-                    disable_next_token_decoder=True,
-                    disable_free_transformer_latent=True,
-                    disable_talker=True,
-                )
-        except Exception as e:
-            # Record but continue (we still want the call count)
-            pass
+        for step in range(steps_per_case):
+            text_context_seq = torch.randn(B, T, D, device=device)
+            trajectory = [torch.randn(B, ws, D, device=device) for _ in range(2)]
+            text_context_mask = torch.ones(B, T, device=device, dtype=torch.bool)
+            workspace_mask = torch.ones(B, ws, device=device, dtype=torch.bool)
+            query_token_indices = torch.tensor([min(3, T-1)], device=device, dtype=torch.long)
+
+            try:
+                with torch.no_grad():
+                    _ = model._compute_answer_state_loop_outputs(
+                        text_context_seq,
+                        trajectory=trajectory,
+                        text_context_mask=text_context_mask,
+                        workspace_mask=workspace_mask,
+                        input_seq_len=T,
+                        query_token_indices=query_token_indices,
+                        disable_recurrent_block=False,
+                        disable_selective_context=True,
+                        force_dense_context=True,
+                        disable_finality_gate=True,
+                        disable_halt_gate=True,
+                        disable_hidden_bridge=True,
+                        disable_next_token_decoder=True,
+                        disable_free_transformer_latent=True,
+                        disable_talker=True,
+                    )
+            except Exception:
+                pass  # Still count instrumentation from any partial calls
 
     hybrid.forward = orig_forward
 
@@ -163,9 +162,10 @@ def run_synthetic_192_mode(name: str, slots_on: bool, persistence_ablate: bool, 
         "hybrid_forward_call_count": call_count["count"],
         "slot_carry_events_observed": call_count["carries"],
         "engine_exercised": call_count["count"] > 0,
+        "cases_run": num_cases,
     }
 
-    print(f"  → hybrid calls: {call_count['count']}, carries: {call_count['carries']}, exercised={call_count['count'] > 0}")
+    print(f"  → hybrid calls: {call_count['count']}, carries: {call_count['carries']}, exercised={call_count['count'] > 0} (over {num_cases} cases)")
     return result
 
 
