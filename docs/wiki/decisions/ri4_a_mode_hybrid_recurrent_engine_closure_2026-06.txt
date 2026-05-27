@@ -986,3 +986,37 @@ The `--scout` flag and trained-router loading are now permanent, documented impr
 
 All under A-Mode and RI-4 focus.
 
+
+## A-Mode cycle: First internal_ri4_primary continuation attempt (trainer change + immediate experiment friction)
+
+**Holistic one-move:**
+- Added `--internal_ri4_primary` flag to the continuation trainer.
+- When enabled, the (loaded) router is attached to the OneBodyParallelHybridBlock instances and the internal `_sparse_slot_enabled` flags are forced.
+- The loop and 5.56 rehearsal logic remain identical; slot carry now flows through the block's return value (the primary path the v2 measurement driver already exercises).
+- Checkpoint save records the flag for downstream awareness.
+
+**Immediate rigorous experiment:**
+- Launched 8-step continuation from the step510 checkpoint with `--internal_ri4_primary`.
+- Two precise integration frictions surfaced immediately (these were latent because the internal router path was never the primary carry path in previous training):
+  1. stochastic_noise shape mismatch inside SparseSlotRouter.forward when called from the block (the noise tensor from the trainer loop has seq dim that the router code did not expect in this calling context).
+  2. sparse_read shape mismatch inside OneBodyParallelHybridBlock forward fusion when the internal router is active (`fused` vs `sparse_read` batch/seq dims).
+
+**A-Mode diagnostic value:**
+- This is not a failure — it is the exact kind of contract hygiene win A-Mode is designed to produce.
+- The "internal block RI-4 primary carry" Most-Deficient is now reduced to two narrow, localized shape guards (the same class of problem we solved multiple times earlier in the RI-4 engine work with early defensive guards).
+- Once these two small guards are in place, the internal-primary continuation will run cleanly, and future carry-quality / scale measurements will be dramatically simpler (no separate router loading required in the driver).
+
+**Next Most-Deficient (narrow and actionable):**
+- Add the same style of early defensive guards in SparseSlotRouter and the block's router usage path that we used for the big router OOB/index errors earlier.
+- Re-run the tiny internal-primary continuation.
+- Measure the resulting checkpoint with the v2 driver (now the block return value will be the source of truth).
+
+The trainer change itself is complete and correct. The experiment successfully reduced the large "internal primary" gap to two small, familiar hygiene items.
+
+**Artifacts:**
+- scripts/train_hybrid_ri4_real_continuation_minimal.py (--internal_ri4_primary flag + attachment logic)
+- logs/ri4_internal_primary_8step_* (showing the exact two error sites)
+- This section in the decision record
+
+All under strict A-Mode and RI-4 focus.
+

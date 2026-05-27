@@ -71,6 +71,7 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--ri4_slots_off", action="store_true")
     p.add_argument("--ri4_persistence_off", action="store_true")
     p.add_argument("--input_mode", type=str, default="gold_structured", choices=["random", "gold_structured"], help="Input generation mode for continuation (gold_structured = much more faithful to 5.56 rehearsal cases)")
+    p.add_argument("--internal_ri4_primary", action="store_true", help="Attach the RI-4 router to the hybrid blocks themselves and use block return value as the primary slot carry mechanism (makes future measurement lighter and more self-contained; preserves exact 5.56 rehearsal logic)")
     args = p.parse_args()
 
     cfg = ContinuationConfig(
@@ -86,6 +87,7 @@ def parse_continuation_args() -> ContinuationConfig:
     )
     cfg.ri4_sparse_slots_ablation = args.ri4_slots_off
     cfg.ri4_persistence_ablation = args.ri4_persistence_off
+    cfg.internal_ri4_primary = args.internal_ri4_primary
     return cfg
 
 
@@ -112,6 +114,8 @@ def main():
             top_k=4,
         ).to(device=cfg.device, dtype=cfg.dtype)
 
+    # Internal RI-4 primary attachment is done *after* resume so we attach the correctly loaded router object.
+
     # === Resume support (A-Mode: close the "can actually continue from previous checkpoint" gap) ===
     start_step = 0
     if cfg.resume_from and os.path.exists(cfg.resume_from):
@@ -126,6 +130,24 @@ def main():
         # Carry over slots if present in the checkpoint (for persistent RI-4 state)
         if hasattr(model, '_ri4_current_slots') and ckpt.get('slots') is not None:
             model._ri4_current_slots = ckpt['slots'].to(device=cfg.device, dtype=cfg.dtype)
+
+        # Re-apply internal primary attachment on resume
+        if cfg.internal_ri4_primary and router is not None:
+            for layer in model:
+                if isinstance(layer, OneBodyParallelHybridBlock):
+                    layer.sparse_slot_router = router
+                    layer._sparse_slot_enabled = True
+                    layer._sparse_slot_ablation_zero = False
+            print("[Internal RI-4 Primary] Router re-attached to blocks after resume")
+
+    # Internal RI-4 primary mode attachment (after resume, so we use the loaded router)
+    if cfg.internal_ri4_primary and router is not None:
+        for layer in model:
+            if isinstance(layer, OneBodyParallelHybridBlock):
+                layer.sparse_slot_router = router
+                layer._sparse_slot_enabled = True
+                layer._sparse_slot_ablation_zero = False
+        print("[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value")
 
     # Gold state (real 642 if provided) — exact same robust prep as the 160-step evidence run
     gold_state = None
@@ -221,10 +243,13 @@ def main():
                 "step": step + 1,
                 "config": cfg,
                 "slots": slots.cpu() if slots is not None else None,
+                "internal_ri4_primary": cfg.internal_ri4_primary,
             }, ckpt_path)
             print(f"[Checkpoint] saved {ckpt_path}")
 
     print("\nContinuation smoke complete. Substrate is now exercisable in a checkpointed loop.")
+    if cfg.internal_ri4_primary:
+        print("Mode: internal_ri4_primary — slot carry flows through block return value (trained router attached to blocks).")
     print("Next: wire real data + full optimizer + 192-style gates on these checkpoints.")
 
 
