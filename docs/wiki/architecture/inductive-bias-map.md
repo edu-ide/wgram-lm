@@ -35,14 +35,10 @@
 - Posterior guidance allows answer-conditioned refinement of the distribution.
 - This is distinct from (and stronger than) post-hoc multi-trajectory scoring over memory buffers.
 
-**Current Status in Primary Path (as of feat/architecture-integration-2026-05, post new-thought-structure pivot)**:
-- **Missing / Not active**.
-- The mechanism lives only in the legacy `state_transition_core.py` + old backbone (never imported by current `QTRMRecursiveCore` in `src/qtrm_mm/core.py`).
-- Current core has:
-  - Deterministic BlockStack recurrence + step conditioning.
-  - Attractor pressure (depth-wise monotonic).
-  - Post-hoc `core_multi_trajectory_enabled` + `MultiTrajectoryScorer` (Mega C) — this is *not* the same inductive bias (it is retrospective scoring, not training-time generative breadth).
-- `component_registry.py` still lists `"state_transition_core"` as `PROMOTED` ("Reusable GRAM/PTRM-style state transition core family") — this is now flagged as library-only, not active in primary One-Body forward.
+**Current Status in Primary Path (updated 2026-06)**:
+- Legacy `state_transition_core` remains library-only (`active_in_primary_onebody_path=False`).
+- **2026-06 Restoration (I-stage)**: Self-contained learned prior (delta + true_gram modes) + generation logic added directly inside `OneBodyParallelHybridBlock` — the active RI-4 recurrent engine delegated from answer_state_loop. Trainer updated to exercise the internal prior. Full ablation_zero contract. Pivot Safety process + Reverse I→G→A record followed.
+- See master roadmap: `docs/wiki/decisions/2026-06-missing-inductive-biases-restoration-roadmap.md` (M1 focus).
 
 **Ablation Flag That Would Control It** (currently does not exist in primary core):
 - None. The SSOT (`internal-multitrajectory-answer-attractor-ssot.md`) requires "GRAM/PTRM stochastic breadth off (K=1 vs K>1)" as a mandatory promotion gate ablation, but no executable control exists in the code being trained.
@@ -152,7 +148,9 @@
 
 ---
 
-**Last Updated**: 2026-05-30 (initial population from stochastic breadth reconstruction + expansion for A/B/C/D execution)
+**Last Updated**: 2026-05-30 (initial population) + 2026-06 updates for hybrid engine restoration work.
+
+**Master Restoration Plan**: See `docs/wiki/decisions/2026-06-missing-inductive-biases-restoration-roadmap.md` for the full prioritized inventory, M0–M4 milestones, and step-by-step Reverse I→G→A playbook across all weak/missing historical biases.
 **Cross Links**:
 - Full D reconstruction across multiple tracks: docs/wiki/decisions/2026-05-30-historical-reconstruction-other-tracks.md
 - Deep Dive on the single highest-priority remaining composite (Full 5.56 Curriculum): docs/wiki/decisions/2026-05-30-deep-dive-full-556-rehearsal-curriculum.md (executed 2026-05-30 as part of A~D sequence)

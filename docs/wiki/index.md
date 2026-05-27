@@ -118,6 +118,14 @@
 - [Canonical Architecture Matrix](architecture/canonical-architecture-matrix.md): active, forward-only, probe-only, runtime, and scaffold status for implemented QTRM components.
 - [Paper Diagram Prompts](architecture/paper-diagram-prompts.md): prompt bank for paper-style architecture and ablation figures.
 
+## Process & Safeguards (Anti-Drift)
+
+- [Pivot Safety & Inductive Bias Preservation](process/pivot-safety-and-inductive-bias-preservation.md): mandatory checklist and process to stop historical SSOT requirements from silently becoming unexecutable after pivots (the failure mode that caused the IMTA stochastic breadth gate to become impossible to run).
+- [Anti-Drift Culture](process/anti-drift-culture.md): "We wrote it in the wiki" is not protection. Rules and habits for treating documentation as debt that must be repaid with executable checks.
+- Executable SSOT Gates: `scripts/gates/check_ssot_stochastic_breadth.py --strict` (run this before any promotion claim that touches IMTA / GRAM-PTRM trajectory diversity).
+- Reverse I→G→A Decision Record template: `docs/wiki/decisions/templates/reverse_iga_decision_record.md`.
+- **Missing Inductive Biases Restoration Roadmap** (2026-06): Authoritative inventory of all historically important biases that were lost/weakened during pivots, with prioritized list, clear milestones (M0–M4), and phased execution plan. Single source of truth for "단계별로 누락된 거 해결하기".
+
 ## Components
 
 - [QTRM Mixer](components/qtrm-mixer.md): status of `src/qtrm_mm/mixers.py` against Gated DeltaNet.
