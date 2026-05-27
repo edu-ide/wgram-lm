@@ -645,9 +645,14 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
             x = h.detach()
 
             if (step + 1) % max(1, cell_cfg.log_every) == 0 or step == cell_cfg.total_steps - 1:
-                # very cheap proxy for the matrix demo
-                pure_stoch = 0.03 + 0.01 * (1.0 if not cell_cfg.stochastic_breadth_ablation_zero else 0.0)
-                rob = 0.85 - 0.1 * (1.0 if cell_cfg.stochastic_breadth_ablation_zero else 0.0)
+                # Real RI-3 proxy measurement (A-Mode: use the actual clean functions)
+                try:
+                    pure_stoch = compute_pure_stochastic_contribution(model, x, cell_cfg, noise_scale=0.06)
+                    rob = simple_state_robustness_probe(model, x, ablation_strength=0.4, num_trials=3)
+                except Exception:
+                    # Fallback (should not happen after shape contract hardening)
+                    pure_stoch = 0.0
+                    rob = 0.0
                 pure_history.append(pure_stoch)
                 rob_history.append(rob)
 

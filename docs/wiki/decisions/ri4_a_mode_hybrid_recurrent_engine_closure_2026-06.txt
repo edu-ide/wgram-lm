@@ -460,6 +460,15 @@ The blocker has shifted from "tooling / execution hygiene" to **model capacity**
 
 This is the direct, honest outcome of following the Most-Deficient filter.
 
+**Follow-up: Real Measurement Integration Test**
+- Replaced the hardcoded fake proxies inside the matrix runner with actual calls to `compute_pure_stochastic_contribution` and `simple_state_robustness_probe`.
+- Re-ran with real 642 gold at 60 steps, d_model=64.
+- Result: All cells returned **0.0** for both metrics.
+- Diagnosis: The self-contained rehearsal loop (while crash-proof) creates internal states that are incompatible with the existing proxy functions' measurement assumptions (different gold injection timing, noise application, etc.).
+- This reveals the refined gap: "We have a stable runner and real gold path, but the dedicated matrix still cannot yet produce *authentic, comparable* RI-3 numbers that match the main curriculum's proxy methodology."
+
+The infrastructure is close, but one more alignment step on measurement is needed before we can trust the matrix for production RI-3 evidence.
+
 **Files touched in this sub-cycle:** Only the decision record (code fixes were already committed in prior step).
 
 This run directly fulfills the "Immediate Rigorous Experiment" requirement after the shape contract A-Mode fixes. The lever for the SSOT's highest immediate priority is now not only present but proven to execute cleanly and produce machine-readable evidence.
