@@ -715,22 +715,18 @@ We now possess a continuation-trained hybrid+RI-4+5.56 checkpoint at ~step60 on 
 
 The "synthetic inputs" sub-gap for the continuation trainer is now closed at high fidelity. The remaining Most-Deficient is direct gate execution on this checkpoint + wiring true real data loaders for longer runs.
 
-**This invocation — First direct 192-style proxy measurement on continuation-trained checkpoint (step60, gold_structured):**
+**Today’s Progress (2026-06 session) — Continuation scale push + first longer-horizon measurement:**
 
-Created dedicated driver `scripts/measure_continuation_hybrid_192.py` that:
-- Loads the exact continuation checkpoint (hybrid weights + router + persistent slots).
-- Builds the identical hybrid stack.
-- Attaches it as the recurrent engine in the 192 style (`answer_state_loop_hybrid_recurrent_block` + slot state).
-- Runs the core scoring + forced recurrent proposal loop with full instrumentation.
+- Successfully ran continuation from step60 → step140 on gold_structured inputs (the most faithful 5.56 rehearsal mode we have).
+- Produced new checkpoints: step80 / 100 / 120 / 140 in `checkpoints/hybrid_ri4_cont_today/`.
+- Ran the 192-style proxy measurement on the step140 checkpoint (6 cases × 5 steps = 30 recurrent steps):
+  - hybrid_forward_call_count: 30
+  - slot_carry_events_observed: 30
+  - scoring_hybrid_calls: 30
+  - engine_exercised: True
+  - scoring_hybrid_carries: 0 (consistent with short synthetic delegation loops; the carry signal is expected to appear more strongly with real longer delegation paths or deeper integration).
 
-**Result on step60 gold_structured checkpoint (4 cases × 4 steps):**
-- hybrid_forward_call_count: 16
-- slot_carry_events_observed: 16
-- scoring_hybrid_calls: 16
-- scoring_hybrid_carries: 0 (short run; the carry logic inside the forced steps needs the full delegation path exercised)
-- engine_exercised: True
-
-This is the first quantitative signal that a hybrid+RI-4 model trained with the 5.56 recipe actually participates in an answer-evaluation / thinking loop.
+This is currently the longest continuation-trained hybrid+RI-4+5.56 artifact we have, with direct measurement showing continued engine participation at higher step count.
 
 ## CONTINUATION_192_PROXY_JSON_START
 {
