@@ -581,9 +581,10 @@ def _run_192_style_forced_path_with_real_tensors(
 
             # Step 2: Now synthesize the exact arguments that the model's answer_state_loop path would use.
             # For the tiny cfg we fall back to a controlled but authentic-shaped call to the internal method.
-            # (In a real Qwen-integrated model the forward path already prepares these.)
-            text_context_seq = torch.randn(B, seq_len, cfg.d_model, device=test_device, dtype=(torch.bfloat16 if test_device.type=="cuda" else torch.float32))
-            trajectory = [torch.randn(B, max(2, int(cfg.workspace_tokens or 4)), cfg.d_model, device=test_device, dtype=text_context_seq.dtype) for _ in range(3)]
+            # Use float32 on CPU to avoid dtype mismatches with hybrid (which may carry bf16 from CUDA init).
+            target_dtype = torch.float32 if test_device.type == "cpu" else torch.bfloat16
+            text_context_seq = torch.randn(B, seq_len, cfg.d_model, device=test_device, dtype=target_dtype)
+            trajectory = [torch.randn(B, max(2, int(cfg.workspace_tokens or 4)), cfg.d_model, device=test_device, dtype=target_dtype) for _ in range(3)]
             text_context_mask = torch.ones(B, seq_len, device=test_device, dtype=torch.bool)
             workspace_mask = torch.ones(B, max(2, int(cfg.workspace_tokens or 4)), device=test_device, dtype=torch.bool)
             query_token_indices = torch.tensor([min(3, seq_len-1)], device=test_device, dtype=torch.long)
