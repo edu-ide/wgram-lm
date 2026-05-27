@@ -581,3 +581,31 @@ This incident is recorded as a small but real "execution fidelity" micro-deficie
 
 This cycle still directly implements the user's "미흡 한번에 수정 → 실험 → 결과 확인 → 개선" + Most-Deficient rule. The primary target (scale/horizon to surface RI-1/RI-2 hallmark) is unchanged; we simply had to repair the launcher to actually fire the diagnostic shot.
 
+**Launch Attempt 2 — Immediate Result (0.94s, ModuleNotFoundError):**  
+Corrected venv activation was used (`source .venv/bin/activate && python ...`), but the process still could not resolve `from src.qtrm_mm.config import QTRMConfig`. Full traceback in the 261-byte log. No matrix cells, no hybrid construction, no gold load, zero progress on the 160-step scale diagnostic.
+
+Root cause (plain language): The canonical RI-3+RI-4 matrix runner (`train_556_on_parallel_hybrid_minimal.py`) assumes project-root PYTHONPATH for its `src/` imports. Venv activation alone does not add the cwd to sys.path in non-interactive tool shells.
+
+This is the second consecutive launcher hygiene failure in the same A-Mode cycle, each blocking the Most-Deficient "longer horizon on verified substrate" experiment.
+
+**Gap closure (same turn, restoration to worked-before pattern):**  
+Historical successful matrix / smoke invocations in this repo and decision record used the explicit `PYTHONPATH=.` prefix after activation. This is the minimal restoration that matches "Return To What Worked" (skill Failure Discipline).
+
+**Launch Attempt 3 command (fired immediately after this append + safe commit):**  
+```
+source .venv/bin/activate && PYTHONPATH=. python scripts/train_556_on_parallel_hybrid_minimal.py \
+  --run_ri3_ri4_matrix \
+  --steps 160 \
+  --d_model 128 \
+  --batch 2 \
+  --enable_stochastic_breadth \
+  --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt \
+  2>&1 | tee logs/ri3_ri4_matrix_d128_160step_real642_$(date +%Y%m%d_%H%M%S).log
+```
+
+**Contract preserved:** No change to any model code, hybrid block, slot router, measurement logic, ablation flags, or gold handling. Pure outer invocation hygiene. The 4-way RI-4 + 5.56 orthogonal matrix contract, One-Body tuple handling, and persistent slot carry remain exactly as verified in prior A-Mode cycles.
+
+**A-Mode discipline note:** Two launcher failures in one cycle is itself diagnostic of "execution fidelity" being a hidden prerequisite for the scale diagnostic. Both were closed holistically (no local patches to the runner script) before any further ideation. The primary Most-Deficient target (160-step d128 real-gold matrix to test whether ablated robustness finally degrades) is now on its third launch attempt in this turn. When it actually executes the 12 cells, the Result Confirmation phase will begin immediately.
+
+Next tool action after this commit: poll the new background task and begin live log tailing for the first cell outputs.
+
