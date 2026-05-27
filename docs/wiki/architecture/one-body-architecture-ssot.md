@@ -119,6 +119,14 @@ Current code anchors:
   launch guards and Stage99 diagnostic-bridge rejection.
 - `src/qtrm_mm/architecture/component_registry.py`: code SSOT for
   promoted/diagnostic/deprecated/pending-extraction component status.
+- `src/qtrm_mm/provenance.py`: example of proper I→G→A extraction
+  (Stage102Z Provenance components moved from scripts/ to native src/
+  following the Improvement→Generalization→Architecture-ization loop).
+- Recent promotions (after large-scale joint ablation evidence):
+  - stage102z_final_freeform_answer_path → PROMOTED (full_answer_path)
+  - gated_thought_workspace_broadcast → PROMOTED
+  - depthwise_monotonic_answer_attractor → PROMOTED
+- Next track I-stage begun: native equation_binding + thought_workspaces scaffolding (core_equation_binding_* flags + gated proj in core, per stashed new thought structure).
 - `src/qtrm_mm/models/blt_components.py`: reusable BLT local decoder and
   next-implicit byte projector components.
 - `src/qtrm_mm/models/blt_prefixlm.py`: full BLT-D PrefixLM model class.

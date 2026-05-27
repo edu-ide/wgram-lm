@@ -220,6 +220,25 @@ class QTRMRecursiveCore(nn.Module):
                 nn.init.zeros_(self.workspace_gates[dom].weight)
                 nn.init.constant_(self.workspace_gates[dom].bias, -2.0)  # start relatively closed
 
+        # === Next track I-stage scaffolding: Native equation_binding (from stashed new thought structure) ===
+        self.equation_binding_proj = None
+        self.equation_binding_gate = None
+        if getattr(cfg, "core_equation_binding_enabled", False):
+            hidden = int(getattr(cfg, "core_equation_binding_hidden_dim", None) or cfg.d_model)
+            num_fields = int(getattr(cfg, "core_equation_binding_num_fields", 8))
+            self.equation_binding_proj = nn.Sequential(
+                nn.Linear(cfg.d_model, hidden),
+                nn.GELU(),
+                nn.Linear(hidden, num_fields),
+            )
+            self.equation_binding_gate = nn.Linear(cfg.d_model, 1)
+            for mod in self.equation_binding_proj:
+                if isinstance(mod, nn.Linear):
+                    nn.init.xavier_uniform_(mod.weight)
+                    nn.init.zeros_(mod.bias)
+            nn.init.zeros_(self.equation_binding_gate.weight)
+            nn.init.constant_(self.equation_binding_gate.bias, float(getattr(cfg, "core_equation_binding_gate_init_bias", -4.0)))
+
         # === Phase 3: Provenance components (I→G→A wired integration) ===
         # When core_provenance_register_enabled, the core now owns the real
         # extracted classes from .provenance via the config factory (A-stage).
@@ -724,6 +743,16 @@ class QTRMRecursiveCore(nn.Module):
             z_h = z_h + broadcast_add.unsqueeze(1)
             thought_workspaces = tw_states or None
 
+        # === Next track I-stage: Minimal equation_binding (gated from z_h, per stashed new structure) ===
+        equation_binding = None
+        if self.equation_binding_proj is not None and self.equation_binding_gate is not None:
+            pooled = z_h.mean(dim=1)
+            raw = self.equation_binding_proj(pooled)
+            gate = torch.sigmoid(self.equation_binding_gate(pooled))
+            equation_binding = gate * raw
+            if getattr(self.cfg, "core_equation_binding_ablation_zero", False):
+                equation_binding = torch.zeros_like(equation_binding)
+
         # === Phase 2: Answer Attractor Pressure (570-style row_contrastive + monotonic on buffer) ===
         # I-stage port from recovered 570_train_solution_aligned_answer_attractor.py
         # Uses contrastive_terms_from_margins logic: rank_loss + monotonic (softplus(prev + gain - current))
@@ -790,5 +819,6 @@ class QTRMRecursiveCore(nn.Module):
                 memory_manager_output=mem_signal,
                 thought_workspaces=thought_workspaces,
                 provenance_register=provenance_register,
+                equation_binding=equation_binding,
             ).detached()
         return z_l, z_h, trajectory, halt_info

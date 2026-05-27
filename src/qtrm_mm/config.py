@@ -128,6 +128,14 @@ class QTRMConfig:
     core_thought_workspace_ablation_zero: bool = False
     core_thought_workspace_selector_mode: str = "sum"  # "sum", "importance", "learned"
 
+    # Next experimental track (I-stage start): Native equation binding + full thought workspaces + hierarchical memory tiers
+    # (revival of stashed "new thought structure" from pre-new-thought-structure tag, +154 line diff)
+    core_equation_binding_enabled: bool = False
+    core_equation_binding_hidden_dim: Optional[int] = None
+    core_equation_binding_num_fields: int = 8
+    core_equation_binding_gate_init_bias: float = -4.0
+    core_equation_binding_ablation_zero: bool = False
+
     # Phase 2 groundwork: Answer Attractor pressure (depth-wise monotonic)
     core_answer_attractor_enabled: bool = False
     core_answer_attractor_weight: float = 0.02
