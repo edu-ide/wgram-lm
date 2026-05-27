@@ -1,0 +1,18 @@
+{
+  "steps": 100,
+  "metrics": {
+    "pure_stochastic_effect": {
+      "hybrid_full": 1.4375,
+      "baseline_full": 1.305,
+      "hybrid_zero": 0.0,
+      "baseline_zero": 0.025,
+      "delta_full": 0.13250000000000006
+    },
+    "robustness": {
+      "hybrid_full": 1.0,
+      "baseline_full": 0.935
+    }
+  },
+  "verdict": "HYBRID SLIGHTLY BETTER \u2014 Competitive with historical 5.56",
+  "s0_gate_status": "PASS (ablation contract holds on hybrid)"
+}

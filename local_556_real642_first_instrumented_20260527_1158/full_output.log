@@ -1,0 +1,23 @@
+=== 5.56 Full Curriculum Minimal Trainer (with Checkpointing) ===
+Steps: 50, Batch: 4, d_model: 64
+Stochastic Breadth: True (ablation_zero=False)
+Save dir: local_556_real642_first_instrumented_20260527_1158
+Gold path: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+
+[GoldProxy] Attempting real 642 gold load from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[GoldProxy] WARNING: real checkpoint loaded but no recognized gold/bos/latent key found.
+             This run will use synthetic proxy. (Reverse I→G→A documented gap)
+[GoldProxy] Using synthetic proxy (no real 642 gold inductive bias carried).
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_556_full_curriculum_minimal.py", line 384, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_556_full_curriculum_minimal.py", line 300, in main
+    z_h = rehearsal.full_curriculum_rehearsal_step(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/rehearsal/adaptive_rehearsal.py", line 173, in full_curriculum_rehearsal_step
+    z_h = self.inject_gold_state(z_h, gold_state) * alpha + z_h * (1 - alpha)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/rehearsal/adaptive_rehearsal.py", line 94, in inject_gold_state
+    return z_h + alpha * gold_state.unsqueeze(1)
+           ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RuntimeError: The size of tensor a (32) must match the size of tensor b (64) at non-singleton dimension 1

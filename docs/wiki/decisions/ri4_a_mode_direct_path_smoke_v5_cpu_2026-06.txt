@@ -1,0 +1,155 @@
+RI-4 A-mode Hybrid Recurrent Engine Smoke
+Testing that OneBodyParallelHybridBlock now drives answer_state_loop recurrence
+
+=== Variant: full_slots (slots_on=True, pers_ablate=False, router_ablate=False) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "full_slots",
+  "slots_on": true,
+  "persistence_ablation": false,
+  "router_ablation": false,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+  [Direct Path Test] Forcing _compute_answer_state_loop_outputs with hybrid attached...
+
+=== Variant: slots_off_ablation (slots_on=False, pers_ablate=False, router_ablate=False) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "slots_off_ablation",
+  "slots_on": false,
+  "persistence_ablation": false,
+  "router_ablation": false,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+  [Direct Path Test] Forcing _compute_answer_state_loop_outputs with hybrid attached...
+
+=== Variant: persistence_ablation (slots_on=True, pers_ablate=True, router_ablate=False) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "persistence_ablation",
+  "slots_on": true,
+  "persistence_ablation": true,
+  "router_ablation": false,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+  [Direct Path Test] Forcing _compute_answer_state_loop_outputs with hybrid attached...
+
+=== Variant: router_ablation (slots_on=True, pers_ablate=False, router_ablate=True) ===
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] RI-4: SparseSlotRouter enabled (slots=16, top_k=4)
+{
+  "variant": "router_ablation",
+  "slots_on": true,
+  "persistence_ablation": false,
+  "router_ablation": true,
+  "device": "cuda:0",
+  "hybrid_forward_call_count": 0,
+  "slot_carry_events_observed": 0,
+  "slot_state_after": "None_or_absent",
+  "hybrid_used_as_recurrent_engine_signal": false,
+  "success": false
+}
+  [Direct Path Test] Forcing _compute_answer_state_loop_outputs with hybrid attached...
+
+=== FINAL SUMMARY ===
+{
+  "all_variants_passed": false,
+  "num_variants": 4,
+  "passed": 0,
+  "results": [
+    {
+      "variant": "full_slots",
+      "slots_on": true,
+      "persistence_ablation": false,
+      "router_ablation": false,
+      "device": "cuda:0",
+      "hybrid_forward_call_count": 0,
+      "slot_carry_events_observed": 0,
+      "slot_state_after": "None_or_absent",
+      "hybrid_used_as_recurrent_engine_signal": false,
+      "success": false,
+      "direct_recurrent_path": {
+        "executed": false,
+        "error": "index 3 is out of bounds for dimension 1 with size 1",
+        "hybrid_calls": 0,
+        "slot_carries": 0
+      }
+    },
+    {
+      "variant": "slots_off_ablation",
+      "slots_on": false,
+      "persistence_ablation": false,
+      "router_ablation": false,
+      "device": "cuda:0",
+      "hybrid_forward_call_count": 0,
+      "slot_carry_events_observed": 0,
+      "slot_state_after": "None_or_absent",
+      "hybrid_used_as_recurrent_engine_signal": false,
+      "success": false,
+      "direct_recurrent_path": {
+        "executed": false,
+        "error": "too many values to unpack (expected 3)",
+        "hybrid_calls": 0,
+        "slot_carries": 0
+      }
+    },
+    {
+      "variant": "persistence_ablation",
+      "slots_on": true,
+      "persistence_ablation": true,
+      "router_ablation": false,
+      "device": "cuda:0",
+      "hybrid_forward_call_count": 0,
+      "slot_carry_events_observed": 0,
+      "slot_state_after": "None_or_absent",
+      "hybrid_used_as_recurrent_engine_signal": false,
+      "success": false,
+      "direct_recurrent_path": {
+        "executed": false,
+        "error": "index 14 is out of bounds for dimension 1 with size 1",
+        "hybrid_calls": 0,
+        "slot_carries": 0
+      }
+    },
+    {
+      "variant": "router_ablation",
+      "slots_on": true,
+      "persistence_ablation": false,
+      "router_ablation": true,
+      "device": "cuda:0",
+      "hybrid_forward_call_count": 0,
+      "slot_carry_events_observed": 0,
+      "slot_state_after": "None_or_absent",
+      "hybrid_used_as_recurrent_engine_signal": false,
+      "success": false,
+      "direct_recurrent_path": {
+        "executed": false,
+        "error": "too many values to unpack (expected 3)",
+        "hybrid_calls": 0,
+        "slot_carries": 0
+      }
+    }
+  ]
+}
+
+Wrote detailed results to /tmp/ri4_a_mode_hybrid_recurrent_smoke.json
+
+❌ Some variants did not produce the expected hybrid-recurrent signals.

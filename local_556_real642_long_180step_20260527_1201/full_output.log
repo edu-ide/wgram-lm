@@ -1,0 +1,36 @@
+=== 5.56 Full Curriculum Minimal Trainer (with Checkpointing) ===
+Steps: 180, Batch: 4, d_model: 64
+Stochastic Breadth: True (ablation_zero=False)
+Save dir: local_556_real642_long_180step_20260527_1201
+Gold path: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+
+[GoldProxy] Attempting real 642 gold load from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[GoldProxy] WARNING: real checkpoint loaded but no recognized gold/bos/latent key found.
+             This run will use synthetic proxy. (Reverse I→G→A documented gap)
+[GoldProxy] Using synthetic proxy (no real 642 gold inductive bias carried).
+[Gold Handling] Real gold_path provided but extraction produced 1D proxy. Disabling injection for shape safety. Other 5.56 curriculum dynamics (decay, stochastic breadth, protection) remain fully active.
+[   0/180] z_h_norm=126.9490  bind=0.400  gold_alpha=0.000  stoch_div=5.8815  gold_dist=0.000  drift=0.0000
+[  10/180] z_h_norm=127.1526  bind=0.380  gold_alpha=0.000  stoch_div=6.0040  gold_dist=0.000  drift=0.4985
+[  20/180] z_h_norm=127.4300  bind=0.360  gold_alpha=0.000  stoch_div=5.9836  gold_dist=0.000  drift=0.6322
+[  30/180] z_h_norm=127.8056  bind=0.340  gold_alpha=0.000  stoch_div=6.0543  gold_dist=0.000  drift=0.0642
+[  40/180] z_h_norm=127.1257  bind=0.320  gold_alpha=0.000  stoch_div=6.0806  gold_dist=0.000  drift=0.1763
+[  50/180] z_h_norm=127.4966  bind=0.300  gold_alpha=0.000  stoch_div=6.0737  gold_dist=0.000  drift=0.0968
+[  60/180] z_h_norm=126.3651  bind=0.280  gold_alpha=0.000  stoch_div=5.8984  gold_dist=0.000  drift=1.2178
+[  70/180] z_h_norm=127.7043  bind=0.260  gold_alpha=0.000  stoch_div=6.0418  gold_dist=0.000  drift=0.3625
+[  80/180] z_h_norm=127.2442  bind=0.240  gold_alpha=0.000  stoch_div=5.9969  gold_dist=0.000  drift=0.6859
+[  90/180] z_h_norm=128.2643  bind=0.220  gold_alpha=0.000  stoch_div=6.0618  gold_dist=0.000  drift=1.7886
+[ 100/180] z_h_norm=127.8101  bind=0.200  gold_alpha=0.000  stoch_div=6.0552  gold_dist=0.000  drift=0.1472
+[ 110/180] z_h_norm=127.1610  bind=0.180  gold_alpha=0.000  stoch_div=5.9544  gold_dist=0.000  drift=1.0391
+[ 120/180] z_h_norm=126.5558  bind=0.160  gold_alpha=0.000  stoch_div=5.9622  gold_dist=0.000  drift=0.3551
+[ 130/180] z_h_norm=127.6659  bind=0.140  gold_alpha=0.000  stoch_div=6.0300  gold_dist=0.000  drift=0.6425
+[ 140/180] z_h_norm=128.1292  bind=0.120  gold_alpha=0.000  stoch_div=6.0511  gold_dist=0.000  drift=1.2567
+[ 150/180] z_h_norm=126.7319  bind=0.100  gold_alpha=0.000  stoch_div=5.9326  gold_dist=0.000  drift=0.6626
+[ 160/180] z_h_norm=127.6915  bind=0.080  gold_alpha=0.000  stoch_div=6.0113  gold_dist=0.000  drift=0.5437
+[ 170/180] z_h_norm=126.6412  bind=0.060  gold_alpha=0.000  stoch_div=5.9741  gold_dist=0.000  drift=0.0677
+[ 179/180] z_h_norm=126.3423  bind=0.042  gold_alpha=0.000  stoch_div=5.9172  gold_dist=0.000  drift=0.5650
+
+Run finished. Checkpoints saved to: local_556_real642_long_180step_20260527_1201
+Best checkpoint metric (min drift): 0.0000
+Artifacts: best.pt, last.pt, metrics.json, config.json
+5.56 curriculum metrics in metrics.json: bind_weight, gold_alpha_effective, attractor_protection_active,
+  stochastic_diversity (Reverse I→G→A breadth), gold_dist, state_stability_proxy

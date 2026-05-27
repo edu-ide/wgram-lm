@@ -1,0 +1,57 @@
+=== Launching 5.56 Full Curriculum Minimal Trainer (Reverse I→G→A + 5.56 Gold Curriculum) ===
+Steps: 100 | Batch: 8 | d_model: 128
+Stochastic Breadth: --enable_stochastic_breadth (ablation_zero=false)
+Save dir: local_556_real642_full_gstage_matrix_fixed_20260527_1256/03_no_attractor_protection
+Resume: none
+Gold path: --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+This launcher drives the full 5.56 Adaptive Rehearsal curriculum reconstruction
+(scheduled decay 0.40→0.04 + attractor protection + gold structural bias + stochastic breadth).
+
+Using python: /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python
+=== 5.56 Full Curriculum Minimal Trainer (with Checkpointing) ===
+Steps: 100, Batch: 8, d_model: 128
+Stochastic Breadth: True (ablation_zero=False)
+Save dir: local_556_real642_full_gstage_matrix_fixed_20260527_1256/03_no_attractor_protection
+Gold path: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+
+[GoldProxy] Attempting real 642 gold load from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[GoldProxy] WARNING: real checkpoint loaded but no recognized gold/bos/latent key found.
+             This run will use synthetic proxy. (Reverse I→G→A documented gap)
+[GoldProxy] Using synthetic proxy (no real 642 gold inductive bias carried).
+[Gold Handling] Real gold_path provided but extraction produced 1D proxy. Disabling injection for shape safety. Other 5.56 curriculum dynamics (decay, stochastic breadth, protection) remain fully active.
+[   0/100] z_h_norm=262.0124  bind=0.400  gold_alpha=0.000  stoch_div=12.7080  gold_dist=0.000  drift=0.0000
+[   5/100] z_h_norm=262.0853  bind=0.382  gold_alpha=0.000  stoch_div=12.7552  gold_dist=0.000  drift=0.0259
+[  10/100] z_h_norm=262.1858  bind=0.364  gold_alpha=0.000  stoch_div=12.7214  gold_dist=0.000  drift=0.1355
+[  15/100] z_h_norm=262.3522  bind=0.346  gold_alpha=0.000  stoch_div=12.7212  gold_dist=0.000  drift=0.4979
+[  20/100] z_h_norm=262.6581  bind=0.328  gold_alpha=0.000  stoch_div=12.8430  gold_dist=0.000  drift=0.1900
+[  25/100] z_h_norm=262.2673  bind=0.310  gold_alpha=0.000  stoch_div=12.7284  gold_dist=0.000  drift=0.3139
+[  30/100] z_h_norm=262.3581  bind=0.292  gold_alpha=0.000  stoch_div=12.7092  gold_dist=0.000  drift=0.5089
+[  35/100] z_h_norm=263.0140  bind=0.274  gold_alpha=0.000  stoch_div=12.8182  gold_dist=0.000  drift=1.3719
+[  40/100] z_h_norm=262.2185  bind=0.256  gold_alpha=0.000  stoch_div=12.6858  gold_dist=0.000  drift=0.1381
+[  45/100] z_h_norm=262.3369  bind=0.238  gold_alpha=0.000  stoch_div=12.7162  gold_dist=0.000  drift=0.9650
+[  50/100] z_h_norm=262.1776  bind=0.220  gold_alpha=0.000  stoch_div=12.7082  gold_dist=0.000  drift=0.1606
+[  55/100] z_h_norm=262.3198  bind=0.202  gold_alpha=0.000  stoch_div=12.7406  gold_dist=0.000  drift=0.3215
+[  60/100] z_h_norm=262.4004  bind=0.184  gold_alpha=0.000  stoch_div=12.7648  gold_dist=0.000  drift=0.1775
+[  65/100] z_h_norm=262.8380  bind=0.166  gold_alpha=0.000  stoch_div=12.7558  gold_dist=0.000  drift=1.2099
+[  70/100] z_h_norm=261.9352  bind=0.148  gold_alpha=0.000  stoch_div=12.7073  gold_dist=0.000  drift=0.2177
+[  75/100] z_h_norm=261.3946  bind=0.130  gold_alpha=0.000  stoch_div=12.6772  gold_dist=0.000  drift=0.6983
+[  80/100] z_h_norm=261.9597  bind=0.112  gold_alpha=0.000  stoch_div=12.6845  gold_dist=0.000  drift=0.1121
+[  85/100] z_h_norm=261.9471  bind=0.094  gold_alpha=0.000  stoch_div=12.7441  gold_dist=0.000  drift=0.0195
+[  90/100] z_h_norm=262.2158  bind=0.076  gold_alpha=0.000  stoch_div=12.7236  gold_dist=0.000  drift=0.5190
+[  95/100] z_h_norm=262.3200  bind=0.058  gold_alpha=0.000  stoch_div=12.7315  gold_dist=0.000  drift=0.2083
+[  99/100] z_h_norm=262.5034  bind=0.044  gold_alpha=0.000  stoch_div=12.6939  gold_dist=0.000  drift=0.3347
+
+Run finished. Checkpoints saved to: local_556_real642_full_gstage_matrix_fixed_20260527_1256/03_no_attractor_protection
+Best checkpoint metric (min drift): 0.0000
+Artifacts: best.pt, last.pt, metrics.json, config.json
+5.56 curriculum metrics in metrics.json: bind_weight, gold_alpha_effective, attractor_protection_active,
+  stochastic_diversity (Reverse I→G→A breadth), gold_dist, state_stability_proxy
+
+Run finished. Artifacts in: local_556_real642_full_gstage_matrix_fixed_20260527_1256/03_no_attractor_protection
+  - best.pt / last.pt
+  - metrics.json   (now contains 5.56 curriculum metrics: bind_weight, stochastic_diversity, gold_dist, ...)
+  - config.json
+
+To reproduce a real 642 gold run (recommended next):
+  bash scripts/launch_556_local_smoke.sh --steps 200 --enable_stochastic_breadth \
+      --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt

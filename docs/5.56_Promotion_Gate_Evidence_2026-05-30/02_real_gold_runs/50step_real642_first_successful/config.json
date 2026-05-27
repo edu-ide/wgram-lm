@@ -1,0 +1,12 @@
+{
+  "total_steps": 50,
+  "batch_size": 4,
+  "d_model": 64,
+  "seq_len": 32,
+  "enable_stochastic_breadth": true,
+  "stochastic_breadth_ablation_zero": false,
+  "log_every": 5,
+  "save_dir": "local_556_real642_first_instrumented_fixed_20260527_1159",
+  "resume": null,
+  "gold_path": "local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt"
+}

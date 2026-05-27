@@ -1,0 +1,12 @@
+Loading checkpoint: local_556_real642_full_gstage_matrix_fixed_20260527_1256/01_full_556_real_gold_stoch_on//best.pt
+Trial 1: degradation = 0.0000
+Trial 2: degradation = 0.0000
+Trial 3: degradation = 0.0000
+Trial 4: degradation = 0.0000
+Trial 5: degradation = 0.0000
+Trial 6: degradation = 0.0000
+
+=== Proxy State Ablation Robustness ===
+Ablation type : zero
+Mean degradation after ablation: 0.0000
+(Lower is better = more robust state after 5.56 curriculum)

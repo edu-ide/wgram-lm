@@ -1,0 +1,14 @@
+=== Launching 5.56 Full Curriculum Minimal Trainer (Reverse I→G→A + 5.56 Gold Curriculum) ===
+Steps: 100 | Batch: 4 | d_model: 64
+Stochastic Breadth: --enable_stochastic_breadth (ablation_zero=true)
+Save dir: local_556_gstage_stoch_zero_real_20260527_1254
+Resume: none
+Gold path: --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+This launcher drives the full 5.56 Adaptive Rehearsal curriculum reconstruction
+(scheduled decay 0.40→0.04 + attractor protection + gold structural bias + stochastic breadth).
+
+Using python: /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_556_full_curriculum_minimal.py", line 40, in <module>
+    from src.qtrm_mm.config import QTRMConfig
+ModuleNotFoundError: No module named 'src'

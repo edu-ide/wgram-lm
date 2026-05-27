@@ -1,0 +1,12 @@
+{
+  "total_steps": 100,
+  "batch_size": 8,
+  "d_model": 128,
+  "seq_len": 32,
+  "enable_stochastic_breadth": true,
+  "stochastic_breadth_ablation_zero": true,
+  "log_every": 5,
+  "save_dir": "local_556_real642_full_gstage_matrix_fixed_20260527_1256/02_stochastic_ablation_zero",
+  "resume": null,
+  "gold_path": "local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt"
+}

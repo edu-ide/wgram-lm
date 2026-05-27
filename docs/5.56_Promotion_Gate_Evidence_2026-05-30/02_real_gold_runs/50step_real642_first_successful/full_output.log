@@ -1,0 +1,28 @@
+=== 5.56 Full Curriculum Minimal Trainer (with Checkpointing) ===
+Steps: 50, Batch: 4, d_model: 64
+Stochastic Breadth: True (ablation_zero=False)
+Save dir: local_556_real642_first_instrumented_fixed_20260527_1159
+Gold path: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+
+[GoldProxy] Attempting real 642 gold load from: local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+[GoldProxy] WARNING: real checkpoint loaded but no recognized gold/bos/latent key found.
+             This run will use synthetic proxy. (Reverse I→G→A documented gap)
+[GoldProxy] Using synthetic proxy (no real 642 gold inductive bias carried).
+[Gold Handling] Real gold_path provided but extraction produced 1D proxy. Disabling injection for shape safety. Other 5.56 curriculum dynamics (decay, stochastic breadth, protection) remain fully active.
+[   0/50] z_h_norm=131.5233  bind=0.400  gold_alpha=0.000  stoch_div=6.3421  gold_dist=0.000  drift=0.0000
+[   5/50] z_h_norm=131.7896  bind=0.364  gold_alpha=0.000  stoch_div=6.4048  gold_dist=0.000  drift=0.1686
+[  10/50] z_h_norm=131.7521  bind=0.328  gold_alpha=0.000  stoch_div=6.4072  gold_dist=0.000  drift=0.4357
+[  15/50] z_h_norm=130.9034  bind=0.292  gold_alpha=0.000  stoch_div=6.3345  gold_dist=0.000  drift=0.3836
+[  20/50] z_h_norm=132.0315  bind=0.256  gold_alpha=0.000  stoch_div=6.4645  gold_dist=0.000  drift=0.8357
+[  25/50] z_h_norm=131.5111  bind=0.220  gold_alpha=0.000  stoch_div=6.4667  gold_dist=0.000  drift=0.0119
+[  30/50] z_h_norm=131.7194  bind=0.184  gold_alpha=0.000  stoch_div=6.4155  gold_dist=0.000  drift=0.7275
+[  35/50] z_h_norm=131.2767  bind=0.148  gold_alpha=0.000  stoch_div=6.4212  gold_dist=0.000  drift=0.6553
+[  40/50] z_h_norm=131.8552  bind=0.112  gold_alpha=0.000  stoch_div=6.4642  gold_dist=0.000  drift=0.1644
+[  45/50] z_h_norm=132.1089  bind=0.076  gold_alpha=0.000  stoch_div=6.4776  gold_dist=0.000  drift=0.6131
+[  49/50] z_h_norm=131.9084  bind=0.047  gold_alpha=0.000  stoch_div=6.4662  gold_dist=0.000  drift=0.6431
+
+Run finished. Checkpoints saved to: local_556_real642_first_instrumented_fixed_20260527_1159
+Best checkpoint metric (min drift): 0.0000
+Artifacts: best.pt, last.pt, metrics.json, config.json
+5.56 curriculum metrics in metrics.json: bind_weight, gold_alpha_effective, attractor_protection_active,
+  stochastic_diversity (Reverse I→G→A breadth), gold_dist, state_stability_proxy

@@ -1,0 +1,10 @@
+=== Launching 5.56 Full Curriculum Minimal Trainer (Reverse I→G→A + 5.56 Gold Curriculum) ===
+Steps: 120 | Batch: 8 | d_model: 128
+Stochastic Breadth: --enable_stochastic_breadth (ablation_zero=false)
+Save dir: local_556_real642_gstage_matrix_20260527_1254/01_full_556_real_gold_stoch_on
+Resume: none
+Gold path: --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+This launcher drives the full 5.56 Adaptive Rehearsal curriculum reconstruction
+(scheduled decay 0.40→0.04 + attractor protection + gold structural bias + stochastic breadth).
+
+scripts/launch_556_local_smoke.sh: 줄 91: python: 명령어를 찾을 수 없음
