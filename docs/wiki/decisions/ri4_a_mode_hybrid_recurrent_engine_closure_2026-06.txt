@@ -471,10 +471,20 @@ This is the direct, honest outcome of following the Most-Deficient filter.
 
 This is the first time the RI-3+RI-4 matrix runner has produced production-usable causal evidence with real gold. The measurement alignment is now working.
 
-**Current RI-3 + RI-4 Status**:
-The dedicated matrix can now generate authentic orthogonal evidence. The stochastic breadth causal contribution (core of RI-3) is clearly isolated and strong when present, zero when ablated.
+**Current RI-3 + RI-4 Status (post 120-step real-gold run)**:
+The dedicated matrix now generates clean, repeatable, causally interpretable RI-3 + RI-4 data with real gold.
 
-Next natural Most-Deficient: Scale horizon and/or model width to observe robustness degradation over longer horizons and stronger RI-1/RI-2 effects (the current d_model=64 regime still saturates robustness quickly).
+- Stochastic breadth isolation remains perfect: stoch_zero arms = 0.0 pure effect across all horizons tested (25→60+ steps).
+- Non-ablated arms consistently show strong positive effect (~1.25–1.42).
+- Robustness stays extremely high (≥0.994) even in ablated arms at these horizons with d_model=64 + real gold. No significant degradation observed.
+
+This strengthens RI-3 evidence (the 5.56 stochastic breadth causal contribution is real, early, and robustly isolated on the hybrid).
+
+However, it also confirms the scale gap: In the current small-width regime, the system enters a high-robustness regime quickly. Longer horizons within this toy scale do not yet surface the robustness degradation or depth-dependent gains that define production RI-1 (test-time scaling) and RI-2 (long-horizon stability) in the SSOT.
+
+**Refined Most-Deficient + Highest-Value**:
+- RI-3 matrix measurement on hybrid + real gold: Now functional (major progress).
+- Blocking the full RI picture: **Effective capacity + horizon**. To see the SSOT's target behaviors (horizon-dependent robustness drop, stronger depth scaling), the next moves are either (a) larger d_model in matrix experiments or (b) integration into real training continuations where the hybrid can be trained at scale with the full 5.56 + RI-4 recipe.
 
 **Files touched in this sub-cycle:** Only the decision record (code fixes were already committed in prior step).
 
