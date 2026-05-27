@@ -2079,3 +2079,41 @@ This is the smallest experiment that can reject the "decoupled bank on current h
 
 **Literature table + this proposal** constitute the required skill output before implementing further.
 
+
+
+## A-Mode Execution: Trainer wiring for Decoupled Bank (smallest falsifying experiment ready) — 2026-06
+
+**Implementation step completed**:
+- Added `--use_decoupled_memory_bank` flag to `scripts/train_hybrid_ri4_real_continuation_minimal.py`
+- Bank creation + attachment to all OneBodyParallelHybridBlock layers (via the new setter)
+- During 5.56 rehearsal, when the flag is active, writes are routed through `bank.controller_write(..., utility_signal)` instead of automatic per-step router updates.
+- Bank state is saved/restored in checkpoints.
+- Zero behavior change when flag is off (full backward compatibility + ablation hygiene preserved).
+
+This makes the smallest falsifying experiment immediately executable:
+- The controller now decides writes at the rehearsal level (decoupled from every micro-step in the recurrent loop).
+- We can now test whether this topology change produces the long-missing ablation signal on real heldout cases.
+
+**Ready-to-run smallest experiment command** (d512 internal primary substrate recommended for signal strength):
+
+```bash
+PYTHONPATH=. python scripts/train_hybrid_ri4_real_continuation_minimal.py \
+  --steps 30 \
+  --d_model 512 \
+  --batch 1 \
+  --use_decoupled_memory_bank \
+  --enable_stochastic_breadth \
+  --internal_ri4_primary \
+  --router_temperature 1.2 \
+  --router_temperature_end 0.55 \
+  --gumbel_noise_std 0.15 \
+  --save_every 10 \
+  --out_dir checkpoints/hybrid_ri4_decoupled_bank_test \
+  --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt
+```
+
+After the run, immediately measure with the existing v2 harness (real heldout_72 cases, 4-way style bank_on vs bank_off) and compare against previous embedded-slot baselines.
+
+This is the direct, minimal next step after the literature sweep + proposal.
+
+

@@ -20,6 +20,14 @@ Usage (smoke on real gold path):
         --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt \
         --save_every 10 --out_dir checkpoints/hybrid_ri4_cont
 
+    # With the 2026-06 Decoupled Memory Bank (new topology):
+    PYTHONPATH=. python scripts/train_hybrid_ri4_real_continuation_minimal.py \
+        --steps 30 --d_model 512 --batch 1 \
+        --use_decoupled_memory_bank \
+        --enable_stochastic_breadth \
+        --gold_path ... \
+        --save_every 10 --out_dir checkpoints/hybrid_ri4_decoupled_test
+
 The recipe inside is deliberately kept identical to the one that produced the clean
 160-step RI-3+RI-4 evidence (after cap removal).
 
@@ -38,6 +46,7 @@ import torch.nn as nn
 from src.qtrm_mm.config import QTRMConfig
 from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
 from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
+from src.qtrm_mm.memory.decoupled_latent_memory_bank import DecoupledLatentMemoryBank, make_decoupled_latent_memory_bank
 
 # Reuse the exact proven helpers from the matrix runner (no drift)
 from scripts.train_556_on_parallel_hybrid_minimal import (
@@ -77,6 +86,12 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--router_temperature_end", type=float, default=None, help="Ending temperature for linear decay schedule over the run (None = constant)")
     p.add_argument("--gumbel_noise_std", type=float, default=0.0, help="Gumbel-style noise std for stochastic breadth in slot selection during training")
     p.add_argument("--router_aux_loss_weight", type=float, default=0.0, help="Weight for auxiliary router selectivity loss (entropy/contrast) during rehearsal. >0 enables stronger training pressure on selection decisions.")
+    # === Architecture-level new mechanism (big jump for RI-4) ===
+    p.add_argument("--enable_gated_memory_update", action="store_true", help="Enable learned per-slot forget/write gates (LM2/G-MemLLM-inspired). This is the architecture-level innovation to make selective memory writes actually useful instead of fixed-persistence.")
+    # === Next Big-Jump candidate per skill (after GSMU falsification): Surprise-Driven Write Trigger ===
+    p.add_argument("--enable_surprise_write_trigger", action="store_true", help="Enable surprise-driven modulation of write strength (Titans-style literature mechanism). Changes the write *trigger* causal route. Skill-mandated next Big Jump after previous candidate negative.")
+    # === 2026-06 Big Jump: Decoupled Latent Memory Bank (MELT + G-MemLLM style) ===
+    p.add_argument("--use_decoupled_memory_bank", action="store_true", help="Use DecoupledLatentMemoryBank (external controller-driven memory instead of per-step embedded slots). This is the topology-level change after repeated falsification of embedded per-block design.")
     args = p.parse_args()
 
     cfg = ContinuationConfig(
@@ -97,6 +112,9 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.router_temperature_end = args.router_temperature_end if args.router_temperature_end is not None else args.router_temperature
     cfg.gumbel_noise_std = args.gumbel_noise_std
     cfg.router_aux_loss_weight = args.router_aux_loss_weight
+    cfg.enable_gated_memory_update = args.enable_gated_memory_update
+    cfg.enable_surprise_write_trigger = args.enable_surprise_write_trigger
+    cfg.use_decoupled_memory_bank = args.use_decoupled_memory_bank
     return cfg
 
 
@@ -136,12 +154,22 @@ def main():
         load_strict = not getattr(cfg, "internal_ri4_primary", False)
         model.load_state_dict(ckpt["model"], strict=load_strict)
         if router is not None and ckpt.get("router") is not None:
-            router.load_state_dict(ckpt["router"])
+            # Robust loading for architecture evolution (new gates etc.)
+            # When enabling new mechanisms (e.g. gated memory update), missing keys are expected and initialized fresh.
+            missing, unexpected = router.load_state_dict(ckpt["router"], strict=False)
+            if missing:
+                print(f"[Resume] Router loaded with missing keys (new architecture components initialized fresh): {missing}")
         start_step = ckpt.get("step", 0)
         print(f"[Resume] Resumed at step {start_step}")
         # Carry over slots if present in the checkpoint (for persistent RI-4 state)
         if hasattr(model, '_ri4_current_slots') and ckpt.get('slots') is not None:
             model._ri4_current_slots = ckpt['slots'].to(device=cfg.device, dtype=cfg.dtype)
+
+        # Resume decoupled bank if present
+        if cfg.use_decoupled_memory_bank and bank is not None and ckpt.get("decoupled_bank") is not None:
+            with torch.no_grad():
+                bank.slots.copy_(ckpt["decoupled_bank"].to(device=cfg.device, dtype=cfg.dtype))
+            print("[Resume] Decoupled Memory Bank state restored")
 
         # Re-apply internal primary attachment on resume
         if cfg.internal_ri4_primary and router is not None:
@@ -161,6 +189,20 @@ def main():
                 layer._sparse_slot_ablation_zero = False
         print("[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value")
 
+    # === 2026-06 Big Jump: Decoupled Latent Memory Bank attachment ===
+    bank = None
+    if cfg.use_decoupled_memory_bank and make_decoupled_latent_memory_bank is not None:
+        bank = make_decoupled_latent_memory_bank(
+            d_model=cfg.d_model,
+            num_slots=16,
+            top_k=4,
+        ).to(device=cfg.device, dtype=cfg.dtype)
+        for layer in model:
+            if isinstance(layer, OneBodyParallelHybridBlock):
+                layer.set_decoupled_memory_bank(bank, ablation_zero=False)
+        print("[RI-4 Topology Jump] DecoupledLatentMemoryBank attached (controller-driven, decoupled from per-step recurrence)")
+        print("  Writes will be routed through bank.controller_write during rehearsal (not automatic per micro-step).")
+
     # Apply RI-4 selectivity pressure (the current Most-Deficient lever)
     if router is not None:
         router.set_temperature(
@@ -168,6 +210,15 @@ def main():
             gumbel_noise_std=getattr(cfg, "gumbel_noise_std", 0.0)
         )
         print(f"[RI-4 Selectivity] Router temperature={getattr(cfg, 'router_temperature', 1.0)} gumbel_std={getattr(cfg, 'gumbel_noise_std', 0.0)}")
+
+    # Architecture-level new mechanism: Gated Memory Update
+    if router is not None and getattr(cfg, "enable_gated_memory_update", False):
+        router.enable_gated_memory_update(True)
+        print("[RI-4 Architecture Jump] Learned Gated Selective Memory Update ENABLED (per-slot forget/write gates active)")
+
+    if router is not None and getattr(cfg, "enable_surprise_write_trigger", False):
+        router.enable_surprise_write_trigger(True, surprise_scale=1.5)
+        print("[RI-4 Big-Jump Candidate] Surprise-Driven Write Trigger ENABLED (post-GSMU falsification per skill)")
 
     # Gold state (real 642 if provided) — exact same robust prep as the 160-step evidence run
     gold_state = None
@@ -255,6 +306,19 @@ def main():
                 decay=decay,
             )
 
+        # 2026-06 Decoupled Bank rehearsal path (controller-driven write, not per-step)
+        if bank is not None and cfg.use_decoupled_memory_bank:
+            rehearsal_target = h.mean(dim=1)  # (B, d)
+            # Simple utility signal for minimal falsification (can be replaced with better surprise later)
+            # Here we use the magnitude of the incoming gold/rehearsal delta as proxy for "this was important"
+            util = torch.norm(gold_delta, dim=-1).squeeze() if gold_delta is not None else torch.ones(cfg.batch_size, device=cfg.device) * 0.1
+            bank.controller_write(
+                current_state=rehearsal_target,
+                utility_signal=util,
+                rehearsal_target=rehearsal_target,
+                write_strength=0.12,
+            )
+
         # RI-4 auxiliary router selectivity loss (stronger training pressure on selection decisions)
         if router is not None and getattr(cfg, 'router_aux_loss_weight', 0.0) > 0:
             aux_loss = router.compute_selectivity_aux_loss(h, loss_weight=cfg.router_aux_loss_weight)
@@ -276,6 +340,7 @@ def main():
         if cfg.save_every > 0 and (step + 1) % cfg.save_every == 0:
             ckpt_path = os.path.join(cfg.out_dir, f"hybrid_ri4_cont_step{step+1}.pt")
             slots = getattr(model, '_ri4_current_slots', None)
+            bank_state = bank.get_bank_state().cpu() if (bank is not None and cfg.use_decoupled_memory_bank) else None
             torch.save({
                 "model": model.state_dict(),
                 "router": router.state_dict() if router is not None else None,
@@ -283,12 +348,16 @@ def main():
                 "config": cfg,
                 "slots": slots.cpu() if slots is not None else None,
                 "internal_ri4_primary": cfg.internal_ri4_primary,
+                "decoupled_bank": bank_state,
+                "use_decoupled_memory_bank": cfg.use_decoupled_memory_bank,
             }, ckpt_path)
             print(f"[Checkpoint] saved {ckpt_path}")
 
     print("\nContinuation smoke complete. Substrate is now exercisable in a checkpointed loop.")
     if cfg.internal_ri4_primary:
         print("Mode: internal_ri4_primary — slot carry flows through block return value (trained router attached to blocks).")
+    if cfg.use_decoupled_memory_bank:
+        print("Mode: use_decoupled_memory_bank — writes now go through external controller (decoupled from per-step recurrence).")
     print("Next: wire real data + full optimizer + 192-style gates on these checkpoints.")
 
 
