@@ -495,3 +495,61 @@ The blocking item for the full SSOT RI picture (especially RI-1 test-time scalin
 
 This run directly fulfills the "Immediate Rigorous Experiment" requirement after the shape contract A-Mode fixes. The lever for the SSOT's highest immediate priority is now not only present but proven to execute cleanly and produce machine-readable evidence.
 
+---
+
+## A-Mode Cycle (Next): Longer-Horizon Scale Diagnostic — Most-Deficient + Highest-Value (post 120-step d_model=128 real-gold)
+
+**Date / Branch:** 2026-06 continuation on feat/ri4-hybrid-answer-state-loop-recurrent-engine (commit b0409f9 hygiene + this record append)
+
+**User directive driving this cycle:** "작업 진행해" (repeated) + formal A-Mode + Most-Deficient principle in research-driven-architecture-debugging SKILL.md
+
+**Re-assessment (Most-Deficient + Highest-Value-First filter):**
+- Substrate (OneBodyParallelHybridBlock as actual recurrent engine inside answer_state_loop + persistent _ri4_hybrid_recurrent_slot_state carry + full 4-way RI-4 ablation contract 100% preservation + 5.56 Adaptive Rehearsal Gold Recipe with real 642 gold + authentic inline measurement) is now CLOSED at high fidelity (previous A-Mode cycles).
+- After d_model=64→128 scale-up + real gold + 120 steps: pure_stochastic_effect materially stronger (up to ~1.98), stochastic isolation perfect (0.0), but **robustness remains saturated ≥0.994–0.997 across every arm and every horizon tested**.
+- The RI-1 (test-time depth/recurrent scaling) and RI-2 (long-horizon stability) hallmark phenomena — clear degradation in ablated arms (slots_off, persistence_ablate, stoch_zero, gold_off, protection_off) while non-ablated maintains or improves — have **not surfaced**.
+- Per explicit diagnosis in this record (previous section): "the current regime ... is still in a high-robustness basin; longer recurrence does not yet produce the robustness drop".
+- Therefore the single largest remaining insufficiency blocking the SSOT RI-1~RI-7 picture (and the ability to claim the hybrid+RI-4 substrate is production-viable for surpassing larger models) is **effective scale (horizon at current best width)**.
+
+**Holistic Largest-Gap Closure (A-Mode style):**
+- No further substrate code patch is the correct move (that would violate "most-deficient" and risk diffusing effort).
+- The holistic closure is **committing the already-verified recipe to a meaningfully longer-horizon diagnostic** on the exact same d_model=128 + real 642 gold substrate before investing in full training continuation.
+- This is the shortest falsifiable path that can either (a) surface the desired RI-1/RI-2 degradation signal (validate substrate ready for scale), or (b) prove the current width is still too small → force re-prioritization to "prepare actual training continuation at larger effective capacity".
+
+**Immediate Rigorous Experiment (executed right after hygiene commit + this record update):**
+- Use the canonical A-Mode matrix runner (already hardened for hybrid tuple returns, slot carry, inline authentic 5.56+RI-4 measurement, real gold loading, standardized ## RI3_RI4_MATRIX_JSON artifact).
+- Target horizon: 160 steps (aggressive but feasible locally; 200 if time/hardware allows) per cell.
+- Config: d_model=128, real 642 gold (`local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt`), stochastic breadth enabled (the 5.56 path), full 3×4 orthogonal.
+- Full One-Body + ablation contract preserved by construction (the runner re-uses the same build_hybrid_stack + rehearsal loop + RI-4 flags that passed all prior contract checks).
+
+**Exact launch command (background, logged):**
+```
+python scripts/train_556_on_parallel_hybrid_minimal.py \
+  --run_ri3_ri4_matrix \
+  --steps 160 \
+  --d_model 128 \
+  --batch 2 \
+  --enable_stochastic_breadth \
+  --gold_path local_eval/642_adaptive_fine_tuned_200step/adaptive_phase2_checkpoint.pt \
+  2>&1 | tee logs/ri3_ri4_matrix_d128_160step_real642_$(date +%Y%m%d_%H%M).log
+```
+
+**Falsifiable gates for this experiment:**
+- If ablated arms (especially RI-4 persistence_ablate + slots_off, and 5.56 stoch_zero/gold_off) show **material robustness drop** (e.g. <0.98 while non-ablated stays >0.995) at the longer horizon → hallmark RI-2 signal surfaced; substrate validated at this scale; next = prepare real training continuation with this recipe.
+- If robustness remains saturated across the board even at 160 steps → current width (128) still inside the high-robustness toy basin; Most-Deficient target moves explicitly to "production training continuation at larger d_model / depth" or "horizon 300+ at 128 as last local diagnostic".
+- All cells must still emit clean per-cell pure_stochastic_effect (0.0 on stoch_zero), RI-4 participation counters, and the unified JSON artifact.
+
+**One-Body / Contract / Hygiene invariants (non-negotiable):**
+- No change to hybrid forward, slot router, answer_state_loop delegation, or ablation flags.
+- The small hygiene commit (b0409f9) before launch ensures the measurement probe itself respects the hybrid tuple contract (slot_state carry).
+- Reverse I→G→A (5.56 stochastic recurrent breadth + rehearsal) fully active in non-ablated cells.
+
+**After run completes:**
+- Append raw matrix table + JSON artifact path + analysis (did degradation surface?) to this record.
+- Re-run Most-Deficient filter across all RI-1~RI-7.
+- Safe minimal doc + any follow-up code commit on this branch only.
+- Output clear next A-Mode step to user.
+
+This cycle directly implements the user's "미흡 한번에 수정 → 실험 → 결과 확인 → 개선" + "가장 미흡하면서 가장 가치있는거부터" rule in its purest form: the substrate was holistically closed in prior cycles; the current largest gap is scale, therefore the immediate action is the longest feasible local diagnostic on that gap.
+
+**Status at append time:** Hygiene committed (b0409f9), decision record updated, experiment launch in progress (background). Results will drive the next re-prioritization.
+
