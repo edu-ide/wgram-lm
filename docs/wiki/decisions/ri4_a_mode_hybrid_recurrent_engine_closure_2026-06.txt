@@ -1581,6 +1581,65 @@ This cycle closes the "levers exist but untested in training" gap and gives us t
 
 ---
 
+## Skill-Mandated Big-Jump Assessment (per research-driven-architecture-debugging SKILL.md) — 2026-06
+
+**Plain-language failure (Failure Discipline step 1):**
+After multiple iterations of increasing training-time selectivity pressure on the RI-4 SparseSlotRouter (temperature annealing, Gumbel noise during selection, direct entropy auxiliary loss on router scores during rehearsal, and the introduction of learned per-slot forget/write gates in the update path), the system still produces near-perfect persistent slot carry (1.0) on real heldout reasoning cases. Critically, turning off the router (router_ablate), disabling persistence (persistence_ablate), or disabling slots entirely (slots_off) does not produce measurable degradation in carry rate or downstream reasoning proxy under the v2 real-heldout driver. The memory is reliably persistent, but its *selectivity* has not been shown to be causally useful for the reasoning task.
+
+This failure has now repeated across several distinct pressure formulations on the same underlying selection + fixed-persistence write topology.
+
+**Last working anchor (step 2):**
+The strongest reliable behavior preserved is the **One-Body hybrid recurrent engine contract** itself: OneBodyParallelHybridBlock + SparseSlotRouter successfully participates as the actual recurrent proposal engine inside answer_state_loop (verified in early A-Mode cycles with pure delegation + realistic shapes + 4-way ablation matrix). Carry robustness is also a preserved (though currently double-edged) behavior — the system does not suffer catastrophic interference or state collapse.
+
+**Classification of recent moves (Big-Jump Rule step 3):**
+- Temperature + Gumbel schedules: nearby tweak on the *scoring* part of the existing router (same causal route: scores → hard/soft top-k → fixed persistence write).
+- Aux entropy loss on router scores: still operating on the selection scores, same route.
+- Introduction of GSMU (learned per-slot forget/write gates in update_slots): This is the first move that changes the **write causal route** itself (from fixed persistence/learning_rate to content-conditioned learned gates). It qualifies as a Big Jump per the skill because it alters how information from the recurrent state and rehearsal target actually modifies the persistent memory slots.
+
+**Current Most-Deficient (re-assessed per skill):**
+The bottleneck has moved from "lack of pressure knobs on selection" to "the write utility / decision mechanism itself is still not learning to make the memory *selectively useful* for downstream reasoning." Even with dynamic gates, if the training signal does not reward useful writes (vs. just safe persistence), the gates may converge to near-identity behavior.
+
+**Next required per skill (Big-Jump + Literature + Humanistic preflight):**
+Because multiple variants on the old selection-pressure family have now repeatedly failed to produce the ablation signal, we must treat further scalar pressure on the existing router as a local minimum. The next action must be either:
+- A true further Big Jump that changes another causal route (e.g., surprise-driven write trigger, explicit value/utility head for write decisions, or decoupling memory into a more LM2-style bank with its own controller), or
+- Rigorous falsification of the GSMU candidate itself (longer training with the gates active + full 4-way real-heldout + reasoning proxy measurement) before proposing the next architectural change.
+
+All subsequent work will follow the skill's mandatory order: humanistic preflight, causal route analysis, literature refresh for the new bottleneck, named candidate with falsification gate, smallest experiment.
+
+This section is the required "freeze ideation on local pressure" checkpoint.
+
+**Execution of the falsification experiment for the current best Big-Jump candidate (GSMU):**
+Per the skill's "smallest experiment that can falsify the best candidate" rule, a 20-step continuation from the latest gated checkpoint (step34) was run with GSMU enabled + scheduled pressure (starting temp 1.2 decaying to 0.55 + gumbel 0.15). New artifacts: step36/40/44/48/52 in `checkpoints/hybrid_ri4_gated_test/`.
+
+**Falsification measurement results (v2 real-heldout driver, 4 real cases from pure_recursive_reasoning_heldout_72, 8 thinking steps):**
+- step52 (GSMU trained):
+  - full: persistent_carry_rate = **1.0**
+  - persistence_ablate: **1.0**
+  - slots_off: **1.0**
+- All arms remain flat at 1.0 (identical to pre-GSMU baselines on this scale).
+
+**Analysis per skill (Big-Jump candidate falsification):**
+The introduction of learned per-slot forget/write gates (the first change to the *write causal route* itself, inspired by LM2/G-MemLLM) + pressure schedule did not produce the expected signal: ablation degradation in carry under real heldout distribution.
+
+This is a clean negative result for GSMU in its current minimal form (small gate networks + standard init + 20 steps on d=512 internal_ri4_primary substrate). The gates are active and training, but the model has not yet learned to use them in a way that makes selectivity causally visible in the carry observable.
+
+**Updated Most-Deficient + Highest-Value (post GSMU falsification):**
+- GSMU (learned gated write on top of sparse routing): tested as Big-Jump candidate → no movement in the critical ablation signal on real heldout.
+- The bottleneck remains at the level of "what training signal + mechanism makes the memory slots learn *utility* of writing vs preserving during actual reasoning/rehearsal trajectories?"
+- Next options (in skill priority):
+  1. Stronger/more direct supervision on the gates themselves during rehearsal (e.g. explicit utility or reconstruction target on the slots).
+  2. A different Big Jump from literature (surprise-driven write trigger from Titans, or fuller LM2-style separate memory bank controller).
+  3. Accept that this family of "add gating to existing slot router" may be insufficient without deeper changes to the rehearsal objective or state representation, and re-prioritize the broader RI-1~RI-7 map.
+
+**Artifacts:**
+- GSMU falsification run log + checkpoints (step36–52 with gates active)
+- Real-heldout 4-way measurements on step52 (and baseline on step34)
+- This section (skill-mandated Big-Jump assessment + candidate falsification result)
+
+This completes the required "smallest experiment that can falsify the best candidate" step for GSMU per the research-driven-architecture-debugging skill.
+
+---
+
 ## A-Mode Cycle: Stronger router selectivity pressure via auxiliary loss (entropy) during rehearsal + measurement — 2026-06
 
 **Most-Deficient driving this cycle:**
