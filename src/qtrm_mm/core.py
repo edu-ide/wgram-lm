@@ -9,6 +9,12 @@ from .blocks import QTRMBlockStack
 from .stability import StableInject
 from .norm import RMSNorm
 from .attention import CrossAttention
+from .provenance import (
+    ProvenanceGraphReasoner,
+    ProvenanceDataWorldModel,
+    WorldModelGatedAnswerRegister,
+    build_provenance_register_from_config,
+)
 
 
 @dataclass
@@ -213,6 +219,18 @@ class QTRMRecursiveCore(nn.Module):
                         nn.init.zeros_(mod.bias)
                 nn.init.zeros_(self.workspace_gates[dom].weight)
                 nn.init.constant_(self.workspace_gates[dom].bias, -2.0)  # start relatively closed
+
+        # === Phase 3: Provenance components (I→G→A wired integration) ===
+        # When core_provenance_register_enabled, the core now owns the real
+        # extracted classes from .provenance via the config factory (A-stage).
+        self.provenance_graph_reasoner: Optional[ProvenanceGraphReasoner] = None
+        self.provenance_world_model: Optional[ProvenanceDataWorldModel] = None
+        self.provenance_register_module: Optional[WorldModelGatedAnswerRegister] = None
+        if getattr(cfg, "core_provenance_register_enabled", False):
+            self.provenance_register_module = build_provenance_register_from_config(cfg)
+            if self.provenance_register_module is not None:
+                self.provenance_graph_reasoner = self.provenance_register_module.graph_reasoner
+                self.provenance_world_model = self.provenance_register_module.world_model
 
         self.halt_head = nn.Linear(cfg.d_model, 2) if cfg.core_halt_enabled else None
         if self.halt_head is not None:
@@ -732,10 +750,12 @@ class QTRMRecursiveCore(nn.Module):
                     # This is the direct analogue of the 570 monotonic pressure
                     z_h = z_h + (strength + depth_bonus) * push_dir.unsqueeze(0).unsqueeze(0)
 
-        # === Phase 3: Provenance Register Fusion (now with native extracted components) ===
-        # When core_provenance_register_enabled, the caller can pass a real
-        # WorldModelGatedAnswerRegister output (or raw tensor). The stub fusion
-        # below remains for backward compatibility during the I→G→A extraction.
+        # === Phase 3: Provenance Register Fusion (real components wired in core) ===
+        # The core now holds self.provenance_register_module (from .provenance)
+        # when the flag is enabled. The tensor path below is kept for compatibility
+        # and external injection. Full end-to-end use of the module (with graph/world
+        # inputs) is available via self.provenance_register_module for callers that
+        # provide the proper features.
         if provenance_register is None and getattr(self.cfg, "core_provenance_register_enabled", False):
             if carry is not None and getattr(carry, 'provenance_register', None) is not None:
                 provenance_register = carry.provenance_register

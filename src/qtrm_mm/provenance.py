@@ -229,4 +229,26 @@ __all__ = [
     "ProvenanceGraphReasoner",
     "ProvenanceDataWorldModel",
     "WorldModelGatedAnswerRegister",
+    "build_provenance_register_from_config",
 ]
+
+
+def build_provenance_register_from_config(cfg: "QTRMConfig") -> Optional["WorldModelGatedAnswerRegister"]:
+    """Factory to create the full native provenance register from QTRMConfig.
+
+    This is the recommended way for config-driven architecture-ization.
+    Returns None if the feature is disabled.
+    """
+    if not getattr(cfg, "core_provenance_register_enabled", False):
+        return None
+
+    prov_d = int(getattr(cfg, "core_provenance_register_dim", 64))
+    graph = ProvenanceGraphReasoner(d_model=prov_d, max_sources=8)
+    world = ProvenanceDataWorldModel(d_model=32, max_sources=8)
+    reg = WorldModelGatedAnswerRegister(
+        d_model=prov_d,
+        graph_reasoner=graph,
+        world_model=world,
+        world_d_model=32,
+    )
+    return reg
