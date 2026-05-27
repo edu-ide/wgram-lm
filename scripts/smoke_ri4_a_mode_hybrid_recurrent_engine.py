@@ -488,18 +488,24 @@ def _run_realistic_model_forward_test(
 
     hybrid_block.forward = instrumented
 
-    # Tiny prompt that the answer_state_loop path should participate in
-    # (with the tiny cfg flags, any generation after the prelude will hit it).
-    prompt_ids = torch.randint(0, cfg.vocab_size, (1, 6), device=test_device)
+    # Longer prompt + multiple steps to increase chance of engaging answer_state_loop
+    # recurrent proposal (the actual path 192 uses during scoring/generation).
+    # This makes hybrid usage visible in a more "natural" model forward while attached.
+    prompt_ids = torch.randint(0, cfg.vocab_size, (1, 12), device=test_device)
 
     try:
         with torch.no_grad():
-            # Realistic causal forward (the actual path 192 uses). Generation in this tiny
-            # cfg is done via the core loop; we just need the forward to exercise answer_state_loop.
+            # Realistic causal forward (the actual path 192 uses).
             out = model(prompt_ids)
-            # If the model has a generate method in this build, try a short one (best effort)
+            # Multiple small "generation" steps to exercise recurrent path more.
             if hasattr(model, "generate"):
-                _ = model.generate(prompt_ids, max_new_tokens=4)
+                _ = model.generate(prompt_ids, max_new_tokens=6)
+            else:
+                # Fallback: several additional forwards with growing context
+                for _ in range(3):
+                    next_token = torch.randint(0, cfg.vocab_size, (1, 1), device=test_device)
+                    prompt_ids = torch.cat([prompt_ids, next_token], dim=1)
+                    _ = model(prompt_ids)
         ok = True
         err = None
     except Exception as e:
@@ -569,9 +575,8 @@ def _run_192_style_forced_path_with_real_tensors(
     hybrid_block.forward = instrumented
 
     # Step 1: Real forward to capture authentic internal tensors
-    # We use a slightly longer input to increase chance of engaging answer_state_loop.
     B = 1
-    seq_len = 8
+    seq_len = 12  # longer to better engage recurrent proposal in tiny cfg
     input_ids = torch.randint(0, cfg.vocab_size, (B, seq_len), device=test_device)
 
     try:
@@ -579,15 +584,14 @@ def _run_192_style_forced_path_with_real_tensors(
             # This forward will populate the internal state the model uses for answer_state_loop
             _ = model(input_ids)
 
-            # Step 2: Now synthesize the exact arguments that the model's answer_state_loop path would use.
-            # For the tiny cfg we fall back to a controlled but authentic-shaped call to the internal method.
-            # Use float32 on CPU to avoid dtype mismatches with hybrid (which may carry bf16 from CUDA init).
+            # Step 2: Synthesize arguments the model's answer_state_loop path would use.
+            # Use float32 on CPU to avoid dtype mismatches.
             target_dtype = torch.float32 if test_device.type == "cpu" else torch.bfloat16
             text_context_seq = torch.randn(B, seq_len, cfg.d_model, device=test_device, dtype=target_dtype)
             trajectory = [torch.randn(B, max(2, int(cfg.workspace_tokens or 4)), cfg.d_model, device=test_device, dtype=target_dtype) for _ in range(3)]
             text_context_mask = torch.ones(B, seq_len, device=test_device, dtype=torch.bool)
             workspace_mask = torch.ones(B, max(2, int(cfg.workspace_tokens or 4)), device=test_device, dtype=torch.bool)
-            query_token_indices = torch.tensor([min(3, seq_len-1)], device=test_device, dtype=torch.long)
+            query_token_indices = torch.tensor([min(5, seq_len-1)], device=test_device, dtype=torch.long)
 
             # Fresh per-case slot state (192 hygiene)
             model._ri4_hybrid_recurrent_slot_state = None
