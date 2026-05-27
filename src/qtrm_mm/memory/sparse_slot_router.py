@@ -79,10 +79,21 @@ class SparseSlotRouter(nn.Module):
         self._router_enabled = True
         self._ablation_zero = False
 
+        # RI-4 selectivity pressure (Most-Deficient target after width saturation)
+        # temperature < 1.0 sharpens selection (more decisive top-k)
+        # temperature > 1.0 softens for exploration during training
+        self.temperature = 1.0
+        self._gumbel_noise_std = 0.0  # >0 enables Gumbel-like exploration during training
+
     def set_ablation(self, enabled: bool = True, ablation_zero: bool = False):
         """Called by training/eval harness for clean ablations."""
         self._router_enabled = enabled
         self._ablation_zero = ablation_zero
+
+    def set_temperature(self, temperature: float = 1.0, gumbel_noise_std: float = 0.0):
+        """Training-time control for selectivity pressure (A-Mode Most-Deficient lever)."""
+        self.temperature = max(0.1, float(temperature))
+        self._gumbel_noise_std = max(0.0, float(gumbel_noise_std))
 
     def forward(
         self,
@@ -120,6 +131,17 @@ class SparseSlotRouter(nn.Module):
 
         # Router scores
         scores = self.router(x_t)  # (B, num_slots)
+
+        # === RI-4 Most-Deficient selectivity pressure (temperature + optional Gumbel) ===
+        # Lower temperature = sharper, more decisive top-k (stronger selectivity pressure)
+        # Higher temperature or Gumbel noise = softer exploration during training
+        if self.temperature != 1.0:
+            scores = scores / self.temperature
+
+        if self._gumbel_noise_std > 0.0 and self.training:
+            # Gumbel-style exploration for stochastic breadth in slot selection
+            gumbel = -torch.log(-torch.log(torch.rand_like(scores) + 1e-12) + 1e-12)
+            scores = scores + self._gumbel_noise_std * gumbel
 
         # Ultra-early RI-4 A-Mode guard: if the router ever produces degenerate output
         # (last dim != num_slots, or any sign of collapsed batch/slot dim), immediately

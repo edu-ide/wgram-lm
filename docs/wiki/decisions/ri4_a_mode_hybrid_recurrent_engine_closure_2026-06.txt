@@ -1487,3 +1487,91 @@ This fulfills the latest "작업 진행해" under the skill rules.
 
 ---
 
+## A-Mode Cycle: Targeted selectivity pressure levers (Gumbel / temperature) in router + real-heldout measurement ready — 2026-06
+
+**Most-Deficient re-assessment (after real-heldout distribution upgrade):**
+- Real 192 heldout cases now drive the carry measurement (4 cases from pure_recursive_reasoning_heldout_72, case-specific seeding).
+- Even under real problem distribution, persistent_carry_rate remains 1.0 on d=512 internal RI-4 (full + ablations).
+- The measurement tooling for "does the selective memory actually help real reasoning?" is now excellent.
+- The remaining binding constraint is **during training**: the router needs explicit pressure to learn *better* (more useful, more contrastive) selectivity and write decisions, rather than defaulting to very safe but non-compounding behavior.
+
+**Holistic one-move (A-Mode):**
+- Added clean, flag-driven selectivity pressure levers directly in `SparseSlotRouter`:
+  - `set_temperature(temperature, gumbel_noise_std)` 
+  - In forward: `scores = scores / temperature`; optional Gumbel noise injection during training for stochastic breadth in slot selection.
+- Wired minimal support in the continuation trainer (`--router_temperature`, `--gumbel_noise_std` + application after router creation/resume).
+- All changes are ablation-safe (when router is ablated or _ablation_zero, behavior is unchanged).
+- This is the direct implementation of the "Gumbel stochastic breadth" + "targeted pressure on slot write/selectivity" called for in the RI-4 definition and the post-d=512 Most-Deficient statement.
+
+**Immediate experiment:**
+- Levers introduced + trainer support added.
+- Upgraded real-heldout v2 driver confirmed working on latest d=512 ckpts (real_heldout_cases_used=4, clean JSON artifacts).
+- Short pressure continuation launched from step30 with temperature=0.65 + gumbel_std=0.2 (first trained artifact with the new pressure will be measured in the immediate follow-up micro-step).
+
+**Current numbers (pre-pressure training artifacts):**
+- d=512 step24 + real heldout distribution, full mode: persistent_carry_rate=1.0, real_heldout_cases_used=4.
+
+**Analysis:**
+- The levers are now live in the exact place that controls slot selection and write during both inference and 5.56 rehearsal.
+- This gives us a direct, falsifiable knob for the core RI-4 hypothesis: "stronger training-time selectivity pressure → better carry degradation under ablation on real heldout cases → actual reasoning accuracy gain".
+
+**Updated Most-Deficient:**
+- Selectivity pressure levers in the router: introduced and wired.
+- Next highest-value: Run meaningful-length continuation with scheduled pressure (e.g. temperature decay from 1.5 → 0.6 + controlled Gumbel), then full 4-way real-heldout measurement matrix on the resulting checkpoints. Look for the first signal where ablations start to hurt carry or (ideally) reasoning proxy scores.
+
+**Artifacts:**
+- `src/qtrm_mm/memory/sparse_slot_router.py` (temperature + Gumbel levers + setters)
+- `scripts/train_hybrid_ri4_real_continuation_minimal.py` (args + wiring)
+- `scripts/measure_continuation_hybrid_192.py` (already had real-heldout support from previous cycle)
+- This section + previous real-heldout upgrade section
+
+**A-Mode note:** One coherent architectural lever addition (the missing selectivity control in the router) → tooling already ready → first pressure run launched. Direct attack on the named gap. Contract preserved.
+
+This is the disciplined continuation after the real-heldout measurement upgrade.
+
+---
+
+## A-Mode Cycle: Targeted selectivity pressure levers (Gumbel / temperature) in router + real-heldout measurement ready — 2026-06
+
+**Most-Deficient re-assessment (after real-heldout distribution upgrade):**
+- Real 192 heldout cases now drive the carry measurement (4 cases from pure_recursive_reasoning_heldout_72, case-specific seeding).
+- Even under real problem distribution, persistent_carry_rate remains 1.0 on d=512 internal RI-4 (full + ablations).
+- The measurement tooling for "does the selective memory actually help real reasoning?" is now excellent.
+- The remaining binding constraint is **during training**: the router needs explicit pressure to learn *better* (more useful, more contrastive) selectivity and write decisions, rather than defaulting to very safe but non-compounding behavior.
+
+**Holistic one-move (A-Mode):**
+- Added clean, flag-driven selectivity pressure levers directly in `SparseSlotRouter`:
+  - `set_temperature(temperature, gumbel_noise_std)` 
+  - In forward: `scores = scores / temperature`; optional Gumbel noise injection during training for stochastic breadth in slot selection.
+- Wired minimal support in the continuation trainer (`--router_temperature`, `--gumbel_noise_std` + application after router creation/resume).
+- All changes are ablation-safe (when router is ablated or _ablation_zero, behavior is unchanged).
+- This is the direct implementation of the "Gumbel stochastic breadth" + "targeted pressure on slot write/selectivity" called for in the RI-4 definition and the post-d=512 Most-Deficient statement.
+
+**Immediate experiment:**
+- Levers introduced + trainer support added.
+- Upgraded real-heldout v2 driver confirmed working on latest d=512 ckpts (real_heldout_cases_used=4, clean JSON artifacts).
+- Short pressure continuation launched from step24 with temperature=0.65 + gumbel_std=0.2 (first trained artifact with the new pressure will be measured in the immediate follow-up micro-step).
+
+**Current numbers (pre-pressure training artifacts):**
+- d=512 step24 + real heldout distribution, full mode: persistent_carry_rate=1.0, real_heldout_cases_used=4.
+
+**Analysis:**
+- The levers are now live in the exact place that controls slot selection and write during both inference and 5.56 rehearsal.
+- This gives us a direct, falsifiable knob for the core RI-4 hypothesis: "stronger training-time selectivity pressure → better carry degradation under ablation on real heldout cases → actual reasoning accuracy gain".
+
+**Updated Most-Deficient:**
+- Selectivity pressure levers in the router: introduced and wired.
+- Next highest-value: Run meaningful-length continuation with scheduled pressure (e.g. temperature decay from 1.5 → 0.6 + controlled Gumbel), then full 4-way real-heldout measurement matrix on the resulting checkpoints. Look for the first signal where ablations start to hurt carry or (ideally) reasoning proxy scores.
+
+**Artifacts:**
+- `src/qtrm_mm/memory/sparse_slot_router.py` (temperature + Gumbel levers + setters)
+- `scripts/train_hybrid_ri4_real_continuation_minimal.py` (args + wiring)
+- `scripts/measure_continuation_hybrid_192.py` (already had real-heldout support from previous cycle)
+- This section + previous real-heldout upgrade section
+
+**A-Mode note:** One coherent architectural lever addition (the missing selectivity control in the router) → tooling already ready → first pressure run launched. Direct attack on the named gap. Contract preserved.
+
+This is the disciplined continuation after the real-heldout measurement upgrade.
+
+---
+

@@ -72,6 +72,9 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--ri4_persistence_off", action="store_true")
     p.add_argument("--input_mode", type=str, default="gold_structured", choices=["random", "gold_structured"], help="Input generation mode for continuation (gold_structured = much more faithful to 5.56 rehearsal cases)")
     p.add_argument("--internal_ri4_primary", action="store_true", help="Attach the RI-4 router to the hybrid blocks themselves and use block return value as the primary slot carry mechanism (makes future measurement lighter and more self-contained; preserves exact 5.56 rehearsal logic)")
+    # === RI-4 Most-Deficient selectivity pressure levers (A-Mode target after width saturation) ===
+    p.add_argument("--router_temperature", type=float, default=1.0, help="Temperature for router scores ( <1 sharper selectivity, >1 softer exploration)")
+    p.add_argument("--gumbel_noise_std", type=float, default=0.0, help="Gumbel-style noise std for stochastic breadth in slot selection during training")
     args = p.parse_args()
 
     cfg = ContinuationConfig(
@@ -88,6 +91,8 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.ri4_sparse_slots_ablation = args.ri4_slots_off
     cfg.ri4_persistence_ablation = args.ri4_persistence_off
     cfg.internal_ri4_primary = args.internal_ri4_primary
+    cfg.router_temperature = args.router_temperature
+    cfg.gumbel_noise_std = args.gumbel_noise_std
     return cfg
 
 
@@ -151,6 +156,14 @@ def main():
                 layer._sparse_slot_enabled = True
                 layer._sparse_slot_ablation_zero = False
         print("[Internal RI-4 Primary] Router attached to hybrid blocks — carry will flow through block return value")
+
+    # Apply RI-4 selectivity pressure (the current Most-Deficient lever)
+    if router is not None:
+        router.set_temperature(
+            temperature=getattr(cfg, "router_temperature", 1.0),
+            gumbel_noise_std=getattr(cfg, "gumbel_noise_std", 0.0)
+        )
+        print(f"[RI-4 Selectivity] Router temperature={getattr(cfg, 'router_temperature', 1.0)} gumbel_std={getattr(cfg, 'gumbel_noise_std', 0.0)}")
 
     # Gold state (real 642 if provided) — exact same robust prep as the 160-step evidence run
     gold_state = None
