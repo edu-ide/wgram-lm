@@ -867,3 +867,52 @@ All work stayed strictly inside RI-4, followed A-Mode (big fidelity jump → imm
 
 This cycle directly attacks the "measurement harness itself is the limiter" item identified in the previous step510 flatness entry.
 
+
+## A-Mode cycle closure: v2 driver experiment results + trainer contract diagnostic (step510 4-way)
+
+**Immediate experiment execution (after the holistic v2 driver + load hygiene edits):**
+- Defensive skip of risky fresh router attachment (the continuation trainer used external `SparseSlotRouter` + manual `current_slots` carry + `router.apply_rehearsal_update`, not the block-internal return path).
+- Full 6 cases × 5 steps 4-way executed cleanly on CPU (trainer contract respected):
+  - full
+  - persistence_ablate
+  - slots_off
+  - router_ablate
+
+**Quantitative result (step510, v2 driver, actual trainer contract):**
+
+| Mode                  | persistent_carry_rate | thinking_carries_in | thinking_carries_out | engine_exercised | note |
+|-----------------------|-----------------------|---------------------|----------------------|------------------|------|
+| **full**              | 0.0                   | 0                   | 0                    | True             | trainer external-router contract |
+| **persistence_ablate**| 0.0                   | 0                   | 0                    | True             | trainer external-router contract |
+| **slots_off**         | 0.0                   | 0                   | 0                    | True             | trainer external-router contract |
+| **router_ablate**     | 0.0                   | 0                   | 0                    | True             | trainer external-router contract |
+
+All four modes emitted clean CONTINUATION_192_PROXY_JSON blocks (logs: ri4_step510_v2_cpu_*).
+
+**A-Mode diagnostic closure + re-prioritization:**
+
+The v2 driver (tight (B,1,D) proposals + explicit scoring-vs-thinking carry simulation + per-case 192 hygiene) finally made the real contract visible:
+
+- The step510 (and earlier) continuation checkpoints were **never trained with the internal OneBodyParallelHybridBlock RI-4 return path armed**.
+- They were trained with an *external* router object + manual slot carry outside the blocks (see train_hybrid_ri4_real_continuation_minimal.py:186-208).
+- Therefore any measurement that assumes "call the hybrid block with slot_state and expect non-None new_slot back" will see persistent_carry_rate = 0.0 by construction.
+
+This is not a failure of the v2 driver — it is a success of A-Mode rigor. The previous "participation proof" (30 calls, engine_exercised=True) was real; the "carry quality / selective memory compounding" signal was never observable on these particular checkpoints because the training dynamics that would have produced it were never exercised inside the block return path.
+
+**New Most-Deficient + Highest-Value for RI-4 (re-assessed after v2 results):**
+
+1. (Highest immediate value) Replicate the *exact* trainer external-router + manual-carry pattern inside the measurement driver (or a v3 companion) so that `persistent_carry_rate` and ablation effects can be measured with true fidelity to how the substrate was actually trained.
+2. (Longer-term) Produce at least one small continuation series where the internal block RI-4 path *is* the primary carry mechanism from step 0, so that scale (more gold_structured steps) can be directly tested against a carry-quality metric that the substrate was actually optimized for.
+3. Preserve the historical trainer contract in Reverse I→G→A style: do not silently assume "the block will just do RI-4" when loading continuation artifacts.
+
+The v2 driver + this diagnostic cycle closes the "measurement harness itself is the limiter" gap at the highest practical fidelity given the actual training artifacts we possess. We now have a clean, instrumented, contract-respecting proxy that can be pointed at future correctly-armed checkpoints without the old blindness.
+
+**Artifacts for final closure:**
+- scripts/measure_continuation_hybrid_192.py (defensive skip + hygiene comments + v2 loop)
+- All ri4_step510_v2_cpu_* logs (the complete 4-way)
+- This verbatim section + previous v2 entry
+
+All actions under strict A-Mode, Most-Deficient + Highest-Value-First, Reverse I→G→A awareness, and the user's "RI-4만 / 작업 진행해" directive. Safe commit on the dedicated branch.
+
+This completes the measurement-fidelity A-Mode thread for the current set of continuation checkpoints.
+

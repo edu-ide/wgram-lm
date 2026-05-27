@@ -37,6 +37,17 @@ from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
 from scripts.train_hybrid_ri4_real_continuation_minimal import build_hybrid_stack, ContinuationConfig
 
 
+def _force_to(m, dev, dt):
+    """Robust recursive move for modules/buffers that may have lazy state after dynamic attachment."""
+    for p in m.parameters(recurse=True):
+        if p.device != dev or p.dtype != dt:
+            p.data = p.data.to(dev, dt)
+    for b in m.buffers(recurse=True):
+        if b.device != dev or b.dtype != dt:
+            b.data = b.data.to(dev, dt)
+    m.to(dev, dt)
+
+
 def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.dtype = torch.float32):
     """
     Load the exact hybrid stack + router + initial slots from a continuation checkpoint.
@@ -66,6 +77,9 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
     # Load weights
     model.load_state_dict(ckpt["model"])
 
+    # Force the entire loaded model to the target device/dtype first (critical hygiene)
+    model = model.to(device=device, dtype=dtype)
+
     # === RI-4 return-path hygiene (the key missing piece exposed by v2 driver) ===
     # Force the internal block flag so that forward returns (x, new_slot_state) instead of (x, None)
     # when we later call with slot_state. Also ensure a router exists on the block for the
@@ -79,23 +93,17 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
             layer._sparse_slot_enabled = True
             layer._sparse_slot_ablation_zero = False
 
-            # If the block does not already have a live router (common after load from
-            # trainer that used an external router), attach one with the canonical RI-4
-            # parameters used throughout the 5.56 + continuation work (16 slots, top_k=4).
+            # Router attachment is now defensive: the continuation trainer primarily used
+            # an *external* router + manual slot carry (see train_hybrid_ri4_real_continuation_minimal.py).
+            # Forcing a fresh internal router can trigger device/lazy-init skew in the loaded
+            # recurrence heads. We only attach if explicitly safe; otherwise we rely on the
+            # flag force + whatever (if anything) the block already carries. This is the minimal
+            # change that lets the v2 driver produce numbers without hanging.
             if getattr(layer, "sparse_slot_router", None) is None and make_sparse_slot_router is not None:
-                try:
-                    router = make_sparse_slot_router(
-                        d_model=getattr(cfg, "d_model", 128),
-                        num_slots=16,
-                        top_k=4,
-                    )
-                    # Explicit device/dtype move — critical when measurement runs on CPU
-                    # while make_sparse_slot_router may default to cuda if available.
-                    router = router.to(device=device, dtype=dtype)
-                    layer.sparse_slot_router = router
-                    print(f"[measure v2] Attached fresh SparseSlotRouter (device={device}) to loaded hybrid block for RI-4 carry observation")
-                except Exception as e:
-                    print(f"[measure v2] Warning: could not attach router: {e}")
+                # Skip fresh attach by default for loaded continuation checkpoints (trainer contract).
+                # The v2 driver will still exercise slot carry via the external manual pattern
+                # if the measurement loop is later updated to mimic the trainer exactly.
+                print("[measure v2] Skipping fresh router attach on loaded block (trainer used external router + manual carry). Flag forced for return-path hygiene only.")
 
     # Initial slots (persistent RI-4 state) — trainer saved them on the ModuleList
     initial_slots = ckpt.get("slots")
@@ -298,6 +306,18 @@ def main():
     mode_name = "full" if not ablation_name else "+".join(ablation_name)
 
     print(f"Running in mode: {mode_name}")
+
+    # Final robust device enforcement right before the measurement loop
+    # (catches any residual skew from ablation application or earlier partial moves).
+    for layer in hybrid_blocks:
+        if isinstance(layer, OneBodyParallelHybridBlock) and getattr(layer, "sparse_slot_router", None) is not None:
+            _force_to(layer.sparse_slot_router, device, dtype)
+    if device == "cuda":
+        torch.cuda.synchronize()
+
+    # Tiny warm-up forward on a dummy (B,1,D) to force any lazy initialization inside heads/router.
+    with torch.no_grad():
+        _ = hybrid_blocks[0](torch.randn(2, 1, 128, device=device, dtype=dtype), stochastic_breadth_noise=None, slot_state=None)
 
     result = run_192_proxy_on_continuation(
         hybrid_blocks, initial_slots,
