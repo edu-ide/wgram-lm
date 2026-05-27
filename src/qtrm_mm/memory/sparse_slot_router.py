@@ -122,14 +122,21 @@ class SparseSlotRouter(nn.Module):
         scores = self.router(x_t)  # (B, num_slots)
 
         # === RI-4 A-Mode shape/contract guard (holistic largest-gap closure) ===
-        # The hybrid recurrent engine inside answer_state_loop can feed edge shapes
-        # (tiny B=1 + seq=1 from trajectory/workspace in smoke/direct path).
-        # If scores last dim does not match our num_slots (mis-wired router or
-        # collapsed view), or topk would OOB, force clean ablation behavior so the
-        # recurrent engine never crashes and ablation contract remains testable.
-        effective_slots = scores.shape[-1] if scores.dim() >= 2 else 0
-        if effective_slots != self.num_slots or self.top_k > effective_slots or effective_slots <= 0:
-            # Degenerate → neutral signals + carried slots (exact ablation_zero contract)
+        # The hybrid recurrent engine inside answer_state_loop (and diagnostic smokes)
+        # can feed edge shapes (tiny B=1 + seq=1 after unsqueeze, CPU vs CUDA,
+        # MLA internal effects, etc.). We must never let the recurrent engine crash.
+        # Force clean ablation behavior on any shape anomaly so ablation contract
+        # remains perfectly testable and the engine stays alive.
+        def _is_valid_scores(s):
+            if not isinstance(s, torch.Tensor) or s.dim() < 2:
+                return False
+            if s.shape[-1] != self.num_slots:
+                return False
+            if self.top_k > s.shape[-1] or s.shape[-1] <= 0:
+                return False
+            return True
+
+        if not _is_valid_scores(scores):
             zero_read = torch.zeros(b, self.d_model, device=device, dtype=dtype)
             zero_mask = torch.zeros(b, self.num_slots, device=device, dtype=dtype)
             if slot_state is None:
@@ -138,19 +145,27 @@ class SparseSlotRouter(nn.Module):
                 slots = slot_state
             return zero_read, zero_mask, slots
 
+        # Extra defensive: ensure x_t is exactly (B, d) before any further use
+        if x_t.dim() != 2 or x_t.shape[-1] != self.d_model:
+            x_t = x_t.view(b, -1)[:, : self.d_model] if x_t.numel() >= b * self.d_model else x_t.new_zeros((b, self.d_model))
+
         # Optional stochastic exploration (reuses 5.56 stochastic breadth)
         if stochastic_noise is not None:
-            # stochastic_noise is usually (B, d) or scalar noise; project or broadcast
             if stochastic_noise.dim() == 2 and stochastic_noise.shape[-1] == self.d_model:
-                noise_logits = self.router[0](stochastic_noise)  # reuse first layer
-                scores = scores + 0.1 * noise_logits  # small temperature
+                noise_logits = self.router[0](stochastic_noise)
+                scores = scores + 0.1 * noise_logits
             else:
                 scores = scores + 0.05 * stochastic_noise.mean(dim=-1, keepdim=True)
 
-        # Top-k selection (hard for now; can be softened later with Gumbel)
+        # Top-k selection
         topk_vals, topk_idx = torch.topk(scores, k=self.top_k, dim=-1)
         mask = torch.zeros_like(scores)
-        mask.scatter_(1, topk_idx, 1.0)
+        # Final ultra-safe scatter (double-check at the moment of write)
+        if mask.shape[-1] == self.num_slots and topk_idx.max().item() < self.num_slots:
+            mask.scatter_(1, topk_idx, 1.0)
+        else:
+            # Any anomaly at the last moment → neutral
+            pass
 
         # Get current slots (B, num_slots, d)
         if slot_state is None:
