@@ -490,6 +490,15 @@ class TorchGatedDeltaNet2MixerV2(nn.Module):
         self.norm = nn.LayerNorm(d_model)
 
     def forward(self, x: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        # RI-4 A-Mode robustness for hybrid recurrent engine:
+        # answer_state_loop does .unsqueeze(1) → (B, 1, D) for the recurrent proposal.
+        # Support 2D/3D inputs without breaking the unpack.
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        while x.dim() > 3:
+            x = x.squeeze(1)
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
         b, t, d = x.shape
 
         proj = self.in_proj(x)
@@ -573,6 +582,14 @@ def _add_sparse_slot_router_support(mixer_cls):
         use_sparse_slots: bool = False,
         slot_router: Optional["SparseSlotRouter"] = None,
     ) -> torch.Tensor:
+        # RI-4 A-Mode shape normalization (same as base mixer)
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        while x.dim() > 3:
+            x = x.squeeze(1)
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+
         if not use_sparse_slots or slot_router is None or SparseSlotRouter is None:
             return original_forward(self, x, attention_mask=attention_mask)
 

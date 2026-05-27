@@ -307,6 +307,19 @@ class OneBodyParallelHybridBlock(nn.Module):
         - Router read + selective rehearsal write with persistence happens on the carried state.
         """
         residual = x
+
+        # RI-4 A-Mode entry normalization for answer_state_loop recurrent engine use:
+        # The delegation site does .unsqueeze(1) to turn the recurrent proposal into (B, 1, D).
+        # Both recurrence and (especially official MLA) attention branches expect clean 3D.
+        # This single normalization guarantees the hybrid block always sees strict 3D input
+        # regardless of how answer_state_loop or diagnostics call it.
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        while x.dim() > 3:
+            x = x.squeeze(1)
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+
         x_norm = self.norm1(x)
 
         # --- RI-4: Early read from persistent carried slots + strong injection ---
