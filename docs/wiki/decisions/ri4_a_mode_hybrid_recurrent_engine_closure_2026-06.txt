@@ -739,7 +739,10 @@ All four runs used identical parameters on the step240 gold_structured continuat
 - No material difference in raw participation numbers yet under any of the three major RI-4 ablations at this step.
 - Scoring-phase slot carries are still not surfacing in the current synthetic proxy driver (this is a known limitation of the measurement harness, not necessarily a failure of the substrate).
 
-This gives us the cleanest head-to-head RI-4 ablation data at the highest continuation step achieved today. The fact that all ablated modes still drive the engine at similar intensity is a positive signal for the robustness of the hybrid+RI-4 design so far. Deeper causal comparison will require either richer scoring metrics or longer/more realistic delegation phases.
+This gives us the cleanest head-to-head RI-4 ablation data at the highest continuation step achieved today. The fact that all ablated modes still drive the engine at similar intensity is a positive signal for the robustness of the hybrid+RI-4 design so far.
+
+**Next RI-4 action launched (Most-Deficient move)**:
+From the step240 checkpoint, we launched another substantial continuation (+120 steps, targeting ~step360) using the same gold_structured + full RI-4 recipe. This directly attacks the longer-horizon gap at the current best width. When this run completes, we will re-run the 4-way measurement on the new highest checkpoint to see whether differences between full and ablated arms start to appear at higher steps.
 
 **Observation at step240**:
 Engine participation remains high across all three modes (30 calls in matched runs). No obvious degradation in call count yet under these two major RI-4 ablations at this step count. Scoring-phase carries are still not appearing in the current synthetic delegation driver (this is a known limitation of the proxy, not necessarily of the substrate).
