@@ -1105,3 +1105,44 @@ The internal-primary path + guards + measurement hygiene is now in excellent sha
 
 All under A-Mode, Most-Deficient prioritization, and RI-4 focus.
 
+
+## A-Mode cycle: Longer-thinking trajectory probe (4×8 steps) across internal-primary ladder + reference depths
+
+**Most-Deficient re-assessment (post 4×4 scout saturation):**
+- Previous 4×4 scout measurements on step360/510/516/528 all showed perfect persistent_carry_rate = 1.0 under the trained router contract.
+- This raised the question: Is the carry quality already maximal, or is the short 4-step thinking loop in the scout protocol simply not long enough to surface differentiation from additional gold_structured rehearsal (effective scale)?
+
+**Holistic one-move (immediate diagnostic):**
+- Ran matched longer-thinking experiments using the exact same v2 driver on the same four checkpoints, but with 4 cases × 8 thinking steps (double the previous thinking depth).
+- Protocol: --num_cases 4 --steps_per_case 8 (full mode only, for speed and clarity).
+
+**Immediate rigorous experiment results:**
+
+| Checkpoint | Steps of continuation (approx from 360) | Thinking steps per case | persistent_carry_rate | thinking_carries (in/out) | wall_time |
+|------------|-----------------------------------------|-------------------------|-----------------------|---------------------------|-----------|
+| step360    | baseline                                | 8                       | 1.0                   | 28/28                     | 0.06s     |
+| step510    | +150                                    | 8                       | 1.0                   | 28/28                     | 0.07s     |
+| step516    | +156 (internal-primary start)           | 8                       | 1.0                   | 28/28                     | 0.06s     |
+| step528    | +168 (internal-primary +12)             | 8                       | 1.0                   | 28/28                     | 0.06s     |
+
+All runs used the faithful trained-router loading path (or attached router for internal-primary checkpoints).
+
+**A-Mode diagnostic + re-prioritization:**
+- Even with doubled thinking trajectory length (8 steps per case), carry persistence remains perfect (1.0) at every depth tested.
+- No measurable degradation or improvement in carry_rate from the additional ~168 steps of gold_structured 5.56 rehearsal in this experimental setup.
+- This is strong evidence that, under the current d=128 + trained router + 5.56 gold_structured recipe, selective memory carry is highly robust and saturates very early.
+- The "effective scale improves carry quality" hypothesis does not produce observable signal in the current v2 driver + these depths + this measurement protocol.
+
+**Updated Most-Deficient (Highest-Value, now sharply focused):**
+1. Test even more extreme thinking depths (e.g. 4 cases × 16–20 steps) or increase num_cases significantly on the same checkpoints — to see if any drop or differentiation finally appears at much longer recurrent horizons.
+2. Run full 4-way ablations (full / persistence_ablate / slots_off / router_ablate) with the longer 4×8 (or longer) protocol on at least one internal-primary checkpoint to see if any ablation now produces measurable degradation in carry persistence.
+3. If the above still show saturation, treat RI-4 carry quality as "solved / maximal" at this scale and re-evaluate the overall RI-1~RI-7 priority map (shift focus to other pillars or larger-scale experiments).
+
+The longer-thinking probe was a clean, low-cost A-Mode experiment that delivered clear negative evidence on the current scale hypothesis. The internal-primary substrate + v2 driver tooling is now mature enough to make such diagnostic probes fast and reliable.
+
+**Artifacts:**
+- Four new longer-thinking logs (step360/510/516/528 with 4×8)
+- This verbatim section
+
+All actions under strict A-Mode (one coherent longer-thinking probe → immediate matched experiments across the ladder → clear result → re-prioritization), Most-Deficient + Highest-Value-First, and the user's "RI-4만 / 작업 진행해" directive. Safe execution and commit on the dedicated branch.
+
