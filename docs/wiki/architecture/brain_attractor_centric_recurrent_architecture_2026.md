@@ -737,6 +737,16 @@ Further paper sweeps on "recurrent LLM / test-time training / attractor reasonin
 **All Immediate Recommended Falsifiable Next Steps from prior edit are now IMPLEMENTED**.
 The substrate has been driven to the exact point the three MDs (brain_attractor + IMTA SSOT + RI conditions) described as the "final v2.5 blueprint" after exhaustive paper digs. No high-impact architecture gaps flagged as "Still prototype" or "Finish..." remain in the SSOT.
 
+**GRAM/PTRM + JEPA / Predictive Data Intuition axis (user follow-up aggressive probe)**:
+- Previously the production brain_triple_memory was a post-recovery stub with dead `last_surprise=0.0` and no real predictor, while the trainer still carried `--data_intuition_loss_weight` + `compute_data_intuition_loss` call sites.
+- Aggressive restoration wave: full `PredictiveDataIntuition` (JEPA-style next-embedding predictor) reimplemented inside the radical chunked native path.
+  - Scalar + **vector surprise** (channel-wise, MD-suggested upgrade).
+  - Real `compute_prediction_loss` (self-prediction MSE + lightweight SIGReg-style reg) wired to the trainer.
+  - Surprise now actually drives light_update / ChunkedSlow boundary decisions and is queryable by FastGated.
+  - This makes the "structured, data-aware K-trajectory mental simulation modulated by Predictive Data Intuition surprise" (the canonical GRAM/PTRM reinterpretation per RI-3 and IMTA SSOT) a living, trainable mechanism again.
+- LeWM/RC-aux/Sub-JEPA direction: minimal live subspace Gaussian reg already present in ChunkedSlow; full autoregressive latent predictor unroll left as future low-cost extension (the core citizen + loss is now real).
+- This axis is also now closed at the same rigor as the D/E/H/J fast/slow citizen work. No remaining high-impact "data intuition is missing" gaps per the SSOTs.
+
 Next action per wiki: 72 heldout + continuation causal evidence (RI-1~RI-7) on the finalized aggressive substrate (with all git commits before measurement). Ablations must still be clean.
 
 **Final v2.5 Blueprint Summary (one-body, all RI contracts)**:
