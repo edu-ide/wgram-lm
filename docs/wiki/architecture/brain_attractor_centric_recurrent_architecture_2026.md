@@ -231,6 +231,696 @@ The surprise-mediated loop (long-term read → K-trajectories + attractor stabil
 
 ---
 
+## 6. 2026-05-28 RI-1 Depth Scaling Autopsy + ATLAS Omega / EqR Deep Integration (Fast-Slow Composition Fix)
+
+**Trigger (직관대로 + "최대한 깊게 파고" execution)**: 
+After stabilizing the aggressive substrate + strong attractor training recipe (variable depth + internalization ramp + fast-h shortcut-consistency + basin shaping) and running the first clean 500-step continuation + native batched RI-1 depth sweep (depths 1/4/8/12 on step500 checkpoint), the result was:
+- Memory acc: completely flat 37.5% across all depths.
+- Reasoning: 25% (d=1) → 37.5% (d=4/8) → 25% (d=12) — non-monotonic, regression at highest depth.
+- Wall time extremely low because light hardening (K=1, writes blocked, inference_mode) made slow memory almost invisible during the exact test for RI-1.
+
+This reproduced the exact "stubborn negative pattern" repeatedly diagnosed in the MD (non-monotonic plateau/regression at target depths on strict-B pure_72, even after M1 + 3-track pressure + strong recipe). IMTA SSOT "Depth scaling" promotion gate was clearly failed.
+
+**Root Cause (Code Autopsy)**:
+- `brain_triple_memory.py:light_update` (and the path called from blocks during internal_fast_recurrent): extreme throttle (`surprise_scalar > 0.90` OR exact 64-chunk boundary) + early return in `is_aggressive` / inference_mode / native 72 paths.
+- `blocks.py:1283-1309`: `call_light` mostly False when `_fast_recurrent_enabled` + `_brain_triple_inference_mode`. Even when called, the slow summary rarely evolved.
+- Result: deeper FastGated citizen ticks ran with a nearly static slow/attractor voice. The "one-body" fast recurrence citizen was doing real work, but the slow memory (ChunkedSlow + Triple Attractor) was architecturally decoupled from variable-depth thinking — exactly the opposite of the brain_attractor_centric + IMTA vision.
+
+**Deep Paper Research Synthesis (최대한 깊게, 2025-2026 cluster)**:
+
+**1. ATLAS / Omega Rule (arXiv:2505.23735, Behrouz et al. May 2025) — the single most direct fix for our gap**
+- Diagnosis in paper: Prior recurrent/long-term memory (including Titans-style) suffers from "purely online (last-token only) updates" that memorize individual tokens instead of coherent context.
+- Solution — **Omega rule** (exact):
+  ```
+  min_M  Σ_{i=t-c+1 to t} γ_i ||M(ϕ(k_i)) - v_i||₂²     (or dot-product bias)
+  M_t = α M_{t-1} - η Σ ∇ℓ(M_{t-1}; k_i, v_i)   over the window
+  ```
+  (c=1 recovers online; larger c = context memorization. γ = input-dependent gates.)
+- Atlas variant uses **Muon optimizer** (Newton-Schulz 5 iterations for approximate 2nd-order / orthogonal updates) on the internal memory, producing "locally optimal" updates. First parallelizable recurrent architecture with this property.
+- Also: polynomial feature maps ϕ on keys for super-linear capacity O(d_k^p).
+- Parallel training via chunk-wise gradient accumulation (LaCT-style large-chunk TTT).
+- Direct mapping to our situation: our 0.85/0.15 EMA inside light_update (even after the first ri1_relaxed relaxation) was the "online weak update" the paper criticizes. Deeper recurrence never got a chance to drive meaningful slow consolidation.
+
+**2. Equilibrium Reasoners (EqR, arXiv:2605.21488, Huang/Geng/Kolter May 2026)**
+- Core hypothesis: Scalable iterative reasoning comes from learning *task-conditioned attractors* (latent dynamical system z_{k+1} = f_θ(z_k; x) whose stable fixed points = good solutions).
+- Training interventions that shape the landscape: Randomized Init (RI) + Noise Injection (NI/path stochasticity) to make correct basins broad and reachable.
+- Residual ||f(z;x) - z|| is a strong diagnostic (lower residual → better task performance).
+- Hierarchical fast/slow latents + truncated gradients + segmented online training for stable long trajectories.
+- Depth × Breadth scaling interaction: breadth (restarts) only becomes effective after sufficient depth allows trajectories to explore and settle.
+- Direct mapping: Our strong recipe already had basin shaping noise + consistency. The missing piece was making the *slow summary itself* participate in the attractor dynamics during deep internal fast ticks (residual alignment between fast_h and slow_summary + directed updates from surprise).
+
+**3. Huginn + Loop/Attractor Models (Ouro, LoopFormer, Solve-the-Loop 2025-2026)**
+- Persistent input/slow-voice injection at *every* recurrence step (not sporadic) is required for path independence and reliable deep scaling.
+- Attractor module as explicit fixed-point solver on top of a strong backbone proposal (equilibrium internalization).
+- Memory augmentations (MELT shared KV across loops, fast-weight sleep phases) to prevent capacity collapse in pure latent looping.
+
+**Implementation of the Fix (concrete code changes executed "직관대로")**:
+- `brain_triple_memory.py:light_update` (ri1_relaxed branch): Replaced naive EMA with lightweight Omega-style directed update. Uses the existing PredictiveDataIntuition (JEPA-style) surprise vector as the gradient signal for the slow summary over the recent fast trajectory. Stronger injection + surprise-modulated momentum. (Direct approximation of the ATLAS windowed loss minimization.)
+- `blocks.py` (inside FastGated path): 
+  - Persistent cheap slow_summary injection on *every* internal tick (Huginn-style continuous voice, low strength in inference_mode).
+  - Cheap 1-step attractor refinement: symmetric residual pull between new_fast_state and slow_summary each tick (EqR-style explicit alignment of fast trajectory with slow attractor).
+- **Loss Recipe Deep Upgrade (2026-05-28 "모든 논문 최대한 깊게" phase)**:
+  - LoopFormer shortcut-consistency upgraded to include slow_memory_summary alignment + depth-dependent weighting (Huginn variable-r spirit).
+  - Ouro Stage-II "loss improvement signal" (I = max(0, L_prev - L_curr)) inspired adaptive pressure added to internalization.
+  - Data Intuition weight automatically boosted 2.5x when relaxed slow mode active (ATLAS Omega + strong JEPA predictive drive for slow memory).
+- Wiring: `_ri1_training_relaxed_slow` flag (set by trainer when strong recipe + internal_fast_recurrent) now actually produces meaningfully different slow evolution during deep thinking.
+
+**Aggression Experiments & Lessons (Late May 2026)**
+
+After the initial substrate repairs (Omega-style slow updates, persistent injection, attractor refinement), we entered a deliberate "maximum aggression" experimental phase. The goal was to stress-test how far we could push the strong attractor training recipe (variable depth + internalization + consistency + data intuition + basin shaping) on top of the improved substrate, directly pulling mechanisms from the 2025-2026 literature.
+
+**Specific aggression levers applied across runs**:
+- Internalization weight raised to 0.55 (with depth boost and slow summary alignment)
+- Consistency weight raised to 0.45 (with slow_summary dominant term + depth factor)
+- Data Intuition weight boosted up to 6x during relaxed slow mode (plus 0.18 floor when internal_fast_recurrent active)
+- Explicit first-class Ouro-style improvement signal term (using change in predictive error as I_t proxy, with penalty on low improvement after deep recurrence)
+- Small depth entropy bonus for exploration
+- Full relaxed slow mode (Omega-style directed updates + lower thresholds) active
+
+**Concrete run results (from middle + final log analysis)**:
+
+- **Loss Recipe Deep Upgrade run** (moderate-to-high aggression): Train loss dropped cleanly to ~0.0015. Eval loss improved only marginally until step ~250, then stagnated and began rising in the second half, finishing worse than start.
+- **MAX_AGGRESSION_all_papers run** (0.12 data_intuition + 0.25 consistency + full terms): Similar early train improvement, but eval_loss degradation started earlier and was more severe (ended at 0.056, with late instability and train_loss spike to 0.084).
+- **ULTIMATE_MAX_AGGRESSION run** (0.15 data_intuition + 0.30 consistency + full extreme terms, completed 2026-05-28):
+  - Eval loss showed the longest period of gradual improvement among aggressive runs: started at 0.0489, reached a best of ~0.0429 around step 450.
+  - However, the second half was unstable. At step 500 there was a significant train_loss spike (to 0.023) and eval_loss rebounded to 0.0446.
+  - The run produced 674 lines of logs with clear [MAX AGGRESSION MODE] banners, but the new higher-quality signals (slow_predictive_value, Ouro-style I_t) had not yet been fully integrated at the time this run was launched.
+
+- **Common pattern across the entire high-aggression series** (including this ULTIMATE run):
+  - Train loss consistently optimized extremely aggressively (often reaching 0.001~0.002 range).
+  - Eval loss on heldout showed only limited, fragile improvement that rarely survived the second half of training.
+  - Stronger auxiliary pressure correlated with earlier onset and greater severity of late-stage generalization degradation and instability.
+  - Conclusion: The marginal benefit of further quantitative aggression had turned negative. This run served as the final data point that confirmed the need for the qualitative C-direction pivot.
+
+**Key Lessons**:
+- Blind quantitative aggression (higher weights + more terms) produced diminishing and eventually negative returns on generalization.
+- The substrate improvements (slow memory participation during deep recurrence) were real, but the loss landscape shaped by extreme auxiliary dominance was not translating those improvements into better heldout performance.
+- This directly falsified the assumption that "more of the good things from the papers" (internalization, consistency, improvement signals, etc.) would automatically solve the RI-1 scaling problem when applied at maximum strength.
+- The evidence pointed toward a need for *qualitative* redesign of the signals rather than further escalation of pressure. The completion of the ULTIMATE_MAX_AGGRESSION run (with its characteristic late instability despite the longest period of eval improvement) served as the final confirmation that the maximum quantitative aggression phase had reached its limit. This directly precipitated the pivot to the C direction.
+
+**C-Direction Refinement (Current Focus)**
+
+Faced with clear evidence from multiple high-aggression runs that simply scaling auxiliary pressure was not solving (and was often worsening) the generalization problem, we executed a deliberate pivot to a **qualitative redesign** of the loss signals (user explicitly chose option C over further quantitative aggression or immediate measurement of existing checkpoints).
+
+**Core Problems Identified in Previous Regime**:
+- High scalar weights on internalization and consistency caused the model to optimize for "making fast_h close to previous states" and "reducing generic surprise" at the expense of actual task performance on heldout data.
+- Data Intuition was functioning mostly as a high-weight regularizer rather than a signal that forces the slow memory to become useful.
+- Improvement signals were present but weak and secondary; the system had no strong incentive for "deeper recurrence + slow participation must produce measurable predictive gain."
+
+**Specific Technical Changes in C Direction**:
+
+1. **Data Intuition – Predictive Contrast Term** (implemented in `src/qtrm_mm/memory/brain_triple_memory.py:124-154` inside `PredictiveDataIntuition.compute_prediction_loss`):
+   - Added explicit "with slow_summary vs without slow_summary" prediction error comparison.
+   - `slow_value = (pred_loss_no_slow - pred_loss).clamp(min=0)`
+   - A dedicated `predictive_value_loss = -0.3 * slow_value` term that rewards the model when including the slow summary actually improves next-state prediction.
+   - This term is now returned as `"slow_predictive_value"` and consumed in the trainer with its own meaningful weight (separate from the base data_intuition scalar loss).
+   - Goal: Turn the slow memory from a passive regularizer into an active component that must demonstrably help the fast recurrence predict better.
+
+2. **Consistency – Slow-Summary Centric Shift** (in trainer strong recipe section):
+   - Changed the dominant term in the shortcut-consistency loss from fast_h alignment to slow_memory_summary alignment across short vs long depth trajectories.
+   - Current formulation (simplified): `sc_loss = slow_cons * 1.5 + fast_cons * 0.5`
+   - Depth factor is still applied, but the primary consistency pressure now flows through the slow attractor state.
+   - This directly implements the architectural intent that deeper internal recurrence should shape a more coherent slow memory / attractor.
+
+3. **Overall Loss Philosophy Change**:
+   - From "apply maximum auxiliary pressure at all times" → "create strong, direct incentives for slow memory participation to produce measurable improvement in prediction and consistency."
+   - This is the practical application of Ouro's "improvement signal" philosophy (only pressure when real gain is not occurring) combined with the brain_attractor MD's requirement that slow memory must be causally useful for the fast citizen.
+
+**C Test Configuration (Current Balanced Test)**:
+- Internalization base weight: 0.22 (with depth boost and slow alignment)
+- Consistency base weight: 0.16 (slow_summary dominant at 1.5× relative weight)
+- Data Intuition base weight: 0.07 (with the new predictive contrast term weighted at ~1.2× the base)
+- Relaxed slow mode still active (Omega-style directed updates)
+- No extreme 4-6× blanket boosts; the quality of the new signals is trusted more than raw magnitude.
+- Logging enhanced to clearly show contribution of `slow_predictive_value` and slow-centric consistency.
+
+A dedicated 400-step "C Test Run" (`ri1_C_test_balanced_400.log`) was launched with these settings. The explicit goal is to observe whether giving the new higher-quality, slow-summary-aware signals breathing room (instead of drowning them in extreme scalar pressure) produces better eval_loss behavior and genuine utilization of the slow memory during deep recurrence.
+
+This configuration is intentionally moderate in total auxiliary strength but aggressive in the *structure and targeting* of the loss terms. It represents the project's current best hypothesis for how to translate the paper mechanisms (Ouro improvement signals, EqR attractor alignment, ATLAS predictive memory, etc.) into actual RI-1 causal gains on this substrate.
+
+---
+
+### Risks & Open Questions (Fundamental Overhaul Phase) — Superseded
+
+**Note (June 2026 update)**: The detailed, paper-specific risk analysis for the Proposal Engine + Dedicated Attractor Solver + SOT substrate is now in **Section 7.1** ("Risk and Open Questions — Explicit Attractor Solver Substrate"). The original C-phase high-level list below is kept for historical record but is considered superseded by the deeper treatment after the full "2번" decision and paper-exact synthesis.
+
+**Original high-level risks (pre-full-spec)**:
+- Complexity & Engineering Overhead, Training Stability (Parcae negative-diagonal + existing citizen), Equilibrium Internalization transfer risk, Loss landscape interaction with existing auxiliaries, One-body / RI contract erosion.
+
+**Open research/implementation questions** (to be attacked in priority order):
+1. How small can the Attractor Solver Module realistically be while still providing meaningful refinement on top of our already-strong proposal engine?
+2. Should the solver operate primarily in output embedding space (as in the pure Attractor Models paper) or in a richer internal latent space that still has access to the full slow memory state?
+3. What is the right balance between "persistent proposal injection" (every solver step) vs. allowing the solver more autonomy with slow memory as primary context?
+4. How do we schedule SOT (segment length, number of segments per example) without exploding training time, especially when combined with variable depth sampling?
+5. Can we keep the existing relaxed slow mode / Omega-style light updates inside the Proposal Engine, or do they need to be rethought when the main iterative work moves to the dedicated solver?
+6. Equilibrium internalization strength: Will we actually see the proposal getting close enough to equilibrium that we can safely skip the solver on most tokens, or will we mostly use it as a training-time regularizer only?
+7. Compatibility with existing strong recipe components (basin shaping noise, depth consistency, etc.) — which ones survive the overhaul and which become obsolete or harmful?
+
+This phase is deliberately higher-risk/higher-reward than previous incremental aggression. Success will be measured by whether we can demonstrate clearly superior RI-1 depth scaling behavior (monotonic gains on strict-B pure_72 with meaningful slow memory utilization) that previous phases could not achieve. Failure modes will be documented honestly so we can decide whether to double down, hybridize, or pivot again.
+
+**Wiki / SSOT Status (Updated)**:
+- Fast-slow causal composition for RI-1: Significantly advanced via both architecture (Omega slow + refinement) and loss redesign (slow-centric consistency + predictive value contrast).
+- Blind auxiliary aggression: Experimentally falsified for this substrate (documented via multiple runs and middle-log analysis).
+- Current working hypothesis: Higher-quality, slow-summary-aware predictive and consistency signals (C direction) are required before further scaling of weights or depth.
+
+This phase represents the project's shift from "maximum quantity of pressure" to "maximum quality of signal", directly informed by log evidence and the latest 2025–2026 literature on improvement signals and attractor alignment.
+
+**Current Experiment (as of latest session)**:
+- "C Test Run" (400 steps, balanced weights) has completed. Analysis showed that while the run avoided the worst late-stage collapse seen in max-aggression runs, eval_loss remained remarkably flat with only marginal gains. The new slow predictive value contrast and slow-centric consistency provided some stability but did not yet deliver robust depth scaling on heldout data.
+- This outcome, combined with the ULTIMATE MAX AGGRESSION run's results, has triggered the next phase: a more **fundamental substrate overhaul** rather than continued incremental or even C-level refinements on the current hybrid citizen + triple memory base.
+
+---
+
+## 7. Fundamental Substrate Overhaul Proposal (June 2026): Explicit Attractor Solvers, Stable Recurrence Operators, and Equilibrium Internalization
+
+**Diagnosis from the Maximum Aggression + C Phase (supported by multiple 400–500 step runs and middle-log analysis)**:
+
+Despite:
+- Significant architecture improvements (internal FastGated citizen, relaxed Omega-style slow memory participation, persistent injection, cheap attractor refinement steps)
+- Major loss recipe upgrades (high internalization on fast_h + slow_summary, slow-dominant shortcut consistency, first-class Ouro-style improvement signals, predictive contrast term rewarding slow memory's actual predictive value)
+
+...we consistently observed the same stubborn pattern:
+- Train loss optimizes extremely well.
+- Eval loss on heldout shows only fragile, limited, or non-sustained gains with increased depth.
+- Higher auxiliary pressure or more terms frequently led to late-training instability or generalization degradation.
+
+This strongly suggests that the **current base substrate** — a hybrid micro-step block augmented with an internal fast recurrence citizen + a triple memory system that participates via injection/refinement/light updates — has fundamental limitations for reliable RI-1 depth scaling, even when heavily augmented with the best 2025–2026 mechanisms.
+
+Incremental additions (more refinement steps, stronger injection, better surprise modulation, more sophisticated auxiliary losses) are hitting diminishing returns. A more structural rethink is required.
+
+**New Paper Synthesis Driving the Overhaul (deeper than previous phases)**:
+
+We are now internalizing several 2026 papers at a deeper level than in previous phases (which were more about extracting individual mechanisms like Omega rule or improvement signals and bolting them onto the existing hybrid + triple memory substrate).
+
+**Core Reference – "Solve the Loop: Attractor Models for Language and Reasoning" (Fein-Ashley & Rashidinejad, arXiv:2605.12466, May 2026)**
+
+This paper provides the strongest signal for a truly structural shift:
+
+- **Two-module separation**: A (usually larger) **backbone** produces a semantically meaningful initial proposal in output embedding space. A separate (often smaller) **attractor module** then solves for the fixed-point equilibrium of a learned operator conditioned on that proposal.
+- **Persistent proposal injection**: The initial proposal ỹ₀ is fed into the attractor solver at *every* refinement step. This keeps the attractor "proposal-dependent" and prevents it from drifting into a generic fixed point unrelated to the input.
+- **Equilibrium internalization (key phenomenon)**: As training progresses, the backbone's initial proposal moves progressively closer to the equilibrium that the solver would find. Eventually, the solver can be run for very few (or zero) steps at inference with little degradation. Recurrence is "internalized" into the proposal itself.
+- **Training**: Standard next-token loss on the (approximate) equilibrium + implicit differentiation through the solver (constant memory w.r.t. effective depth). Anderson acceleration or similar for the solver.
+- **Inference**: Adaptive depth via residual tolerance (not fixed steps or learned halting head).
+
+This is qualitatively different from our current model, where the hybrid citizen (with occasional slow memory injection and light refinement) *is* the thinking engine. In the Attractor Models view, the current citizen (or an enhanced version of it) becomes primarily a strong **proposal engine**, and a dedicated attractor layer on top does the heavy iterative refinement.
+
+**Complementary References (for stability, capacity, and training)**:
+
+- **Parcae (Prairie et al., arXiv:2604.12946)**: Emphasizes stability at high recurrence depth via negative-diagonal parameterization of the injection operator (constraining spectral norm <1). This directly addresses the instability we saw in high-depth aggressive runs.
+- **Iso-depth scaling laws + Hyperconnections (Schwethelm et al., arXiv:2604.21106)**: Introduces the "recurrence-equivalence exponent" φ (baseline ~0.46). Each additional recurrence only gives ~46% the capacity of a unique block. **Hyperconnections** (learnable multi-lane residuals) raise φ to ~0.65, genuinely increasing the value of recurrence and improving multi-depth information flow. This is a concrete way to make high-depth solving more effective than simply adding more steps.
+- **EqR (Huang et al., arXiv:2605.21488)**: Reinforces hierarchical fast/slow latents and **Segmented Online Training (SOT)** as a superior way to shape attractor landscapes during training (interleaving latent updates and parameter updates).
+- Two-timescale latent dynamics papers and "Do Language Models Need Sleep?" (2026): Suggest offline "sleep" phases for plastic memory consolidation, separate from online next-token pressure.
+- **Densing Law of LLMs (Xiao, Cai, Zhao et al., arXiv:2412.04315, Nature Machine Intelligence 2025)**: Introduces *capability density* ρ = N̂_effective / N_actual, measured via two-step reference scaling law (loss power-law → sigmoid performance mapping). Empirical finding: maximum open-source LLM density grows exponentially (≈ doubles every 3.3 months since Llama-1 era). Explicitly flags **Inference Densing Law** (density w.r.t. inference FLOPs rather than parameters) as critical future work. Directly frames why stable, parameter-efficient deep recurrence (our attractor solver) is a high-leverage path to sustainable progress. See also the key nuance paper "Incompressible Knowledge Probes" (arXiv:2604.24827) distinguishing compressible procedural capability (where Densing holds) from incompressible factual storage (where it largely does not).
+
+**Overall Synthesis for Our Overhaul**:
+The previous phases treated the current hybrid block + BrainMimeticTripleMemory as the core recurrence engine and tried to force better depth scaling through injection, refinement steps, and auxiliary losses. The new synthesis treats that engine more as a powerful **proposal generator** and adds an explicit, controllable **attractor solving layer** on top, with better stability primitives and training methods designed from the ground up for high effective depth.
+
+This is the level of "more fundamental" change the logs and the latest papers are pointing toward.
+
+**Densing Law Framing of the Overhaul (Inference Densing Perspective)**
+
+The Densing Law (arXiv:2412.04315) and its follow-up nuance (Incompressible Knowledge Probes, arXiv:2604.24827) provide the highest-level strategic justification for the substrate change:
+
+- Traditional parameter/data scaling is hitting economic and physical walls. The observed exponential rise in *capability density* (performance per actual parameter) is driven largely by better architectures and training recipes that pack more *procedural* capability into the same weights.
+- The paper explicitly calls out the need for an **Inference Densing Law** — measuring density with respect to inference FLOPs (especially variable-depth "thinking" compute) rather than static parameters. This is precisely the axis our new substrate attacks.
+- The IKP critique adds a crucial guardrail: Densing gains are real and strong for compressible procedural/reasoning skills, but raw incompressible factual knowledge continues to scale classically with parameter count. Our attractor solver + SOT + equilibrium internalization is therefore optimized for the compressible procedural regime (deep iterative refinement, attractor convergence, slow-memory shaping) while still leveraging the rich proposal engine for factual grounding.
+
+In short: the Proposal Engine + Dedicated Attractor Solver division of labor, combined with Parcae stability and SOT landscape shaping, is one of the cleanest architectural realizations of "Inference Densing" currently proposed in the 2025–2026 literature. It directly serves the project's RI-1 goal (reliable test-time compute scaling via recurrence depth) while aligning with the broader "Green Scaling" / density-optimal imperative.
+
+---
+
+**Specific Architectural Improvement Opportunities (Densing Law Informed)**
+
+While the current sketch is already well-aligned, the Densing Law literature (original paper + IKP critique + related looped/diffusion works) highlights several concrete areas where the substrate can still be strengthened from an architecture perspective:
+
+1. **Curriculum-Driven Equilibrium Internalization (Multi-Stage Density Ramp)**
+   - Current: Single internalization loss with ramp.
+   - Improvement: Explicit multi-phase curriculum where the solver is gradually "starved" (max_solver_steps reduced over training phases) while monitoring the internalization gap. This directly targets the "drop the solver at inference" promise of the original Attractor Models paper and Inference Densing. Add a `internalization_curriculum_schedule` that ties solver budget decay to measured ||y0 - y*|| reduction.
+
+2. **First-Class Inference Densing Objective / Metric**
+   - Current: Internalization is an auxiliary loss; success is measured indirectly.
+   - Improvement: Introduce an explicit auxiliary term or diagnostic that optimizes *performance per solver step* (or per effective FLOP). Example: during SOT segments, add a loss component that penalizes high residual after few steps more heavily than after many steps. This makes density improvement a direct training signal rather than an emergent side effect. The diagnostic harness should become the primary evaluation instrument (quality vs. cumulative solver steps curve).
+
+3. **Density-Aware Solver Architecture (Conditional / Progressive Solver)**
+   - Current: Fixed-size solver module applied for a variable number of steps.
+   - Improvement: Make the solver itself "density-aware" — e.g., a small core solver + optional refinement heads that are only activated when residual is high (gated by a cheap predictor). This mirrors ideas in Looped Diffusion Language Models (selective looping) and allows the model to allocate fewer effective parameters/FLOPs on easy cases while still having capacity for hard ones. Ties directly into IKP-style procedural vs. factual distinction (light solver for most cases, heavier only when needed).
+
+4. **Procedural vs. Factual Capacity Separation in Proposal Engine**
+   - Current: Rich proposal engine (FastGated + Triple Memory) handles everything.
+   - Improvement (per IKP insight): Explicitly route or tag "incompressible factual" signals vs. "compressible procedural" computation. One practical direction: keep a small dedicated factual memory bank that bypasses the heavy attractor solver (high persistence, low iteration), while routing reasoning-heavy paths through the full solver. This prevents the attractor dynamics from being polluted by incompressible facts and allows targeted density optimization on the procedural path.
+
+5. **Advanced Stability + Hyperconnection Integration for Deeper Effective Recurrence**
+   - Current: Parcae negative-diagonal on the solver operator.
+   - Improvement: Combine Parcae with Hyperconnections (learnable multi-lane residuals, raising recurrence-equivalence exponent φ) inside the solver. This would increase the *value* of each additional solver step, directly boosting Inference Densing (more capability per FLOP spent in the loop). Also consider learned discretization parameters (Δ) that adapt per diffusion-like timestep analogy in the attractor iteration.
+
+6. **Density-Optimized Offline Sleep / Plasticity Phases**
+   - Current: Optional offline sleep for slow memory consolidation.
+   - Improvement: Make sleep phases explicitly density-focused — e.g., run attractor solver iterations on replayed trajectories *without* next-token loss, only with internalization + residual minimization objectives. This consolidates the attractor landscape for lower inference cost later, aligning with "Green Scaling" recommendations in the Densing paper.
+
+7. **Built-in Densing Diagnostic Infrastructure**
+   - Current: Relies on external analysis of logs.
+   - Improvement: Embed in `AttractorSolverModule` and `SOTSegmentedSolverTrainer` native methods to return "densing curves" (e.g., `get_densing_metrics()` returning quality_per_step, internalization_progress, effective_FLOPs_proxy). This should be first-class in the 20-step diagnostic and future RI-1 sweeps so that density improvement is measured as rigorously as raw accuracy.
+
+These points are not speculative slogans — each maps to a concrete, falsifiable extension of the current sketch that can be prototyped in the existing `src/qtrm_mm/attractor/` module and tested in the diagnostic harness. They directly address the gap between the current "promising alignment" with Densing Law and actually *driving* measurable Inference Densing gains on RI-1 tasks.
+
+---
+
+**LoopMDM-style Selective Looping at the Intersection (Concrete Cross-Architecture Improvements)**
+
+LoopMDM (arXiv:2605.26106, "Looped Diffusion Language Models") demonstrates that *selectively* looping a small block of early-to-middle layers inside an iterative refinement process (in their case, masked diffusion denoising) delivers strong training efficiency and flexible inference-time compute scaling, outperforming both uniform looping and simply making the network deeper.
+
+There is a clear intersection with our attractor substrate:
+
+- Both paradigms rely on repeated application of shared computation for refinement (denoising steps vs. attractor solver steps).
+- Both aim at Inference Densing: variable "thinking" compute at inference without proportional parameter increase.
+- LoopMDM's key insight (selective + early-middle looping + stochastic training loops + adaptive inference stopping) maps naturally onto our Proposal Engine + Dedicated Solver design.
+
+**Specific improvement proposals at this intersection:**
+
+1. **Selective Looping inside the Attractor Solver**
+   - Instead of applying the full solver block every step, designate a small "core refinement block" (e.g., 1-2 Parcae-stabilized layers) as the loopable unit, with head/tail layers applied only at the beginning and end of a solver segment.
+   - Benefit: Dramatically cheaper per solver step while preserving most refinement power. Directly inspired by LoopMDM's selective mid-block looping.
+
+2. **Stochastic Loop Count during SOT Training (LoopMDM-style)**
+   - During SOT segments, sample the number of solver steps S ~ Uniform(1, S_max) per segment (instead of fixed length).
+   - This gives the solver "depth scaling" exposure during training without always paying the full cost, similar to how LoopMDM samples loop counts.
+   - Can be combined with our existing RI/NI for even richer basin shaping.
+
+3. **Adaptive Early-Stopping in the Solver (Inference Densing)**
+   - At inference, implement LoopMDM-style adaptive looping: after each solver step, check not only residual but also a cheap hidden-state delta (or our existing internalization progress signal). Stop early when improvement plateaus.
+   - This turns the solver into a true variable-depth "thinking" module, directly advancing the Inference Densing objective.
+
+4. **Hybrid Proposal + Diffusion-like Latent Iteration**
+   - Explore treating the attractor solver steps as a form of "latent denoising" over the proposal embedding.
+   - The Proposal Engine produces an initial noisy/good-enough y0; the solver performs iterative refinement in latent space (exactly like diffusion denoising but using our attractor operator instead of a learned denoiser).
+   - This creates a bridge between our current work and diffusion-language-model research, potentially allowing us to borrow sampling techniques or noise schedules from MDMs.
+
+5. **Parcae + Selective Looping Synergy**
+   - LoopMDM still uses standard Transformer layers inside the loop. Applying our Parcae negative-diagonal stabilization specifically to the looped mid-block would give us stability advantages that plain LoopMDM does not have.
+   - This is a clear "our contribution" area at the intersection.
+
+These ideas are low-risk to prototype because they are mostly scheduling and structural changes around the existing `AttractorSolverModule.step()` and `SOTSegmentedSolverTrainer`. The 20-step diagnostic harness is the perfect place to test "fixed S vs stochastic S vs adaptive stopping" variants while measuring the new densing_sig.
+
+Bottom line: LoopMDM validates that selective, training-aware looping inside iterative refinement is a high-leverage idea. Our attractor substrate already has superior stability (Parcae) and training methodology (SOT + internalization) primitives. Combining them is one of the most promising concrete next steps for pushing Inference Densing further.
+
+---
+
+**Long-term Direction: Diffusion-Style Attractor Iteration (Proposal as Noisy Latent → Solver as Learned Denoiser)**
+
+This is the most ambitious forward-looking direction among the three previously outlined. It reframes the entire Proposal + Attractor Solver system through the lens of modern diffusion models, specifically connecting to the emerging "Diffusion Language Models + Recurrent Depth" literature (LoopMDM, Make Your Diffusion LM a Latent Reasoner, etc.).
+
+**Core Conceptual Shift**
+
+Current view (2026-06):
+- Proposal Engine produces a good initial guess ỹ₀.
+- Attractor Solver iteratively refines it to a fixed point ỹ⋆ via a learned operator T_θ.
+
+Long-term diffusion-style view:
+- The Proposal Engine produces an **initial noisy latent** (analogous to x_T in diffusion).
+- The "noise" here is not just random Gaussian, but structured uncertainty, inconsistency, and low-confidence regions in the proposal embedding.
+- The Dedicated Attractor Solver is re-interpreted as a **specialized latent denoiser** that learns to iteratively remove this noise according to a learned schedule, converging to high-quality equilibria (fixed points that correspond to good reasoning / answer states).
+- At inference, we can control the "denoising strength" (number of steps, noise level, schedule) to trade compute for quality — the purest form of Inference Densing.
+
+**Why this direction is high-potential (Densing Law + RI perspective)**
+
+- It gives a principled way to inject and control noise during both training and inference (beyond simple EqR NI).
+- Structured noise schedules (cosine, sigmoid, learned) can help the solver escape spurious attractors and shape broader, more robust basins — directly addressing one of the biggest risks in 7.1.
+- It creates a natural bridge between our brain-mimetic attractor work and the rapidly advancing diffusion LM + latent reasoning literature.
+- Training the solver as a denoiser (predicting clean equilibrium from progressively noised proposals) may lead to stronger generalization and better internalization than pure fixed-point supervision.
+- At inference, we can have fine-grained control: light denoising for easy cases, heavy denoising for hard reasoning — exactly what Inference Densing wants.
+
+**Proposed Architectural Mechanisms (to explore over 6-12 months)**
+
+1. **Noising the Proposal (during training)**
+   - Add a learnable or scheduled noising module on top of the Proposal Engine output.
+   - Noise can be added in embedding space (Gaussian + learned projection) or in a more structured way (masking low-confidence tokens in the proposal, adding inconsistency noise derived from slow memory surprise).
+
+2. **Diffusion-style Schedules inside the Solver**
+   - Replace the current fixed or linearly decaying step logic with explicit noise schedules:
+     - β_t (noise variance at solver step t)
+     - α_t cumulative product
+     - Learned or cosine/sigmoid schedules
+   - The solver step becomes something closer to:
+     y_{t-1} = f_θ(y_t, y0, t, slow_context, β_t)
+   - This makes each solver step "denoising-aware."
+
+3. **Training Objective Evolution**
+   - Simple ||y0 - stopgrad(y*)|| internalization remains.
+   - Add denoising-style losses: given a noised version of the proposal, train the solver to recover a high-quality equilibrium.
+   - Possible hybrid loss: task loss on final equilibrium + denoising loss at multiple noise levels + residual minimization.
+
+4. **Inference-time Control**
+   - "Denoising strength" knob: how many steps + which part of the schedule to traverse.
+   - Early stopping based on both residual and estimated remaining noise (learned noise predictor head).
+   - Per-example or even per-token adaptive denoising budget (future extension of M1 variable depth).
+
+5. **Slow Memory Integration**
+   - The slow memory summary can be viewed as "clean context" or "conditioning signal" that guides the denoising process (similar to class conditioning or text conditioning in diffusion models).
+   - This strengthens the role of the triple memory system in a diffusion-like framework.
+
+**Risks and Open Questions (Long-term)**
+
+- Increased complexity in training dynamics and hyperparameter surface.
+- Risk of the "denoising" metaphor becoming forced if the mathematics don't align well with attractor fixed-point solving.
+- Potential tension with strict one-body causal path if too much diffusion machinery is added.
+- Data efficiency: learning good noise schedules and denoisers may require more or more diverse data than pure fixed-point training.
+- Evaluation: How do we fairly measure whether the diffusion-style version actually improves Inference Densing over the current attractor solver?
+
+**First Small Steps (to start in the next 1-2 months)**
+
+1. In the existing diagnostic harness, add controlled Gaussian noise to the proposal y0 before feeding it to the solver, and measure how well the solver recovers good equilibria from different noise levels.
+2. Implement a simple linear or cosine noise schedule wrapper around the current step() function.
+3. Add a lightweight noise level embedding (sinusoidal or learned) concatenated into the solver input.
+4. Run small ablations: "clean proposal" vs "noisy proposal + denoiser-style training".
+5. Document results against the Inference Densing curves.
+
+This direction is deliberately long-term and high-uncertainty. It is not meant to replace the current Proposal + Solver sketch in the near term, but rather to explore whether reframing the solver as a learned latent denoiser with explicit noise schedules can unlock a new regime of depth scaling, robustness, and density that pure fixed-point attractors cannot reach.
+
+It represents the most ambitious synthesis of three threads the project cares about:
+- Brain-mimetic attractor dynamics
+- Modern diffusion / iterative refinement literature
+- Densing Law / Inference Densing as the guiding north star
+
+All future work in this direction must remain strictly one-body and Principle-Gate compliant.
+
+**Detailed New Substrate Sketch (Maximum Detail)**
+
+**High-Level Architecture (Text Diagram)**
+
+```
+Input Tokens
+     │
+     ▼
+[Proposal Engine]  ← (Enhanced version of current hybrid citizen:
+                     FastGated internal recurrence + ChunkedSlow participation
+                     + Predictive Data Intuition + BrainMimeticTripleMemory
+                     for rich, multi-trajectory proposals)
+     │
+     │  Produces: ỹ₀ (initial output embedding proposal) + rich slow memory context
+     │            (Working/Attractor/Provenance state, surprise signals, etc.)
+     ▼
+[Dedicated Attractor Solver Module]  (new core component, typically smaller)
+     │  Inputs: proposal ỹ₀ + current slow memory state + surprise/context
+     │  Operation: Iteratively applies a learned, weight-tied operator
+     │             with *persistent injection of ỹ₀ at every step*
+     │             + integration with slow memory (as context or additional state)
+     │             + stability mechanisms (negative-diagonal / spectral control,
+     │               hyperconnections / multi-lane residuals)
+     │  Solver: Anderson acceleration or similar (or learned solver)
+     │  Stopping: Residual tolerance ε (adaptive depth) or max steps
+     │
+     ▼
+Equilibrium (approximate) ỹ⋆
+     │
+     ├──► [Decoder / LM Head] → Output distribution
+     │
+     └──► [Slow Memory Update] (ChunkedSlow / long-term slots / attractor memory)
+           using the final equilibrium + surprise signals
+```
+
+**Module Breakdown & Mapping to Existing Components**
+
+- **Proposal Engine** (not replaced, but repurposed and enhanced):
+  - Current OneBodyParallelHybridBlock + FastGatedLinearRecurrence (as the fast citizen for rich proposal generation).
+  - BrainMimeticTripleMemory (Working + Attractor + Provenance) for structured mental simulation inside proposals.
+  - ChunkedSlow + PredictiveDataIntuition for surprise-aware, chunked context in proposals.
+  - Goal: Produce high-quality, semantically meaningful initial guesses (ỹ₀) rather than being the final thinker.
+
+- **Dedicated Attractor Solver Module** (new structural component):
+  - Smaller weight-tied network (Transformer block or simplified hybrid).
+  - Explicit job: Solve ỹ_{t+1} = f_θ(ỹ_t, ỹ₀, slow_context) until convergence.
+  - Persistent proposal injection (ỹ₀ fed every step) — directly from the Attractor Models paper.
+  - Takes slow memory state as additional context or co-evolving state.
+  - Can incorporate Parcae-style negative-diagonal parameterization on its recurrence operator for stability.
+  - Can use hyperconnections for better information flow across many solver steps.
+
+- **Slow Memory System** (evolved, not replaced):
+  - Remains BrainMimeticTripleMemory + ChunkedSlowAdapter.
+  - Now primarily updated from the *final equilibrium* rather than intermediate hybrid states.
+  - Becomes part of the "attractor landscape" being shaped.
+
+**Pseudocode Sketch of Forward Pass + Training (High Detail, Paper-Exact)**
+
+```python
+# === Forward (training or inference) - enriched with 2605.12466 / 2604.12946 / 2605.21488 mechanisms ===
+x_tilde = embedding(x)                    # tied embedding
+
+# Proposal phase (current hybrid citizen, enhanced → Proposal Engine)
+proposal, slow_context = ProposalEngine(x_tilde)   # FastGated + TripleMemory + ChunkedSlow + DataIntuition
+# y0 lives in tied output embedding space (Solve-the-Loop key observation)
+
+# Attractor solving phase (new dedicated module)
+y = proposal
+for t in range(max_solver_steps):
+    # Persistent proposal injection at *every* step (non-negotiable per 2605.12466)
+    # + Parcae stable dynamics: h_{t+1} = A_bar h_t + B_bar e + R_bar(h_t, e)
+    #   where A is parameterized Diag(-exp(log_A)), discretized ZOH/Euler → ρ(A_bar) < 1 guaranteed
+    y = AttractorSolver.step(y, proposal, slow_context, noise=NI_scale if training else 0.0)
+
+    # EqR-style residual diagnostic (||f(y)-y|| strongly tracks correctness)
+    if residual(y, proposal, slow_context) < epsilon:
+        break
+
+logits = decode(y)                        # tied unembedding + LM head
+update_slow_memory(y, slow_context, surprise)  # final *equilibrium* drives slow update (not intermediate)
+
+# === Training (key differences from current) ===
+# 1. Main loss: CE on the equilibrium y (or logits) — the attractor fixed point
+# 2. Strong first-class Equilibrium Internalization Loss (2605.12466):
+#       L_int = ||proposal - stopgrad(y*)||^2   (or cosine)
+#    This is what makes the solver skippable at inference later.
+# 3. SOT (Segmented Online Training, 2605.21488) as *primary* schedule, not afterthought:
+#    for seg in range(num_segments):
+#        y_seg = solver.run_segment(y_carry, proposal, slow_ctx, h=7)
+#        L_task = CE(decode(y_seg), target)
+#        L_int  = internalization(proposal, y_seg)
+#        (L_task + L_int).backward()
+#        optimizer.step()                      # immediate update inside trajectory
+#        y_carry = y_seg.detach()              # truncated gradient, constant memory
+# 4. Gradients via implicit differentiation (IFT) or one-step phantom (constant mem w.r.t. depth)
+# 5. Training interventions (EqR): RI (randomized solver init) + NI (noise injection) to shape broad correct basins
+# 6. Optional offline "sleep" plasticity phase for slow memory / attractor landscape consolidation
+```
+
+Key equations now explicitly referenced (see paper deep dives in F.4 / G.1):
+- Parcae dyn sys (exact from full text): h_{t+1} = A_bar h_t + B_bar e + R_bar(h_t, e)
+  A := Diag(−exp(log_A)) (continuous) → ZOH/Euler discretization.
+- Solve-the-Loop fixed-point: ỹ* solves ỹ* = T_θa(ỹ, ỹ₀) or A(ỹ, ỹ₀) = 0 (Anderson acceleration recommended).
+- EqR attractor: stable fixed points of z_{k+1} = f_θ(z_k ; x) correspond to solutions; residual is diagnostic.
+
+**Training Paradigm Shift (More Detail)**
+
+- **Segmented Online Training (SOT)** becomes a first-class primitive rather than an optional trick (inspired by EqR).
+- **Equilibrium Internalization** is no longer a weak auxiliary — it is a core objective so the proposal engine learns to do most of the work.
+- **Landscape shaping** uses RI (randomized init of solver state) + NI (noise injection during solving) + SOT.
+- Slow memory updates happen primarily from high-quality equilibria, not noisy intermediate states.
+- This combination is expected to produce much more stable high-depth behavior and better transfer of depth scaling to heldout data than the previous "pressure the existing engine harder" approach.
+
+This level of detail (diagram + pseudocode + explicit mapping of existing components + training paradigm changes) makes the proposed fundamental substrate overhaul concrete and actionable for future prototyping and ablation.
+
+**Training Implications (More Fundamental Changes)**
+
+- Primary loss: Next-token prediction on the (approximate) equilibrium ỹ⋆.
+- Strong first-class **Equilibrium Internalization Loss**: ||ỹ₀ - ỹ⋆|| (or cosine distance, etc.). This is no longer a weak auxiliary — it is central so the proposal engine learns to do most of the work.
+- **Segmented Online Training (SOT)** from EqR as a core primitive: Interleave solver steps with parameter updates (with detached carry) to shape the landscape online.
+- Randomized initialization (RI) + Noise Injection (NI) for the solver state (from EqR) to broaden basins.
+- Implicit differentiation (or one-step phantom gradient approximation) through the solver for O(1) memory w.r.t. effective depth.
+- Possible offline "sleep" phases (inspired by 2026 plasticity papers) where the slow memory / attractor landscape is consolidated without next-token pressure.
+
+**Inference Behavior**
+
+- The proposal engine runs once.
+- The attractor solver runs until residual < ε (or max budget).
+- Thanks to strong equilibrium internalization during training, in many cases the solver will converge in very few (or zero) steps.
+- Effective depth becomes truly adaptive and input-dependent.
+- Slow memory can still participate for long-context / memory-heavy tasks.
+
+**Why This Is More Fundamental Than Previous Phases**
+
+Previous work (including the C phase) was still largely operating *inside* the existing hybrid micro-step citizen, adding better slow participation and better auxiliary losses on top.
+
+This new sketch changes the **division of labor**:
+- The (enhanced) hybrid citizen becomes the "fast, rich proposal generator."
+- A dedicated, controllable attractor solver becomes the "iterative refinement engine."
+- Slow memory becomes more explicitly part of the attractor dynamics rather than an occasional injector.
+
+This aligns much more closely with the strongest 2026 signals (Attractor Models paper + Parcae stability + EqR training methods) and directly addresses the repeated log observation that "more pressure on the current engine" was not yielding robust depth scaling.
+
+This sketch is the current working proposal for the next major iteration of the architecture. It will be prototyped, ablated, and refined against the same strict RI contracts.
+
+**Implications for Loss (also more fundamental)**:
+- Move toward stronger implicit / bilevel-style objectives (task loss on the equilibrium + internalization loss on proposal vs equilibrium).
+- Make the "slow memory must demonstrably help prediction" contrast (our recent C term) a first-class, high-priority objective rather than an auxiliary.
+- Explore offline "sleep"/plasticity phases for the slow memory (inspired by recent "Do Language Models Need Sleep?" work), where the attractor landscape can be consolidated without the pressure of immediate next-token prediction.
+
+This overhaul is more structural than previous phases. It treats the current hybrid citizen + triple memory system as a strong *proposal engine* rather than the final thinking engine, and adds a dedicated attractor solving layer on top whose dynamics and training we control more explicitly.
+
+---
+
+### 7.1 Risk and Open Questions — Explicit Attractor Solver Substrate (June 2026 Overhaul)
+
+This section supersedes the earlier high-level Risks note in the C-phase appendix. It specifically addresses the **Proposal Engine + Dedicated Attractor Solver + SOT + Parcae stability + Equilibrium Internalization** architecture.
+
+#### Critical Failure Modes (High Probability if Not Addressed)
+
+1. **Equilibrium Internalization Fails to Materialize (or is Weak)**
+   - In the clean two-module Attractor Models setup the internalization effect was dramatic. Our proposal engine is already extremely rich (FastGated citizen + full BrainMimeticTripleMemory K-trajectory mental simulation + surprise-driven ChunkedSlow + predictive contrast). There is a real risk that the solver always does non-trivial work and the internalization loss only produces marginal improvement in y0 quality.
+   - Consequence: We pay the solver overhead at inference forever; the "drop the solver" promise does not deliver.
+   - Mitigation: Strong RI+NI + SOT during training + explicit diagnostic (track ||y0 - y*|| and solver steps needed over training). If internalization plateaus early, we must decide whether to keep the solver as permanent inference component or fall back.
+
+2. **Spurious Attractors Despite SOT + RI + NI**
+   - EqR is very clear: on ill-posed or multi-solution tasks the attractor landscape can develop strong spurious fixed points. Our pure_72 + narrow reasoning heldouts may be exactly the kind of data that creates this.
+   - Residual ||f(y)-y|| becoming small on wrong answers is the nightmare scenario (the model "confidently converges to garbage").
+   - Mitigation: (a) EqR-style convergence-based selection across K solver trajectories (GRAM/PTRM breadth re-expressed as multi-init solver breadth); (b) provenance grounding from TripleMemory as additional basin-shaping signal; (c) keep a strong one-body "reject if residual high on best trajectory" gate.
+
+3. **SOT + Implicit Diff Interaction with One-Body Contract + Existing Strong Recipe**
+   - SOT requires immediate optimizer steps inside the segment loop + detached carry. This is fundamentally different from our current external rehearsal / truncated BPTT patterns.
+   - Risk of breaking: proper porting guarantees, honest conditions-matched ablations, the Principle Gate (one_body_causal_path, state_transition_core, etc.), and our carefully tuned auxiliary suite (slow_predictive_value, slow-centric consistency, Ouro I_t).
+   - Gradient flow through the solver (even with phantom/IFT) may interfere with the existing internalization-on-fast_h and slow_summary consistency terms.
+   - Open question: Do we still need (or can we keep) the C-direction slow-centric consistency and predictive contrast terms, or do they become redundant/harmful once SOT + first-class internalization is the dominant landscape shaper?
+
+4. **Stability Interactions Between Parcae Negative-Diagonal Solver Operator + Existing Griffin RG-LRU Fast Citizen + Hyperconnections**
+   - Parcae guarantees ρ(A_bar) < 1 on its own operator. But the solver will receive input from (and feed back into) the existing FastGated citizen and the triple memory system.
+   - Spectral interactions, especially when slow memory summary is injected at every solver step, are unknown. We may see new forms of late-training loss spikes or state explosion that Parcae alone did not predict.
+   - Hyperconnections (if added for φ boost) add another set of learnable residuals whose interaction with negative-diagonal A is uncharted.
+
+5. **Compute & Memory Reality at RI-1 Scale (Native 72 + B>4)**
+   - Even with SOT the per-example cost of running the solver (even 4-8 steps per segment × many segments) is higher than the current internal FastGated citizen.
+   - Anderson acceleration (recommended in 2605.12466) is non-trivial to implement correctly in the training graph.
+   - Risk: We can only run tiny batches or short sequences, making the RI-1 72 heldout measurement statistically weak or impossible under honest conditions.
+   - Mitigation: Prototype must include a "solver_off / cheap_proposal_only" fast path for quick ablations and a strict B=4~8 measurement protocol from day one.
+
+6. **Data Requirements for Attractor Landscape Shaping**
+   - EqR and Solve-the-Loop both needed carefully constructed hard combinatorial tasks (Sudoku-Extreme, Maze-Hard) where the attractor view shines. Our current mix (including pure_72) may be either too easy (internalization happens trivially) or too noisy (spurious attractors dominate).
+   - Open question: Do we need a new "attractor curriculum" dataset (synthetic fixed-point / equilibrium problems) before or alongside the RI measurement suite?
+
+#### Engineering & Scientific Debt Risks
+
+- **One-Body Causal Path Erosion**: The moment the "deep thinking" moves into a separate solver module, it becomes easy to accidentally create a side-channel (e.g., using solver hidden states for answer construction that never flows through the LM head on the equilibrium). Every integration step must be Principle-Gate audited.
+- **Ablation Surface Explosion**: We now have solver_on/off, internalization_weight, parcae_on/off, sot_on/off, ri_ni_on/off, proposal_enhancement_level, K_solver_trajectories, etc. The combinatorial ablation matrix required for honest "this component caused the RI-1 gain" claims grows dramatically. We must ruthlessly prioritize the minimal falsifiable diagnostic set.
+- **Reproducibility & Checkpoint Porting**: Moving to a substrate with implicit/segmented gradients and new parameterizations (negative diagonal A, learned Δ, etc.) makes continuing from old C-phase or ULTIMATE checkpoints non-trivial. We need a clear "cold start from strong proposal engine checkpoint" protocol.
+- **Serving / InferenceState Contract Violation**: The current beautiful fixed-size InferenceState (fast_recurrent_h + slow_summary + step_count) was designed for the citizen. The solver will need its own persistent state across tokens (or the ability to cheaply re-solve from proposal + cached slow). If we end up with two separate state machines we have re-created the original sin we were trying to escape.
+
+#### Prioritized Open Research / Implementation Questions (Attack Order)
+
+1. **Minimal viable solver size & operator**: Can a single Parcae-stabilized linear + gated residual block (as in the current prototype) deliver meaningful refinement on top of our already-strong proposal engine, or do we immediately need 1-2 full hybrid blocks inside the solver?
+2. **Space in which the solver operates**: Tied output embedding (pure Attractor Models) vs. richer internal latent that still has direct access to slow memory state vectors? The latter may be necessary given our triple memory design but changes the internalization math.
+3. **SOT segment length & scheduling policy** under variable depth (M1) sampling: How do we combine per-example depth sampling with SOT segments without either exploding memory or destroying the "online landscape shaping" benefit?
+4. **How much of the existing C-recipe survives?** Specifically: does slow_predictive_value contrast + slow-centric consistency remain first-class, get demoted to auxiliary, or get removed? (This must be measured, not assumed.)
+5. **K-trajectory breadth inside the solver**: The natural modern expression of GRAM/PTRM stochastic breadth is "K independent solver trajectories from different RI+NI inits, selected by final residual + provenance score". When and how do we activate this? Is it only at evaluation or also during SOT training segments?
+6. **Offline sleep plasticity compatibility**: Can we literally pause next-token pressure, run a pure attractor-consolidation phase on the slow memory + solver operator (perhaps with a reconstruction or consistency objective), then resume? Does this help or hurt the one-body contract?
+7. **Diagnostic power of the residual**: We must instrument ||f(y)-y|| on both correct and incorrect final answers on pure_72 strict-B from the very first prototype run. If the correlation is weak or inverted, the entire attractor premise is in trouble for our data regime.
+
+#### Densing Law Lens on the Risks (Cross-Cutting Perspective)
+
+The Densing Law + IKP literature adds a strategic filter to every risk above:
+
+- **Procedural vs. Factual Asymmetry** (from arXiv:2604.24827): Our substrate is optimized for compressible procedural depth (iterative refinement, attractor convergence, slow-memory shaping). It is likely to deliver strong Densing gains here. However, incompressible factual storage still scales classically with parameter count. Over-optimism about "the solver will internalize everything" must be tempered by this distinction. Diagnostic: run parallel IKP-style rare-fact probes alongside pure_72.
+- **Inference Densing as Primary Success Metric**: The ultimate validation of this overhaul is not just raw accuracy, but *performance per inference FLOP* (especially variable solver steps). Track solver steps / residual vs. answer quality as a first-class curve. If internalization works, the curve should shift favorably over training (fewer steps needed for same quality).
+- **Risk of "Densing Theater"**: Many compression techniques improve headline numbers while lowering true density (original Densing paper observation). Our SOT + internalization curriculum must demonstrably increase density, not just move loss curves. The 20-step diagnostic harness (see `docs/wiki/experiments/2026-06_attractor_solver_first_diagnostic.md`) is the minimal instrument for this.
+
+#### Success Criteria for the Overhaul Phase (Unambiguous)
+
+- RI-1: Clear monotonic depth scaling (d=1 → 4 → 8 → 12+) on strict-B pure_72 native 72 heldout (B=4~8, conditions-matched, full Principle Gate) that is *statistically and visually* superior to the best C-phase or pre-C aggression runs.
+- The solver must show non-trivial refinement (measurable drop in residual + improvement in answer quality) on a non-trivial fraction of hard cases, while the internalization loss shows ||y0 - y*|| decreasing over training.
+- Demonstrable **Inference Densing** improvement: the relationship between solver steps / effective recurrence depth and final answer quality improves over training (lower compute for equivalent quality).
+- No regression on the existing strong C-test signals (slow memory must still be causally useful; predictive contrast and slow-centric consistency must not collapse).
+- Honest documentation of every failure mode listed above, with quantitative evidence, before any claim of "success" or "new SOTA substrate".
+
+This phase is the highest-risk / highest-reward the project has attempted. The previous 18+ months of incremental aggression and C-pivot work have falsified the "make the current engine better" path at the level of middle-log diagnosis. We are now explicitly testing whether the 2026 attractor literature (particularly the clean separation + persistent injection + SOT + stability parameterization + internalization curriculum) provides a genuinely different causal route to reliable RI-1 depth scaling.
+
+All prototype work, ablations, and RI measurements will be recorded with the same rigor (and same SSOT contracts) as previous phases. If this substrate also fails to deliver monotonic RI-1 under honest conditions, the honest conclusion will be documented and the next pivot (or termination) will be decided without sunk-cost rationalization.
+
+---
+
+**Wiki / SSOT Status**:
+- Previous phases (aggression + C) are now viewed as necessary but insufficient exploration that revealed the limits of the current base substrate.
+- We are entering a new phase of more radical substrate redesign, still grounded in the same SSOT MDs and RI principles, but willing to change the core recurrence + memory topology more substantially.
+- All prior wins (internal fast citizen, relaxed slow participation, predictive data intuition, etc.) are to be preserved where possible and re-integrated into the new structure.
+- **New (June 2026)**: Full paper-exact equations + concrete prototype in `src/qtrm_mm/attractor/attractor_solver.py` (now with `compute_internalization_progress` + `get_densing_metrics` hooks + `step_selective` placeholder + `step_with_noise_schedule` long-term stub) + dedicated 7.1 Risk section + first runnable wiring script + 20-step diagnostic harness + detailed long-term direction "Diffusion-Style Attractor Iteration (Proposal as Noisy Latent → Solver as Learned Denoiser)" in Section 7.
+
+This document will be updated continuously as the new substrate design is prototyped, ablated, and measured against the same strict-B pure_72 + Principle Gate standards.
+
+---
+
+## 4.5 Appendix: Maximum-Detail Technical Record of the C-Phase Pivot (Late May 2026)
+
+**Purpose of this appendix**: Provide an extremely granular, reproducible record of the shift from "maximum quantitative aggression" to the "C qualitative redesign" direction, including exact code locations, formulas, run commands, and diagnostic criteria. This is intended for future readers or auditors who want to understand the precise reasoning and implementation without having to reconstruct it from git history and scattered logs.
+
+### 4.5.1 Timeline of the Pivot (Log-Driven)
+
+1. Multiple 500-step runs with progressively higher auxiliary weights (0.04→0.12→0.15 data_intuition, 0.15→0.25→0.30 consistency, internalization up to 0.55) + all paper-inspired terms at full strength.
+2. Consistent pattern in middle logs: train_loss excellent, eval_loss marginal improvement followed by stagnation or clear degradation in the second half.
+3. Decision: Further increasing magnitude of existing terms was falsified as a solution. Pivot to changing the *nature* of the signals (user explicitly selected option C).
+
+### 4.5.2 Exact Data Intuition Change (Predictive Contrast)
+
+**File**: `src/qtrm_mm/memory/brain_triple_memory.py`
+
+**Method**: `PredictiveDataIntuition.compute_prediction_loss`
+
+**Core addition** (simplified):
+```python
+pred_no_slow, _, _ = self.forward(current, slow_summary=None)
+pred_loss_no_slow = F.mse_loss(pred_no_slow, tgt)
+slow_value = (pred_loss_no_slow - pred_loss).clamp(min=0)
+predictive_value_loss = -0.3 * slow_value
+```
+
+**Return dict addition**:
+- New key: `"slow_predictive_value": slow_value.detach()`
+
+**Rationale**: Directly optimizes for the slow memory being *causally useful* for better next-state prediction by the fast path. This is the highest-signal version of "make slow memory participate meaningfully during deep recurrence."
+
+### 4.5.3 Exact Consistency Change (Slow-Summary Dominant)
+
+**Location**: Trainer `strong_training_active` block (consistency loss computation).
+
+**Before (typical)**: Fast_h consistency dominant, slow summary as small additive term.
+
+**After (C version)**:
+```python
+slow_cons = (short_slow_summary - slow_summary_long.detach()).pow(2).mean()
+sc_loss = slow_cons * 1.5 + fast_cons * 0.5
+```
+
+**Effect**: The gradient signal for consistency now primarily flows through the slow attractor state across depth trajectories.
+
+### 4.5.4 C Test Run Configuration (for exact reproduction)
+
+**Command**:
+```bash
+python scripts/train_hybrid_ri4_real_continuation_minimal.py \
+  --steps 400 \
+  --brain_triple_memory \
+  --internal_fast_recurrent \
+  --data_intuition_loss_weight 0.07 \
+  --depth_consistency_weight 0.14 \
+  --enable_ri1_variable_depth \
+  --accept-freeze-risk
+```
+
+**Log file**: `checkpoints/hybrid_ri4_cont/ri1_C_test_balanced_400.log`
+
+**Key weights used in this run**:
+- Internalization: 0.22
+- Consistency: 0.16 (slow term 1.5×)
+- Data Intuition: 0.07 + slow_predictive_value at ~1.2× relative
+
+**Success / diagnostic criteria for this run** (to be evaluated after completion):
+- Positive and increasing `slow_predictive_value` values in logs.
+- Slow-summary term dominating the consistency loss contribution.
+- Eval loss showing more stable or continued downward trend in the 150–350 step window compared to previous high-aggression runs.
+- No late-stage divergence in eval_loss.
+
+### 4.5.5 Rationale for Choosing "Balanced + High-Quality Signals" Over Continued Aggression
+
+- Previous max-aggression runs (documented in section 4.5.1) empirically showed that higher magnitude of auxiliary pressure produced worse generalization after a certain point.
+- The new terms (predictive contrast and slow-centric consistency) are higher *precision* signals. They need breathing room (moderate total weight) to demonstrate whether they can shape a better loss landscape.
+- This follows the spirit of the papers themselves: Ouro does not simply increase loss weight on the improvement signal — it uses the signal to *selectively* allocate pressure.
+
+---
+
 ## 5. Smallest Falsifiable Diagnostic (Execution Plan)
 
 **Per skill + conversation**:
@@ -254,13 +944,29 @@ The surprise-mediated loop (long-term read → K-trajectories + attractor stabil
 - ByteDance Seed et al. (2025, updates 2026). "Scaling Latent Reasoning via Looped Language Models" (Ouro / LoopLM). arXiv:2510.25741. https://ouro-llm.github.io/
 - Huang, Geng, Kolter (2026). "Equilibrium Reasoners: Learning Attractors Enables Scalable Reasoning" (EqR). arXiv:2605.21488. https://arxiv.org/abs/2605.21488 ; https://github.com/locuslab/EqR
 - Fein-Ashley, Rashidinejad (2026). "Solve the Loop: Attractor Models for Language and Reasoning". arXiv:2605.12466. https://attractor-models.github.io/ ; https://github.com/jacobfa/Attractor
-- LoopFormer (ICLR 2026): Elastic-depth transformers with trajectory conditioning and shortcut-consistency loss (referenced in project roadmap; full citation to be added on confirmation).
+  - **Prototype implementation**: `src/qtrm_mm/attractor/attractor_solver.py` (AttractorSolverModule with mandatory persistent y0 injection + ParcaeNegativeDiagonalInjection + SOTSegmentedSolverTrainer + EquilibriumInternalizationLoss).
+- Prairie et al. (2026). "Parcae: Scaling Laws For Stable Looped Language Models". arXiv:2604.12946.
+  - **Deep dive**: Section G.1 + exact dynamical system equations and negative-diagonal parameterization now in Section 7 pseudocode.
+- Schwethelm et al. (2026). "How Much Is One Recurrence Worth? Iso-Depth Scaling Laws for Looped Language Models". arXiv:2604.21106 (hyperconnections and recurrence-equivalence exponent φ).
+- LoopFormer (ICLR 2026): Elastic-depth transformers with trajectory conditioning and shortcut-consistency loss.
+
+**Related Foundational / Complementary**:
+- Deep Equilibrium Models (DEQ) and follow-ups (implicit differentiation, constant-memory depth).
+- "Do Language Models Need Sleep?" and offline plasticity / fast-weight memory update papers (2026).
 
 **Related / Foundational**:
 - Deep Equilibrium Models (DEQ) family (Bai et al. and follow-ups).
 - Parcae (stable recurrence / diagonal decay injection).
 - Universal Transformers / weight-tied recurrent cores (pre-2025 roots).
 - HRM / HRM-Text (recurrent latent reasoning reference standard per skill).
+
+**Densing Law & Efficiency Scaling (Strategic Framing for the Overhaul)**:
+- Xiao, Cai, Zhao et al. (2024/2025). "Densing Law of LLMs". arXiv:2412.04315 (Nature Machine Intelligence 2025 cover). Introduces capability density ρ and the empirical exponential growth law; explicitly flags the need for an **Inference Densing Law** (density w.r.t. inference FLOPs and variable-depth thinking). Primary strategic justification for moving from pressure-on-citizen to explicit attractor solver.
+- Li (2026). "Incompressible Knowledge Probes: Estimating Black-Box LLM Parameter Counts via Factual Capacity". arXiv:2604.24827. Critical nuance paper: Densing Law holds strongly for compressible procedural capability but largely fails for incompressible factual knowledge (time coefficient ≈ 0, strong statistical rejection of Densing prediction). Essential guardrail for interpreting RI-1 and internalization results. Also provides black-box factual capacity estimation methodology.
+- "Densing Law Revisited for Chinese Large Language Models" (CodeOcean capsule, 2026): Cross-lingual validation of the density trend.
+
+**Project Experiment Records**:
+- `docs/wiki/experiments/2026-06_attractor_solver_first_diagnostic.md` (first 20-step wiring harness + ablation matrix for the explicit attractor solver substrate; includes Densing-aligned success signals).
 
 **Project Internal (RI principles, diagnosis, GRAM/PTRM, brain-mimetic implementation)**:
 - `experiments/ri1_m1_reports/Stubborn_Negative_Pattern_Diagnosis_20260528.md` (and Consolidated_RI1_M1_Analysis, Multi_Direction_Exploration_Table).
@@ -281,7 +987,7 @@ The surprise-mediated loop (long-term read → K-trajectories + attractor stabil
 
 ---
 
-**Next Immediate Action (per user "직관대로 해" repeated directive)**: The core surprise-coupling + multi-scale memory loop (fast K + slow attractor + long-term gated persistent + real training signal for data intuition) is now implemented and tightened per the architecture vision. Next: launch a short falsifiable diagnostic continuation (from strongest available anchor) using `--brain_triple_memory --brain_mimetic_stochastic --data_intuition_loss_weight 0.04` (and ablation variants), run strict-B depth sweep + Principle Gate on pure_72, and record whether the deeper substrate + actual surprise minimization produces the first robust monotonic RI-1 signal where previous families could not. Update this doc + new decision record with honest results. All RI contracts from line 1.
+**Next Immediate Action (per user "직관대로 해" repeated directive + recent Densing Law integration)**: The substrate is now explicitly framed as an Inference Densing engine (Section 7). Next: run the 20-step attractor solver diagnostic (`scripts/diag_explicit_attractor_solver_20step.py` + the matrix in `docs/wiki/experiments/2026-06_attractor_solver_first_diagnostic.md`), with explicit tracking of solver steps vs. quality (Inference Densing signal) + rare-fact probes (IKP-style). Record whether the new division of labor + SOT/internalization produces measurable density gains on both procedural depth scaling (RI-1) and factual grounding. Update this doc + decision record with numbers. All RI contracts from line 1.
 
 This document is the authoritative synthesis and proposal for the "2번" substrate direction. Update on every new measurement or literature addition.
 

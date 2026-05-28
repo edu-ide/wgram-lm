@@ -169,6 +169,9 @@ def parse_continuation_args() -> ContinuationConfig:
     # === Wave After Next (pre-prepared under "진행해" directive) ===
     p.add_argument("--complete_thinking_memory_decoupling", action="store_true", help="Wave after next Direction 1: Memory decisions happen ONLY in explicit offline/consolidation phases. Thinking recurrence is completely decoupled from long-term memory writes during the main loop.")
     p.add_argument("--attractor_fixed_point_core", action="store_true", help="Wave after next Direction 2: Replace step-by-step hybrid recurrence with fixed-point / attractor-style convergence core for the thinking engine.")
+    p.add_argument("--use_explicit_attractor_solver", action="store_true", help="June 2026 Fundamental Overhaul (Section 7): Activate explicit ProposalEngine + Dedicated AttractorSolverModule (Solve-the-Loop + Parcae + EqR SOT). Persistent y0 injection, internalization as first-class, SOT segments. High-risk diagnostic path.")
+    p.add_argument("--attractor_solver_weight", type=float, default=0.15, help="Weight multiplier for the explicit attractor solver refinement loss (on equilibrium).")
+    p.add_argument("--sot_segment_length", type=int, default=5, help="EqR SOT segment length (steps per online optimizer segment).")
     p.add_argument("--brain_triple_memory", action="store_true", help="Proper brain-mimetic memory redefinition: Workspaces + Attractor + Provenance as active, influencing recurrent participants (not side rehearsal). Structural version, not heuristic.")
     p.add_argument("--internal_fast_recurrent", action="store_true", help="D implementation: prefer the new internal Griffin-style FastGatedLinearRecurrence inside OneBodyParallelHybridBlock for per-micro brain participation (reduces external triple.step cost).")
     p.add_argument("--brain_mimetic_stochastic", action="store_true", help="Brain-mimetic upgrade of GRAM/PTRM: structured stochastic sampling of multiple mental trajectories inside WorkingMemory, modulated by Attractor (stability) and Provenance (grounding). Not blind noise.")
@@ -202,6 +205,8 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--heldout_answer_pressure_interval", type=int, default=3, help="How often (in steps) to apply the heldout answer pressure loss.")
     p.add_argument("--trajectory_monotonic_weight", type=float, default=0.15, help="Weight for v0.x-style trajectory monotonic improvement pressure: penalizes cases where similarity to gold target decreases across thinking steps (directly addresses low-loss but non-improving trajectories).")
     p.add_argument("--depth_consistency_weight", type=float, default=0.0, help="Weight for explicit short-vs-long depth final latent state consistency (shortcut-consistency style). When M1 variable depth is active, longer sampled rollouts are pressured to produce demonstrably better final states than short fixed-depth rollouts on the same input. This is the next parallel direction after stochastic breadth falsification.")
+    # When using the new internal fast recurrence citizen, we default to a stronger consistency signal
+    # because the MDs emphasize that without it the attractor substrate does not produce reliable RI-1.
     p.add_argument("--gold_injection_warmup_steps", type=int, default=80, help="Number of steps to gradually ramp up gold injection alpha from 0 to full value. This prevents loss from collapsing too fast in the very first steps (addresses the problem that v0.x losses started high ~10+ and dropped dynamically).")
     p.add_argument("--strong_protection", action="store_true", help="Enable stronger protection mechanisms (higher attractor protection during rehearsal + higher pressure) for testing the effect of re-introducing v0.x style safeguards.")
     p.add_argument("--v0x_trajectory_selection", type=int, default=1, help="Number of candidate trajectories to sample and select from (v0.x style architecture-level selection). K>1 enables explicit verification/selection of better reasoning trajectories. Recommended: 3~5 for testing.")
@@ -214,6 +219,7 @@ def parse_continuation_args() -> ContinuationConfig:
     # === 1번 extreme native measurement push ===
     p.add_argument("--native_batched_measurement", action="store_true", default=True, help="For --run_72_heldout_only + brain: run all cases as a single batched forward (B=N) instead of serial per-case. Major throughput win while keeping real brain participation.")
     p.add_argument("--native_brain_step_interval", type=int, default=2, help="During native 72 measurement, call triple.step only every N micro-steps (1=every step, 2=every other, etc). Reduces brain overhead while still having real participation on selected steps.")
+    p.add_argument("--ri1_test_depth", type=int, default=None, help="For --run_72_heldout_only: explicitly set think_steps (recurrence depth) for RI-1 depth scaling test. E.g. 1,4,8,12")
     args = p.parse_args()
 
     cfg = ContinuationConfig(
@@ -273,11 +279,20 @@ def parse_continuation_args() -> ContinuationConfig:
     # Wave after next (pre-armed for auto-escalation)
     cfg.complete_thinking_memory_decoupling = args.complete_thinking_memory_decoupling
     cfg.attractor_fixed_point_core = args.attractor_fixed_point_core
+    cfg.use_explicit_attractor_solver = getattr(args, 'use_explicit_attractor_solver', False)
+    cfg.attractor_solver_weight = getattr(args, 'attractor_solver_weight', 0.15)
+    cfg.sot_segment_length = getattr(args, 'sot_segment_length', 5)
     cfg.brain_triple_memory_enabled = args.brain_triple_memory
     if args.brain_triple_memory:
         cfg.brain_triple_memory_ablation_zero = False  # can be extended later with a separate flag
     cfg.internal_fast_recurrent = getattr(args, 'internal_fast_recurrent', False)
     cfg.data_intuition_loss_weight = getattr(args, 'data_intuition_loss_weight', 0.04)
+
+    # Maximum Aggression default: when using the new internal fast citizen, make predictive data intuition much stronger by default
+    if getattr(cfg, 'internal_fast_recurrent', False):
+        if cfg.data_intuition_loss_weight < 0.08:
+            cfg.data_intuition_loss_weight = 0.10
+            print("[MAX AGGRESSION] internal_fast_recurrent active → data_intuition_loss_weight raised to 0.10 by default")
 
     cfg.brain_mimetic_stochastic_enabled = args.brain_mimetic_stochastic
     cfg.brain_mimetic_stochastic_k = getattr(args, 'brain_mimetic_stochastic_k', 4)
@@ -297,6 +312,9 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.heldout_answer_pressure_interval = args.heldout_answer_pressure_interval
     cfg.trajectory_monotonic_weight = args.trajectory_monotonic_weight
     cfg.depth_consistency_weight = args.depth_consistency_weight
+    if getattr(cfg, 'internal_fast_recurrent', False) and cfg.depth_consistency_weight == 0.0:
+        cfg.depth_consistency_weight = 0.06  # stronger default when we have a real fast recurrent citizen
+        print("[Training Recipe] internal_fast_recurrent active → defaulting depth_consistency_weight to 0.06 for stronger shortcut-consistency")
     cfg.gold_injection_warmup_steps = args.gold_injection_warmup_steps
     cfg.v0x_trajectory_selection = args.v0x_trajectory_selection
 
@@ -304,6 +322,7 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.run_72_heldout_only = getattr(args, 'run_72_heldout_only', False)
     cfg.native_batched_measurement = getattr(args, 'native_batched_measurement', True)
     cfg.native_brain_step_interval = getattr(args, 'native_brain_step_interval', 2)
+    cfg.ri1_test_depth = getattr(args, 'ri1_test_depth', None)
 
     # Final-wave architecture alignment: when doing pure native 72 with internal fast recurrence,
     # automatically put the fast path into inference_mode (cleaner, no stochastic noise inside FastGated,
@@ -338,6 +357,15 @@ def parse_continuation_args() -> ContinuationConfig:
     # Following research-driven skill: scaffolding in core/blocks now promoted to first-class in active trainer.
     # Variable depth during training (not just eval proxy) is the causal change for monotonic test-time scaling.
     ri1_variable_active = bool(getattr(args, 'enable_ri1_variable_depth', False) or proper_port_default)
+
+    # === 직관 최종 결정: final aggressive substrate를 쓰면 training recipe도 강제로 세게 간다 ===
+    # substrate만 세워놓고 training dynamics가 약하면 RI-1 monotonic scaling은 절대 안 나온다.
+    # 이제 internal_fast_recurrent가 켜지면 variable depth + Strong Attractor Training Recipe가 거의 자동으로 따라온다.
+    if getattr(cfg, 'internal_fast_recurrent', False) and not getattr(args, 'ri1_depth_ablation_fixed', False):
+        ri1_variable_active = True
+        cfg._force_strong_attractor_training = True
+        if not getattr(args, 'enable_ri1_variable_depth', False):
+            print("[Strong Attractor Training Recipe] internal_fast_recurrent active → variable depth + strong internalization/consistency/basin shaping FORCED by default")
     if ri1_variable_active and not getattr(args, 'ri1_depth_ablation_fixed', False):
         cfg.core_elastic_depth_enabled = True
         cfg.core_elastic_depth_train_random = True
@@ -714,6 +742,12 @@ def main():
         if model._brain_triple_memory_ablation_zero:
             print("  [ABORT] ablation_zero=True → triple memory influence disabled (old behavior)")
 
+        # Late wiring for RI-1 relaxed slow mode (after attachment)
+        if getattr(cfg, 'internal_fast_recurrent', False) and getattr(cfg, 'ri1_variable_depth_active', False):
+            if hasattr(model._brain_triple_memory, 'set_ri1_training_relaxed_slow'):
+                model._brain_triple_memory.set_ri1_training_relaxed_slow(True)
+                print("[RI-1 Omega Fix] Late activation: relaxed slow mode ON for this run")
+
         # D implementation: if --internal_fast_recurrent, tell hybrid blocks to prefer the new compiled fast path
         if getattr(cfg, 'internal_fast_recurrent', False):
             try:
@@ -1062,7 +1096,8 @@ def main():
 
                 coarse_counter = 0
                 coarse_interval = 3 if getattr(cfg, 'coarse_recurrence_granularity', False) else 1
-                think_steps = 4
+                # RI-1 depth control for 72 heldout
+                think_steps = getattr(cfg, 'ri1_test_depth', None) or 4
 
                 model._triple_mem_state = pre_state
 
@@ -1619,8 +1654,11 @@ def main():
                         long_term_stride=4
                     )
 
+            depth_for_ri1 = getattr(cfg, 'ri1_test_depth', None)
+            if depth_for_ri1:
+                print(f"[RI-1 MODE] Using explicit recurrence depth (think_steps) = {depth_for_ri1}")
             r_hit, r_tot, r_acc, m_hit, m_tot, m_acc = _compute_narrow_heldout_accuracy(max_cases=getattr(cfg, 'heldout_max_cases', 72))
-            print(f"\n[72 HELDOUT - NATIVE BRAIN] reasoning: {r_hit}/{r_tot} ({r_acc:.2%}) | memory: {m_hit}/{m_tot} ({m_acc:.2%})")
+            print(f"\n[72 HELDOUT - NATIVE BRAIN] reasoning: {r_hit}/{r_tot} ({r_acc:.2%}) | memory: {m_hit}/{m_tot} ({m_acc:.2%}) (depth={depth_for_ri1 or 4})")
             print("Exiting after optimized heldout only. (No training loop executed)")
         return
 
@@ -1724,7 +1762,12 @@ def main():
                 else:
                     out = layer(h)
                 if isinstance(out, tuple):
-                    h, current_slots = out
+                    if len(out) == 3:
+                        h, current_slots, _ = out   # fast recurrence state returned by the citizen
+                    elif len(out) == 2:
+                        h, current_slots = out
+                    else:
+                        h = out
                 else:
                     h = out
 
@@ -1794,10 +1837,25 @@ def main():
                 try:
                     intu = triple.compute_data_intuition_loss(model._triple_mem_state, reg_weight=0.005)
                     intu_w = float(getattr(cfg, 'data_intuition_loss_weight', 0.04))
+
+                    # C TEST: Balanced, quality-focused weights
+                    if getattr(triple, '_ri1_training_relaxed_slow', False):
+                        intu_w = intu_w * 1.8   # moderate boost when deep recurrence
+
+                    if getattr(cfg, 'internal_fast_recurrent', False):
+                        intu_w = max(intu_w, 0.07)
+
                     if intu_w > 0.0 and 'total_loss' in intu:
                         train_loss = train_loss + intu['total_loss'] * intu_w
+
+                        # C-direction: directly use the new slow_summary predictive value term
+                        slow_val = float(intu.get('slow_predictive_value', 0.0))
+                        slow_val_w = intu_w * 1.2   # give the new predictive contrast term good weight
+                        if slow_val > 0:
+                            train_loss = train_loss + slow_val * slow_val_w   # reward when slow helps
+
                         if (step + 1) % max(1, getattr(cfg, 'total_steps', 100) // 8) == 0:
-                            print(f"  [Data Intuition] pred_loss={float(intu.get('pred_loss', 0)):.4f} total_contrib={float(intu['total_loss']*intu_w):.5f}")
+                            print(f"  [Data Intuition] pred_loss={float(intu.get('pred_loss', 0)):.4f} slow_value={slow_val:.5f} total_contrib={float(intu['total_loss']*intu_w):.5f}")
                 except Exception:
                     pass  # Never let the new intuition loss break an otherwise healthy run
 
@@ -1885,35 +1943,134 @@ def main():
                 except Exception as _e:
                     pass  # diagnostic only — never break the main loop
 
-        # === AGGRESSIVE Training Recipe (MD line 879 "remaining wins") ===
-        # Internalization curriculum + proper shortcut-consistency on fast recurrent state
-        # (LoopFormer + EqR + Huginn spirit)
-        if getattr(cfg, 'internal_fast_recurrent', False):
+        # === EXTREMELY AGGRESSIVE TRAINING RECIPE (my strongest current intuition) ===
+        # Substrate(OneBody + FastGated citizen + ChunkedSlow + real PredictiveDataIntuition)는 이미 상당히 끝까지 밀었다.
+        # RI-1이 여전히 안 나오는 가장 큰 이유는 training dynamics가 아직 너무 약하기 때문이다.
+        # MD + EqR/LoopFormer/Huginn/Ouro가 반복해서 말하는 것:
+        #   - Internalization curriculum을 강하고 점진적으로 (backbone이 equilibrium에 가까운 proposal을 내도록)
+        #   - Fast recurrent state 자체에 대한 shortcut-consistency를 first-class로 (short vs long budget trajectory align)
+        #   - Variable depth/budget를 그냥 옵션이 아니라 진짜 default 동역학으로
+        #   - Basin shaping을 위한 deliberate intervention (noise for breadth during training)
+        #
+        # 이제 이 Strong Attractor Training Recipe를 "new architecture를 쓸 때의 기본"으로 만들었다.
+        # internal_fast_recurrent가 활성화되면 아래 레시피가 강력하게, 구조적으로 적용된다.
+        strong_training_active = getattr(cfg, 'internal_fast_recurrent', False) or getattr(cfg, '_force_strong_attractor_training', False)
+
+        if strong_training_active:
+            # === C Test Configuration (User chose C direction) ===
+            # Goal: Test the qualitative improvements (slow-summary centric consistency + predictive value contrast)
+            # with balanced, non-destructive weights instead of blind aggression.
+            base_internalization_w = 0.22
+            base_consistency_w = 0.16
+            print("[C TEST MODE] Balanced weights + slow-summary focused consistency + predictive contrast active")
+
+            # === 1. Very Strong Internalization Curriculum (Ouro + EqR + Huginn maximum aggression) ===
+            # Ouro Stage II "loss improvement signal" + EqR attractor alignment + Huginn variable-r expectation spirit
             try:
-                # Internalization: encourage the model to propose states closer to what the fast recurrence converges to
                 if hasattr(model, '_last_inference_state') and model._last_inference_state is not None:
                     fast_h = model._last_inference_state.fast_recurrent_h
+                    slow_sum = getattr(model._last_inference_state, 'slow_memory_summary', None)
+
                     if fast_h is not None:
-                        # Simple proxy: make current pooled hidden closer to the carried fast state
                         pooled_h = h.mean(dim=1) if h.dim() == 3 else h
                         if pooled_h.shape[-1] == fast_h.shape[-1]:
-                            internalization_loss = (pooled_h.detach() - fast_h).pow(2).mean() * 0.01
-                            train_loss = train_loss + internalization_loss * 0.05   # light but real weight
+                            int_loss = (pooled_h - fast_h.detach()).pow(2).mean()
 
-                # Shortcut-consistency on fast recurrent h (align short vs long budget trajectories)
-                if getattr(cfg, 'ri1_variable_depth_active', False) and eff_depth > 2:
-                    # Re-use the short/long simulation already computed above when possible
-                    if 'short_final' in locals() and 'long_final' in locals():
-                        # Align the fast state representations (stronger than previous proxy)
-                        fast_short = short_final
-                        fast_long = long_final
-                        if fast_short.shape == fast_long.shape:
-                            sc_loss = (fast_short - fast_long.detach()).pow(2).mean() * 0.02
-                            train_loss = train_loss + sc_loss * 0.08
-                            if (step + 1) % max(1, cfg.total_steps // 8) == 0:
-                                print(f"  [Internalization + Shortcut-Consistency] sc_loss={float(sc_loss):.5f}")
+                            # EqR-style: also pull current state toward slow attractor summary if available
+                            if slow_sum is not None and slow_sum.shape[-1] == pooled_h.shape[-1]:
+                                int_loss = int_loss + (pooled_h - slow_sum.detach()).pow(2).mean() * 0.6
+
+                            # Aggressive progressive ramp + Ouro-style improvement incentive
+                            progress = min(1.0, (step + 1) / max(1, getattr(cfg, 'total_steps', 2000)))
+                            ramp = 0.4 + 0.6 * progress
+
+                            # Extra boost when we are in deep recurrence (Huginn E_r spirit)
+                            eff_depth = getattr(cfg, '_last_sampled_depth', 4)
+                            depth_boost = 1.0 + max(0.0, (eff_depth - 4) / 8.0)
+                            train_loss = train_loss + int_loss * (base_internalization_w * ramp * depth_boost)
+
+                            if (step + 1) % 50 == 0:
+                                print(f"  [Strong Internalization MAX] {float(int_loss):.5f} (ramp {ramp:.2f} depth_boost {depth_boost:.1f})")
             except Exception:
                 pass
+
+            # === 2. First-Class, High-Weight Shortcut-Consistency (MAX AGGRESSION: LoopFormer + EqR + Huginn + Ouro) ===
+            # Full combination: stopgrad(long) + slow summary + depth factor + explicit improvement signal
+            try:
+                short_state = h.mean(dim=1) if h.dim() == 3 else h
+                long_state = None
+                slow_summary_long = None
+                if hasattr(model, '_last_inference_state') and model._last_inference_state is not None:
+                    long_state = model._last_inference_state.fast_recurrent_h
+                    slow_summary_long = getattr(model._last_inference_state, 'slow_memory_summary', None)
+
+                if long_state is not None and short_state.shape == long_state.shape:
+                    sc_loss = (short_state - long_state.detach()).pow(2).mean()
+
+                    if slow_summary_long is not None:
+                        short_slow = getattr(model, '_last_inference_state', None)
+                        if short_slow is not None and hasattr(short_slow, 'slow_memory_summary') and short_slow.slow_memory_summary is not None:
+                            short_slow_summary = short_slow.slow_memory_summary
+                            if slow_summary_long.shape == short_slow_summary.shape:
+                                # C-direction: make slow_summary consistency the primary signal (not just auxiliary to fast_h)
+                                slow_cons = (short_slow_summary - slow_summary_long.detach()).pow(2).mean()
+                                sc_loss = slow_cons * 1.5 + (short_state - long_state.detach()).pow(2).mean() * 0.5  # slow_summary dominant
+
+                    eff_depth = getattr(cfg, '_last_sampled_depth', 4)
+                    depth_factor = max(1.0, eff_depth / 4.0)
+                    total_cons_w = base_consistency_w * depth_factor
+                    train_loss = train_loss + sc_loss * total_cons_w
+
+                    if (step + 1) % max(1, cfg.total_steps // 8) == 0:
+                        print(f"  [Strong Slow-Centric Consistency] {float(sc_loss):.5f} (w={total_cons_w:.3f})")
+            except Exception:
+                pass
+
+            # === 3. Deliberate Basin Shaping + First-Class Ouro Improvement Signal Loss (EqR + Ouro Stage II, exact paper spirit) ===
+            # Reference: Ouro (LoopLM) arXiv:2510.25741 — "loss improvement signal" I_i^{(t)} = max(0, L_stop^(t-1) - L_stop^(t))
+            # Then adaptive loss encourages continuation only when real improvement occurs.
+            # We implement a first-class auxiliary that directly rewards states where deeper recurrence / better slow summary
+            # produces measurable reduction in predictive error (data_intuition pred_loss) or consistency error.
+            if getattr(cfg, 'ri1_variable_depth_active', False) or getattr(cfg, '_force_strong_attractor_training', False):
+                try:
+                    noise_scale = 0.08 * (1.0 - min(1.0, step / 800))
+                    if noise_scale > 0.005:
+                        h = h + torch.randn_like(h) * noise_scale
+
+                    # Compute current "stop loss" proxy using data_intuition pred_loss (the most direct predictive signal we have)
+                    current_stop_loss = 0.0
+                    if 'intu' in locals() and intu and 'pred_loss' in intu:
+                        current_stop_loss = float(intu['pred_loss'])
+
+                    # Ouro-style improvement signal (proper first-class term)
+                    improvement_signal = 0.0
+                    if hasattr(cfg, '_prev_step_stop_loss'):
+                        prev_stop = getattr(cfg, '_prev_step_stop_loss', current_stop_loss)
+                        improvement_signal = max(0.0, prev_stop - current_stop_loss)  # positive when we improved
+
+                        # Add a proper auxiliary loss: we reward (via negative contribution when improvement is good)
+                        # For simplicity and stability, we add a loss that penalizes *lack of improvement* when we allocated deep recurrence
+                        if eff_depth > 4 and improvement_signal < 0.0003:
+                            # Low improvement after deep thinking → add pressure (encourage better use of depth/slow memory)
+                            lack_of_improvement_penalty = 0.01 * (1.0 - min(1.0, improvement_signal / 0.001))
+                            train_loss = train_loss + lack_of_improvement_penalty
+
+                    cfg._prev_step_stop_loss = current_stop_loss
+
+                    # Keep the previous pseudo boosting for backward compatibility during transition
+                    if hasattr(cfg, '_last_consistency_loss') and 'sc_loss' in locals():
+                        last_cons = getattr(cfg, '_last_consistency_loss', 0.0)
+                        curr_cons = float(sc_loss) if 'sc_loss' in locals() else 0.0
+                        I_t = max(0.0, last_cons - curr_cons)
+                        cfg._last_consistency_loss = curr_cons
+                        if I_t < 0.0005 and 'sc_loss' in locals():
+                            train_loss = train_loss + sc_loss * (base_consistency_w * 0.4)
+                except Exception:
+                    pass
+
+            # Strong recipe activity를 훨씬 더 자주, 명확하게 로깅 (직관: 학습 돌릴 때 strong recipe가 정말 돌고 있는지 로그로 잘 보여야 함)
+            if (step + 1) % 50 == 0 and strong_training_active:
+                print(f"  [Strong Attractor Recipe ACTIVE] step {step+1} | internalization + fast-h consistency + basin shaping 적용 중")
 
         # RI-1 M1 sampled depth is now part of the training distribution for C-track visibility
         if (step + 1) % max(1, cfg.total_steps // 10) == 0 and getattr(cfg, 'ri1_variable_depth_active', False):

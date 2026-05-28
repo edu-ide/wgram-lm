@@ -277,6 +277,22 @@ class QTRMConfig:
 
     qtrm_logits_scale: float = 1.0
     donor_logits_scale: float = 0.0
+
+    # === June 2026 Explicit Attractor Solver Substrate (Section 7 Overhaul) ===
+    # Proposal Engine (existing hybrid citizen) + Dedicated AttractorSolverModule
+    # Persistent y0 injection + Parcae stability + SOT + Equilibrium Internalization
+    use_explicit_attractor_solver: bool = False
+    attractor_solver_weight: float = 0.15          # multiplier on solver refinement contribution
+    attractor_solver_internalization_weight: float = 0.12
+    sot_segment_length: int = 5                    # EqR SOT h (steps per segment)
+    sot_num_segments: int = 3
+    parcae_negative_diag_enabled: bool = True
+    attractor_solver_max_steps: int = 12
+    attractor_solver_residual_tol: float = 1e-3
+    attractor_solver_ablation_zero: bool = False   # full bypass for clean baseline comparison
+    attractor_solver_use_ri_ni: bool = True        # randomized init + noise injection (EqR)
+    attractor_ri_ni_scale: float = 0.05
+
     qtrm_residual_clamp: Optional[float] = None
     qtrm_residual_gate_enabled: bool = False
     qtrm_residual_gate_init_bias: float = -2.0

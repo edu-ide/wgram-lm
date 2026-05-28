@@ -140,9 +140,20 @@ class PredictiveDataIntuition(nn.Module):
         tgt = target if target is not None else x.detach()
 
         pred_loss = F.mse_loss(pred, tgt)
+
+        # === C-direction redesign (more predictive data_intuition) ===
+        # Explicitly measure whether including slow_summary actually improves prediction quality
+        # compared to predicting from fast state alone. This creates direct gradient pressure for
+        # the slow memory to become meaningfully useful for the fast recurrence (exactly what RI-1 needs).
+        pred_no_slow, _, _ = self.forward(current, slow_summary=None)
+        pred_loss_no_slow = F.mse_loss(pred_no_slow, tgt)
+        # Positive when slow_summary helps (we want to minimize this gap in a beneficial way)
+        slow_value = (pred_loss_no_slow - pred_loss).clamp(min=0)   # how much better with slow
+        predictive_value_loss = -0.3 * slow_value   # reward when slow_summary improves prediction
+
         reg = self.regularizer_proj(pred)
         reg_loss = ((reg.pow(2).mean() - 1.0).clamp(min=0)) * reg_weight
-        total = pred_loss + reg_loss
+        total = pred_loss + reg_loss + predictive_value_loss
 
         return {
             "pred_loss": pred_loss,
@@ -150,7 +161,24 @@ class PredictiveDataIntuition(nn.Module):
             "total_loss": total,
             "surprise_mean": surprise_scalar.mean().detach(),
             "pred": pred.detach(),
+            "slow_predictive_value": slow_value.detach(),
         }
+
+
+class _DummyTripleState:
+    """Module-level picklable state class for BrainMimeticTripleMemory."""
+    def __init__(self, **kwargs):
+        self.working_memory = kwargs.get('working_memory')
+        self.attractor_state = kwargs.get('attractor_state')
+        self.provenance_register = kwargs.get('provenance_register')
+        self.step_count = kwargs.get('step_count')
+        self.long_term_state = kwargs.get('long_term_state')
+
+    def to(self, *a, **k):
+        return self
+
+    def __repr__(self):
+        return f"_DummyTripleState(step_count={self.step_count})"
 
 
 class BrainMimeticTripleMemory(torch.nn.Module):
@@ -180,14 +208,8 @@ class BrainMimeticTripleMemory(torch.nn.Module):
         return self
 
     def init_state(self, batch_size, device, dtype):
-        # Minimal dummy state
-        class DummyState:
-            working_memory = None
-            attractor_state = None
-            provenance_register = None
-            step_count = None
-            def to(self, *a, **k): return self
-        return DummyState()
+        # Use the module-level picklable state class
+        return _DummyTripleState()
 
     def set_light_eval_mode(self, enabled: bool = True):
         self._light_eval_mode = bool(enabled)
@@ -197,6 +219,16 @@ class BrainMimeticTripleMemory(torch.nn.Module):
 
     def set_ultra_fast_measurement_mode(self, enabled: bool = True, **kwargs):
         pass
+
+    def set_ri1_training_relaxed_slow(self, enabled: bool = True):
+        """
+        RI-1 causal fix: when enabled (during strong attractor recipe + internal_fast_recurrent training),
+        light_update becomes much more permissive. This allows deeper internal recurrence to actually
+        shape the slow memory summary and attractor — which was previously impossible due to the
+        extreme 0.90 / 64-chunk throttle. This is the minimal substrate change to give the
+        "one body" fast citizen + slow memory real causal composition for RI-1 depth scaling.
+        """
+        self._ri1_training_relaxed_slow = bool(enabled)
 
     def enable_long_term_surprise_driven_memory(self, **kwargs):
         pass
@@ -211,6 +243,12 @@ class BrainMimeticTripleMemory(torch.nn.Module):
 
         Now uses the actual JEPA-style predictor to compute surprise instead of a dead scalar.
         High-surprise or chunk-boundary decisions are now driven by learned data intuition.
+
+        RI-1 causal fix (2026-05-28 autopsy): when _ri1_training_relaxed_slow is set (strong attractor
+        recipe + internal_fast_recurrent training), we deliberately lower the bar for slow memory
+        participation. This is required because the previous extreme throttle (surprise>0.90 or 64-chunk)
+        meant deeper internal FastGated recurrence had almost no causal effect on the slow attractor
+        summary — directly explaining flat memory acc and non-monotonic depth scaling on RI-1 tests.
         """
         if getattr(self, '_light_eval_mode', False) or getattr(self, '_long_term_write_disabled', False):
             return self._cached_slow_summary
@@ -238,25 +276,71 @@ class BrainMimeticTripleMemory(torch.nn.Module):
             effective_chunk = max(self._chunk_size, int(self._aggressive_ticks_from_block * 2))
 
         on_real_chunk_boundary = (self._chunk_step_counter % max(32, effective_chunk)) == 0
-        extreme_surprise = surprise_scalar > 0.90
 
-        if is_aggressive and not (on_real_chunk_boundary or extreme_surprise):
+        # RI-1 training relaxation (직관-driven minimal fix):
+        # In strong attractor recipe + internal fast recurrence training, we want deeper recurrence
+        # to actually drive slow memory / attractor evolution. Extreme 0.90 threshold made this impossible.
+        ri1_relaxed = getattr(self, '_ri1_training_relaxed_slow', False)
+        if ri1_relaxed:
+            # Much more permissive during deep internal thinking in training
+            surprise_threshold = 0.52
+            effective_chunk = max(8, effective_chunk // 2)
+            on_real_chunk_boundary = (self._chunk_step_counter % max(8, effective_chunk)) == 0
+        else:
+            surprise_threshold = 0.90
+
+        extreme_surprise = surprise_scalar > surprise_threshold
+
+        if is_aggressive and not ri1_relaxed and not (on_real_chunk_boundary or extreme_surprise):
             return self._cached_slow_summary
+
+        # In relaxed training mode we still respect a (much lower) bar, but we do not early-return
+        # as aggressively. We want the slow summary to evolve with the fast recurrence trajectory.
 
         if current_latent is not None:
             pooled = current_latent.mean(dim=1) if current_latent.dim() == 3 else current_latent
             if pooled.dim() == 1:
                 pooled = pooled.unsqueeze(0)
 
-            new_summary = pooled * 0.12
+            # === ATLAS Omega Rule + EqR Attractor Integration (2026-05-28 RI-1 Autopsy) ===
+            # Previous EMA (0.85/0.15) was too weak/online (per ATLAS critique of per-token updates).
+            # In ri1_relaxed training mode we now do a lightweight "Omega-style" directed update:
+            # Use the existing PredictiveDataIntuition (JEPA-style) to produce a context-aware
+            # surprise vector that acts as the gradient signal for the slow summary.
+            # This approximates the windowed loss minimization over recent fast states
+            # (Omega rule: optimize M w.r.t. a local context of (k, v) pairs using the predictor
+            # as the internal attentional bias / loss). Combined with EqR-style residual pull
+            # toward better alignment between fast trajectory and slow attractor.
+            #
+            # Reference: ATLAS (arXiv:2505.23735) Omega rule:
+            #   M_t = α M_{t-1} - η Σ ∇ℓ(M; ϕ(k_i), v_i) over window (here approximated via data_intuition surprise)
+            # EqR (arXiv:2605.21488): convergence residual between states as diagnostic + basin shaping.
+            if ri1_relaxed and self.data_intuition is not None:
+                try:
+                    # data_intuition returns (pred, scalar_surprise, vec_surprise)
+                    pred, _, s_vec = self.data_intuition(current_latent, self._cached_slow_summary)
+                    if s_vec is not None:
+                        # Omega-style: use surprise vector as directed "gradient" signal
+                        # (higher surprise in a dimension → stronger pull on that axis of slow summary)
+                        omega_step = 0.08 * s_vec.mean(dim=0, keepdim=True) if s_vec.dim() > 1 else 0.08 * s_vec
+                        new_summary = pooled * 0.18 + omega_step  # stronger injection + surprise modulation
+                    else:
+                        new_summary = pooled * 0.15
+                except Exception:
+                    new_summary = pooled * 0.15
+            else:
+                new_summary = pooled * 0.12
+
             if self._cached_slow_summary is not None:
-                self._cached_slow_summary = 0.85 * self._cached_slow_summary + 0.15 * new_summary
+                # Momentum-style decay (Titans/Omega influence) + residual alignment (EqR)
+                mom = 0.82 if ri1_relaxed else 0.85
+                self._cached_slow_summary = mom * self._cached_slow_summary + (1 - mom) * new_summary
             else:
                 self._cached_slow_summary = new_summary
 
             if on_real_chunk_boundary or extreme_surprise:
                 self._last_chunk_commit_step = self._chunk_step_counter
-                # Future: here we could trigger richer LeWM-style recurrent prediction unroll or RC-aux term
+                # Future: richer LeWM-style unroll or full Omega windowed GD on adapter
 
             return self._cached_slow_summary
 
@@ -328,6 +412,23 @@ class BrainMimeticTripleMemory(torch.nn.Module):
 
     def set_ablation(self, enabled=True, ablation_zero=False):
         pass
+
+    # === Minimal long-term state support (to unblock training with strong recipe) ===
+    def get_long_term_state(self):
+        """Return current long-term persistent state (slots or summary)."""
+        return getattr(self, '_long_term_state', None)
+
+    def set_long_term_state(self, state):
+        """Restore long-term persistent state."""
+        self._long_term_state = state
+
+    def get_latest_long_term_slots(self):
+        """Return the most recent long-term slots (for logging/resume)."""
+        lt = getattr(self, '_long_term_state', None)
+        if lt is not None:
+            return lt
+        # Fallback to cached slow summary if no dedicated long-term state yet
+        return self._cached_slow_summary
 
 
 def integrate_brain_mimetic_stochastic_into_triple_memory(triple_memory, k=4, ablation_zero=False):

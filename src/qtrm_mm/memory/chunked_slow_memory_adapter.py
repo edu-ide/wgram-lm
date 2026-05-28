@@ -180,6 +180,11 @@ class ChunkedSlowMemoryAdapter(nn.Module):
             # LeWM follow-up inspired (RC-aux / TRM / Sub-JEPA spirit, final push)
             # Momentum + decay + horizon/reachability-aware boost + subspace Gaussian regularizer seed.
             # This makes the slow path closer to a "plannable latent world model" (LeWM + follow-ups).
+            #
+            # ATLAS Omega upgrade (2026-05-28 deep integration): the weighted aggregation is already
+            # a step toward Omega (windowed, surprise-modulated). When the caller is in ri1_relaxed
+            # training mode we can later replace the simple momentum with a true small-window GD step
+            # using data_intuition as the attentional bias (exact Omega formula in the wiki section).
             mom = 0.82
             decay = 0.96
             if not hasattr(self, '_commit_momentum'):
