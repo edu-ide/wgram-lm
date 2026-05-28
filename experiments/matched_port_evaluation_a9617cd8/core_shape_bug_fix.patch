@@ -1,0 +1,76 @@
+diff --git a/src/qtrm_mm/core.py b/src/qtrm_mm/core.py
+index 6a594f6..283c6f5 100644
+--- a/src/qtrm_mm/core.py
++++ b/src/qtrm_mm/core.py
+@@ -251,6 +251,10 @@ class QTRMRecursiveCore(nn.Module):
+ 
+         self.stochastic_breadth_prior = None
+         self.stochastic_breadth_posterior = None
++        self.stochastic_breadth_gate = nn.Linear(cfg.d_model, 1)
++        nn.init.zeros_(self.stochastic_breadth_gate.weight)
++        nn.init.constant_(self.stochastic_breadth_gate.bias, -1.5)  # start relatively closed but learnable
++
+         if self._stochastic_breadth_enabled and not self._stochastic_breadth_ablation_zero:
+             hidden = int(getattr(cfg, "core_stochastic_breadth_hidden_dim", None) or cfg.d_model * 2)
+             self.stochastic_breadth_prior = nn.Sequential(
+@@ -547,6 +551,45 @@ class QTRMRecursiveCore(nn.Module):
+                     z_h = self.norm_h(z_h + source_h)
+                     z_h = self.slow_stack(z_h, attention_mask=attention_mask)
+                     loop_id += 1
++
++                    # === FULL PORT at a9617cd8: Activate real stochastic breadth + gated equation binding readback injection ===
++                    # Uses the existing _apply_stochastic_breadth helper (clean Reverse I→G→A).
++                    # Equation binding now computes a bound representation and injects gated readback directly into z_h
++                    # so it participates in the normal one-body causal path to the LM head (no side renderer, no hidden channel).
++                    if z_h.dim() == 3:
++                        pooled_for_stoch = z_h.mean(dim=1)                    # (B, D) mean over sequence (batch-preserving)
++                        ctx_for_stoch = workspace.mean(dim=1) if workspace.dim() == 3 else workspace
++                    else:
++                        pooled_for_stoch = z_h
++                        ctx_for_stoch = workspace
++                    z_h = self._apply_stochastic_breadth(z_h, pooled_for_stoch, ctx_for_stoch)
++
++                    # Equation binding injection (real forward, gated, causal into recurrent state)
++                    equation_binding = None
++                    if getattr(self, 'equation_binding_proj', None) is not None and self.equation_binding_gate is not None:
++                        bind_in = z_h[:, 0, :]
++                        bind_feat = self.equation_binding_proj(bind_in)
++                        bind_gate = torch.sigmoid(self.equation_binding_gate(bind_in))
++                        readback = self.equation_binding_readback(bind_feat)
++
++                        # Strong defensive normalization to (B, D)
++                        if readback.dim() == 3:
++                            readback = readback[:, 0, :]
++                        if bind_gate.dim() == 3:
++                            bind_gate = bind_gate[:, 0, :]
++                        if readback.dim() > 2:
++                            readback = readback.view(readback.shape[0], -1)
++                        if bind_gate.dim() > 2:
++                            bind_gate = bind_gate.view(bind_gate.shape[0], -1)
++
++                        # Ensure gate is (B, 1) for broadcasting
++                        if bind_gate.shape[-1] != 1:
++                            bind_gate = bind_gate.mean(dim=-1, keepdim=True)
++
++                        z_h = z_h.clone()
++                        z_h[:, 0, :] = z_h[:, 0, :] + (bind_gate * readback)
++                        equation_binding = bind_feat.detach()  # expose the bound representation for Carry / downstream
++
+             if freeze_halted_state and bool(halted.any().detach().cpu().item()):
+                 active_mask = active_at_start.view(b, 1, 1)
+                 z_l = torch.where(active_mask, z_l, z_l_before_outer)
+@@ -1109,7 +1152,13 @@ class QTRMRecursiveCore(nn.Module):
+         if self.stochastic_breadth_prior is None:
+             return z_h
+ 
+-        # Build input for prior
++        # Ensure both inputs are at least 2D and batch-aligned before cat
++        if pooled.dim() == 1:
++            pooled = pooled.unsqueeze(0)
++        if ctx.dim() == 1:
++            ctx = ctx.unsqueeze(0)
++
++        # Build input for prior (now safe after call-site fixes)
+         guidance_input = torch.cat([pooled, ctx], dim=-1)
+         hidden = torch.nn.functional.gelu(
+             self.stochastic_breadth_prior[1](self.stochastic_breadth_prior[0](guidance_input))

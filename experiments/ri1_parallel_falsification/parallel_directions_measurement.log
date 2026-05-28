@@ -1,0 +1,18 @@
+Depth 1:
+VERDICT: PARTIAL (see issues)
+=== Accuracy on pure_72 ===
+Correct: 15 / 72
+reported_accuracy: 15/72 (20.83%)
+VERDICT: PARTIAL (see issues)
+Depth 4:
+VERDICT: PARTIAL (see issues)
+=== Accuracy on pure_72 ===
+Correct: 18 / 72
+reported_accuracy: 18/72 (25.00%)
+VERDICT: PARTIAL (see issues)
+Depth 8:
+VERDICT: PARTIAL (see issues)
+=== Accuracy on pure_72 ===
+Correct: 19 / 72
+reported_accuracy: 19/72 (26.39%)
+VERDICT: PARTIAL (see issues)

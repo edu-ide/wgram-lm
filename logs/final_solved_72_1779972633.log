@@ -1,0 +1,88 @@
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[Architecture Alignment] --run_72_heldout_only + --internal_fast_recurrent → forcing inference_mode on FastGated + light paths
+
+======================================================================
+[PROPER PORTING ACTIVE] Workspaces + Attractor + Provenance
+  These three historical experiment tracks are now first-class in the main RI-4 pipeline.
+  This is the default behavior per user instruction ('제대로 포팅을 하라고').
+  Use --enable-workspaces / --enable-attractor / --enable-provenance for fine control.
+======================================================================
+
+
+======================================================================
+[RI-1 M1 ACTIVE] Variable Depth Training Schedule enabled (Huginn-style)
+  Sampling mode: randint | mean=4 max=8
+  Composes with proper 3-track Attractor (depth-wise monotonic on memory_buffer)
+  This closes the Reverse I→G→A gap for RI-1 depth scaling inductive bias.
+======================================================================
+
+[GPU FORCE] Brain memory enabled → forcing device=cuda, dtype=float32 to prevent cpu/cuda + dtype mismatches
+
+======================================================================
+BRAIN MEMORY FREEZE RISK ASSESSMENT
+======================================================================
+!! HIGH RISK of computer freeze during this run !!
+Risk Level: HIGH (score=3)
+Reasons:
+  - Heldout/72 eval active with brain memory (very heavy: K-trajectories + long-term router)
+
+Recommended safe flags:
+  --heldout_eval_interval 0
+  --heldout_max_cases 8~16  (for any heldout)
+  Consider lowering K with a custom run if doing very long experiments.
+======================================================================
+
+[LIGHT NATIVE HARDENING APPLIED] K=1 forced, long-term writes blocked, no_grad + per-case gc active.
+  This is the best we can do for 'real native full-stack' without immediate system hang on this hardware.
+  Still use --heldout_max_cases 8 and monitor closely.
+[AUTO-SAFE] High risk → forcing heldout_eval_interval=0
+[Logging] Direct run log at checkpoints/hybrid_ri4_cont/run.log (in addition to stdout + TB)
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 50 steps | d_model=128
+  Gold: None
+  RI-4 ablations: slots_off=False, persistence_off=False
+
+========================================================================
+>>> PROPER PORTING OF HISTORICAL TRACKS IS ACTIVE <<<
+    - Gated Thought Workspaces (importance/ALRMC selector)
+    - Answer Align Attractor (depth-wise monotonic pressure)
+    - Provenance + World Model Gated Register
+    These three tracks are now treated as first-class citizens
+    in the main RI-4 + 5.56 continuation pipeline.
+    This is the new default per explicit user instruction.
+========================================================================
+
+========================================================================
+>>> ARCHITECTURE: v1.2 (Hybrid RI-4 + FULL v0.5 5.56 Curriculum + ARCHITECTURAL TRAJECTORY GUARDRAIL)
+    full_curriculum_rehearsal_step + rolling buffer + decay-scaled gold injection + protection_during_rehearsal=0.7
+    + K-candidate selection INSIDE OneBodyParallelHybridBlock recurrence (v0.x StateTransitionCore spirit)
+    (This is the architecture modification that was required alongside the accuracy cycle.)
+    + RI-1 M1 Variable Depth Training (Huginn-style sampling in pressure/rehearsal loops)
+      (properly ported per research-driven skill: now first-class + ablatable in active trainer)
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[v0.5 Curriculum Restoration] PRIMARY PATH: full_curriculum_rehearsal_step (decay + protection + gold injection + buffer selection) for gold_structured mode
+[Memory Redefinition] BrainMimeticTripleMemory (Working + Attractor + Provenance) attached as active participant
+[D] Internal FastGatedLinearRecurrence (Griffin-style) enabled on hybrid blocks
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 2296, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/train_hybrid_ri4_real_continuation_minimal.py", line 736, in main
+    model._triple_mem_state.working_memory = model._triple_mem_state.working_memory.to(cfg.device, dtype=cfg.dtype)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'to'

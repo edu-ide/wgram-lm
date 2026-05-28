@@ -1,0 +1,28 @@
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 12:54:42
+phase: end
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): NOT DECLARED
+ablation_matrix fully reported: YES
+honest labeling present: YES
+reported_accuracy: 21/72 (29.17%)
+checkpoint: base_for_matched_a9617cd8_port_test.pt
+
+VERDICT: PARTIAL (see issues)
+
+ISSUES:
+  - Depth-wise answer quality improvement not demonstrated (Answer Align Attractor core promise)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_END_1779940482.json

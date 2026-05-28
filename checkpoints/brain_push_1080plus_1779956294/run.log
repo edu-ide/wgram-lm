@@ -1,0 +1,5 @@
+step 600/1080 | train_loss=0.010525 | eval_loss=0.034281
+step 650/1080 | train_loss=0.002671 | eval_loss=0.032592
+step 700/1080 | train_loss=0.001705 | eval_loss=0.032243
+step 750/1080 | train_loss=0.003953 | eval_loss=0.032422
+step 800/1080 | train_loss=0.001413 | eval_loss=0.032907

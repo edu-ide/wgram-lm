@@ -1,0 +1,5 @@
+step 840/1200 | train_loss=0.005903 | eval_loss=0.037512
+step 880/1200 | train_loss=0.004059 | eval_loss=0.037191
+step 920/1200 | train_loss=0.003716 | eval_loss=0.037432
+step 960/1200 | train_loss=0.001899 | eval_loss=0.037269
+step 1000/1200 | train_loss=0.003594 | eval_loss=0.037743

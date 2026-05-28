@@ -1,0 +1,10 @@
+step 490/580 | train_loss=0.035272 | eval_loss=0.044328
+step 500/580 | train_loss=0.009172 | eval_loss=0.044087
+step 510/580 | train_loss=0.007041 | eval_loss=0.044022
+step 520/580 | train_loss=0.004057 | eval_loss=0.044053
+step 530/580 | train_loss=0.006171 | eval_loss=0.043792
+step 540/580 | train_loss=0.002949 | eval_loss=0.043379
+step 550/580 | train_loss=0.001852 | eval_loss=0.043066
+step 560/580 | train_loss=0.001775 | eval_loss=0.043057
+step 570/580 | train_loss=0.002985 | eval_loss=0.043441
+step 580/580 | train_loss=0.000901 | eval_loss=0.043828

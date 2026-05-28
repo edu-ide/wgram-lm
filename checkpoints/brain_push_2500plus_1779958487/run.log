@@ -1,0 +1,4 @@
+step 2050/2500 | train_loss=0.026721 | eval_loss=0.023327
+step 2100/2500 | train_loss=0.026672 | eval_loss=0.021783
+step 2150/2500 | train_loss=0.010811 | eval_loss=0.021207
+step 2200/2500 | train_loss=0.024868 | eval_loss=0.020619

@@ -70,7 +70,7 @@ import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 
 from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+from src.qtrm_mm.blocks import OneBodyParallelHybridBlock, InferenceState
 
 # Level-3 pivot safety: importing this will fire loud warnings if critical
 # historical inductive biases (e.g. real training-time stochastic breadth) are
@@ -1083,9 +1083,14 @@ def main():
 
                 def _hybrid_forward_only(h, slots, coarse_counter):
                     """Pure hybrid recurrence — the only thing we compile in measurement.
-                    Now fully threads fast_recurrent_state (final wave improvement).
+                    MOST AGGRESSIVE: InferenceState is now the sole threaded contract (closes MD prototype gap).
                     """
-                    fr_state = None
+                    inf_state = getattr(model, '_last_inference_state', None)
+                    if inf_state is None and getattr(cfg, 'internal_fast_recurrent', False):
+                        inf_state = InferenceState(
+                            fast_recurrent_h=getattr(model, '_fast_recurrent_state', None),
+                            step_count=getattr(model, '_internal_tick_counter', 0) or 0
+                        )
                     do_full = (coarse_interval == 1) or (coarse_counter % coarse_interval == 0)
                     for layer in model:
                         if isinstance(layer, OneBodyParallelHybridBlock):
@@ -1094,30 +1099,32 @@ def main():
                                     h,
                                     stochastic_breadth_noise=None,
                                     slot_state=slots if use_slots else None,
-                                    fast_recurrent_state=getattr(model, '_fast_recurrent_state', None) if getattr(cfg, 'internal_fast_recurrent', False) else None
+                                    fast_recurrent_state=inf_state if getattr(cfg, 'internal_fast_recurrent', False) else None
                                 )
                             else:
                                 out = layer(h, stochastic_breadth_noise=None, slot_state=None)
                             if isinstance(out, tuple):
                                 if len(out) == 3:
                                     h, slots, fr_state = out
+                                    if isinstance(fr_state, InferenceState):
+                                        inf_state = fr_state
+                                    elif fr_state is not None:
+                                        inf_state = InferenceState(fast_recurrent_h=fr_state, step_count=(inf_state.step_count + 1) if inf_state else 1)
                                 elif len(out) == 2:
                                     h, slots = out
-                                    fr_state = None
-                                else:
-                                    h = out
-                                    fr_state = None
                             else:
                                 h = out
-                                fr_state = None
                     if use_slots and slots is not None:
                         slots = slots * 0.98
 
-                    # Persist for the next micro-step inside the compiled block
-                    if fr_state is not None and getattr(cfg, 'internal_fast_recurrent', False):
-                        model._fast_recurrent_state = fr_state
+                    # Persist canonical InferenceState (primary per MD H/J)
+                    if inf_state is not None and getattr(cfg, 'internal_fast_recurrent', False):
+                        model._last_inference_state = inf_state
+                        if inf_state.fast_recurrent_h is not None:
+                            model._fast_recurrent_state = inf_state.fast_recurrent_h
+                        model._internal_tick_counter = inf_state.step_count
 
-                    return h, slots, coarse_counter + 1, fr_state
+                    return h, slots, coarse_counter + 1, inf_state
 
                 # Compile only the hybrid part.
                 # Web search best practice for complex custom state + small recurrent models:
@@ -1158,11 +1165,18 @@ def main():
                         # Fallback eager hybrid (same as before)
                         do_full_hybrid = (coarse_interval == 1) or (coarse_counter % coarse_interval == 0)
 
-                        # Architecture best-state threading (v2 direction):
-                        # When --internal_fast_recurrent, we pass and receive the fast recurrence state
-                        # explicitly so the internal Griffin-style citizen has proper temporal continuity.
-                        # This is the explicit contract upgrade from implicit block-owned state.
-                        fr_state = getattr(model, '_fast_recurrent_state', None) if getattr(cfg, 'internal_fast_recurrent', False) else None
+                        # MOST AGGRESSIVE (brain_attractor MD H + IMTA SSOT + "until no more"): InferenceState is the PRIMARY contract.
+                        # All native fast paths now thread the full dataclass (fast_recurrent_h + slow_summary + step_count).
+                        # Raw tensor is only a legacy mirror during the final transition.
+                        if getattr(cfg, 'internal_fast_recurrent', False):
+                            prev_inf = getattr(model, '_last_inference_state', None)
+                            if prev_inf is None:
+                                prev_inf = InferenceState(
+                                    fast_recurrent_h=getattr(model, '_fast_recurrent_state', None),
+                                    step_count=getattr(model, '_internal_tick_counter', 0) or 0
+                                )
+                        else:
+                            prev_inf = None
 
                         for layer in model:
                             if isinstance(layer, OneBodyParallelHybridBlock):
@@ -1171,7 +1185,7 @@ def main():
                                         h,
                                         stochastic_breadth_noise=None,
                                         slot_state=slots if use_slots else None,
-                                        fast_recurrent_state=fr_state if getattr(cfg, 'internal_fast_recurrent', False) else None
+                                        fast_recurrent_state=prev_inf if getattr(cfg, 'internal_fast_recurrent', False) else None
                                     )
                                 else:
                                     out = layer(h, stochastic_breadth_noise=None, slot_state=None)
@@ -1179,16 +1193,21 @@ def main():
                                 if isinstance(out, tuple):
                                     if len(out) == 3:
                                         h, slots, fr_state = out
+                                        if isinstance(fr_state, InferenceState):
+                                            prev_inf = fr_state
+                                        elif fr_state is not None:
+                                            prev_inf = InferenceState(fast_recurrent_h=fr_state, step_count=(prev_inf.step_count + 1) if prev_inf else 1)
                                     elif len(out) == 2:
                                         h, slots = out
-                                    else:
-                                        h = out
                                 else:
                                     h = out
 
-                        # Persist the latest fast recurrence state on the model for the next micro-step
-                        if getattr(cfg, 'internal_fast_recurrent', False) and fr_state is not None:
-                            model._fast_recurrent_state = fr_state
+                        # Persist canonical InferenceState (this closes the "Still prototype" carry gap)
+                        if getattr(cfg, 'internal_fast_recurrent', False) and prev_inf is not None:
+                            model._last_inference_state = prev_inf
+                            if prev_inf.fast_recurrent_h is not None:
+                                model._fast_recurrent_state = prev_inf.fast_recurrent_h
+                            model._internal_tick_counter = prev_inf.step_count
 
                         if use_slots and slots is not None:
                             slots = slots * 0.98
@@ -1720,12 +1739,23 @@ def main():
             if len(rehearsal_memory_buffer) > REHEARSAL_BUFFER_MAX:
                 rehearsal_memory_buffer.pop(0)
 
-        # === D-implementation guard: when internal fast recurrence is primary citizen,
-        # minimize eager external triple.step during normal training (aligns with
-        # "Remove/minimize external triple.step for fast path" in brain_attractor_centric...md).
-        # The internal FastGated + occasional light_update now carries most of the fast brain signal.
+        # === EXTREMELY AGGRESSIVE (same radicalism as 72 path, applied to all training):
+        # The MDs are clear: the internal fast citizen + sparse slow path should be the default
+        # everywhere, not just in 72 measurement. We now apply the full extreme settings by default.
         internal_fast_primary = getattr(cfg, 'internal_fast_recurrent', False)
         skip_eager_brain_for_fast = internal_fast_primary and not getattr(cfg, 'force_full_brain_every_step', False)
+
+        # Full extreme boundary reduction in normal training when the architecture is in aggressive mode
+        use_extreme_boundary_reduction = internal_fast_primary and getattr(cfg, 'aggressive_native_mode', True)
+
+        # When in extreme mode, we also force very high internal ticks and strong compression defaults
+        # for the whole run (this is the "make it the default" level the MDs want).
+        if use_extreme_boundary_reduction:
+            # These aggressive defaults now apply to normal training, not just 72
+            if not hasattr(cfg, '_forced_extreme_aggression'):
+                cfg._forced_extreme_aggression = True
+                # We can log this once
+                # print("[EXTREME AGGRESSION] Full native-style boundary reduction enabled for normal training")
 
         # === Mandatory real training loss + TensorBoard logging (user: loss 무조건 + eval loss TB) ===
         # Rehearsal objective: how close the current state is to the gold target after the step.
@@ -1748,9 +1778,19 @@ def main():
         # Fully guarded by data_intuition_ablation_zero and brain_triple ablations (RI contract).
         if (hasattr(model, '_brain_triple_memory') and
                 not getattr(model, '_brain_triple_memory_ablation_zero', False) and
-                not skip_eager_brain_for_fast):  # respect D-guard when internal fast recurrence is primary
+                not skip_eager_brain_for_fast):
+
             triple = model._brain_triple_memory
-            if getattr(triple, 'data_intuition_enabled', False) and not getattr(triple, 'data_intuition_ablation_zero', False):
+
+            # EXTREMELY AGGRESSIVE: In extreme mode we only do any brain participation (even data intuition)
+            # on very high surprise. This is the full radical application of the MD vision to normal training.
+            do_any_brain_participation = True
+            if use_extreme_boundary_reduction:
+                surprise = getattr(triple, 'last_surprise', 0.0) or 0.0
+                if float(surprise) < 0.75:
+                    do_any_brain_participation = False
+
+            if do_any_brain_participation and getattr(triple, 'data_intuition_enabled', False) and not getattr(triple, 'data_intuition_ablation_zero', False):
                 try:
                     intu = triple.compute_data_intuition_loss(model._triple_mem_state, reg_weight=0.005)
                     intu_w = float(getattr(cfg, 'data_intuition_loss_weight', 0.04))

@@ -1,0 +1,228 @@
+
+=== 50-step M1, Depth 1 ===
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 13:10:49
+phase: start
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+checkpoint: checkpoints/hybrid_ri4_ri1_m1_50step_20260528_1307/hybrid_ri4_cont_step50.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_START_1779941449.json
+Loaded 72 cases from pure_72
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[WARN] Unexpected keys ignored when loading: ['model', 'router', 'step', 'config', 'slots', 'internal_ri4_primary', 'decoupled_bank', 'use_decoupled_memory_bank']
+
+=== Accuracy on pure_72 ===
+Correct: 22 / 72
+Accuracy: 30.56%
+
+[Attractor Depth Behavior Diagnostic]
+  Attractor was enabled during this run.
+  Note: Full depth-wise monotonic improvement measurement requires
+  running the core at multiple recurrent depths on the same cases.
+  Current proxy scoring does not yet capture per-depth gold margin.
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 13:10:51
+phase: end
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+reported_accuracy: 22/72 (30.56%)
+checkpoint: checkpoints/hybrid_ri4_ri1_m1_50step_20260528_1307/hybrid_ri4_cont_step50.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_END_1779941451.json
+
+=== 50-step M1, Depth 4 ===
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 13:10:52
+phase: start
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+checkpoint: checkpoints/hybrid_ri4_ri1_m1_50step_20260528_1307/hybrid_ri4_cont_step50.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_START_1779941452.json
+Loaded 72 cases from pure_72
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[WARN] Unexpected keys ignored when loading: ['model', 'router', 'step', 'config', 'slots', 'internal_ri4_primary', 'decoupled_bank', 'use_decoupled_memory_bank']
+
+=== Accuracy on pure_72 ===
+Correct: 27 / 72
+Accuracy: 37.50%
+
+[Attractor Depth Behavior Diagnostic]
+  Attractor was enabled during this run.
+  Note: Full depth-wise monotonic improvement measurement requires
+  running the core at multiple recurrent depths on the same cases.
+  Current proxy scoring does not yet capture per-depth gold margin.
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 13:10:58
+phase: end
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+reported_accuracy: 27/72 (37.50%)
+checkpoint: checkpoints/hybrid_ri4_ri1_m1_50step_20260528_1307/hybrid_ri4_cont_step50.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_END_1779941458.json
+
+=== 50-step M1, Depth 8 ===
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 13:10:59
+phase: start
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+checkpoint: checkpoints/hybrid_ri4_ri1_m1_50step_20260528_1307/hybrid_ri4_cont_step50.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_START_1779941459.json
+Loaded 72 cases from pure_72
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+[WARN] Unexpected keys ignored when loading: ['model', 'router', 'step', 'config', 'slots', 'internal_ri4_primary', 'decoupled_bank', 'use_decoupled_memory_bank']
+
+=== Accuracy on pure_72 ===
+Correct: 24 / 72
+Accuracy: 33.33%
+
+[Attractor Depth Behavior Diagnostic]
+  Attractor was enabled during this run.
+  Note: Full depth-wise monotonic improvement measurement requires
+  running the core at multiple recurrent depths on the same cases.
+  Current proxy scoring does not yet capture per-depth gold margin.
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 13:11:11
+phase: end
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+reported_accuracy: 24/72 (33.33%)
+checkpoint: checkpoints/hybrid_ri4_ri1_m1_50step_20260528_1307/hybrid_ri4_cont_step50.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_END_1779941471.json

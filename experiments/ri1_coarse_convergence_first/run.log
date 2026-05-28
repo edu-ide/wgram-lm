@@ -1,0 +1,12 @@
+step 26/37 | train_loss=0.207031 | eval_loss=0.055908
+step 27/37 | train_loss=0.184570 | eval_loss=0.055908
+step 28/37 | train_loss=0.160156 | eval_loss=0.055664
+step 29/37 | train_loss=0.143555 | eval_loss=0.055664
+step 30/37 | train_loss=0.126953 | eval_loss=0.055664 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+step 31/37 | train_loss=0.113281 | eval_loss=0.055664
+step 32/37 | train_loss=0.103516 | eval_loss=0.055664
+step 33/37 | train_loss=0.093750 | eval_loss=0.055664
+step 34/37 | train_loss=0.083984 | eval_loss=0.055664
+step 35/37 | train_loss=0.075684 | eval_loss=0.055664 | reasoning_heldout=2/8(0.25) memory_heldout=3/8(0.38)
+step 36/37 | train_loss=0.067383 | eval_loss=0.055664
+step 37/37 | train_loss=0.060791 | eval_loss=0.055908

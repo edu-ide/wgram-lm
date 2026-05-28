@@ -98,6 +98,57 @@
 **Ablation / Control Flags** (all now exist and are ablatable in the primary trainer):
 - `--enable_stochastic_breadth` / `--stochastic_ablation_zero`
 - RehearsalConfig: `scheduled_binding_decay_start/end`, `protect_attractor`, `attractor_protection_during_rehearsal`, `gold_state_injection_alpha`
+
+---
+
+## Entry: Variable-Depth Recurrent Training Schedule (RI-1 Test-Time Compute Scaling, Huginn/LoopFormer-style)
+
+**Bias Name**: Training-time sampling of recurrence depth (effective_outer_steps / think_steps) from heavy-tailed distribution (log-normal Poisson or curriculum randint) to induce monotonic test-time depth scaling and elastic budget behavior.
+
+**Alternative Names**: RI-1 M1 variable depth training, core_elastic_depth_train_random, Huginn-style recurrence sampling, LoopFormer trajectory-consistent elastic depth.
+
+**Historical Strong Signals It Contributed To**:
+- None yet in this project (new RI-1 thread, 2026-06).
+- The partial scaffolding in QTRMRecursiveCore (randint under core_elastic_depth_*) and OneBodyParallelHybridBlock (learn_policy head) was never exercised default-on inside the active hybrid RI-4 continuation trainer's main loops or 5.56 rehearsal/pressure computations. The crude post-hoc --effective-depth proxy sweep on 50-step base produced non-monotonic results (37.5% / 27.8% / 31.9% at d=1/4/8), confirming the inductive bias was missing in training.
+
+**Key Mechanism** (target for I→G→A M1):
+- Huginn: per-microbatch (locked-step) sampling r ~ LogNormalPoisson(mean~8-32, heavy tail); input injection every step; truncated BPTT (k=8); sandwich norms for stability.
+- LoopFormer: trajectory conditioning (t, Δt sinusoidal + AdaLN/gating) + shortcut-consistency loss (short traj aligned to long traj via stop-grad).
+- In our substrate: sample effective depth per training step/batch inside the hybrid trainer's rehearsal + pressure_loss + forward calls; compose with already-ported Attractor (depth-wise monotonic pressure on actual memory_buffer states) + Workspaces + Provenance for rich conditioning; leverage existing core_elastic_depth_* flags + ablation_zero contract.
+- Result: the recurrent thinker learns operators that improve answer quality (or attractor alignment) with more iterations; test-time forcing of d=8/12 produces clean monotonic gains + ablation drops on pure_recursive_reasoning_heldout_72 under strict B.
+
+**Why It Mattered (Inductive Bias Effect)**:
+- Without training-time variable depth pressure, the model overfits to the fixed short unroll (think_steps=4 hardcoded in helpers). Longer test-time unrolls become "unseen distribution" → noise, overthinking, or non-monotonic behavior.
+- The Attractor (depth-wise pressure) and 3-tracks only produce RI-1 scaling *when the training distribution actually contains variable-horizon trajectories*.
+- This is the exact "largest remaining insufficiency" for RI-1 after the 3-track proper porting (2026-06).
+
+**Current Status in Primary Path (after 25-step clean run, 2026-05-28)**:
+- M1 implemented and exercised (trainer pressure/monotonic loops now sample variable depth with progress-biased deeper sampling).
+- 25-step clean run produced the strongest RI-1 signal to date: clear monotonic scaling with d=8 reaching 40.28% (vs pre-M1 20.83% at d=8).
+- Still **I-stage only**. Narrow contract not yet closed (no direct M1 on/off ablation on the scaling gain, short horizon, single seed).
+- Reverse I→G→A for variable depth training bias is in advanced I, but promotion to G/A is not justified yet per strict I→G→A rules.
+
+**Reverse I→G→A + I→G→A Plan**:
+- I-stage (this session): Add --enable_ri1_variable_depth + sampling (randint first, lognormal_poisson next) to the trainer; make pressure/heldout helpers and main rehearsal steps consume sampled depths; default-on when 3-tracks active for RI-1 experiments; full ablation contract (elastic_depth_ablation_zero); run matched 20-50 step continuation + immediate Triple-Track + principle gate.
+- G-stage: multi-seed + depth sweep on pure_72 strict-B showing first monotonic gain; composition with Attractor monotonic pressure on real memory_buffer.
+- A-stage: promote to component_registry as active RI-1 primitive, update SSOT + bias map + trainer guards.
+
+**Ablation / Control Flags** (to be added in M1):
+- `--enable_ri1_variable_depth` (sets core_elastic_depth_enabled + train_random + proper 3-track composition)
+- `--ri1_depth_sampling_mode` (randint | lognormal_poisson)
+- `--ri1_depth_mean` / `--ri1_depth_max`
+- Core-level: `core_elastic_depth_ablation_zero` (must destroy any future depth-scaling gain)
+- Trainer-level: sampled_depth logged per step for C-track dynamics analysis.
+
+**Evidence Links** (to be populated post first run):
+- Roadmap P1.4 M1 definition.
+- Lit: Huginn arXiv:2502.05171 (log-normal Poisson + input injection + truncated BPTT); LoopFormer ICLR 2026 (trajectory conditioning + shortcut-consistency).
+- Humanistic preflight + lit mapping recorded in 2026-06 RI-1 session notes.
+- First M1 stub implementation + gate report in experiments/matched_port_evaluation_*/ 
+
+**Notes**:
+- Directly addresses the user's "RI-1 최신 논문 참고해서 진행해봐" + "M1 stub" request.
+- Per skill: after 3-track proper port (the stability substrate), this is the highest-value next attack on the most-insufficient RI-1 condition.
 - `--gold_path` (real vs synthetic is the most important ablation for this bias)
 
 **Reverse I→G→A Status**:

@@ -1,0 +1,4 @@
+step 6/60 | train_loss=0.134766 | eval_loss=0.033691
+step 12/60 | train_loss=0.107422 | eval_loss=0.033691
+step 18/60 | train_loss=0.096680 | eval_loss=0.034180
+step 24/60 | train_loss=0.075684 | eval_loss=0.033936

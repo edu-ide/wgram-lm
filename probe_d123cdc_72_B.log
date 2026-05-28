@@ -1,0 +1,44 @@
+Loaded 72 cases from pure_recursive_reasoning_heldout_72 (B 방식 @ d123cdc)
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/probe_d123cdc_72_B_forced_choice.py", line 297, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/probe_d123cdc_72_B_forced_choice.py", line 179, in main
+    core = load_core_from_ckpt(ckpt, d_state=d_state, n_steps=n_steps).to(device)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/probe_d123cdc_72_B_forced_choice.py", line 120, in load_core_from_ckpt
+    missing, unexpected = core.load_state_dict(sd, strict=False)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 2593, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for StateTransitionCore:
+	size mismatch for step_embed.weight: copying a param with shape torch.Size([6, 256]) from checkpoint, the shape in current model is torch.Size([5, 256]).
+Loaded 72 cases from pure_recursive_reasoning_heldout_72 (B 방식 @ d123cdc)
+[load_core] missing=103 unexpected=0 (normal for older ckpt)
+[B] Binding head lightly adapted on 12 numeric cases (readback calibration).
+Case 00: B=✗ (20)  A=✗  gold=17  scores=[0.2969, 0.3263, 0.3057, 0.2871]
+Case 01: B=✗ (blue)  A=✗  gold=violet  scores=[-0.1645, -0.1504, -0.1027, -0.1598]
+Case 02: B=✓ (TRUE)  A=✓  gold=TRUE  scores=[-0.0972, -0.0976]
+Case 19: B=✓ (16,12)  A=✗  gold=16,12  scores=[0.2308, 0.1842, 0.2188, -0.1535]
+Case 39: B=✗ (24,32,20)  A=✗  gold=20,32,24  scores=[0.0897, 0.1672, 0.0927, -0.1547]
+Case 59: B=✓ (36,32)  A=✗  gold=36,32  scores=[0.4973, 0.3734, 0.2402, -0.1543]
+
+============================================================
+B 방식 (equation-state binding readback forced_choice) @ d123cdc
+============================================================
+Total cases           : 72
+B (readback) correct  : 26/72  (36.11%)
+A (crude logits) correct : 18/72  (25.00%)
+Numeric subset        : 18 cases
+B accuracy on numeric : 1/18 (5.56%)
+
+Interpretation:
+  - B uses the Stage119 binding head readback (the actual architectural
+    contribution at d123cdc) to decide which choice the bound state 'wants'
+    the LM head to emit.
+  - A is the 10-way answer_logits proxy (what probe_d123cdc_72.py used).
+  - If B >> random(25%) especially on numeric, the binding readback is
+    doing real work for forced_choice. This is the signal that later
+    hybrid (OneBody) tried to preserve/improve.
+============================================================
+
+Detailed results written to /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/probe_d123cdc_72_B_results.json

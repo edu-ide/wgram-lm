@@ -1,0 +1,141 @@
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+
+======================================================================
+[PROPER PORTING ACTIVE] Workspaces + Attractor + Provenance
+  These three historical experiment tracks are now first-class in the main RI-4 pipeline.
+  This is the default behavior per user instruction ('제대로 포팅을 하라고').
+  Use --enable-workspaces / --enable-attractor / --enable-provenance for fine control.
+======================================================================
+
+
+======================================================================
+[RI-1 M1 ACTIVE] Variable Depth Training Schedule enabled (Huginn-style)
+  Sampling mode: randint | mean=4 max=8
+  Composes with proper 3-track Attractor (depth-wise monotonic on memory_buffer)
+  This closes the Reverse I→G→A gap for RI-1 depth scaling inductive bias.
+======================================================================
+
+[GPU FORCE] Brain memory enabled → forcing device=cuda, dtype=float32 to prevent cpu/cuda + dtype mismatches
+
+======================================================================
+BRAIN MEMORY FREEZE RISK ASSESSMENT
+======================================================================
+!!! EXTREME RISK of computer freeze / OOM / system hang !!!
+Risk Level: EXTREME (score=6)
+Reasons:
+  - Heldout/72 eval active with brain memory (very heavy: K-trajectories + long-term router)
+  - Full 72 heldout without small --max-cases (high OOM risk)
+  - K=4 stochastic trajectories (heavy)
+
+Recommended safe flags:
+  --heldout_eval_interval 0
+  --max-cases 8~16  (for any heldout)
+  Consider lowering K with a custom run if doing very long experiments.
+======================================================================
+
+[LIGHT NATIVE HARDENING APPLIED] K=1 forced, long-term writes blocked, no_grad + per-case gc active.
+  This is the best we can do for 'real native full-stack' without immediate system hang on this hardware.
+  Still use --max-cases 8 and monitor closely.
+[AUTO-SAFE] High risk → forcing heldout_eval_interval=0
+[AUTO-SAFE] High risk → capping to 16 cases
+[Logging] Direct run log at checkpoints/hybrid_ri4_cont/run.log (in addition to stdout + TB)
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 50 steps | d_model=64
+  Gold: None
+  RI-4 ablations: slots_off=False, persistence_off=False
+
+========================================================================
+>>> PROPER PORTING OF HISTORICAL TRACKS IS ACTIVE <<<
+    - Gated Thought Workspaces (importance/ALRMC selector)
+    - Answer Align Attractor (depth-wise monotonic pressure)
+    - Provenance + World Model Gated Register
+    These three tracks are now treated as first-class citizens
+    in the main RI-4 + 5.56 continuation pipeline.
+    This is the new default per explicit user instruction.
+========================================================================
+
+========================================================================
+>>> ARCHITECTURE: v1.2 (Hybrid RI-4 + FULL v0.5 5.56 Curriculum + ARCHITECTURAL TRAJECTORY GUARDRAIL)
+    full_curriculum_rehearsal_step + rolling buffer + decay-scaled gold injection + protection_during_rehearsal=0.7
+    + K-candidate selection INSIDE OneBodyParallelHybridBlock recurrence (v0.x StateTransitionCore spirit)
+    (This is the architecture modification that was required alongside the accuracy cycle.)
+    + RI-1 M1 Variable Depth Training (Huginn-style sampling in pressure/rehearsal loops)
+      (properly ported per research-driven skill: now first-class + ablatable in active trainer)
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[HybridBlock] Could not load official FLA MLA, falling back to simplified version: No module named 'einops'
+[v0.5 Curriculum Restoration] PRIMARY PATH: full_curriculum_rehearsal_step (decay + protection + gold injection + buffer selection) for gold_structured mode
+[Resume] Loading from checkpoints/brain_push_2500plus_1779958487/hybrid_ri4_cont_step2200.pt
+[Resume] Model loaded with unexpected keys (old RI-4 attachment style from prior experiment, ignored): 62 keys
+[Resume] Resumed at step 2200
+[Memory Redefinition] BrainMimeticTripleMemory (Working + Attractor + Provenance) attached as active participant
+  Triple memory state initialized — WorkingMemory + Attractor + Provenance now actively participate in every recurrence step
+[Resume] Brain triple / long-term restore skipped (non-fatal): 'TripleMemoryState' object has no attribute 'to'
+  [GRAM/PTRM Upgrade] BrainMimeticStochasticSampler attached (K=4) — structured mental simulation inside WorkingMemory, guided by Attractor + Provenance
+  [Long-Term Memory] SparseGatedLongTermMemory (Raven+LM2+surprise) activated — slow persistent memory now participates
+[Light Eval Mode] BrainMimeticTripleMemory entered SAFE mode (K=1, long-term writes BLOCKED)
+  [OPTIMIZED LIGHT NATIVE] 72 heldout will run with brain full-stack attached but K=1 + all writes blocked + no_grad planned
+  This is the minimal honest native path that can run without freezing the machine.
+[SparseSlotRouter] Fast eval mode ON (cache_interval=2) - safe mode with shape guards
+[Native Eval Mode] Real native participation enabled (router cache_interval=2)
+  [NATIVE EVAL PUSH] Brain memory participation kept during 72 (no full bypass).
+  Optimizing per-step cost while maintaining real native influence.
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[C-Track] TensorBoard enabled at checkpoints/hybrid_ri4_cont/tb (train_loss + eval_loss + Heldout/*_acc)
+
+=== RUN_72_HELDOUT_ONLY MODE (OPTIMIZED NATIVE FULL-STACK) ===
+[Pre-flight] Final aggressive memory cleanup before native 72 with brain components...
+  Light mode (K=1 + long-term read-only + inference_mode + max cases cap) active.
+  [NATIVE EVAL PUSH] Brain memory participating (optimized per-step cost, no full bypass).
+[SparseSlotRouter] Fast eval mode ON (cache_interval=4) - safe mode with shape guards
+[ULTRA FAST MEASUREMENT] brain_step_interval=3, lt_stride=4
+[SAFETY] Brain active → capping to 8 cases (was 16)
+[1번] Compiled micro-step enabled for native measurement (Python dispatch reduction)
+W0528 20:05:02.021000 1063703 torch/fx/experimental/symbolic_shapes.py:6307] [0/0] failed during evaluate_expr(u0 < 32, hint=None, size_oblivious=False, forcing_spec=False
+E0528 20:05:02.022000 1063703 torch/fx/experimental/recording.py:299] [0/0] failed while running evaluate_expr(*(u0 < 32, None), **{'fx_node': False})
+W0528 20:05:06.955000 1063703 torch/fx/experimental/symbolic_shapes.py:6307] [1/0] failed during evaluate_expr(u0 < 32, hint=None, size_oblivious=False, forcing_spec=False
+E0528 20:05:06.956000 1063703 torch/fx/experimental/recording.py:299] [1/0] failed while running evaluate_expr(*(u0 < 32, None), **{'fx_node': False})
+W0528 20:05:07.400000 1063703 torch/fx/experimental/symbolic_shapes.py:6307] [2/0] failed during evaluate_expr(u0 < 32, hint=None, size_oblivious=False, forcing_spec=False
+E0528 20:05:07.400000 1063703 torch/fx/experimental/recording.py:299] [2/0] failed while running evaluate_expr(*(u0 < 32, None), **{'fx_node': False})
+W0528 20:05:07.591000 1063703 torch/fx/experimental/symbolic_shapes.py:6307] [3/0] failed during evaluate_expr(u0 < 32, hint=None, size_oblivious=False, forcing_spec=False
+E0528 20:05:07.591000 1063703 torch/fx/experimental/recording.py:299] [3/0] failed while running evaluate_expr(*(u0 < 32, None), **{'fx_node': False})
+/home/tripleyoung/.local/lib/python3.12/site-packages/torch/_inductor/compile_fx.py:194: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+skipping cudagraphs due to disabling cudagraphs due to incompatible op aten._local_scalar_dense.default Found from   File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/memory/sparse_slot_router.py", line 356, in forward
+    if mask.shape[-1] == self.num_slots and topk_idx.max().item() < self.num_slots:
+
+
+skipping cudagraphs due to mutated inputs (1 instances). Found from : 
+   File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/src/qtrm_mm/memory/sparse_slot_router.py", line 334, in torch_dynamo_resume_in_forward_at_333
+    mask.scatter_(1, topk_idx, 1.0)
+
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0] failed while attempting to run meta for aten.expand.default
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0] Traceback (most recent call last):
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]   File "/home/tripleyoung/.local/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py", line 2384, in _dispatch_impl
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]     r = func(*args, **kwargs)
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]         ^^^^^^^^^^^^^^^^^^^^^
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]   File "/home/tripleyoung/.local/lib/python3.12/site-packages/torch/_ops.py", line 723, in __call__
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]     return self._op(*args, **kwargs)
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]   File "/home/tripleyoung/.local/lib/python3.12/site-packages/torch/_refs/__init__.py", line 3015, in expand
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]     torch._check(
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]   File "/home/tripleyoung/.local/lib/python3.12/site-packages/torch/__init__.py", line 1656, in _check
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]     _check_with(RuntimeError, cond, message)
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]   File "/home/tripleyoung/.local/lib/python3.12/site-packages/torch/__init__.py", line 1638, in _check_with
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0]     raise error_type(message_evaluated)
+E0528 20:05:09.349000 1063703 torch/_subclasses/fake_tensor.py:2388] [17/0] RuntimeError: expand: the requested shape has too few dimensions!
+  [1번 Timing] micro-step 1 total: 8.919s

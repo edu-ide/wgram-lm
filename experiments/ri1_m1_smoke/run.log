@@ -1,0 +1,93 @@
+=== Clean short M1 smoke (no resume, 5 steps, variable depth + 3-track) ===
+step 1/5 | train_loss=0.185547 | eval_loss=0.044678
+step 2/5 | train_loss=0.177734 | eval_loss=0.044434
+step 3/5 | train_loss=0.265625 | eval_loss=0.044189
+step 4/5 | train_loss=0.170898 | eval_loss=0.044434
+step 5/5 | train_loss=0.163086 | eval_loss=0.044434 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+
+======================================================================
+[PROPER PORTING ACTIVE] Workspaces + Attractor + Provenance
+  These three historical experiment tracks are now first-class in the main RI-4 pipeline.
+  This is the default behavior per user instruction ('제대로 포팅을 하라고').
+  Use --enable-workspaces / --enable-attractor / --enable-provenance for fine control.
+======================================================================
+
+
+======================================================================
+[RI-1 M1 ACTIVE] Variable Depth Training Schedule enabled (Huginn-style)
+  Sampling mode: randint | mean=3 max=6
+  Composes with proper 3-track Attractor (depth-wise monotonic on memory_buffer)
+  This closes the Reverse I→G→A gap for RI-1 depth scaling inductive bias.
+======================================================================
+
+[Logging] Direct run log at experiments/ri1_m1_smoke/run.log (in addition to stdout + TB)
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 5 steps | d_model=64
+  Gold: None
+  RI-4 ablations: slots_off=False, persistence_off=False
+
+========================================================================
+>>> PROPER PORTING OF HISTORICAL TRACKS IS ACTIVE <<<
+    - Gated Thought Workspaces (importance/ALRMC selector)
+    - Answer Align Attractor (depth-wise monotonic pressure)
+    - Provenance + World Model Gated Register
+    These three tracks are now treated as first-class citizens
+    in the main RI-4 + 5.56 continuation pipeline.
+    This is the new default per explicit user instruction.
+========================================================================
+
+========================================================================
+>>> ARCHITECTURE: v1.2 (Hybrid RI-4 + FULL v0.5 5.56 Curriculum + ARCHITECTURAL TRAJECTORY GUARDRAIL)
+    full_curriculum_rehearsal_step + rolling buffer + decay-scaled gold injection + protection_during_rehearsal=0.7
+    + K-candidate selection INSIDE OneBodyParallelHybridBlock recurrence (v0.x StateTransitionCore spirit)
+    (This is the architecture modification that was required alongside the accuracy cycle.)
+    + RI-1 M1 Variable Depth Training (Huginn-style sampling in pressure/rehearsal loops)
+      (properly ported per research-driven skill: now first-class + ablatable in active trainer)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[v0.5 Curriculum Restoration] PRIMARY PATH: full_curriculum_rehearsal_step (decay + protection + gold injection + buffer selection) for gold_structured mode
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[C-Track] TensorBoard enabled at experiments/ri1_m1_smoke/tb (train_loss + eval_loss + Heldout/*_acc)
+[B+C-Track] Periodic real heldout accuracy probe ACTIVE every 5 steps (max_cases=8) on reasoning + memory 72.jsonl
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~3)
+step 1/5 | train_loss=0.185547 | eval_loss=0.044678
+step 1/5 | norm=3.641
+[Checkpoint] saved experiments/ri1_m1_smoke/hybrid_ri4_cont_step1.pt
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~1)
+step 2/5 | train_loss=0.177734 | eval_loss=0.044434
+step 2/5 | norm=3.984
+[Checkpoint] saved experiments/ri1_m1_smoke/hybrid_ri4_cont_step2.pt
+  [RI-1 M1] Step 2: sampled effective_depth=3 for answer_pressure (C-track)
+  [RI-1 M1] Step 2: sampled effective_depth=2 for monotonic_pressure (Attractor composition)
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~5)
+step 3/5 | train_loss=0.265625 | eval_loss=0.044189
+step 3/5 | norm=3.953
+[Checkpoint] saved experiments/ri1_m1_smoke/hybrid_ri4_cont_step3.pt
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~2)
+step 4/5 | train_loss=0.170898 | eval_loss=0.044434
+step 4/5 | norm=3.922
+[Checkpoint] saved experiments/ri1_m1_smoke/hybrid_ri4_cont_step4.pt
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~6)
+step 5/5 | train_loss=0.163086 | eval_loss=0.044434 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+step 5/5 | norm=3.844
+[Checkpoint] saved experiments/ri1_m1_smoke/hybrid_ri4_cont_step5.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)
+[C-Track] TensorBoard flushed+closed. Logs at: experiments/ri1_m1_smoke/tb  (tensorboard --logdir experiments/ri1_m1_smoke/tb)

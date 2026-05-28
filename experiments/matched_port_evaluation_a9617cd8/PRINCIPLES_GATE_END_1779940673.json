@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-05-28 12:57:53",
+  "phase": "end",
+  "benchmark": "pure_recursive_reasoning_heldout_72",
+  "conditions_matched": "partial_synthetic_base",
+  "strict_b": true,
+  "one_body": true,
+  "gram_ptrm_restoration": [
+    "stochastic_breadth=ON in forward path",
+    "gated_equation_binding readback=ON (z_h injection)"
+  ],
+  "attractor_depth_behavior": false,
+  "three_historical_tracks": {
+    "workspaces": false,
+    "attractor": false,
+    "provenance": false,
+    "all_properly_ported": false,
+    "notes": []
+  },
+  "ablation_matrix_reported": true,
+  "honest_notes": [
+    "I-stage port of QTRMRecursiveCore stochastic + gated binding (a9617cd8). Synthetic 10-step base. Not a real pretraining continuation."
+  ],
+  "issues": [
+    "Depth-wise answer quality improvement not demonstrated (Answer Align Attractor core promise)"
+  ],
+  "recommendations": [
+    "Honest I-stage / partial / synthetic labeling present — good."
+  ],
+  "verdict": "PARTIAL (see issues)",
+  "accuracy": "21/72 (29.17%)",
+  "checkpoint": "base_for_matched_a9617cd8_port_test.pt",
+  "extra": {}
+}

@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-05-28 12:40:24",
+  "phase": "end",
+  "benchmark": "pure_recursive_reasoning_heldout_72",
+  "conditions_matched": "partial_synthetic_base",
+  "strict_b": true,
+  "one_body": true,
+  "gram_ptrm_restoration": [
+    "stochastic_breadth=ON in forward path",
+    "gated_equation_binding readback=ON (z_h injection)"
+  ],
+  "attractor_depth_behavior": false,
+  "three_historical_tracks": {
+    "workspaces": false,
+    "attractor": false,
+    "provenance": false,
+    "all_properly_ported": false,
+    "notes": []
+  },
+  "ablation_matrix_reported": false,
+  "honest_notes": [
+    "Matched continuation (50 steps). conditions-matched=partial_synthetic_base. Full LM-head forced_choice scoring not yet wired. See protocol."
+  ],
+  "issues": [],
+  "recommendations": [
+    "Honest I-stage / partial / synthetic labeling present — good."
+  ],
+  "verdict": "PARTIAL (see issues)",
+  "accuracy": "discrimination=2.0665 gold_pref=0.625",
+  "checkpoint": "experiments/matched_port_evaluation_a9617cd8/base_for_matched_a9617cd8_port_test.pt",
+  "extra": {
+    "timestamp": "2026-05-28 12:40:24",
+    "base_checkpoint": "experiments/matched_port_evaluation_a9617cd8/base_for_matched_a9617cd8_port_test.pt",
+    "continuation_steps": 50,
+    "ablation": {
+      "stochastic_disabled": false,
+      "binding_disabled": false
+    },
+    "conditions_matched": "partial_synthetic_base",
+    "protocol": "FAIR_COMPARISON_PROTOCOL.md",
+    "strict_b_result": {
+      "status": "improved_core_discrimination",
+      "num_cases": 8,
+      "avg_discrimination": 2.0665,
+      "gold_preferred_rate": 0.625,
+      "note": "Core-state discrimination proxy (higher = better preference for gold answer)."
+    },
+    "loss_curve": [
+      0.25,
+      0.1982019543647766,
+      0.1246025562286377,
+      0.04824105650186539,
+      0.001966950949281454,
+      0.028405584394931793,
+      0.05077176168560982,
+      0.027801822870969772,
+      0.0034455559216439724,
+      0.0035018979106098413,
+      0.015567896887660027,
+      0.01644706539809704,
+      0.010363140143454075,
+      0.0037630023434758186,
+      0.00042453265632502735,
+      0.00026815905584953725,
+      0.0019516930915415287,
+      0.003193346783518791,
+      0.0030527589842677116,
+      0.0015738527290523052,
+      0.00033317843917757273,
+      0.00017522441339679062,
+      0.0013272440992295742,
+      0.002047256799414754,
+      0.0016643018461763859,
+      0.0005687601515091956,
+      4.608694507624023e-05,
+      0.00020995184604544193,
+      0.000653881230391562,
+      0.0009315667557530105,
+      0.0009097757283598185,
+      0.00045646040234714746,
+      0.00010019931505667046,
+      1.0064411981147714e-05,
+      0.00021503586322069168,
+      0.0004281323926988989,
+      0.00044140039244666696,
+      0.00032557558733969927,
+      0.00019015643920283765,
+      1.4793158698012121e-05,
+      7.49110768083483e-06,
+      0.00015237738261930645,
+      0.00024770331219770014,
+      0.00024171388940885663,
+      0.00013160883099772036,
+      5.0202535931020975e-05,
+      1.6629276160529116e-06,
+      1.8000744603341445e-05,
+      0.00011755760351661593,
+      0.00010858391033252701
+    ],
+    "final_loss": 0.00010858391033252701
+  }
+}

@@ -1,7 +1,7 @@
 """
 Sparse Slot Router for Raven/MSA-style memory inside recurrence.
 
-This is the minimal prototype targeting RI-4 (Sparse Selective Memory Access
+This is the RI-4 Sparse Selective Memory Access implementation (Raven/MSA style). Low-impact scaffolding relative to the core FastGated + ChunkedSlow citizen (D/E/H/J).
 causally active inside the raw intelligence / latent reasoning loop).
 
 Design goals (strict):

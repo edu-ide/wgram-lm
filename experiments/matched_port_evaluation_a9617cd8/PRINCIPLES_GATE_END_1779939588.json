@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-05-28 12:39:48",
+  "phase": "end",
+  "benchmark": "pure_recursive_reasoning_heldout_72",
+  "conditions_matched": "partial_synthetic_base",
+  "strict_b": true,
+  "one_body": true,
+  "gram_ptrm_restoration": [
+    "stochastic_breadth=ON in forward path",
+    "gated_equation_binding readback=ON (z_h injection)"
+  ],
+  "attractor_depth_behavior": false,
+  "three_historical_tracks": {
+    "workspaces": false,
+    "attractor": false,
+    "provenance": false,
+    "all_properly_ported": false,
+    "notes": []
+  },
+  "ablation_matrix_reported": false,
+  "honest_notes": [
+    "Matched continuation (10 steps). conditions-matched=partial_synthetic_base. Full LM-head forced_choice scoring not yet wired. See protocol."
+  ],
+  "issues": [],
+  "recommendations": [
+    "Honest I-stage / partial / synthetic labeling present — good."
+  ],
+  "verdict": "PARTIAL (see issues)",
+  "accuracy": "discrimination=-0.5179 gold_pref=0.625",
+  "checkpoint": "experiments/matched_port_evaluation_a9617cd8/base_for_matched_a9617cd8_port_test.pt",
+  "extra": {
+    "timestamp": "2026-05-28 12:39:48",
+    "base_checkpoint": "experiments/matched_port_evaluation_a9617cd8/base_for_matched_a9617cd8_port_test.pt",
+    "continuation_steps": 10,
+    "ablation": {
+      "stochastic_disabled": false,
+      "binding_disabled": false
+    },
+    "conditions_matched": "partial_synthetic_base",
+    "protocol": "FAIR_COMPARISON_PROTOCOL.md",
+    "strict_b_result": {
+      "status": "improved_core_discrimination",
+      "num_cases": 8,
+      "avg_discrimination": -0.5179,
+      "gold_preferred_rate": 0.625,
+      "note": "Core-state discrimination proxy (higher = better preference for gold answer)."
+    },
+    "loss_curve": [
+      0.25,
+      0.19915731251239777,
+      0.12485748529434204,
+      0.05033049359917641,
+      0.002318636979907751,
+      0.026107896119356155,
+      0.051771875470876694,
+      0.03080016002058983,
+      0.00550732109695673,
+      0.0008770224521867931
+    ],
+    "final_loss": 0.0008770224521867931
+  }
+}

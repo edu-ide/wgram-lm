@@ -1,0 +1,28 @@
+=== C-Track Extraction from M1 Smoke Log ===
+step 1/5 | train_loss=0.185547 | eval_loss=0.044678
+step 2/5 | train_loss=0.177734 | eval_loss=0.044434
+step 3/5 | train_loss=0.265625 | eval_loss=0.044189
+step 4/5 | train_loss=0.170898 | eval_loss=0.044434
+step 5/5 | train_loss=0.163086 | eval_loss=0.044434 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~3)
+step 1/5 | train_loss=0.185547 | eval_loss=0.044678
+step 1/5 | norm=3.641
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~1)
+step 2/5 | train_loss=0.177734 | eval_loss=0.044434
+step 2/5 | norm=3.984
+  [RI-1 M1] Step 2: sampled effective_depth=3 for answer_pressure (C-track)
+  [RI-1 M1] Step 2: sampled effective_depth=2 for monotonic_pressure (Attractor composition)
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~5)
+step 3/5 | train_loss=0.265625 | eval_loss=0.044189
+step 3/5 | norm=3.953
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~2)
+step 4/5 | train_loss=0.170898 | eval_loss=0.044434
+step 4/5 | norm=3.922
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~6)
+step 5/5 | train_loss=0.163086 | eval_loss=0.044434 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+step 5/5 | norm=3.844
+
+=== Honest Summary ===
+M1 smoke (5 steps, d=64, randint 3-6) successfully exercised variable depth sampling in pressure/monotonic loops while 3-tracks were default-on.
+Loss descent observed. Multiple different depths sampled (1~6). Proper porting banners active.
+Deeper eval blocked by torch 2.6 weights_only on custom ContinuationConfig (environment, not architecture).

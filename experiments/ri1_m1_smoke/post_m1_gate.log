@@ -1,0 +1,180 @@
+=== POST-M1 Principle Gate ===
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 12:57:53
+phase: end
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): NOT DECLARED
+ablation_matrix fully reported: YES
+honest labeling present: YES
+reported_accuracy: 21/72 (29.17%)
+checkpoint: base_for_matched_a9617cd8_port_test.pt
+
+VERDICT: PARTIAL (see issues)
+
+ISSUES:
+  - Depth-wise answer quality improvement not demonstrated (Answer Align Attractor core promise)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_END_1779940673.json
+=== POST-M1 depth=1 ===
+usage: compute_72_accuracy_from_base.py [-h] [--checkpoint CHECKPOINT]
+                                        [--enable-workspaces]
+                                        [--enable-attractor]
+                                        [--enable-provenance] [--all-three]
+                                        [--effective-depth EFFECTIVE_DEPTH]
+compute_72_accuracy_from_base.py: error: unrecognized arguments: --all-three-tracks
+=== POST-M1 depth=4 ===
+usage: compute_72_accuracy_from_base.py [-h] [--checkpoint CHECKPOINT]
+                                        [--enable-workspaces]
+                                        [--enable-attractor]
+                                        [--enable-provenance] [--all-three]
+                                        [--effective-depth EFFECTIVE_DEPTH]
+compute_72_accuracy_from_base.py: error: unrecognized arguments: --all-three-tracks
+=== POST-M1 depth=8 ===
+usage: compute_72_accuracy_from_base.py [-h] [--checkpoint CHECKPOINT]
+                                        [--enable-workspaces]
+                                        [--enable-attractor]
+                                        [--enable-provenance] [--all-three]
+                                        [--effective-depth EFFECTIVE_DEPTH]
+compute_72_accuracy_from_base.py: error: unrecognized arguments: --all-three-tracks
+=== Corrected POST-M1 Depth Sweep (using --all-three) on experiments/ri1_m1_smoke/hybrid_ri4_cont_step5.pt ===
+=== POST-M1 depth=1 (corrected flag) ===
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 12:58:03
+phase: start
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+checkpoint: experiments/ri1_m1_smoke/hybrid_ri4_cont_step5.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_START_1779940683.json
+Loaded 72 cases from pure_72
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 235, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 111, in main
+    core = load_core_from_checkpoint(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 32, in load_core_from_checkpoint
+    ckpt = torch.load(ckpt_path, map_location="cpu")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 1524, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, [1mdo those steps only if you trust the source of the checkpoint[0m. 
+	(1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+	(2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.
+	WeightsUnpickler error: Unsupported global: GLOBAL __main__.ContinuationConfig was not an allowed global by default. Please use `torch.serialization.add_safe_globals([__main__.ContinuationConfig])` or the `torch.serialization.safe_globals([__main__.ContinuationConfig])` context manager to allowlist this global if you trust this class/function.
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.
+=== POST-M1 depth=4 (corrected flag) ===
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 12:58:04
+phase: start
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+checkpoint: experiments/ri1_m1_smoke/hybrid_ri4_cont_step5.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_START_1779940684.json
+Loaded 72 cases from pure_72
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 235, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 111, in main
+    core = load_core_from_checkpoint(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 32, in load_core_from_checkpoint
+    ckpt = torch.load(ckpt_path, map_location="cpu")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 1524, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, [1mdo those steps only if you trust the source of the checkpoint[0m. 
+	(1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+	(2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.
+	WeightsUnpickler error: Unsupported global: GLOBAL __main__.ContinuationConfig was not an allowed global by default. Please use `torch.serialization.add_safe_globals([__main__.ContinuationConfig])` or the `torch.serialization.safe_globals([__main__.ContinuationConfig])` context manager to allowlist this global if you trust this class/function.
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.
+=== POST-M1 depth=8 (corrected flag) ===
+
+========================================================================
+REASONING TEST PRINCIPLES GATE  (항상 실행되는 원칙 검증)
+========================================================================
+timestamp: 2026-05-28 12:58:04
+phase: start
+benchmark: pure_recursive_reasoning_heldout_72
+conditions-matched: partial_synthetic_base
+strict_b (pure_72, no-evidence): YES
+one_body_causal_path: YES
+GRAM/PTRM restoration live: stochastic_breadth=ON in forward path, gated_equation_binding readback=ON (z_h injection)
+Answer Attractor depth behavior measured: NO / NOT PROVIDED
+Three historical tracks (Workspaces + Attractor + Provenance): Workspaces (importance selector), Answer Attractor (depth-wise monotonic), Provenance (Graph + WorldModel + Gated Register), → PROPER PORTING ACTIVE (default in main RI-4 trainer)
+ablation_matrix fully reported: NO
+honest labeling present: YES
+checkpoint: experiments/ri1_m1_smoke/hybrid_ri4_cont_step5.pt
+
+VERDICT: PARTIAL (see issues)
+
+RECOMMENDATIONS:
+  - Honest I-stage / partial / synthetic labeling present — good.
+========================================================================
+
+[PRINCIPLE GATE] Report written: PRINCIPLES_GATE_START_1779940684.json
+Loaded 72 cases from pure_72
+Traceback (most recent call last):
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 235, in <module>
+    main()
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 111, in main
+    core = load_core_from_checkpoint(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/experiments/matched_port_evaluation_a9617cd8/compute_72_accuracy_from_base.py", line 32, in load_core_from_checkpoint
+    ckpt = torch.load(ckpt_path, map_location="cpu")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/serialization.py", line 1524, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, [1mdo those steps only if you trust the source of the checkpoint[0m. 
+	(1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+	(2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.
+	WeightsUnpickler error: Unsupported global: GLOBAL __main__.ContinuationConfig was not an allowed global by default. Please use `torch.serialization.add_safe_globals([__main__.ContinuationConfig])` or the `torch.serialization.safe_globals([__main__.ContinuationConfig])` context manager to allowlist this global if you trust this class/function.
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.

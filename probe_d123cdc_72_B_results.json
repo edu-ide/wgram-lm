@@ -1,0 +1,1382 @@
+{
+  "summary": {
+    "total": 72,
+    "B_correct": 24,
+    "B_acc": 33.333333333333336,
+    "A_correct": 18,
+    "A_acc": 25.0,
+    "numeric_total": 18,
+    "numeric_B_correct": 1,
+    "numeric_B_acc": 5.555555555555555
+  },
+  "per_case": [
+    {
+      "i": 0,
+      "gold": "17",
+      "choices": [
+        "17",
+        "20",
+        "18",
+        "16"
+      ],
+      "chosen_B": "20",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.2966,
+        0.323,
+        0.3065,
+        0.2815
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 1,
+      "gold": "violet",
+      "choices": [
+        "violet",
+        "green",
+        "blue",
+        "silver"
+      ],
+      "chosen_B": "violet",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        -0.1211,
+        -0.1337,
+        -0.1368,
+        -0.1693
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 2,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.109,
+        -0.0945
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 3,
+      "gold": "8,4",
+      "choices": [
+        "8,4",
+        "4,8",
+        "4,2",
+        "EMPTY"
+      ],
+      "chosen_B": "8,4",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.2191,
+        0.1761,
+        0.1748,
+        -0.1689
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 4,
+      "gold": "32",
+      "choices": [
+        "32",
+        "36",
+        "33",
+        "31"
+      ],
+      "chosen_B": "36",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.535,
+        0.6363,
+        0.5801,
+        0.5141
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 5,
+      "gold": "silver",
+      "choices": [
+        "silver",
+        "amber",
+        "green",
+        "red"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1696,
+        -0.1815,
+        -0.1332,
+        -0.099
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 6,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0954,
+        -0.1087
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 7,
+      "gold": "4,16,8",
+      "choices": [
+        "4,16,8",
+        "8,16,4",
+        "2,8,4",
+        "EMPTY"
+      ],
+      "chosen_B": "8,16,4",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.1051,
+        0.1614,
+        0.1178,
+        -0.1716
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 8,
+      "gold": "51",
+      "choices": [
+        "51",
+        "56",
+        "52",
+        "50"
+      ],
+      "chosen_B": "56",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        1.3755,
+        1.6499,
+        1.4924,
+        1.2708
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 9,
+      "gold": "red",
+      "choices": [
+        "red",
+        "violet",
+        "amber",
+        "blue"
+      ],
+      "chosen_B": "red",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        -0.1003,
+        -0.1225,
+        -0.1832,
+        -0.1378
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 10,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.1086,
+        -0.0947
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 11,
+      "gold": "12,8",
+      "choices": [
+        "12,8",
+        "8,12",
+        "6,4",
+        "EMPTY"
+      ],
+      "chosen_B": "6,4",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.2073,
+        0.1838,
+        0.2198,
+        -0.1702
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 12,
+      "gold": "74",
+      "choices": [
+        "74",
+        "80",
+        "75",
+        "73"
+      ],
+      "chosen_B": "73",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.5727,
+        0.4528,
+        0.5553,
+        0.6439
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 13,
+      "gold": "blue",
+      "choices": [
+        "blue",
+        "silver",
+        "violet",
+        "green"
+      ],
+      "chosen_B": "violet",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.137,
+        -0.1697,
+        -0.1216,
+        -0.1335
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 14,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0939,
+        -0.1082
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 15,
+      "gold": "8,20,12",
+      "choices": [
+        "8,20,12",
+        "12,20,8",
+        "4,10,6",
+        "EMPTY"
+      ],
+      "chosen_B": "12,20,8",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.0589,
+        0.0844,
+        0.0827,
+        -0.1699
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 16,
+      "gold": "29",
+      "choices": [
+        "29",
+        "36",
+        "30",
+        "28"
+      ],
+      "chosen_B": "36",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.4449,
+        0.6335,
+        0.4835,
+        0.4298
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 17,
+      "gold": "green",
+      "choices": [
+        "green",
+        "red",
+        "silver",
+        "amber"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1325,
+        -0.0982,
+        -0.1678,
+        -0.1812
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 18,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.1091,
+        -0.0961
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 19,
+      "gold": "16,12",
+      "choices": [
+        "16,12",
+        "12,16",
+        "8,6",
+        "EMPTY"
+      ],
+      "chosen_B": "8,6",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.1952,
+        0.1652,
+        0.2133,
+        -0.17
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 20,
+      "gold": "42",
+      "choices": [
+        "42",
+        "45",
+        "43",
+        "41"
+      ],
+      "chosen_B": "45",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.7752,
+        0.9193,
+        0.8551,
+        0.7378
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 21,
+      "gold": "amber",
+      "choices": [
+        "amber",
+        "blue",
+        "red",
+        "violet"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1841,
+        -0.1381,
+        -0.1011,
+        -0.1223
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 22,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0971,
+        -0.1088
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 23,
+      "gold": "12,24,16",
+      "choices": [
+        "12,24,16",
+        "16,24,12",
+        "6,12,8",
+        "EMPTY"
+      ],
+      "chosen_B": "6,12,8",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.0567,
+        0.0882,
+        0.1068,
+        -0.1688
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 24,
+      "gold": "64",
+      "choices": [
+        "64",
+        "68",
+        "65",
+        "63"
+      ],
+      "chosen_B": "63",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.916,
+        0.7409,
+        0.8687,
+        1.0042
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 25,
+      "gold": "violet",
+      "choices": [
+        "violet",
+        "green",
+        "blue",
+        "silver"
+      ],
+      "chosen_B": "violet",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        -0.1199,
+        -0.1312,
+        -0.1348,
+        -0.1678
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 26,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0942,
+        -0.1075
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 27,
+      "gold": "20,16",
+      "choices": [
+        "20,16",
+        "16,20",
+        "10,8",
+        "EMPTY"
+      ],
+      "chosen_B": "20,16",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.2489,
+        0.2113,
+        0.1844,
+        -0.1695
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 28,
+      "gold": "90",
+      "choices": [
+        "90",
+        "95",
+        "91",
+        "89"
+      ],
+      "chosen_B": "89",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.3323,
+        0.2948,
+        0.3229,
+        0.3354
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 29,
+      "gold": "silver",
+      "choices": [
+        "silver",
+        "amber",
+        "green",
+        "red"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1683,
+        -0.1808,
+        -0.1328,
+        -0.0987
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 30,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0941,
+        -0.1088
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 31,
+      "gold": "16,28,20",
+      "choices": [
+        "16,28,20",
+        "20,28,16",
+        "8,14,10",
+        "EMPTY"
+      ],
+      "chosen_B": "20,28,16",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.1275,
+        0.1709,
+        0.0445,
+        -0.1701
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 32,
+      "gold": "36",
+      "choices": [
+        "36",
+        "42",
+        "37",
+        "35"
+      ],
+      "chosen_B": "42",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.6333,
+        0.775,
+        0.6526,
+        0.6044
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 33,
+      "gold": "red",
+      "choices": [
+        "red",
+        "violet",
+        "amber",
+        "blue"
+      ],
+      "chosen_B": "red",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        -0.0993,
+        -0.1209,
+        -0.182,
+        -0.1364
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 34,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.1076,
+        -0.095
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 35,
+      "gold": "24,20",
+      "choices": [
+        "24,20",
+        "20,24",
+        "12,10",
+        "EMPTY"
+      ],
+      "chosen_B": "24,20",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.2946,
+        0.2419,
+        0.1347,
+        -0.1716
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 36,
+      "gold": "62",
+      "choices": [
+        "62",
+        "69",
+        "63",
+        "61"
+      ],
+      "chosen_B": "61",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        1.0259,
+        0.7067,
+        0.9999,
+        1.0902
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 37,
+      "gold": "blue",
+      "choices": [
+        "blue",
+        "silver",
+        "violet",
+        "green"
+      ],
+      "chosen_B": "violet",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1371,
+        -0.1694,
+        -0.1209,
+        -0.1329
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 38,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.093,
+        -0.1069
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 39,
+      "gold": "20,32,24",
+      "choices": [
+        "20,32,24",
+        "24,32,20",
+        "10,16,12",
+        "EMPTY"
+      ],
+      "chosen_B": "24,32,20",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.1438,
+        0.2165,
+        -0.0269,
+        -0.1708
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 40,
+      "gold": "77",
+      "choices": [
+        "77",
+        "80",
+        "78",
+        "76"
+      ],
+      "chosen_B": "76",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.4837,
+        0.4548,
+        0.4967,
+        0.5298
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 41,
+      "gold": "green",
+      "choices": [
+        "green",
+        "red",
+        "silver",
+        "amber"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1324,
+        -0.0992,
+        -0.1694,
+        -0.1816
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 42,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.1094,
+        -0.0958
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 43,
+      "gold": "28,24",
+      "choices": [
+        "28,24",
+        "24,28",
+        "14,12",
+        "EMPTY"
+      ],
+      "chosen_B": "28,24",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.3694,
+        0.2983,
+        0.1769,
+        -0.1702
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 44,
+      "gold": "106",
+      "choices": [
+        "106",
+        "110",
+        "107",
+        "105"
+      ],
+      "chosen_B": "107",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.1761,
+        0.1327,
+        0.199,
+        0.1897
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 45,
+      "gold": "amber",
+      "choices": [
+        "amber",
+        "blue",
+        "red",
+        "violet"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1824,
+        -0.1363,
+        -0.0995,
+        -0.1214
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 46,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0969,
+        -0.1084
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 47,
+      "gold": "24,36,28",
+      "choices": [
+        "24,36,28",
+        "28,36,24",
+        "12,18,14",
+        "EMPTY"
+      ],
+      "chosen_B": "28,36,24",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.2723,
+        0.3275,
+        0.053,
+        -0.1682
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 48,
+      "gold": "43",
+      "choices": [
+        "43",
+        "48",
+        "44",
+        "42"
+      ],
+      "chosen_B": "48",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.8594,
+        1.1105,
+        0.8557,
+        0.7781
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 49,
+      "gold": "violet",
+      "choices": [
+        "violet",
+        "green",
+        "blue",
+        "silver"
+      ],
+      "chosen_B": "violet",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        -0.1193,
+        -0.1329,
+        -0.1368,
+        -0.168
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 50,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.1077,
+        -0.0962
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 51,
+      "gold": "32,28",
+      "choices": [
+        "32,28",
+        "28,32",
+        "16,14",
+        "EMPTY"
+      ],
+      "chosen_B": "32,28",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.4672,
+        0.4019,
+        0.2038,
+        -0.1694
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 52,
+      "gold": "72",
+      "choices": [
+        "72",
+        "78",
+        "73",
+        "71"
+      ],
+      "chosen_B": "71",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.6188,
+        0.4951,
+        0.6448,
+        0.6461
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 53,
+      "gold": "silver",
+      "choices": [
+        "silver",
+        "amber",
+        "green",
+        "red"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1699,
+        -0.1814,
+        -0.1319,
+        -0.0997
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 54,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0968,
+        -0.1089
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 55,
+      "gold": "28,40,32",
+      "choices": [
+        "28,40,32",
+        "32,40,28",
+        "14,20,16",
+        "EMPTY"
+      ],
+      "chosen_B": "32,40,28",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.3085,
+        0.366,
+        0.0583,
+        -0.171
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 56,
+      "gold": "105",
+      "choices": [
+        "105",
+        "112",
+        "106",
+        "104"
+      ],
+      "chosen_B": "105",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.1875,
+        0.1421,
+        0.1737,
+        0.1796
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 57,
+      "gold": "red",
+      "choices": [
+        "red",
+        "violet",
+        "amber",
+        "blue"
+      ],
+      "chosen_B": "red",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        -0.0992,
+        -0.1207,
+        -0.1821,
+        -0.1369
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 58,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.1101,
+        -0.0965
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 59,
+      "gold": "36,32",
+      "choices": [
+        "36,32",
+        "32,36",
+        "18,16",
+        "EMPTY"
+      ],
+      "chosen_B": "36,32",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.5945,
+        0.4955,
+        0.2404,
+        -0.171
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 60,
+      "gold": "122",
+      "choices": [
+        "122",
+        "125",
+        "123",
+        "121"
+      ],
+      "chosen_B": "123",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.0953,
+        0.1063,
+        0.154,
+        0.1061
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 61,
+      "gold": "blue",
+      "choices": [
+        "blue",
+        "silver",
+        "violet",
+        "green"
+      ],
+      "chosen_B": "violet",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1375,
+        -0.1706,
+        -0.1221,
+        -0.1336
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 62,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0936,
+        -0.108
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 63,
+      "gold": "32,44,36",
+      "choices": [
+        "32,44,36",
+        "36,44,32",
+        "16,22,18",
+        "EMPTY"
+      ],
+      "chosen_B": "36,44,32",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.3781,
+        0.4877,
+        0.1055,
+        -0.1691
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 64,
+      "gold": "50",
+      "choices": [
+        "50",
+        "54",
+        "51",
+        "49"
+      ],
+      "chosen_B": "54",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        1.2619,
+        1.7904,
+        1.3649,
+        1.1761
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 65,
+      "gold": "green",
+      "choices": [
+        "green",
+        "red",
+        "silver",
+        "amber"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1352,
+        -0.1012,
+        -0.1721,
+        -0.1842
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 66,
+      "gold": "TRUE",
+      "choices": [
+        "TRUE",
+        "FALSE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": false,
+      "hit_A": true,
+      "scores_B": [
+        -0.109,
+        -0.0955
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 67,
+      "gold": "40,36",
+      "choices": [
+        "40,36",
+        "36,40",
+        "20,18",
+        "EMPTY"
+      ],
+      "chosen_B": "40,36",
+      "hit_B": true,
+      "hit_A": false,
+      "scores_B": [
+        0.7014,
+        0.6103,
+        0.2581,
+        -0.1685
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 68,
+      "gold": "82",
+      "choices": [
+        "82",
+        "87",
+        "83",
+        "81"
+      ],
+      "chosen_B": "83",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.4264,
+        0.3745,
+        0.4509,
+        0.4298
+      ],
+      "is_numeric": true
+    },
+    {
+      "i": 69,
+      "gold": "amber",
+      "choices": [
+        "amber",
+        "blue",
+        "red",
+        "violet"
+      ],
+      "chosen_B": "red",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        -0.1817,
+        -0.1358,
+        -0.0991,
+        -0.1193
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 70,
+      "gold": "FALSE",
+      "choices": [
+        "FALSE",
+        "TRUE"
+      ],
+      "chosen_B": "FALSE",
+      "hit_B": true,
+      "hit_A": true,
+      "scores_B": [
+        -0.0955,
+        -0.108
+      ],
+      "is_numeric": false
+    },
+    {
+      "i": 71,
+      "gold": "36,48,40",
+      "choices": [
+        "36,48,40",
+        "40,48,36",
+        "18,24,20",
+        "EMPTY"
+      ],
+      "chosen_B": "40,48,36",
+      "hit_B": false,
+      "hit_A": false,
+      "scores_B": [
+        0.5275,
+        0.6057,
+        0.1143,
+        -0.1688
+      ],
+      "is_numeric": false
+    }
+  ]
+}

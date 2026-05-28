@@ -1,0 +1,98 @@
+=== Launching 50-step post-Attractor strengthening M1 run (option 1 - fastest path for scaling evidence) ===
+
+================================================================================
+PIVOT SAFETY WARNING: Inductive biases missing from primary One-Body path
+================================================================================
+
+  Component: state_transition_core
+  active_in_primary_onebody_path = False
+  Note: Reusable GRAM/PTRM-style state transition core family (legacy implementation). Provides the original stochastic recurrent breadth inductive bias (true_gram prior/posterior sampling + high-level guidance) that contributed to historical 5.53~5.56 signals. See Historical Signal Reconstruction: docs/wik...
+  → Any SSOT requiring executable ablations on this bias is currently unfulfillable.
+
+  See: docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md
+================================================================================
+
+
+======================================================================
+[PROPER PORTING ACTIVE] Workspaces + Attractor + Provenance
+  These three historical experiment tracks are now first-class in the main RI-4 pipeline.
+  This is the default behavior per user instruction ('제대로 포팅을 하라고').
+  Use --enable-workspaces / --enable-attractor / --enable-provenance for fine control.
+======================================================================
+
+
+======================================================================
+[RI-1 M1 ACTIVE] Variable Depth Training Schedule enabled (Huginn-style)
+  Sampling mode: randint | mean=6 max=14
+  Composes with proper 3-track Attractor (depth-wise monotonic on memory_buffer)
+  This closes the Reverse I→G→A gap for RI-1 depth scaling inductive bias.
+======================================================================
+
+[Logging] Direct run log at checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/run.log (in addition to stdout + TB)
+========================================================================
+RI-4 HYBRID REAL CONTINUATION (A-Mode Most-Deficient move)
+  Horizon: 50 steps | d_model=128
+  Gold: None
+  RI-4 ablations: slots_off=False, persistence_off=False
+
+========================================================================
+>>> PROPER PORTING OF HISTORICAL TRACKS IS ACTIVE <<<
+    - Gated Thought Workspaces (importance/ALRMC selector)
+    - Answer Align Attractor (depth-wise monotonic pressure)
+    - Provenance + World Model Gated Register
+    These three tracks are now treated as first-class citizens
+    in the main RI-4 + 5.56 continuation pipeline.
+    This is the new default per explicit user instruction.
+========================================================================
+
+========================================================================
+>>> ARCHITECTURE: v1.2 (Hybrid RI-4 + FULL v0.5 5.56 Curriculum + ARCHITECTURAL TRAJECTORY GUARDRAIL)
+    full_curriculum_rehearsal_step + rolling buffer + decay-scaled gold injection + protection_during_rehearsal=0.7
+    + K-candidate selection INSIDE OneBodyParallelHybridBlock recurrence (v0.x StateTransitionCore spirit)
+    (This is the architecture modification that was required alongside the accuracy cycle.)
+    + RI-1 M1 Variable Depth Training (Huginn-style sampling in pressure/rehearsal loops)
+      (properly ported per research-driven skill: now first-class + ablatable in active trainer)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[HybridBlock] Using official FLA MultiheadLatentAttention (MLA)
+[v0.5 Curriculum Restoration] PRIMARY PATH: full_curriculum_rehearsal_step (decay + protection + gold injection + buffer selection) for gold_structured mode
+[RI-4 Selectivity] Router temperature=1.0 gumbel_std=0.0
+[C-Track] TensorBoard enabled at checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/tb (train_loss + eval_loss + Heldout/*_acc)
+[B+C-Track] Periodic real heldout accuracy probe ACTIVE every 5 steps (max_cases=8) on reasoning + memory 72.jsonl
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~7)
+step 5/50 | train_loss=0.141602 | eval_loss=0.049072 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~6)
+step 10/50 | train_loss=0.102051 | eval_loss=0.049072 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+[Checkpoint] saved checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/hybrid_ri4_cont_step10.pt
+step 12/50 | norm=4.000
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~7)
+step 15/50 | train_loss=0.109863 | eval_loss=0.049072 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~6)
+step 20/50 | train_loss=0.042480 | eval_loss=0.048828 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+[Checkpoint] saved checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/hybrid_ri4_cont_step20.pt
+step 24/50 | norm=2.766
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~6)
+step 25/50 | train_loss=0.037842 | eval_loss=0.048828 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+  [RI-1 M1] Step 29: sampled effective_depth=8 for answer_pressure (C-track)
+  [RI-1 M1] Step 29: sampled effective_depth=8 for monotonic_pressure (Attractor composition)
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~7)
+step 30/50 | train_loss=0.036133 | eval_loss=0.048828 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+[Checkpoint] saved checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/hybrid_ri4_cont_step30.pt
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~6)
+step 35/50 | train_loss=0.030151 | eval_loss=0.048584 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+step 36/50 | norm=2.609
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~4)
+step 40/50 | train_loss=0.024536 | eval_loss=0.048584 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+[Checkpoint] saved checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/hybrid_ri4_cont_step40.pt
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~4)
+step 45/50 | train_loss=0.017212 | eval_loss=0.048340 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+step 48/50 | norm=1.898
+  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~5)
+step 50/50 | train_loss=0.010986 | eval_loss=0.048340 | reasoning_heldout=0/8(0.00) memory_heldout=0/8(0.00)
+step 50/50 | norm=1.820
+[Checkpoint] saved checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/hybrid_ri4_cont_step50.pt
+
+Continuation smoke complete. Substrate is now exercisable in a checkpointed loop.
+Next: wire real data + full optimizer + 192-style gates on these checkpoints. Parallel Fast-Falsification batch active. (User order: positive until it appears)
+[C-Track] TensorBoard flushed+closed. Logs at: checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/tb  (tensorboard --logdir checkpoints/hybrid_ri4_ri1_m1_50step_post_attractor_20260528_1313/tb)

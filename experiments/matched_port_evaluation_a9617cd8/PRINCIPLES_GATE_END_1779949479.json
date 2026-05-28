@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-05-28 15:24:39",
+  "phase": "end",
+  "benchmark": "pure_recursive_reasoning_heldout_72",
+  "conditions_matched": "partial_synthetic_base",
+  "strict_b": true,
+  "one_body": true,
+  "gram_ptrm_restoration": [
+    "stochastic_breadth=ON in forward path",
+    "gated_equation_binding readback=ON (z_h injection)"
+  ],
+  "attractor_depth_behavior": false,
+  "three_historical_tracks": {
+    "workspaces": true,
+    "attractor": true,
+    "provenance": true,
+    "all_properly_ported": true,
+    "notes": [
+      "Workspaces (importance selector)",
+      "Answer Attractor (depth-wise monotonic)",
+      "Provenance (Graph + WorldModel + Gated Register)",
+      "→ PROPER PORTING ACTIVE (default in main RI-4 trainer)"
+    ]
+  },
+  "ablation_matrix_reported": false,
+  "honest_notes": [
+    "3-tracks test (Workspaces+Attractor+Provenance). Enabled: W=True, A=True, P=True. Attractor depth behavior measured: False. Synthetic base. conditions-matched: partial_synthetic_base"
+  ],
+  "issues": [],
+  "recommendations": [
+    "Honest I-stage / partial / synthetic labeling present — good."
+  ],
+  "verdict": "PARTIAL (see issues)",
+  "accuracy": "21/72 (29.17%)",
+  "checkpoint": "experiments/ri1_brain_triple_memory_diagnostic_now/hybrid_ri4_cont_step40.pt",
+  "extra": {}
+}

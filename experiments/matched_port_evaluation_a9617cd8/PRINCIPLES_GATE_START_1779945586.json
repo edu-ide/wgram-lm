@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-05-28 14:19:46",
+  "phase": "start",
+  "benchmark": "pure_recursive_reasoning_heldout_72",
+  "conditions_matched": "partial_synthetic_base",
+  "strict_b": true,
+  "one_body": true,
+  "gram_ptrm_restoration": [
+    "stochastic_breadth=ON in forward path",
+    "gated_equation_binding readback=ON (z_h injection)"
+  ],
+  "attractor_depth_behavior": false,
+  "three_historical_tracks": {
+    "workspaces": true,
+    "attractor": true,
+    "provenance": true,
+    "all_properly_ported": true,
+    "notes": [
+      "Workspaces (importance selector)",
+      "Answer Attractor (depth-wise monotonic)",
+      "Provenance (Graph + WorldModel + Gated Register)",
+      "→ PROPER PORTING ACTIVE (default in main RI-4 trainer)"
+    ]
+  },
+  "ablation_matrix_reported": false,
+  "honest_notes": [
+    "I-stage port test. Synthetic short base. Workspaces=True, Attractor=True, Provenance=True. Full LM-head forced_choice not yet integrated."
+  ],
+  "issues": [],
+  "recommendations": [
+    "Honest I-stage / partial / synthetic labeling present — good."
+  ],
+  "verdict": "PARTIAL (see issues)",
+  "accuracy": null,
+  "checkpoint": "experiments/ri1_memory_primary_scale_v1/hybrid_ri4_cont_step65.pt",
+  "extra": {}
+}

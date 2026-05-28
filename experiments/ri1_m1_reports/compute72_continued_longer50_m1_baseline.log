@@ -1,0 +1,6 @@
+usage: compute_72_accuracy_from_base.py [-h] [--checkpoint CHECKPOINT]
+                                        [--enable-workspaces]
+                                        [--enable-attractor]
+                                        [--enable-provenance] [--all-three]
+                                        [--effective-depth EFFECTIVE_DEPTH]
+compute_72_accuracy_from_base.py: error: argument --effective-depth: invalid int value: '1,4,8'
