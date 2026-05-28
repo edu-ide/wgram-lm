@@ -732,11 +732,20 @@ def main():
         model._triple_mem_state = triple.init_state(cfg.batch_size, cfg.device, cfg.dtype)
         # Force a full device sync on the new memory system right at attachment — this is the main fix for the repeated "computer stops / device error" during diagnostic runs
         dummy = torch.zeros(1, 1, cfg.d_model, device=cfg.device, dtype=cfg.dtype)
-        triple._ensure_same_device(dummy)
-        model._triple_mem_state.working_memory = model._triple_mem_state.working_memory.to(cfg.device, dtype=cfg.dtype)
-        model._triple_mem_state.attractor_state = model._triple_mem_state.attractor_state.to(cfg.device, dtype=cfg.dtype)
-        model._triple_mem_state.provenance_register = model._triple_mem_state.provenance_register.to(cfg.device, dtype=cfg.dtype)
-        print("  Triple memory state initialized — WorkingMemory + Attractor + Provenance now actively participate in every recurrence step")
+        if hasattr(triple, '_ensure_same_device'):
+            triple._ensure_same_device(dummy)
+
+        # With the root bypass + stub, the state may be a minimal dummy.
+        # Guard the attribute access so the 72 test can proceed with the architectural improvements.
+        state = getattr(model, '_triple_mem_state', None)
+        if state is not None and hasattr(state, 'working_memory') and state.working_memory is not None:
+            state.working_memory = state.working_memory.to(cfg.device, dtype=cfg.dtype)
+        if state is not None and hasattr(state, 'attractor_state') and state.attractor_state is not None:
+            state.attractor_state = state.attractor_state.to(cfg.device, dtype=cfg.dtype)
+        if state is not None and hasattr(state, 'provenance_register') and state.provenance_register is not None:
+            state.provenance_register = state.provenance_register.to(cfg.device, dtype=cfg.dtype)
+
+        print("  Triple memory state initialized (guarded for stub/root-bypass path)")
 
         # === Restore brain-mimetic memory state from checkpoint (slow persistent memory continuity) ===
         if cfg.resume_from and os.path.exists(cfg.resume_from):
@@ -1200,8 +1209,11 @@ def main():
                         # the internal FastGatedLinearRecurrence + light_update is the intended native path.
                         # Completely bypass the external triple.step that is causing the expand error with B=8.
                         if getattr(cfg, 'internal_fast_recurrent', False):
+                            # MOST AGGRESSIVE (brain_attractor MD H + raw-intel SSOT RI-4 + IMTA one-body):
+                            # External triple.step is 100% eliminated when internal_fast_recurrent is active.
+                            # The FastGated citizen + sparse light_update (high-surprise or chunk) is the native path.
                             if do_timing:
-                                print(f"[ROOT FIX] Skipped external triple.step (internal FastGated citizen active)")
+                                print(f"[MOST AGGRESSIVE NATIVE] Pure internal FastGated path - NO external triple.step at all")
                         else:
                             try:
                                 print(f"[PINPOINT] B={h.shape[0]} h.shape={h.shape} before triple.step (micro={micro})")
@@ -1213,7 +1225,10 @@ def main():
                                 continue
 
                         if do_timing:
-                            print(f"    [1번 A Timing] micro{micro+1} eager triple.step(B={B}): {time.time() - brain_start:.3f}s")
+                            if getattr(cfg, 'internal_fast_recurrent', False):
+                                print(f"    [MOST AGGRESSIVE NATIVE] micro{micro+1} pure internal FastGated (no external step)")
+                            else:
+                                print(f"    [1번 A Timing] micro{micro+1} eager triple.step(B={B}): {time.time() - brain_start:.3f}s")
 
                     if do_timing:
                         print(f"  [1번 A Timing] micro-step {micro+1} total: {time.time() - micro_wall:.3f}s")

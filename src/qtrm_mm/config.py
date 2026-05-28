@@ -109,6 +109,18 @@ class QTRMConfig:
     core_convergence_halt_enabled: bool = False
     core_convergence_halt_threshold: float = 1e-3
     core_convergence_halt_min_outer: int = 1
+    # === RI-1 Radical Minimal Prototype: ConvergenceTick / Coarse Convergence Engine ===
+    # Promotes the trainer stubs (coarse_convergence_engine, attractor_fixed_point_core)
+    # into a first-class, ablatable mode. When enabled (and not ablation_zero), the
+    # recurrent engine (OneBodyParallelHybridBlock) runs a small number of internal
+    # fast recurrence ticks *before* any 3-track memory/attractor/workspace sync.
+    # This changes the temporal granularity of the thinker (memory becomes coarser
+    # consolidation layer). Full ablation contract: ablation_zero restores exact
+    # previous per-step micro-hybrid behavior.
+    core_coarse_convergence_engine: bool = False
+    core_convergence_ticks: int = 3
+    core_convergence_engine_ablation_zero: bool = False
+    core_attractor_fixed_point_core: bool = False
     core_trm_no_grad_inner_cycles_enabled: bool = False
     core_depth_readout_enabled: bool = False
     jepa_encoder_layers: int = 1
@@ -230,6 +242,32 @@ class QTRMConfig:
     core_answer_attractor_weight: float = 0.02
     core_answer_attractor_monotonic_gain: float = 0.03
     core_answer_attractor_ablation_zero: bool = False
+
+    # === Brain-Mimetic Triple Memory Redefinition (proper structural version) ===
+    # Workspaces + Attractor + Provenance as the PRIMARY recurrent thinker,
+    # not side participants. Brain-inspired: PFC/workspace (fast active thought),
+    # cortical/hippocampal attractor (slow stabilization), hippocampal provenance (causal grounding).
+
+    # Long-term Sparse Gated Persistent Memory (Raven + LM2 + MSA 2026 style)
+    # Integrated with Predictive Data Intuition surprise for selective write.
+    core_long_term_memory_enabled: bool = False
+    core_long_term_memory_num_slots: int = 32
+    core_long_term_memory_top_k: int = 8
+    core_long_term_memory_ablation_zero: bool = False
+    core_long_term_memory_use_gates: bool = True
+    core_long_term_memory_use_surprise: bool = True
+    # These three actively influence every recurrence step.
+    brain_triple_memory_enabled: bool = False
+    brain_triple_memory_ablation_zero: bool = False
+    brain_triple_memory_workspace_streams: int = 4
+
+    # Brain-mimetic GRAM/PTRM stochastic sampling (structured mental simulation
+    # inside the triple memory, not blind noise on latent)
+    brain_mimetic_stochastic_enabled: bool = False
+    brain_mimetic_stochastic_ablation_zero: bool = False
+    brain_mimetic_stochastic_k: int = 4
+    # Separate ablation for the stochastic sampler itself (even if triple memory is on)
+    brain_mimetic_stochastic_sampler_ablation_zero: bool = False
 
     # Phase 3 groundwork: Provenance / Graph reasoning register input
     core_provenance_register_enabled: bool = False

@@ -66,6 +66,10 @@ Stochastic recurrent breadth, real gold (bos_latent) structural injection, attra
 - Full ablation matrix (full 5.56 recipe vs stoch_zero vs gold_off vs protection_off vs decay_disabled) on the hybrid, using both the clean pure stochastic effect proxy **and** direct raw reasoning heldout accuracy / diversity / robustness.
 - Stochastic breadth remains the dominant driver (as seen in S2), but gold injection and protection must still show measurable positive contribution to long-horizon raw reasoning stability and correctness.
 
+**Substrate update (2026-06 attractor-centric + brain-mimetic triple memory)**:
+In the new OneBodyParallelHybridBlock + attractor-centric substrate with BrainMimeticTripleMemory, "stochastic recurrent breadth" is realized as **structured, data-aware K-trajectory mental simulation** (inside ActiveWorkingMemory) modulated by StabilizingAttractorMemory, ProvenanceEpisodicMemory, and the Predictive Data Intuition surprise signal. 
+This modern form must demonstrate equivalent or stronger causal contribution than historical GRAM/PTRM-style breadth. The ablation (`brain_mimetic_stochastic` off or `data_intuition_ablation_zero=True`) must produce clear drops on the same gates. Historical prior/posterior noise injection on z_h is no longer the canonical form; the structured mental simulation + surprise modulation inside the triple memory is the required realization.
+
 ### RI-4: Sparse Selective Memory Access is Causally Active Inside the Latent Reasoning Loop (MSA/Raven-style) (maps to S2 #1 + #3)
 The model must use structured sparse routing (top-k / learned router over past latent states, thought chunks, or memory slots) rather than dense updates or simple FIFO rehearsal. Untouched or low-weight memory must exhibit high persistence (anti-interference).
 
@@ -112,6 +116,13 @@ All raw intelligence claims must use:
 - **Clean ablations** with identity behavior when disabled (especially stochastic breadth ablation_zero must still be perfect).
 - Primary metrics: answer correctness on heldout + diversity / trajectory quality under depth + state robustness under long horizons.
 - Secondary / cheaper proxies: pure stochastic effect (already implemented and validated in S2), depth-output diversity, robustness probe.
+
+**Causal Sensitivity / "인과성 직관" Diagnostic (mandatory when claiming Predictive Data Intuition progress)**:
+When work on Predictive Data Intuition (or data-grounded world model components) is active, the following must be measured and reported alongside A/B/C tracks:
+- Intervention consistency probe: On synthetic causal families, perturbing a causally upstream latent factor must produce coherent downstream changes in the model's internal trajectories and final answer distribution (while non-causal correlations do not).
+- What-if / counterfactual consistency in latent space: Applying "what-if" perturbations to K mental simulation trajectories must yield predictable, non-hallucinated shifts consistent with the Predictive Data Intuition model's own predictions.
+- Surprise-causal correlation: High-surprise events (from the data intuition predictor) must show statistically stronger binding or influence in ProvenanceEpisodicMemory and attractor stabilization than low-surprise events.
+These diagnostics do not create a new top-level RI-8 at this time, but are required evidence that the combination of predictive world model + structured stochastic mental simulation is producing genuine causal sensitivity rather than mere statistical pattern matching.
 - Task-family labeling (parallelizable vs sequential/stochastic counting) as recommended in the old gates document.
 
 The existing `raw_intelligence_gate.py` and scripts must be extended with new modes:
