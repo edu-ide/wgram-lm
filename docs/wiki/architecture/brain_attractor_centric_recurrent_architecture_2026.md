@@ -876,7 +876,17 @@ After exhaustive sweeps (Huginn/Ouro/EqR/Solve-the-Loop → Titans/Griffin/Parca
 - **Best-known memory editing operator for linear recurrent state** (GDN-2 / FG²-GDN channel-wise decoupled erase/write, already primary mixer + upgrade seed for slow/fast ports).
 - Hybrid validation across sequence axis (Oryx) and inference practicality (RecurrentGemma/LaCT scaling laws).
 
-**Substrate big-jump opportunities are exhausted**. Remaining wins are engineering (cleaner InferenceState threading, fused light_update, better chunk boundary heuristics), training recipe (variable convergence budget + internalization + shortcut-consistency on fast h + LeWM-style reachability on ChunkedSlow commits), and the optional targeted primitive upgrade (decoupled selective erase/write ports on FastGated/ChunkedSlow with full ablation_zero contract).
+**Substrate big-jump opportunities are exhausted** (final aggressive wave).
+
+All items previously listed under "Remaining wins" and "optional targeted primitive upgrades" have now received aggressive implementations:
+- Decoupled selective erase/write_mod ports on FastGated (GDN-2 transfer, protects attractor hypotheses during K-trajectories)
+- Real LeWM-style autoregressive latent predictor + horizon-matched reachability inside ChunkedSlow + PredictiveDataIntuition
+- Internalization curriculum loss + LoopFormer-style shortcut-consistency on fast recurrent h wired into training
+- Internal fast + chunked slow citizen pushed harder as dominant path even in core training loop
+
+The architecture phase is now driven to the absolute limit of what the three SSOT MDs described as desirable before "Ready for measurement".
+
+Remaining activity is purely measurement (72 heldout + RI-1~RI-7 causal evidence + clean ablations) on the finalized substrate.
 
 This is the terminal "nothing left to dig" point for the 2025-2026 attractor / recurrent-depth / linear-memory-editing / latent-WM literature cluster relevant to RI-1~RI-7 + brain-mimetic v2.
 

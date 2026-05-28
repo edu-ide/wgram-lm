@@ -308,9 +308,44 @@ class FastGatedLinearRecurrence(nn.Module):
             influence_gate = torch.sigmoid(brain_influence.mean(dim=-1, keepdim=True)) * 0.3
             x = x + brain_influence * influence_gate
 
-        # RG-LRU style update (core fast recurrence primitive)
-        # If we are in latent mode, this h_new is already in latent space
-        h_new = a * h_prev + torch.sqrt(1 - a**2 + 1e-8) * (i * x)
+        # === AGGRESSIVE GDN-2 transfer (decoupled selective erase/write ports) ===
+        # Per MD J-section upgrade opportunity: protect existing attractor hypotheses (erase)
+        # while selectively committing surprising new evidence (write) during K-trajectory evolution.
+        # This reduces destructive interference when multiple mental simulations run in shared fast h.
+        erase_mod = torch.ones_like(h_prev)
+        write_mod = torch.ones_like(h_prev)
+
+        if brain_influence is not None or surprise is not None:
+            # Derive per-dimension erase/write signals from surprise + brain_influence
+            mod_input = h_prev
+            if brain_influence is not None:
+                mod_input = mod_input + brain_influence * 0.5
+
+            # Simple but effective learned projections (lightweight, no big new params)
+            if not hasattr(self, 'erase_proj'):
+                self.erase_proj = nn.Linear(self.d_model, self.d_model, bias=False).to(h_prev.device)
+                nn.init.xavier_uniform_(self.erase_proj.weight)
+            if not hasattr(self, 'write_proj'):
+                self.write_proj = nn.Linear(self.d_model, self.d_model, bias=False).to(h_prev.device)
+                nn.init.xavier_uniform_(self.write_proj.weight)
+
+            erase_logit = self.erase_proj(mod_input)
+            write_logit = self.write_proj(mod_input)
+
+            erase_mod = torch.sigmoid(erase_logit)          # high = protect (keep old more)
+            write_mod = torch.sigmoid(write_logit)          # high = commit new evidence strongly
+
+            # Surprise modulates: high surprise → more aggressive write, less protective erase
+            if surprise is not None:
+                s = torch.sigmoid(surprise.view(-1, 1) if surprise.dim() == 1 else surprise)
+                write_mod = write_mod * (0.6 + 0.4 * s)
+                erase_mod = erase_mod * (0.9 - 0.3 * s) + 0.1  # slightly less protective on high surprise
+
+        # RG-LRU style update with decoupled selective editing (GDN-2 spirit)
+        # h_new = (protect old via erase) * decayed_h + (selective write) * new_info
+        protected_prev = erase_mod * h_prev
+        selective_new = write_mod * (torch.sqrt(1 - a**2 + 1e-8) * (i * x))
+        h_new = a * protected_prev + selective_new
 
         # === Final aggressive upgrade: Native stochastic breadth inside the fast recurrence ===
         # This is the closest realization yet of historical GRAM/PTRM "stochastic guidance during recurrence"

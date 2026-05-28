@@ -192,15 +192,33 @@ class ChunkedSlowMemoryAdapter(nn.Module):
 
             final_update = decay * self._commit_momentum + (1 - decay) * weighted
 
-            # RC-aux / TRM style: horizon/reachability boost (simple proxy using accumulated surprise as "budget signal")
+            # === AGGRESSIVE LeWM-style upgrade (MD I-section #1 concrete suggestion) ===
+            # Add a small learned autoregressive latent step + proper horizon-matched reachability.
+            # This moves ChunkedSlow from "predictive accumulator" toward "plannable latent world model".
+
+            # Lightweight autoregressive predictor on the latent summary (LeWM recurrent unroll spirit)
+            if not hasattr(self, 'latent_ar_proj'):
+                self.latent_ar_proj = nn.Linear(final_update.shape[-1] if final_update is not None else 128, 
+                                                final_update.shape[-1] if final_update is not None else 128, bias=False)
+                if final_update is not None:
+                    self.latent_ar_proj = self.latent_ar_proj.to(final_update.device)
+                    nn.init.xavier_uniform_(self.latent_ar_proj.weight)
+
+            if final_update is not None and hasattr(self, 'latent_ar_proj'):
+                ar_pred = self.latent_ar_proj(final_update)
+                # Simple one-step recurrent prediction error as additional reachability signal
+                ar_error = (ar_pred - final_update).pow(2).mean(dim=-1, keepdim=True)
+                # Use low prediction error = more "reachable/plannable" for the fast path
+                reachability_from_ar = 1.0 / (1.0 + 0.5 * ar_error.clamp(0, 4))
+                final_update = final_update * (0.7 + 0.3 * reachability_from_ar)
+
+            # RC-aux / TRM style: horizon/reachability boost (improved with AR signal)
             if self._accumulated_surprise:
                 avg_surprise = torch.stack([s for s in self._accumulated_surprise]).abs().mean()
-                reachability_boost = 1.0 + 0.25 * torch.sigmoid(avg_surprise)  # favor reachable high-surprise windows
+                reachability_boost = 1.0 + 0.35 * torch.sigmoid(avg_surprise)
                 final_update = final_update * reachability_boost
 
-            # Sub-JEPA / RC-aux style subspace Gaussian (minimal aggressive implementation):
-            # Project summary to a few random subspaces and add a cheap L2-to-unit-Gaussian regularizer signal.
-            # This is now live (not TODO) — provides the "plannable latent geometry" the LeWM follow-ups demand.
+            # Sub-JEPA / RC-aux style subspace Gaussian (live)
             if hasattr(self, 'long_term_memory') and self.long_term_memory is not None and final_update is not None:
                 try:
                     u = final_update

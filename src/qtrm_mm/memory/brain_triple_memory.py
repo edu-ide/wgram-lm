@@ -65,6 +65,11 @@ class PredictiveDataIntuition(nn.Module):
             self.vector_surprise_scale = nn.Parameter(torch.tensor(0.5))
         self.regularizer_proj = nn.Linear(d_model, d_model, bias=False)
 
+        # === LeWM-style small autoregressive latent predictor (aggressive follow-up) ===
+        # One-step recurrent prediction in latent space for better "plannability" signal
+        self.latent_ar = nn.Linear(d_model, d_model, bias=False)
+        nn.init.xavier_uniform_(self.latent_ar.weight)
+
         self._enabled = True
         self._ablation_zero = False
 
@@ -97,8 +102,16 @@ class PredictiveDataIntuition(nn.Module):
             joint = torch.cat([x, torch.zeros_like(x)], dim=-1)
 
         pred = self.predictor(joint)
+
+        # Base JEPA error
         error = (pred - x).pow(2).mean(dim=-1, keepdim=True)
-        surprise_scalar = torch.sigmoid(self.surprise_gate(x)) * error
+
+        # LeWM-style one-step autoregressive prediction error (richer plannability signal)
+        ar_pred = self.latent_ar(pred.detach())
+        ar_error = (ar_pred - x).pow(2).mean(dim=-1, keepdim=True)
+        combined_error = 0.7 * error + 0.3 * ar_error
+
+        surprise_scalar = torch.sigmoid(self.surprise_gate(x)) * combined_error
 
         if self.use_vector_surprise and hasattr(self, 'vector_surprise_proj'):
             v_err = (pred - x) ** 2
