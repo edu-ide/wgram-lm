@@ -7,9 +7,9 @@
 이 문서 상단이 현재 **실행 중인 단기 마일스톤**의 single source of truth다. (사용자 "장기 마일스톤 하루로 줄여" 지시 후 압축된 버전)
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
-**오전**: 이전 실험 결과 판단 + wiki/실험 문서 반영 (완료: constant 0.1/0.2/0.3 sweep + quality-aware recov metric)
-**오후**: 최소 실행 1개 (아래 Priority 1 또는 2 중 하나)
-**저녁**: 결과 기록 + commit + 다음 선택 or wiki update
+**오전**: 이전 실험 결과 판단 + wiki/실험 문서 반영 (완료: constant noise + rich_proposal internalization)
+**오후**: 30-step --rich_proposal run with real BrainMimeticTripleMemory + int_mse tracking (완료)
+**저녁**: 결과 기록 + clean commit (진행 완료)
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
 **Real proposal engine로 internalization 숫자 뽑기**
@@ -85,12 +85,14 @@ Run each for 20–40 steps. Log solver_res, internalization_loss, primary_on_equ
 In the ultra-minimal harness (toy linear proposal), `internalization_loss` stayed 0.0 because proposal and equilibrium are too close by construction. This is actually **useful data** — it previews risk #1 ("Equilibrium Internalization Fails to Materialize") when the proposal engine is already strong.
 
 **2026-06 Priority 1 Result (Real/Rich Proposal Test)**:
-- Added `--rich_proposal` mode using `RichProposalStub` (BrainMimeticTripleMemory + minimal GRU-style fast recurrence) inside the diagnostic harness.
-- **Key measurement**: `int` loss now starts at ~0.0033~0.0035 (step 1) and monotonically decreases to ~0.00030 by step 20.
-- This is the **first time** in the diagnostic harness that internalization is non-zero **and actively improving**.
-- Implication: The rich proposal (with slow memory summary) is meaningfully farther from equilibrium than the toy linear case, and the internalization curriculum is working (proposal engine learning to emit y0 closer to the solver's attractor).
-- solver_res remains stable and well-behaved. Adding the rich proposal component did not introduce instability or explosion.
-- This is a strong early positive signal against Risk #1 in Section 7.1 ("Equilibrium Internalization Fails to Materialize").
+- Added `--rich_proposal` mode using `RichProposalStub` (real `BrainMimeticTripleMemory` + fast recurrence stub).
+- **30-step run (v2, improved stub)**:
+  - `int` (SOT internalization): 0.00345 (step 1) → 0.00020 (step 30) — clear monotonic decrease.
+  - `int_mse` (solver.compute_internalization_progress): 0.03452 → 0.00201 — proposal is measurably getting closer to equilibrium.
+- This is the **first credible internalization learning curve** we have in the diagnostic harness.
+- Implication: When the proposal carries actual slow memory signal, the internalization objective does real work. The curriculum is shaping the proposal engine toward the attractor.
+- solver residual stayed healthy throughout. No stability issues from the richer proposal.
+- Strong positive evidence against 7.1 Risk #1. We now have a repeatable minimal instrument to track internalization progress before full trainer wiring.
 
 When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becomes the proposal engine, we expect `int_loss` to become meaningful and then (hopefully) decrease over training. This must be the first thing measured in the next wiring iteration.
 

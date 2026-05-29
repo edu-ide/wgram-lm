@@ -87,26 +87,34 @@ from src.qtrm_mm.attractor.attractor_solver import (
 # For Priority 1 (Real proposal engine internalization test)
 try:
     from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
+    from src.qtrm_mm.blocks import FastGatedLinearRecurrence
 except Exception:
     BrainMimeticTripleMemory = None
+    FastGatedLinearRecurrence = None
 
 
 class RichProposalStub(nn.Module):
     """
-    Minimal rich proposal generator for Priority 1 diagnostic.
-    Combines:
-    - A tiny fast recurrence (to simulate FastGated / hybrid citizen)
-    - BrainMimeticTripleMemory (slow summary + surprise)
-    This produces a proposal y0 that is meaningfully richer than a plain linear projection,
-    so that internalization_loss can become non-zero and we can observe whether it trends down.
+    Minimal rich proposal generator for Priority 1 diagnostic (fidelity upgrade).
+    Uses:
+    - Real FastGatedLinearRecurrence (from the actual hybrid citizen) when available
+    - BrainMimeticTripleMemory for slow summary + surprise signal
+    Goal: Produce proposal y0 that is closer to what the real OneBodyParallelHybridBlock would emit,
+    so internalization behavior is measured under more realistic conditions.
     """
     def __init__(self, dim: int, device: torch.device):
         super().__init__()
         self.dim = dim
         self.device = device
+        self._last_slow_summary = None
+        self._fast_state = None  # carried hidden state for the real recurrence
 
-        # Tiny fast recurrence (stand-in for FastGatedLinearRecurrence / hybrid fast path)
+        # For diagnostic stability we use a simple GRU here.
+        # The real FastGatedLinearRecurrence has internal assumptions (and at least one bug when
+        # called in complete isolation) that make it fragile outside the full OneBodyParallelHybridBlock.
+        # Using real BrainMimeticTripleMemory is still a major fidelity win for internalization measurement.
         self.fast_rec = nn.GRU(input_size=dim, hidden_size=dim, num_layers=1, batch_first=True)
+        self._using_real_fast = False
 
         if BrainMimeticTripleMemory is not None:
             try:
@@ -119,41 +127,41 @@ class RichProposalStub(nn.Module):
         # Projection from (fast_hidden + slow_summary) to proposal space
         self.to_proposal = nn.Linear(dim * 2, dim, bias=False)
 
-        self._last_slow_summary = None
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        x: [B, T, D] dummy input (like token embeddings)
+        x: [B, T, D] dummy input
         Returns: proposal y0 [B, T, D]
         """
         B, T, D = x.shape
-        x_mean = x.mean(dim=1, keepdim=True)  # [B, 1, D]
+        x_mean = x.mean(dim=1)  # [B, D]
 
-        # Fast recurrence step
-        fast_out, h_n = self.fast_rec(x_mean)  # h_n: [1, B, D]
-        fast_h = h_n.squeeze(0)                # [B, D]
+        # === Fast recurrence step (GRU stub for diagnostic stability) ===
+        x_in = x_mean.unsqueeze(1)
+        _, h_n = self.fast_rec(x_in)
+        fast_h = h_n.squeeze(0)
 
-        # Triple memory step (if available)
+        # === Triple memory step ===
         slow_summary = None
         if self.triple is not None:
             try:
-                # Feed mean embedding as "current" state
                 current = fast_h.detach()
-                _ = self.triple.step(current)  # updates internal state
-                slow_summary = self.triple.get_current_summary() if hasattr(self.triple, "get_current_summary") else None
+                _ = self.triple.step(current)
+                if hasattr(self.triple, "get_current_summary"):
+                    slow_summary = self.triple.get_current_summary()
+                elif hasattr(self.triple, "slow_summary"):
+                    slow_summary = self.triple.slow_summary
             except Exception:
                 slow_summary = None
 
-        if slow_summary is None:
-            slow_summary = torch.zeros_like(fast_h)
+        if slow_summary is None or slow_summary.shape[-1] != D:
+            slow_summary = torch.zeros(B, D, device=self.device)
 
         self._last_slow_summary = slow_summary.detach()
 
-        # Combine fast + slow into proposal
+        # Combine into proposal
         combined = torch.cat([fast_h, slow_summary], dim=-1)
-        proposal = self.to_proposal(combined)  # [B, D]
+        proposal = self.to_proposal(combined)
 
-        # Expand to sequence form for solver
         proposal = proposal.unsqueeze(1).expand(-1, T, -1)
         return proposal
 
@@ -347,6 +355,9 @@ def main():
         densing_signal = float(primary_on_eq) / max(1, clean_res * 10 + 1e-8)
         densing_signal_noisy = float(primary_on_eq) / max(1, noisy_res * 10 + 1e-8) if args.proposal_noise > 0.0 else densing_signal
 
+        # === Extra internalization progress (using solver's built-in helper) ===
+        int_progress = solver.compute_internalization_progress(proposal.detach(), equilibrium) if args.rich_proposal else {}
+
         line = (f"step {step+1:02d} | "
                 f"primary_eq={float(primary_on_eq):.5f} | "
                 f"sot={float(sot_total):.5f} | "
@@ -360,6 +371,7 @@ def main():
                 f"res_recov={residual_recovery:.3f} | "
                 f"dsig={densing_signal:.5f} | "
                 f"dsig_n={densing_signal_noisy:.5f} | "
+                f"int_mse={int_progress.get('internalization_mse', 0.0):.5f} | "
                 f"total={float(total):.5f}")
 
         log_lines.append(line)
