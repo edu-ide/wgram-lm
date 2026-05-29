@@ -524,8 +524,10 @@ def main():
         # the slow memory (triple memory) also starts carrying the wired state.
         if args.demo_equilibrium_wiring and wired_base is not None:
             slow_ctx = {"summary": wired_base.mean(dim=1).detach()}
+            densing_active = True
         else:
             slow_ctx = {"summary": slow_summary}
+            densing_active = False
 
         # === Run one SOT segment on the Dedicated Solver ===
         # Pass proposal_engine so that internalization_loss becomes active and non-zero (the whole point of Priority 1)
@@ -618,6 +620,7 @@ def main():
                 f"dsig={densing_signal:.5f} | "
                 f"dsig_n={densing_signal_noisy:.5f} | "
                 f"int_mse={int_progress.get('internalization_mse', 0.0):.5f} | "
+                f"densing={densing_active} | "
                 f"total={float(total):.5f}")
 
         log_lines.append(line)
