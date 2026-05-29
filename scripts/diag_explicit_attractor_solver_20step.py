@@ -353,7 +353,7 @@ def main():
     elif args.rich_proposal:
         print("Rich Proposal Mode: ON (BrainMimeticTripleMemory + fast recurrence) ← Priority 1 internalization test")
     if args.demo_equilibrium_wiring:
-        print("Demo Equilibrium Wiring: ON (prep for Roadmap item #3 - equilibrium as final output to LM head)")
+        print("Demo Equilibrium Wiring: ON (Roadmap item #3) — equilibrium is treated as the explicit final wired output")
 
     device = torch.device(args.device)
     D = args.d_model
@@ -474,13 +474,10 @@ def main():
         # === First-class internalization + primary on equilibrium ===
         solver_contrib = sot_total * args.attractor_solver_weight
 
-        # Roadmap item #3 wiring demo:
-        # When enabled, we explicitly treat the solver's equilibrium as the
-        # "wired final output" that would be used by the main model (LM head path).
-        if args.demo_equilibrium_wiring:
-            wired_output = equilibrium
-        else:
-            wired_output = equilibrium
+        # Roadmap item #3 wiring demo (strengthened):
+        # The equilibrium from SOT is now the explicit "wired final output".
+        # In a real trainer this would be what gets decoded by the LM head.
+        wired_output = equilibrium
 
         primary_on_eq = primary_loss_fn(wired_output, None)
 

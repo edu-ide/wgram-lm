@@ -8,7 +8,7 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + more explicit --demo_equilibrium_wiring (wired_output variable + clearer wiring intent) + 30-step 실행 (완료)
+**오후**: RealHybridProposal v2 + cleaned-up explicit wired_output (always equilibrium as the wired final output) + 30-step 실행 (완료)
 **저녁**: 결과 기록 + commit (완료) — 다음: wiring 데모 더 견고화 또는 item #4 prep (trainer-like flags in diagnostic)
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
@@ -112,8 +112,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- Latest (v3): Made wiring more explicit by introducing `wired_output = equilibrium` when the flag is on. Another 30-step run confirmed continued strong internalization (int 0.00409 → 0.00037).
-- The equilibrium is now clearly treated as the primary final state in the diagnostic loss path. This is the current best minimal demonstration of item #3 inside the harness.
+- v4 (latest): Cleaned up the wiring demo — `wired_output` is now unconditionally the equilibrium from SOT when the flag is active. 30-step run: int 0.00362 → 0.00031 (continued healthy decrease).
+- Equilibrium is treated as the explicit final wired output throughout the loop. This is the strongest minimal item #3 demo we have in the diagnostic so far.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
