@@ -112,7 +112,7 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v23 (latest): Continued validation run with the full current best stack (including all internalization + densing features + Trainer Integration Prep notes). The loop remains stable and healthy.
+- v24 (latest): Continued validation run with the full current best stack (including all internalization + densing features + Trainer Integration Prep notes). The loop remains stable and healthy.
 - The diagnostic is now in an excellent position as both a measurement tool and a living specification for the real wiring. The foundation for light trainer integration prep is solid.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
