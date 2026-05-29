@@ -679,6 +679,37 @@ def main():
     torch.save(save_dict, ckpt)
     print(f"Solver checkpoint saved → {ckpt}")
 
+    # === Trainer Integration Prep (Roadmap item #4 → light trainer wiring) ===
+    # This diagnostic loop is the closest simulation we have to how the real trainer
+    # would call the explicit attractor solver with:
+    #   --use_explicit_attractor_solver
+    #   --internal_fast_recurrent
+    #   --brain_triple_memory
+    #   --demo_equilibrium_wiring (or equivalent)
+    #
+    # In the real trainer (e.g. train_hybrid_ri4_*.py), the equivalent would look like:
+    #   proposal, slow_ctx = proposal_engine(input_emb, inference_state, triple_memory)
+    #   logs, total, equilibrium = sot_trainer.train_segment(
+    #       y0=proposal, slow_context=slow_ctx, ..., proposal_engine=proposal_engine
+    #   )
+    #   if wiring:
+    #       wired_output = equilibrium
+    #       # feed wired_output back into triple_memory / proposal_engine state
+    #       # use wired_output as the primary state for LM head / next step
+    #
+    # The current diagnostic already exercises:
+    #   - RealHybridProposal (OneBodyParallelHybridBlock + TripleMemory)
+    #   - Strong internalization loop (equilibrium → next proposal base + slow context + engine memory)
+    #   - Inference Densing (reduced micro-steps + reduced eff_sot when internalized)
+    #   - Visible densing_active / eff_sot for tracking
+    #
+    # Next concrete step toward full integration:
+    #   - Drop this pattern into the main trainer's forward path as an optional path
+    #     controlled by --use_explicit_attractor_solver
+    #   - Wire equilibrium as the actual input to the LM head (or parallel strong loss)
+    #   - Enable real --internal_fast_recurrent behavior inside the hybrid block
+    #   - Run native 72 heldout under the same strict-B + Principle Gate contract
+
     print("\n" + "=" * 72)
     print("IMMEDIATE NEXT ACTIONS (Section 7.1 Success Criteria + Densing Law)")
     print("=" * 72)
