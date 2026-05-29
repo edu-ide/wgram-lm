@@ -315,3 +315,14 @@ This direction is deliberately exploratory and should only be pursued after the 
 - The low absolute number is expected for a first crossing with the new heavy substrate (many competing objectives + the model was not yet heavily optimized under the new loss terms). The important fact is that the full path executed cleanly and the measurement contract was respected.
 - Status: Promotion gate crossed for the first time. The Section 7 overhaul is now measurable end-to-end under the strict RI-1 72 protocol.
 - Next mandated: Iterate on the recipe (more steps under winner, higher internalization, possible small auxiliary terms) while repeatedly measuring the 72 gate to climb the accuracy curve with the new substrate. This is now the primary loop.
+
+**v39 — Climb Iteration 7: Extended Pure sot=1 (50 steps) — Best Early Peak, Later Degradation, 72 Flat**
+- 50-step run with pure best single configuration: `--sot_segment_length 1 --attractor_internalization_weight 0.18` (denoising explicitly disabled).
+- Internal signals:
+  - Early-mid peak was the strongest yet in some windows (densing_sig reached **17.5**, int_mse down to ~0.057).
+  - Clear gradual degradation over the long horizon: by step 50, int_mse rose to ~0.079–0.080 and densing_sig fell to ~12.6 (regression pattern now observed in multiple long runs).
+- 72 gate probes (8-case narrow, every 5 steps through step 50):
+  - All probes remained **0/8 reasoning, 0/8 memory** — zero movement despite the best internal substrate signals produced so far.
+- Interpretation: The sot=1 direction delivers the highest-leverage internalization curriculum we have found, but even pure long-horizon training under it shows slow degradation of the very metrics it excels at, and the 72 heldout accuracy remains completely unresponsive. This strongly indicates that the current climb approach (tweaking attractor knobs while the rest of the loss mixture and final-state usage stay fixed) has reached its limit. Further progress on the 72 gate will likely require addressing the coupling between the equilibrium representation and answer extraction, or re-balancing competing loss terms under the strong new curriculum.
+- Status: Longest pure sot=1 run completed. Highest internal peaks recorded, followed by degradation. 72 gate still at 0/8 after dozens of steps across multiple configurations. The post-promotion climb loop has now generated enough data to show the need for a broader adjustment beyond single-knob attractor tuning.
+- Next mandated: Shift the climb loop toward higher-leverage changes — for example (a) significantly longer training (80–100+ steps) under sot=1 with 72 probes, (b) deliberate reduction of competing loss weights (rehearsal, data intuition, etc.) while keeping the strong attractor curriculum, or (c) direct improvement of how the final equilibrium state is used for LM head / answer scoring. Continue targeted iterations + repeated 72 measurement.
