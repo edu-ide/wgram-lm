@@ -470,13 +470,21 @@ def main():
     log_lines = []
     start = time.time()
 
+    wired_base = None  # for Roadmap item #3 internalization simulation
+
     for step in range(args.steps):
         opt.zero_grad()
 
         # === Proposal Engine produces y0 ===
         if proposal_engine is not None:
-            # Rich proposal path (Priority 1)
-            proposal = proposal_engine(dummy_x)
+            if wired_base is not None and args.demo_equilibrium_wiring:
+                # Strong internalization simulation:
+                # Once the equilibrium is wired as the final output, the next proposal
+                # starts from that equilibrium (or very close to it).
+                # This is the core promise of the substrate being tested in the diagnostic.
+                proposal = wired_base.clone()
+            else:
+                proposal = proposal_engine(dummy_x)
             # Get slow summary for context if available
             slow_summary = proposal_engine.get_last_slow_summary() if hasattr(proposal_engine, "get_last_slow_summary") else slow_summary
         else:
@@ -509,12 +517,14 @@ def main():
             proposal_engine=proposal_engine,   # critical for internalization to actually run
         )
 
-        # Roadmap item #3 wiring feedback (minimal but concrete):
+        # Roadmap item #3 wiring feedback (strengthened):
         # When the equilibrium is explicitly wired as the final output,
-        # we simulate that it now influences the slow context for the next step.
-        # This creates a realistic loop where the wired state starts shaping future proposals.
+        # two things happen for the next step:
+        # 1. It becomes the slow context (already done)
+        # 2. It becomes the base for the next proposal (core internalization signal)
         if args.demo_equilibrium_wiring:
-            slow_ctx = {"summary": equilibrium.mean(dim=1).detach()}  # use equilibrium as new slow summary
+            slow_ctx = {"summary": equilibrium.mean(dim=1).detach()}
+            wired_base = equilibrium.detach()  # next proposal starts from the wired equilibrium
 
         # === First-class internalization + primary on equilibrium ===
         solver_contrib = sot_total * args.attractor_solver_weight
