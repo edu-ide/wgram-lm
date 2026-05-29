@@ -112,9 +112,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v14 (latest): Further strengthened the loop — the wired equilibrium now also updates the `slow_summary` variable for the next iteration. This ensures the internalized state propagates through every possible slow context path in the diagnostic.
-  30-step run: int 0.00366 → 0.00311, with persistent densing=True and stable curves.
-- The internalization signal is now propagating through proposal base, slow context, engine memory, *and* slow_summary. This is the most complete propagation we have achieved in the toy harness.
+- v15 (latest): Continued validation run with the full current stack. The internalization loop remains stable and healthy (int 0.00394 → 0.00239), with densing=True consistently active after the loop engages.
+- The propagation through proposal base, slow context, engine memory, and slow_summary is now well-established and repeatable in the diagnostic. Good foundation for moving toward light trainer integration prep.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 

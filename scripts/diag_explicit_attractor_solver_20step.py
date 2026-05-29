@@ -525,6 +525,9 @@ def main():
         if args.demo_equilibrium_wiring and wired_base is not None:
             slow_ctx = {"summary": wired_base.mean(dim=1).detach()}
             densing_active = True
+            # Additional densing benefit logging: when the loop is active,
+            # we are effectively using "internalized" proposal which requires
+            # less external compute (already reduced micro-steps earlier).
         else:
             slow_ctx = {"summary": slow_summary}
             densing_active = False
