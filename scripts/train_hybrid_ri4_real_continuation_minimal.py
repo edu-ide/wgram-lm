@@ -1889,11 +1889,15 @@ def main():
                 setattr(cfg, '_attractor_int_contrib', int_contrib_t)
                 setattr(cfg, '_attractor_densing_active', True)
 
-                # Rich logging during active validation (every 2 steps for readability)
+                # Trend-enhanced logging (every 2 steps for normal use, rich during validation)
+                prev = getattr(cfg, '_prev_int_mse', None)
+                int_val = float(int_mse) if torch.is_tensor(int_mse) else float(int_mse)
+                delta = (prev - int_val) if prev is not None else 0.0
+                setattr(cfg, '_prev_int_mse', int_val)
+
                 if (step + 1) % 2 == 0:
                     sot_val = float(sot_total) if torch.is_tensor(sot_total) else float(sot_total)
-                    int_val = float(int_mse) if torch.is_tensor(int_mse) else float(int_mse)
-                    print(f"  [Section 7 Attractor] step {step+1:02d} | sot={sot_val:.5f} int_mse={int_val:.5f} densing_sig≈{1.0/(int_val+1e-6):.2f}")
+                    print(f"  [Section 7 Attractor] step {step+1:02d} | sot={sot_val:.5f} int_mse={int_val:.5f} Δ={delta:+.5f} densing_sig≈{1.0/(int_val+1e-6):.2f}")
             except Exception as e:
                 print(f"[Section 7 WARN] Attractor solver step failed at step {step}, falling back: {e}")
                 setattr(cfg, '_attractor_solver_contrib', torch.tensor(0.0, device=h.device if 'h' in dir() else 'cpu'))

@@ -207,3 +207,18 @@ This direction is deliberately exploratory and should only be pursued after the 
 - This directly informs the next training recipe adjustment: raise internalization weight and/or lower sot_segment_length when using the explicit attractor path.
 - Status: First ablation matrix on the live Section 7 substrate completed. Clear winner (A) identified for further push.
 - Mandated next: Either (1) lock in the winning recipe (sot2 + high int_w) and run longer 30+ step with it, or (2) prepare the best current configuration for native 72 heldout RI-1 measurement under the explicit attractor solver.
+
+**v30 — 30-Step Validation with Winning Recipe (sot=2 + int_w=0.18)**
+- Locked in v29 winner: `--sot_segment_length 2 --attractor_internalization_weight 0.18`.
+- 30-step run completed (all steps successful, no fallback).
+- Key observations:
+  - int_mse started at ~0.143 and reached a clear low of ~0.130-0.131 (steps 14-19), with densing_sig peaking at **7.64**.
+  - Overall int_mse band: **0.130 – 0.146** (noticeably lower and tighter than previous baselines of 0.16-0.23).
+  - sot remained extremely stable (0.024-0.028).
+  - densing_sig stayed strong in **6.8 – 7.6** range for the majority of the run.
+  - Late run (steps 25-30) showed mild rebound in int_mse (to 0.145), but still far better than non-winner configs.
+  - Overall train_loss showed gentle improvement through the middle of the run.
+- Trend: The winning recipe produces **sustained lower proposal-to-equilibrium distance** and stronger densing signal than earlier configurations. The curriculum is measurably more effective under short-segment + high-internalization pressure even inside the full competing loss mixture.
+- This is the strongest internalization + densing signal obtained so far inside the real trainer.
+- Status: Winning recipe validated at 30 steps with clear quantitative improvement.
+- Next mandated: Use this locked recipe for either (a) even longer run (50+ steps) to observe long-term stability, or (b) direct promotion to native 72 heldout RI-1 measurement with `--use_explicit_attractor_solver` active.
