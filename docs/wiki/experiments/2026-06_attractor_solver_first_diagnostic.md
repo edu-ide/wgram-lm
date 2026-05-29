@@ -8,7 +8,7 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + strong internalization loop (wired equilibrium as next proposal base + slow context feedback) + full item #4 prep + 30-step 실행 (완료)
+**오후**: RealHybridProposal v2 + strong internalization loop (wired equilibrium as next proposal base + slow context) + Inference Densing signal (reduced proposal compute when internalized) + 30-step 실행 (완료)
 **저녁**: 결과 기록 + commit (완료) — 다음: item #4 prep 더 구체화 또는 trainer integration light prep
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
@@ -112,8 +112,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v10 (latest): Enhanced the internalization loop — when wiring is active, the equilibrium now becomes both the next proposal base *and* strongly influences the slow context for the following step. 30-step run with full stack: int 0.00367 → 0.00246.
-- This creates a more complete "wired state propagates into both proposal and slow memory" feedback loop, which is a key property of the desired substrate.
+- v11 (latest): Added explicit Inference Densing signal — when the internalization loop is active (using wired_base), the rich proposal generation uses significantly fewer internal micro-steps. 30-step run: clear demonstration of reduced proposal compute as internalization progresses.
+- This is the first visible "less compute needed for the same quality as the proposal internalizes the equilibrium" signal in the diagnostic. Strong alignment with the overall Densing Law direction.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 

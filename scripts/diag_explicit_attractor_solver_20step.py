@@ -483,10 +483,22 @@ def main():
                 # starts from that equilibrium (or very close to it).
                 # This is the core promise of the substrate being tested in the diagnostic.
                 proposal = wired_base.clone()
+
+                # Inference Densing signal (item #4 + Densing Law):
+                # When the proposal has internalized the equilibrium, we can use
+                # fewer internal micro-steps in the rich proposal generation.
+                # This simulates that less "thinking" compute is needed as internalization progresses.
+                if hasattr(proposal_engine, 'micro_steps'):
+                    original_steps = proposal_engine.micro_steps
+                    proposal_engine.micro_steps = max(1, original_steps // 2)
             else:
                 proposal = proposal_engine(dummy_x)
             # Get slow summary for context if available
             slow_summary = proposal_engine.get_last_slow_summary() if hasattr(proposal_engine, "get_last_slow_summary") else slow_summary
+
+            # Restore original micro_steps after the step (for consistent measurement)
+            if 'original_steps' in locals():
+                proposal_engine.micro_steps = original_steps
         else:
             # Original toy linear path
             proposal = proposal_proj(dummy_x.mean(dim=1))
