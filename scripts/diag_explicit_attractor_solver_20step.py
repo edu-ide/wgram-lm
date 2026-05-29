@@ -473,7 +473,16 @@ def main():
 
         # === First-class internalization + primary on equilibrium ===
         solver_contrib = sot_total * args.attractor_solver_weight
-        primary_on_eq = primary_loss_fn(equilibrium, None)
+
+        # Roadmap item #3 wiring demo:
+        # When enabled, we explicitly treat the solver's equilibrium as the
+        # "wired final output" that would be used by the main model (LM head path).
+        if args.demo_equilibrium_wiring:
+            wired_output = equilibrium
+        else:
+            wired_output = equilibrium
+
+        primary_on_eq = primary_loss_fn(wired_output, None)
 
         total = primary_on_eq + solver_contrib
         total.backward()
