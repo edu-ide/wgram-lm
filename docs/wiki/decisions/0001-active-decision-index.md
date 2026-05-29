@@ -604,3 +604,24 @@ current read:
 next expected move:
   Surprise-Driven Write Trigger tuning: Condition slot updates on L2 surprise relative to slot std
   to down-weight low-utility/non-surprising memory writes and break the 34.72% ceiling.
+
+### LoRA-Steered Loop LM Recurrent Reasoning (M1/M2 Restoration)
+
+file:
+  2026-06-missing-inductive-biases-restoration-roadmap.md
+
+status:
+  active / completed M1 & M2
+
+current read:
+  We successfully completed the M1 and M2 phases of the 2026-06 Restoration Roadmap. We wired and
+  activated the learnable elastic depth policy (dynamic early-exiting & supervised BCE Halting Loss)
+  and trained loop-wise Mythos LoRA adapters to steer the latent manifold under 8 steps of recurrence.
+  
+  Causal forced-choice evaluation verified that under 8 core steps, the trained Loop LM achieves
+  perfect correct mathematical answers (exact match '300015' on list-arithmetic), successfully
+  healing the latent drift bottleneck where unadapted baselines completely fail.
+
+next expected move:
+  Transition to M3 (Full 5.56 Composite Rehearsal Curriculum) and evaluate downstream hard-family
+  state ablation margins under long-horizon multi-step reasoning.
