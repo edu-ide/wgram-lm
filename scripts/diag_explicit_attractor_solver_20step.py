@@ -406,11 +406,11 @@ def main():
         loss = F.mse_loss(y_star, target)
 
         if args.demo_equilibrium_wiring:
-            # Stronger demo for Roadmap item #3:
-            # The equilibrium y* is now treated as the primary "final output" representation
-            # that would be fed to the real LM head / CE loss in the main trainer.
-            # We explicitly add a term that makes the loss care about y* being the answer state.
-            wiring_loss = 0.1 * F.mse_loss(y_star, target * 0.95)  # simulate "this is the decoded final state"
+            # Roadmap item #3 wiring demo:
+            # y_star (equilibrium) is now the canonical final output state.
+            # In the real trainer this would be passed to the LM head for the actual CE loss.
+            # We treat it explicitly as the "answer representation".
+            wiring_loss = 0.12 * F.mse_loss(y_star, target * 0.93)
             loss = loss + wiring_loss
         return loss
 

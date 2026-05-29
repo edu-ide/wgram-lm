@@ -8,8 +8,8 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + strengthened --demo_equilibrium_wiring (Roadmap item #3 prep) + 30-step 실행 (완료)
-**저녁**: 결과 기록 + commit (진행)
+**오후**: RealHybridProposal v2 + strengthened --demo_equilibrium_wiring + 30-step 실행 (완료)
+**저녁**: 결과 기록 + commit (완료) — 다음: wiring 데모 더 견고화 또는 item #4 prep (trainer-like flags in diagnostic)
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
 **Real proposal engine로 internalization 숫자 뽑기**
@@ -111,7 +111,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
 - Strengthened wiring demo run (30 steps): 
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
-- This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness. Ready to consider light movement toward item #4 (more trainer-like flags) while staying in toy harness.
+- This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
+- Current best state (as of latest 30-step run): real hybrid proposal + explicit equilibrium-as-final-output wiring produces strong, consistent internalization decrease while keeping residual healthy. This is the highest-fidelity signal we have in the toy harness so far.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
