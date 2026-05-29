@@ -338,6 +338,17 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest pure sot=1 run to date. Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly indicates that further progress requires changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
 - Next mandated: Move to higher-leverage directions as outlined in v39/v40 — e.g., (a) run even longer (100+ steps) under pure sot=1, (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, etc.) while keeping the strong attractor curriculum, or (c) improve the direct use of the equilibrium state for final answer scoring. Continue the iteration + measurement loop.
 
+**v42 — Climb Iteration 11: 100-Step Pure sot=1 — All-Time Highest Peak (19.23), Sustained High Levels, 72 Still Flat**
+- 100-step run with pure best single configuration: `--sot_segment_length 1 --attractor_internalization_weight 0.18`.
+- Internal signals:
+  - New all-time high: densing_sig reached **19.23** around step 78, with int_mse down to ~0.0520.
+  - Metrics remained at extremely high levels through the late run (no sharp post-peak degradation within this horizon).
+- 72 gate probes (8-case narrow, every 5 steps through step 100):
+  - All probes remained **0/8 reasoning, 0/8 memory** — zero movement across 100 steps.
+- Interpretation: sot=1 continues to scale dramatically with very long training, producing the highest internal curriculum signals observed to date. Nevertheless, the 72 heldout accuracy has shown **no response whatsoever** despite the strongest substrate signals generated to date. This is now conclusive evidence that the current climb loop (primarily tuning the attractor curriculum while the rest of the loss mixture and final-state usage remain fixed) has reached a hard limit on the actual RI-1 72 gate.
+- Status: Longest pure sot=1 run to date (100 steps). Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly demands changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
+- Next mandated: Shift to higher-leverage directions — e.g., (a) run even longer if desired, but more importantly (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, trajectory monotonic, etc.) while keeping the strong attractor curriculum active, or (c) directly improve how the final equilibrium state is used for LM head / answer scoring. Begin targeted experiments in these directions + repeated 72 measurement.
+
 **v40 — Climb Iteration 8: 70-Step Pure sot=1 — Highest Peak Yet + Continued Degradation, 72 Flat**
 - 70-step run with the strongest single configuration: `--sot_segment_length 1 --attractor_internalization_weight 0.18` (pure, no denoising).
 - Internal signals:
