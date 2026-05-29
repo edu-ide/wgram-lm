@@ -7,9 +7,9 @@
 이 문서 상단이 현재 **실행 중인 단기 마일스톤**의 single source of truth다. (사용자 "장기 마일스톤 하루로 줄여" 지시 후 압축된 버전)
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
-**오전**: 이전 실험 결과 판단 + wiki/실험 문서 반영 (완료: constant noise + rich_proposal internalization)
-**오후**: 30-step --rich_proposal run with real BrainMimeticTripleMemory + int_mse tracking (완료)
-**저녁**: 결과 기록 + clean commit (진행 완료)
+**오전**: 이전 결과 판단 + rich_proposal v2 기록
+**오후**: --real_hybrid_proposal 첫 실행 (OneBodyParallelHybridBlock stack + TripleMemory) — Roadmap item #2 착수 (완료, defensive path로 동작 확인)
+**저녁**: 결과 기록 + commit (진행)
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
 **Real proposal engine로 internalization 숫자 뽑기**
@@ -95,6 +95,15 @@ In the ultra-minimal harness (toy linear proposal), `internalization_loss` staye
 - Strong positive evidence against 7.1 Risk #1. We now have a repeatable minimal instrument to track internalization progress before full trainer wiring.
 
 When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becomes the proposal engine, we expect `int_loss` to become meaningful and then (hopefully) decrease over training. This must be the first thing measured in the next wiring iteration.
+
+**2026-06 Real Hybrid Proposal Attempt (Roadmap #2)**:
+- Implemented `RealHybridProposal` class that uses the proven `build_hybrid_stack` (OneBodyParallelHybridBlock) + real `BrainMimeticTripleMemory`.
+- First run (15 steps, defensive mode): 
+  - `int` loss still decreases nicely (0.00364 → 0.00121).
+  - Full hybrid micro-step path hit shape/attention state issues (expected in ultra-minimal harness without full InferenceState threading).
+  - Defensive fallback still delivered good internalization signal via the real triple memory.
+- Lesson: Using the *real* hybrid block inside the tiny diagnostic is possible but requires careful state contract (InferenceState, attention mask, stochastic flags). This is the exact engineering debt we will pay when doing full trainer integration.
+- Status: First concrete execution of "replace toy with real OneBodyParallelHybridBlock call". Blocker identified and documented.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
