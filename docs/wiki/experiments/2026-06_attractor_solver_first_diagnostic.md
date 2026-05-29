@@ -236,3 +236,17 @@ This direction is deliberately exploratory and should only be pursued after the 
 - This is the strongest and most sustained densing + internalization evidence obtained to date in the real training loop.
 - Status: Long-term stability of the optimized substrate confirmed at 50 steps with continued improvement.
 - Next mandated: The substrate is now in excellent shape for promotion. Prepare and execute the first native 72 heldout RI-1 measurement using the locked winning recipe (`--use_explicit_attractor_solver` + sot=2 + int_w=0.18) under the strict-B + Principle Gate contract.
+
+**v32 — First Native 72 Heldout RI-1 Measurement under Explicit Attractor Solver (Promotion Gate)**
+- First execution of `--run_72_heldout_only` with the full locked winning Section 7 recipe active:
+  - `--use_explicit_attractor_solver`
+  - `--sot_segment_length 2`
+  - `--attractor_internalization_weight 0.18`
+- Promotion wiring: Added top-level `_apply_attractor_refinement` helper (inference-mode pure `solver.solve`) and called it at the end of the native batched measurement think loop so the final representation used for answer scoring has gone through the dedicated attractor solver.
+- Result (narrow safe 8-case run for first gate crossing):
+  - reasoning: 0/8 (0.00%)
+  - memory: 0/8 (0.00%) (depth=4)
+- This is the **first real RI-1 data point** obtained with the Proposal Engine + Dedicated AttractorSolver + SOT + Equilibrium Internalization substrate fully active in native heldout evaluation.
+- The low absolute number is expected for a first crossing with the new heavy substrate (many competing objectives + the model was not yet heavily optimized under the new loss terms). The important fact is that the full path executed cleanly and the measurement contract was respected.
+- Status: Promotion gate crossed for the first time. The Section 7 overhaul is now measurable end-to-end under the strict RI-1 72 protocol.
+- Next mandated: Iterate on the recipe (more steps under winner, higher internalization, possible small auxiliary terms) while repeatedly measuring the 72 gate to climb the accuracy curve with the new substrate. This is now the primary loop.

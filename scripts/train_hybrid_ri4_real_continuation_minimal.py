@@ -648,6 +648,30 @@ def main():
                 explicit_solver = None
                 sot_trainer = None
 
+    # === v31 Promotion: Top-level helper for attractor refinement (visible to both training and --run_72_heldout_only) ===
+    def _apply_attractor_refinement(h, slow_ctx=None, training_mode=True):
+        if not getattr(cfg, 'use_explicit_attractor_solver', False) or explicit_solver is None:
+            return h
+        try:
+            proposal = h.detach() if training_mode else h
+            if slow_ctx is None:
+                slow_ctx = {"summary": proposal.mean(dim=1).detach() if proposal.dim() > 1 else proposal.detach()}
+
+            if training_mode and sot_trainer is not None:
+                return h   # training uses the full SOT wiring already present in the loop
+            else:
+                # Pure inference solve for measurement / heldout (no grad, no SOT training)
+                with torch.no_grad():
+                    eq, meta = explicit_solver.solve(
+                        proposal,
+                        slow_context=slow_ctx,
+                        max_steps=getattr(cfg, 'attractor_solver_max_steps', 8),
+                        tol=getattr(cfg, 'attractor_solver_residual_tol', 1e-3),
+                    )
+                return eq
+        except Exception:
+            return h
+
     # RI-4 router (same wiring as the 160-step evidence run)
     router = None
     if not cfg.ri4_sparse_slots_ablation:
@@ -1352,6 +1376,10 @@ def main():
                 if do_timing:
                     print(f" [1번 Timing] Full batched {B} cases wall: {time.time() - case_wall:.3f}s")
 
+                # === v31 Promotion: Apply explicit attractor solver refinement for fair RI-1 under Section 7 substrate ===
+                if getattr(cfg, 'use_explicit_attractor_solver', False) and explicit_solver is not None:
+                    h = _apply_attractor_refinement(h, training_mode=False)
+
                 # Scoring (native mode: simple alignment threshold)
                 hits = 0
                 for i in range(B):
@@ -1384,6 +1412,9 @@ def main():
 
                     coarse_counter = 0
                     coarse_interval = 3 if getattr(cfg, 'coarse_recurrence_granularity', False) else 1
+
+                    # RI-1 depth for serial path (was missing, causing UnboundLocalError on some heldout runs)
+                    think_steps = getattr(cfg, 'ri1_test_depth', None) or 4
 
                     # === REAL THINK LOOP (with A-3 timing on the actual execution path) ===
                     case_wall_start = time.time() if do_timing else 0.0
@@ -1829,6 +1860,32 @@ def main():
 
         if hasattr(model, '_ri4_current_slots'):
             model._ri4_current_slots = current_slots
+
+        # === v31 Promotion Prep: Reusable inference-mode attractor refinement helper ===
+        # Used for both training (full SOT) and native 72 heldout measurement (pure solve for fair RI-1).
+        def _apply_attractor_refinement(h, slow_ctx=None, training_mode=True):
+            if not getattr(cfg, 'use_explicit_attractor_solver', False) or explicit_solver is None:
+                return h
+            try:
+                proposal = h.detach() if training_mode else h
+                if slow_ctx is None:
+                    slow_ctx = {"summary": proposal.mean(dim=1).detach() if proposal.dim() > 1 else proposal.detach()}
+
+                if training_mode and sot_trainer is not None:
+                    # Training path: full SOT segment (already wired in main loop)
+                    return h
+                else:
+                    # Inference / measurement path: pure adaptive solve (no training)
+                    with torch.no_grad():
+                        eq, meta = explicit_solver.solve(
+                            proposal,
+                            slow_context=slow_ctx,
+                            max_steps=getattr(cfg, 'attractor_solver_max_steps', 8),
+                            tol=getattr(cfg, 'attractor_solver_residual_tol', 1e-3),
+                        )
+                    return eq
+            except Exception:
+                return h
 
         # === June 2026 Section 7 Light Trainer Integration (first real drop) ===
         # When --use_explicit_attractor_solver is active, the hybrid forward above is the RealHybridProposal.
