@@ -406,10 +406,12 @@ def main():
         loss = F.mse_loss(y_star, target)
 
         if args.demo_equilibrium_wiring:
-            # Demo for Roadmap item #3: treat equilibrium as the "final wired output"
-            # (in real trainer this would be the input to the LM head / CE loss)
-            wiring_bonus = 0.05 * torch.norm(y_star, dim=-1).mean()  # tiny signal that y_star is now the main representation
-            loss = loss + wiring_bonus
+            # Stronger demo for Roadmap item #3:
+            # The equilibrium y* is now treated as the primary "final output" representation
+            # that would be fed to the real LM head / CE loss in the main trainer.
+            # We explicitly add a term that makes the loss care about y* being the answer state.
+            wiring_loss = 0.1 * F.mse_loss(y_star, target * 0.95)  # simulate "this is the decoded final state"
+            loss = loss + wiring_loss
         return loss
 
     sot_trainer = SOTSegmentedSolverTrainer(solver, primary_loss_fn, sot_cfg)

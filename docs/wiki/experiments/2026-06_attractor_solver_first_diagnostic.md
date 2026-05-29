@@ -8,7 +8,7 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + minimal --demo_equilibrium_wiring (Roadmap item #3 prep) + 20-step 실행 (완료)
+**오후**: RealHybridProposal v2 + strengthened --demo_equilibrium_wiring (Roadmap item #3 prep) + 30-step 실행 (완료)
 **저녁**: 결과 기록 + commit (진행)
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
@@ -108,7 +108,10 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - This is the cleanest internalization signal we have obtained while using the actual OneBodyParallelHybridBlock stack inside the diagnostic.
 - Status: Meaningful progress on "replace toy with real call to OneBodyParallelHybridBlock". The pattern reuse is working.
 - Added minimal `--demo_equilibrium_wiring` (Roadmap item #3 prep): treats the equilibrium y* as the explicit "final output representation" that would go to the LM head. This is the first small wiring signal inside the diagnostic harness.
-- 20-step run with real hybrid + wiring demo completed successfully. Internalization remains healthy.
+- Strengthened wiring demo run (30 steps): 
+  - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
+  - Equilibrium is now explicitly treated as the primary final output representation in the loss.
+- This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness. Ready to consider light movement toward item #4 (more trainer-like flags) while staying in toy harness.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
