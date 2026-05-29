@@ -758,11 +758,35 @@ class OneBodyParallelHybridBlock(nn.Module):
         self._convergence_engine_ablation_zero = False
         self._convergence_ticks = 3
 
+        # === Long Horizon Substrate Formation Light Mode (직관적 실행) ===
+        # For the actual long training needed to bake RI-1 depth + memory inductive bias,
+        # we must be able to run hundreds of steps without blowing cgroup limits.
+        # This flag, when set by the trainer for long runs, aggressively reduces internal work:
+        # - Forces K=1 (no multi-trajectory overhead)
+        # - Reduces convergence ticks
+        # - Can disable some heavy per-micro paths
+        self._long_horizon_light_recurrence = False
+
     def set_convergence_engine(self, enabled: bool = False, ablation_zero: bool = False, ticks: int = 3):
         """Minimal setter for the ConvergenceTick prototype (mirrors LEM / decoupled bank pattern)."""
         self._convergence_engine_enabled = bool(enabled) and not bool(ablation_zero)
         self._convergence_engine_ablation_zero = bool(ablation_zero)
         self._convergence_ticks = max(1, int(ticks))
+
+    def set_long_horizon_light_recurrence(self, enabled: bool = True):
+        """
+        INTUITIVE LONG SUBSTRATE FORMATION MODE.
+        When the trainer detects a long run (>80 steps), it calls this to make the
+        per-block recurrence dramatically cheaper so the experiment can actually finish
+        and produce the long trajectory needed for RI-1 depth + memory causal testing.
+        """
+        self._long_horizon_light_recurrence = bool(enabled)
+        if enabled:
+            self._internal_k_trajectory = 1
+            # Reduce internal convergence ticks aggressively for long formation phase
+            if self._convergence_engine_enabled:
+                self._convergence_ticks = min(self._convergence_ticks, 1)
+            print("[HybridBlock] LONG_HORIZON_LIGHT_RECURRENCE enabled: K=1, minimal internal ticks for substrate formation")
 
     def set_decoupled_memory_bank(self, bank: Optional["DecoupledLatentMemoryBank"], ablation_zero: bool = False):
         """Attach a Decoupled Latent Memory Bank (new 2026-06 topology).
@@ -971,6 +995,12 @@ class OneBodyParallelHybridBlock(nn.Module):
 
         x_norm = self.norm1(x)
 
+        # M2: Wire and activate learnable depth policy
+        self.last_elastic_halt_logit = None
+        if getattr(self, "_elastic_depth_learn_policy", False) and self.elastic_depth_policy is not None:
+            pooled = x_norm.mean(dim=1) if x_norm.dim() == 3 else x_norm
+            self.last_elastic_halt_logit = self.elastic_depth_policy(pooled)
+
         # === RI-1 ConvergenceTick Engine (minimal prototype, approved plan) ===
         # When active and not ablation_zero: run N internal fast recurrence ticks
         # (recurrence_heads only, *no* memory injection / attractor / workspace / LEM).
@@ -981,7 +1011,11 @@ class OneBodyParallelHybridBlock(nn.Module):
             and not getattr(self, "_convergence_engine_ablation_zero", False)
         ):
             ticks = max(1, int(getattr(self, "_convergence_ticks", 3)))
-            for _ in range(ticks):
+            for tick in range(ticks):
+                if self.last_elastic_halt_logit is not None:
+                    # Dynamically halt loop early if halting probability > 0.5 (logit > 0) when not in training
+                    if not self.training and torch.sigmoid(self.last_elastic_halt_logit).mean() > 0.5:
+                        break
                 rec_outs = []
                 for head in self.recurrence_heads:
                     try:

@@ -2,16 +2,16 @@
 set -euo pipefail
 
 export PYTHONPATH="${PYTHONPATH:-src}"
-export HF_HOME="${HF_HOME:-/mnt/nvme1n1p2/hf-cache-qtrm}"
-export TMPDIR="${TMPDIR:-/mnt/nvme1n1p2/tmp}"
-export TORCHINDUCTOR_CACHE_DIR="${TORCHINDUCTOR_CACHE_DIR:-/mnt/nvme1n1p2/torchinductor-cache}"
+export HF_HOME="${HF_HOME:-/mnt/nvme0n1p2/hf-cache-qtrm}"
+export TMPDIR="${TMPDIR:-/mnt/nvme0n1p2/tmp}"
+export TORCHINDUCTOR_CACHE_DIR="${TORCHINDUCTOR_CACHE_DIR:-/mnt/nvme0n1p2/torchinductor-cache}"
 PYTHON_BIN="${PYTHON_BIN:-.venv/bin/python}"
 
 CONFIG="${CONFIG:-configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_loop_joint_decoder_s040.yaml}"
 TRAIN_DATA="${TRAIN_DATA:-data/filtered/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len579_train40000_v0to5.jsonl}"
 EVAL_CASES="${EVAL_CASES:-data/eval/pure_recursive_transition_joint_dynamic_halt_v3_mixed_composition_len579_eval50000_v6to7_len7_9.jsonl}"
 INIT_CHECKPOINT="${INIT_CHECKPOINT:-/mnt/nvme1n1p2/qtrm-runs/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_next_token_decoder_selfrollout_s040_from_s080/last.pt}"
-OUT_DIR="${OUT_DIR:-/mnt/nvme1n1p2/qtrm-runs/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_loop_joint_decoder_s040_from_selfrollout}"
+OUT_DIR="${OUT_DIR:-/mnt/nvme0n1p2/qtrm-runs/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_loop_joint_decoder_s040_from_selfrollout}"
 STEPS="${STEPS:-40}"
 LR="${LR:-5.0e-5}"
 SELF_ROLLOUT_WEIGHT="${SELF_ROLLOUT_WEIGHT:-0.35}"
