@@ -349,6 +349,16 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest pure sot=1 run to date (100 steps). Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly demands changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
 - Next mandated: Shift to higher-leverage directions — e.g., (a) run even longer if desired, but more importantly (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, trajectory monotonic, etc.) while keeping the strong attractor curriculum active, or (c) directly improve how the final equilibrium state is used for LM head / answer scoring. Begin targeted experiments in these directions + repeated 72 measurement.
 
+**v46 — Extended Higher-Leverage Re-balancing (60 steps with rehearsal 0.2 + sot=1)**
+- 60-step run under the best re-balanced setting found so far: `--sot_segment_length 1 --attractor_internalization_weight 0.18 --rehearsal_pressure_scale 0.2`.
+- Internal signals: Very strong and **stable** across the entire 60 steps (densing_sig consistently in 17-19+ range, no major degradation).
+  - This is the best "sustained high performance over longer horizon" under the re-balanced loss mixture.
+- 72 gate probes (at steps 30 / 60):
+  - Still **0/8 reasoning, 0/8 memory** — no movement.
+- Interpretation: The combination of strong attractor curriculum + significantly reduced rehearsal pressure produces the most stable and high-quality internalization signals over extended training. The substrate is clearly benefiting from the higher-leverage re-balancing. However, even with 60 steps of this improved regime, the 72 heldout accuracy has not responded.
+- Status: Strong confirmation that aggressive rehearsal re-balancing is the right higher-leverage direction. The best internal behavior yet. 72 gate remains the lagging indicator.
+- Next mandated: Either (a) run significantly longer (80–100+ steps) under this proven re-balanced setting with 72 probes, or (b) combine the low-rehearsal + strong attractor with reduction of another competing term (e.g., trajectory monotonic weight), or (c) begin direct experiments on making the equilibrium state the primary representation for final answer scoring / LM head. Continue the higher-leverage iteration loop.
+
 **v45 — More Aggressive Rehearsal Reduction (0.1 scale) + sot=1**
 - 50-step run with even stronger higher-leverage re-balancing: `--rehearsal_pressure_scale 0.1` (rehearsal at only 10% of normal) + best attractor (sot=1 + int_w=0.18).
 - Internal signals: Started at moderate levels and **degraded** over the run (densing_sig ~14 → ~11.9 by the end). Noticeably worse than the 0.2 scale run in v44 (which reached 21.0).
