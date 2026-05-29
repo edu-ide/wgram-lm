@@ -509,6 +509,13 @@ def main():
             proposal_engine=proposal_engine,   # critical for internalization to actually run
         )
 
+        # Roadmap item #3 wiring feedback (minimal but concrete):
+        # When the equilibrium is explicitly wired as the final output,
+        # we simulate that it now influences the slow context for the next step.
+        # This creates a realistic loop where the wired state starts shaping future proposals.
+        if args.demo_equilibrium_wiring:
+            slow_ctx = {"summary": equilibrium.mean(dim=1).detach()}  # use equilibrium as new slow summary
+
         # === First-class internalization + primary on equilibrium ===
         solver_contrib = sot_total * args.attractor_solver_weight
 

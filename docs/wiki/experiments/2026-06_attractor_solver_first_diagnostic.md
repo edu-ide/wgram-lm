@@ -8,7 +8,7 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + item #3/#4 interaction strengthened (higher slow weight when internal_fast_recurrent) + 30-step 실행 (완료)
+**오후**: RealHybridProposal v2 + equilibrium feedback into slow context (item #3 wiring loop) + full item #4 prep + 30-step 실행 (완료)
 **저녁**: 결과 기록 + commit (완료) — 다음: item #4 prep 더 구체화 또는 trainer integration light prep
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
@@ -112,8 +112,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v7 (latest): Added direct item #3/#4 interaction — when --internal_fast_recurrent is on, the slow summary (from triple memory) receives higher weight in proposal generation. 30-step run: int 0.00341 → 0.00027.
-- This creates a feedback loop where deeper internal recurrence makes the proposal more strongly shaped by the wired equilibrium context. Good signal for the overall substrate.
+- v8 (latest): Added equilibrium feedback into slow context when --demo_equilibrium_wiring is active (the wired equilibrium now directly influences the next proposal's slow summary). 30-step run with full stack: int 0.00377 → 0.00035.
+- This is a meaningful step toward making the "wired" state actually participate in the ongoing proposal generation loop, which is the core promise of the substrate.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
