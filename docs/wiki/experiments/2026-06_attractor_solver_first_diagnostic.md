@@ -349,6 +349,15 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest pure sot=1 run to date (100 steps). Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly demands changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
 - Next mandated: Shift to higher-leverage directions — e.g., (a) run even longer if desired, but more importantly (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, trajectory monotonic, etc.) while keeping the strong attractor curriculum active, or (c) directly improve how the final equilibrium state is used for LM head / answer scoring. Begin targeted experiments in these directions + repeated 72 measurement.
 
+**v49 — First Direct Equilibrium-to-Primary-Loss Coupling Experiment**
+- 45-step run under the best re-balance (rehearsal 0.2 + sot=1 + 0.18) + new higher-leverage coupling term: strong direct MSE pressure (0.6 weight) from attractor equilibrium to gold target in the main loss.
+- Internal signals: Moderate (densing_sig 13-15.5 range), noticeably lower sustained performance than the pure 0.2 rehearsal + sot=1 without the extra direct term.
+- 72 gate probes (at steps 20 / 40 / 45):
+  - All remained **0/8 reasoning, 0/8 memory** — no movement.
+- Interpretation: Adding strong direct supervision from equilibrium to gold in the primary loss did not produce additive benefit on the internalization curriculum in this window and did not move the 72 gate. The previous best regime (0.2 rehearsal + strong sot=1 without this extra term) remains superior for internal metrics.
+- Status: First data point on the "direct equilibrium usage for answer scoring" higher-leverage direction. Simple addition of direct eq-to-gold pressure was not helpful in the short term.
+- Next mandated: Either (a) return to / extend the best re-balanced setting (0.2 rehearsal + sot=1) for very long training (80–100+ steps) with 72 probes, (b) try a different form of coupling (e.g., use equilibrium as the sole or dominant state for the main rehearsal objective instead of adding on top), or (c) combine the best re-balance with reduction of a different competing term. Continue the higher-leverage iteration loop.
+
 **v48 — Stacking Another Competing Loss Reduction (trajectory monotonic 0.05) on top of best re-balance**
 - 45-step run combining the strongest re-balance so far (rehearsal 0.2 + sot=1 + 0.18) with additional reduction of trajectory_monotonic_weight to 0.05.
 - Internal signals: Started reasonably but showed clear degradation over the run (densing_sig ~16.8 → ~15.6). Noticeably worse sustained performance than the 0.2 rehearsal + sot=1 alone (v46/v47).
