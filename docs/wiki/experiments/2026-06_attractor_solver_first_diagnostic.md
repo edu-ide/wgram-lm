@@ -349,6 +349,15 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest pure sot=1 run to date (100 steps). Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly demands changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
 - Next mandated: Shift to higher-leverage directions — e.g., (a) run even longer if desired, but more importantly (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, trajectory monotonic, etc.) while keeping the strong attractor curriculum active, or (c) directly improve how the final equilibrium state is used for LM head / answer scoring. Begin targeted experiments in these directions + repeated 72 measurement.
 
+**v43 — Climb Iteration 12: Lower Competing Loss (data_intuition 0.02) + sot=1 — Internal Degradation, 72 Flat**
+- 40-step run combining the strongest attractor curriculum (sot=1 + int_w=0.18) with a deliberate reduction of one competing term: `--data_intuition_loss_weight 0.02`.
+- Internal signals: Started at moderate levels but showed clear degradation over the horizon (densing_sig ~14+ → ~13.0 by the end). Not as strong as pure long sot=1 runs.
+- 72 gate probes (8-case narrow, at steps 20 / 40):
+  - Both remained **0/8 reasoning, 0/8 memory** — no movement.
+- Interpretation: Lowering the data intuition term while keeping the strong attractor path did not produce additive benefit on internal metrics in this window and had no visible effect on the 72 gate. This continues the pattern that simple single-term reductions in the current loss mixture are not immediately translating to 72 accuracy movement.
+- Status: Another data point in the higher-leverage phase. The climb loop is now systematically testing competing loss re-balancing.
+- Next mandated: Continue targeted re-balancing experiments — e.g., more aggressive reduction of rehearsal/gold injection pressure, or lowering trajectory monotonic / heldout pressure terms — while keeping the strong sot=1 curriculum active, with repeated 72 probes. Or begin direct experiments on improving how the equilibrium state feeds into final answer scoring. The goal remains finding the combination that moves the 72 numbers.
+
 **v40 — Climb Iteration 8: 70-Step Pure sot=1 — Highest Peak Yet + Continued Degradation, 72 Flat**
 - 70-step run with the strongest single configuration: `--sot_segment_length 1 --attractor_internalization_weight 0.18` (pure, no denoising).
 - Internal signals:
