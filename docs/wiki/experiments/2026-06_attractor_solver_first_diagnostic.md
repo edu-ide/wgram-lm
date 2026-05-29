@@ -349,6 +349,15 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest pure sot=1 run to date (100 steps). Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly demands changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
 - Next mandated: Shift to higher-leverage directions — e.g., (a) run even longer if desired, but more importantly (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, trajectory monotonic, etc.) while keeping the strong attractor curriculum active, or (c) directly improve how the final equilibrium state is used for LM head / answer scoring. Begin targeted experiments in these directions + repeated 72 measurement.
 
+**v45 — More Aggressive Rehearsal Reduction (0.1 scale) + sot=1**
+- 50-step run with even stronger higher-leverage re-balancing: `--rehearsal_pressure_scale 0.1` (rehearsal at only 10% of normal) + best attractor (sot=1 + int_w=0.18).
+- Internal signals: Started at moderate levels and **degraded** over the run (densing_sig ~14 → ~11.9 by the end). Noticeably worse than the 0.2 scale run in v44 (which reached 21.0).
+- 72 gate probes (at steps 20 / 40 / 50):
+  - All remained **0/8 reasoning, 0/8 memory** — still no movement.
+- Interpretation: Pushing rehearsal pressure too low (0.1) hurts the strong attractor curriculum rather than helping it further. The 0.2 scale from v44 appears closer to the sweet spot for this combination. The 72 gate continues to show no response even under very different rehearsal pressure regimes.
+- Status: Important boundary data in the re-balancing space. Extreme reduction is not better; moderate aggressive reduction (around 0.2) was superior for internal metrics.
+- Next mandated: Either (a) run longer (60–80+ steps) with the better 0.2 rehearsal scale + strong sot=1, or (b) try a different competing loss for aggressive reduction (e.g., trajectory monotonic weight or heldout answer pressure), or (c) begin direct experiments on improving how the equilibrium state is used for final answer scoring. Continue the higher-leverage iteration loop.
+
 **v44 — First Aggressive Rehearsal Re-balancing (Higher-Leverage) + sot=1**
 - 40-step run with the strongest attractor curriculum (sot=1 + int_w=0.18) + deliberate heavy reduction of competing rehearsal pressure: `--rehearsal_pressure_scale 0.2` (rehearsal/gold injection at 20% of normal).
 - Internal signals: **Best performance recorded to date**.
