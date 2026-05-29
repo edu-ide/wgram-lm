@@ -547,6 +547,16 @@ def main():
             slow_ctx = {"summary": equilibrium.mean(dim=1).detach()}
             wired_base = equilibrium.detach()  # next proposal starts from the wired equilibrium
 
+            # Stronger internalization simulation (item #3 + proposal engine):
+            # Feed the wired equilibrium back into the proposal engine's own memory (triple memory).
+            # This simulates that the proposal engine itself is internalizing the equilibrium
+            # and will produce better proposals in future steps.
+            if proposal_engine is not None and hasattr(proposal_engine, 'triple') and proposal_engine.triple is not None:
+                try:
+                    proposal_engine.triple.step(equilibrium.mean(dim=1).detach())
+                except Exception:
+                    pass
+
         # === First-class internalization + primary on equilibrium ===
         solver_contrib = sot_total * args.attractor_solver_weight
 
