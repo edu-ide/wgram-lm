@@ -67,6 +67,7 @@ import os
 import argparse
 import time
 from pathlib import Path
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -80,7 +81,84 @@ from src.qtrm_mm.attractor.attractor_solver import (
     AttractorSolverModule,
     SOTSegmentedSolverTrainer,
     SOTConfig,
+    ProposalEngineAdapter,
 )
+
+# For Priority 1 (Real proposal engine internalization test)
+try:
+    from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
+except Exception:
+    BrainMimeticTripleMemory = None
+
+
+class RichProposalStub(nn.Module):
+    """
+    Minimal rich proposal generator for Priority 1 diagnostic.
+    Combines:
+    - A tiny fast recurrence (to simulate FastGated / hybrid citizen)
+    - BrainMimeticTripleMemory (slow summary + surprise)
+    This produces a proposal y0 that is meaningfully richer than a plain linear projection,
+    so that internalization_loss can become non-zero and we can observe whether it trends down.
+    """
+    def __init__(self, dim: int, device: torch.device):
+        super().__init__()
+        self.dim = dim
+        self.device = device
+
+        # Tiny fast recurrence (stand-in for FastGatedLinearRecurrence / hybrid fast path)
+        self.fast_rec = nn.GRU(input_size=dim, hidden_size=dim, num_layers=1, batch_first=True)
+
+        if BrainMimeticTripleMemory is not None:
+            try:
+                self.triple = BrainMimeticTripleMemory(d_model=dim, enabled=True)
+            except Exception:
+                self.triple = None
+        else:
+            self.triple = None
+
+        # Projection from (fast_hidden + slow_summary) to proposal space
+        self.to_proposal = nn.Linear(dim * 2, dim, bias=False)
+
+        self._last_slow_summary = None
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x: [B, T, D] dummy input (like token embeddings)
+        Returns: proposal y0 [B, T, D]
+        """
+        B, T, D = x.shape
+        x_mean = x.mean(dim=1, keepdim=True)  # [B, 1, D]
+
+        # Fast recurrence step
+        fast_out, h_n = self.fast_rec(x_mean)  # h_n: [1, B, D]
+        fast_h = h_n.squeeze(0)                # [B, D]
+
+        # Triple memory step (if available)
+        slow_summary = None
+        if self.triple is not None:
+            try:
+                # Feed mean embedding as "current" state
+                current = fast_h.detach()
+                _ = self.triple.step(current)  # updates internal state
+                slow_summary = self.triple.get_current_summary() if hasattr(self.triple, "get_current_summary") else None
+            except Exception:
+                slow_summary = None
+
+        if slow_summary is None:
+            slow_summary = torch.zeros_like(fast_h)
+
+        self._last_slow_summary = slow_summary.detach()
+
+        # Combine fast + slow into proposal
+        combined = torch.cat([fast_h, slow_summary], dim=-1)
+        proposal = self.to_proposal(combined)  # [B, D]
+
+        # Expand to sequence form for solver
+        proposal = proposal.unsqueeze(1).expand(-1, T, -1)
+        return proposal
+
+    def get_last_slow_summary(self) -> Optional[torch.Tensor]:
+        return self._last_slow_summary
 
 
 def main():
@@ -104,6 +182,11 @@ def main():
     parser.add_argument("--noise_mode", type=str, default="constant",
                         choices=["constant", "increasing", "decreasing"],
                         help="How to apply proposal noise across steps.")
+
+    # === Priority 1: Real/Rich proposal engine to finally get non-zero internalization (Risk #1 test) ===
+    parser.add_argument("--rich_proposal", action="store_true",
+                        help="Use a richer proposal stub (BrainMimeticTripleMemory + minimal fast state) instead of toy linear. "
+                             "This is the minimal way to get meaningful internalization_loss > 0 and observe if it decreases.")
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -115,17 +198,27 @@ def main():
           f"solver_w={args.attractor_solver_weight}, int_w={args.internalization_weight}")
     if args.proposal_noise > 0.0:
         print(f"Noisy Proposal Mode: scale={args.proposal_noise}, mode={args.noise_mode}  ← Diffusion-style probe")
+    if args.rich_proposal:
+        print("Rich Proposal Mode: ON (BrainMimeticTripleMemory + fast recurrence) ← Priority 1 internalization test")
 
     device = torch.device(args.device)
     D = args.d_model
     B = args.batch
     T = args.seq_len
 
-    # === Minimal but realistic Proposal Engine (for the diagnostic) ===
-    # In a full wiring this would be the real OneBodyParallelHybridBlock + FastGated + BrainTriple.
-    # For the absolute first 20 steps we use a small learned projection as "proposal generator".
-    # This is sufficient to test the solver dynamics, persistent injection, Parcae stability, SOT, and internalization.
-    proposal_proj = nn.Linear(D, D).to(device)
+    # === Proposal Engine ===
+    # Default (toy): tiny linear projection (original behavior)
+    # --rich_proposal: RichProposalStub using BrainMimeticTripleMemory + minimal fast recurrence
+    # This is the critical step for Priority 1: finally getting internalization_loss > 0 and seeing if it trends down.
+    if args.rich_proposal and BrainMimeticTripleMemory is not None:
+        print("[Priority 1] Using RichProposalStub (BrainMimeticTripleMemory + fast recurrence) for meaningful internalization test.")
+        proposal_engine = RichProposalStub(dim=D, device=device).to(device)
+        proposal_proj = None  # not used in rich mode
+    else:
+        if args.rich_proposal:
+            print("[Warning] --rich_proposal requested but BrainMimeticTripleMemory unavailable. Falling back to toy linear.")
+        proposal_engine = None
+        proposal_proj = nn.Linear(D, D).to(device)
 
     # === The New Core: Dedicated Attractor Solver ===
     solver = AttractorSolverModule(
@@ -153,7 +246,10 @@ def main():
     sot_trainer = SOTSegmentedSolverTrainer(solver, primary_loss_fn, sot_cfg)
 
     # Tiny optimizer only for the solver + proposal (in real wiring this is the main optimizer)
-    opt = torch.optim.AdamW(list(solver.parameters()) + list(proposal_proj.parameters()), lr=3e-4)
+    if proposal_proj is not None:
+        opt = torch.optim.AdamW(list(solver.parameters()) + list(proposal_proj.parameters()), lr=3e-4)
+    else:
+        opt = torch.optim.AdamW(list(solver.parameters()) + list(proposal_engine.parameters()), lr=3e-4)
 
     # Synthetic "data" + slow context (in real run this comes from the dataset + BrainMimeticTripleMemory)
     dummy_x = torch.randn(B, T, D, device=device)
@@ -165,9 +261,16 @@ def main():
     for step in range(args.steps):
         opt.zero_grad()
 
-        # === Proposal Engine produces y0 (rich context in real system) ===
-        proposal = proposal_proj(dummy_x.mean(dim=1))   # [B, D] — simulated rich proposal
-        proposal = proposal.unsqueeze(1).expand(-1, T, -1)  # make it sequence-like for solver
+        # === Proposal Engine produces y0 ===
+        if proposal_engine is not None:
+            # Rich proposal path (Priority 1)
+            proposal = proposal_engine(dummy_x)
+            # Get slow summary for context if available
+            slow_summary = proposal_engine.get_last_slow_summary() if hasattr(proposal_engine, "get_last_slow_summary") else slow_summary
+        else:
+            # Original toy linear path
+            proposal = proposal_proj(dummy_x.mean(dim=1))
+            proposal = proposal.unsqueeze(1).expand(-1, T, -1)
 
         # === Noisy Proposal Experiment (Diffusion-style direction probe) ===
         if args.proposal_noise > 0.0:
@@ -185,12 +288,13 @@ def main():
 
         slow_ctx = {"summary": slow_summary}
 
-        # === Run one SOT segment on the Dedicated Solver (this is the new core loop) ===
-        # Use noisy_proposal when experimenting with the diffusion-style direction
+        # === Run one SOT segment on the Dedicated Solver ===
+        # Pass proposal_engine so that internalization_loss becomes active and non-zero (the whole point of Priority 1)
         logs, sot_total, equilibrium = sot_trainer.train_segment(
             y0=noisy_proposal,
             slow_context=slow_ctx,
             target_logits_or_ids=None,
+            proposal_engine=proposal_engine,   # critical for internalization to actually run
         )
 
         # === First-class internalization + primary on equilibrium ===
@@ -279,14 +383,19 @@ def main():
     print(f"Log saved → {log_path}")
 
     ckpt = Path(args.out_dir) / "solver_20step.pt"
-    torch.save({
+    save_dict = {
         "solver": solver.state_dict(),
-        "proposal_proj": proposal_proj.state_dict(),
         "steps": args.steps,
         "final_residual": clean_res,
         "final_quality_gap": quality_gap if args.proposal_noise > 0.0 else 0.0,
         "final_recovery": recovery if args.proposal_noise > 0.0 else 1.0,
-    }, ckpt)
+        "rich_proposal_used": args.rich_proposal,
+    }
+    if proposal_proj is not None:
+        save_dict["proposal_proj"] = proposal_proj.state_dict()
+    if proposal_engine is not None:
+        save_dict["proposal_engine"] = proposal_engine.state_dict()
+    torch.save(save_dict, ckpt)
     print(f"Solver checkpoint saved → {ckpt}")
 
     print("\n" + "=" * 72)

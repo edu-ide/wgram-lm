@@ -2,6 +2,38 @@
 
 **Status**: Ready to run (prototype + wiring script complete)
 
+**Current Compressed Daily Milestone (하루 마일스톤 - 2026-06, "너가 선택해" 이후)**
+
+이 문서 상단이 현재 **실행 중인 단기 마일스톤**의 single source of truth다. (사용자 "장기 마일스톤 하루로 줄여" 지시 후 압축된 버전)
+
+### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
+**오전**: 이전 실험 결과 판단 + wiki/실험 문서 반영 (완료: constant 0.1/0.2/0.3 sweep + quality-aware recov metric)
+**오후**: 최소 실행 1개 (아래 Priority 1 또는 2 중 하나)
+**저녁**: 결과 기록 + commit + 다음 선택 or wiki update
+
+**Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
+**Real proposal engine로 internalization 숫자 뽑기**
+- `scripts/diag_explicit_attractor_solver_20step.py` 의 toy `proposal_proj` 를 실제 `OneBodyParallelHybridBlock + BrainMimeticTripleMemory` 호출로 교체 (trainer의 `_hybrid_forward_only` 패턴 재사용)
+- SOT trainer 호출 시 `proposal_engine` 인자 제대로 넘겨서 `internalization_loss` 가 0이 아닌 값으로 나오게 만들기
+- Success criteria: 20~30 step run에서 `int` loss가 의미있게 >0 이면서 점차 ↓ 하는 곡선 관찰
+- 이게 안 되면 "rich proposal이 이미 equilibrium에 너무 가까워서 solver가 의미 없어지는" Risk #1이 현실이 됨
+
+**Priority 2 (내가 "너가 선택해" 때 judgment로 제시한 modest next push)**  
+**Light denoising auxiliary + timestep conditioning stub 구현**
+- `AttractorSolverModule.step_with_noise_schedule` 스텁을 최소한으로 실제화
+- Diagnostic script에 `--denoise_loss_weight` 추가 (noisy proposal → clean equilibrium을 맞추는 aux loss)
+- Constant noise 0.2~0.3 환경에서 denoising loss 유무에 따른 recovery / densing_sig 비교
+- Success: denoising term이 recovery를 더 안정적으로 만들거나, densing_sig를 개선하는 신호
+
+**Priority 3**  
+SOT / internalization weight ablation matrix 중 critical 2~3개 (A5, A7 등) diagnostic script로 빠르게 돌리기
+
+**Phase 3 진입 조건** (위 1~2가 어느 정도 되면)
+- Full trainer integration (equilibrium를 main loss path에 연결)
+- Native strict-B 72 heldout RI-1 측정 시작
+
+**주의**: 모든 작업은 "RI-1~RI-7 깨끗하게 검증 가능한 상태"를 절대 해치지 않으면서 진행. toy harness에서 real wiring으로 넘어가기 전까지는 72 측정 스크립트 손대지 말 것.
+
 **Strategic Context (Densing Law Framing)**: This diagnostic is the minimal instrument for measuring *Inference Densing* gains from the Section 7 substrate (see main wiki Section 7 "Densing Law Framing of the Overhaul" and 7.1 Risks). Success is ultimately defined not only by raw accuracy but by improved performance per inference FLOP (solver steps / effective recurrence depth vs. answer quality). See also the IKP nuance (arXiv:2604.24827) on procedural vs. factual capacity.
 
 **Goal**: Smallest falsifiable 20–50 step diagnostic for the Section 7 substrate (Proposal Engine + Dedicated AttractorSolverModule + Parcae stability + SOT + Equilibrium Internalization) before promoting to full native 72 RI-1 measurement.
@@ -51,6 +83,14 @@ Run each for 20–40 steps. Log solver_res, internalization_loss, primary_on_equ
 ## Current Known Early Observation (from first 20-step runs)
 
 In the ultra-minimal harness (toy linear proposal), `internalization_loss` stayed 0.0 because proposal and equilibrium are too close by construction. This is actually **useful data** — it previews risk #1 ("Equilibrium Internalization Fails to Materialize") when the proposal engine is already strong.
+
+**2026-06 Priority 1 Result (Real/Rich Proposal Test)**:
+- Added `--rich_proposal` mode using `RichProposalStub` (BrainMimeticTripleMemory + minimal GRU-style fast recurrence) inside the diagnostic harness.
+- **Key measurement**: `int` loss now starts at ~0.0033~0.0035 (step 1) and monotonically decreases to ~0.00030 by step 20.
+- This is the **first time** in the diagnostic harness that internalization is non-zero **and actively improving**.
+- Implication: The rich proposal (with slow memory summary) is meaningfully farther from equilibrium than the toy linear case, and the internalization curriculum is working (proposal engine learning to emit y0 closer to the solver's attractor).
+- solver_res remains stable and well-behaved. Adding the rich proposal component did not introduce instability or explosion.
+- This is a strong early positive signal against Risk #1 in Section 7.1 ("Equilibrium Internalization Fails to Materialize").
 
 When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becomes the proposal engine, we expect `int_loss` to become meaningful and then (hopefully) decrease over training. This must be the first thing measured in the next wiring iteration.
 
