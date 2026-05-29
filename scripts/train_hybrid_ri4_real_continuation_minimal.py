@@ -1884,8 +1884,11 @@ def main():
                 setattr(cfg, '_attractor_int_contrib', int_contrib_t)
                 setattr(cfg, '_attractor_densing_active', True)
 
-                if (step + 1) % max(1, getattr(cfg, 'total_steps', 100) // 10) == 0:
-                    print(f"  [Section 7 Attractor] step {step+1} | sot={float(sot_total):.5f} int_mse={float(int_mse):.5f}")
+                # Rich logging during active validation (every 2 steps for readability)
+                if (step + 1) % 2 == 0:
+                    sot_val = float(sot_total) if torch.is_tensor(sot_total) else float(sot_total)
+                    int_val = float(int_mse) if torch.is_tensor(int_mse) else float(int_mse)
+                    print(f"  [Section 7 Attractor] step {step+1:02d} | sot={sot_val:.5f} int_mse={int_val:.5f} densing_sig≈{1.0/(int_val+1e-6):.2f}")
             except Exception as e:
                 print(f"[Section 7 WARN] Attractor solver step failed at step {step}, falling back: {e}")
                 setattr(cfg, '_attractor_solver_contrib', torch.tensor(0.0, device=h.device if 'h' in dir() else 'cpu'))

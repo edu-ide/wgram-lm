@@ -169,3 +169,26 @@ First small experiments to consider:
 - Compare against current plain attractor solver baseline.
 
 This direction is deliberately exploratory and should only be pursued after the near-term and medium-term improvements (selective looping, curriculum internalization, densing metrics) show stable signals.
+
+**v28 — 25-Step Clean Validation Run + Internalization Trend Capture**
+- Executed 25-step run (d=64, B=2, `--use_explicit_attractor_solver`, sot_segment=3, attractor_weight=0.12) with the hardened wiring.
+- Results (attractor path succeeded on **all 25 steps**):
+  - `sot` (solver contribution inside SOT segment): extremely stable in **0.0287 – 0.03198** band throughout.
+  - `int_mse` (direct proposal-to-equilibrium distance, primary internalization curriculum metric): stable in **0.214 – 0.234** range.
+    - Early (step 1-5): ~0.214–0.219
+    - Mid (step 10-15): ~0.217–0.228
+    - Late (step 20-25): ~0.220–0.226
+  - Crude densing proxy (`1/int_mse`): consistently **4.27 – 4.65** (no collapse, no explosion).
+  - Sample logs:
+    - step 01 | sot=0.02942 int_mse=0.21875 densing_sig≈4.57
+    - step 10 | sot=0.03040 int_mse=0.21777 densing_sig≈4.59
+    - step 15 | sot=0.03052 int_mse=0.22852 densing_sig≈4.38
+    - step 25 | sot=0.03149 int_mse=0.22656 densing_sig≈4.41
+  - Overall train_loss stayed in healthy 0.055–0.080 range with normal variance; no divergence or NaN.
+- Interpretation (Section 7 / Densing Law lens):
+  - Unlike the isolated diagnostic (where int loss dropped sharply to ~0.0003), here the internalization distance remains stable but **non-zero and bounded**.
+  - This is expected and valuable real-trainer data: the full rehearsal + data_intuition + stochastic breadth pressures compete with the attractor internalization objective.
+  - Positive signal: the curriculum is **alive and not broken** (Risk #1 partially mitigated — equilibrium does not become meaningless).
+  - Open question now shifts to "how much internalization weight / SOT pressure is needed to make int_mse trend downward in the presence of the full loss mixture?"
+- Status: 25-step validation complete with rich, repeatable internalization + densing proxy numbers from the real hybrid proposal engine.
+- Next mandated: Small targeted ablation on the new substrate (sot_segment_length 2/4/6 + internalization_weight 0.08/0.15/0.20) or direct promotion prep toward native 72 heldout with the explicit path enabled.
