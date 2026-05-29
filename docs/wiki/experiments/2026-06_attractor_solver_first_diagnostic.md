@@ -349,6 +349,15 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest pure sot=1 run to date (100 steps). Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly demands changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
 - Next mandated: Shift to higher-leverage directions — e.g., (a) run even longer if desired, but more importantly (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, trajectory monotonic, etc.) while keeping the strong attractor curriculum active, or (c) directly improve how the final equilibrium state is used for LM head / answer scoring. Begin targeted experiments in these directions + repeated 72 measurement.
 
+**v50 — Equilibrium as Primary for Main Loss (Strong Coupling) + Best Re-balance**
+- 45-step run under the best re-balance (rehearsal 0.2 + sot=1 + 0.18) + strong higher-leverage coupling: equilibrium made the *primary* state for the main rehearsal objective (1.0 weight direct MSE from equilibrium to gold).
+- Internal signals: Excellent peak (densing_sig up to **21.33**), matching previous bests, but with clear degradation toward the end of the run (down to ~17.8). Overall less stable than the pure 0.2 re-balance without this direct primary change.
+- 72 gate probes (at steps 20 / 40 / 45):
+  - All remained **0/8 reasoning, 0/8 memory** — no movement.
+- Interpretation: Making the equilibrium the primary state for the main loss produces very high peak internalization performance, but introduces more instability over longer steps compared to the previous best re-balance. The 72 heldout accuracy still shows no response. This direction has high potential but needs refinement (e.g., different weighting, different form of coupling, or longer training under it).
+- Status: First structural coupling experiment completed. Strong peak signals, but not yet superior to the best re-balance alone, and 72 remains flat.
+- Next mandated: Either (a) refine the coupling (e.g., softer weighting, use equilibrium as the sole state for loss, or improve heldout scoring to be fully equilibrium-based), (b) run significantly longer under this new coupling + best re-balance, or (c) return to the proven 0.2 rehearsal + sot=1 for very long training while beginning parallel coupling experiments. Continue the higher-leverage iteration loop.
+
 **v49 — First Direct Equilibrium-to-Primary-Loss Coupling Experiment**
 - 45-step run under the best re-balance (rehearsal 0.2 + sot=1 + 0.18) + new higher-leverage coupling term: strong direct MSE pressure (0.6 weight) from attractor equilibrium to gold target in the main loss.
 - Internal signals: Moderate (densing_sig 13-15.5 range), noticeably lower sustained performance than the pure 0.2 rehearsal + sot=1 without the extra direct term.
