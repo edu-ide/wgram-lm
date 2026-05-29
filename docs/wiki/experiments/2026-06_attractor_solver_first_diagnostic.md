@@ -112,9 +112,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v17 (latest): Added "Trainer Integration Prep" comment block in the diagnostic code showing the exact mapping to real trainer flags (`--use_explicit_attractor_solver`, `--internal_fast_recurrent`, `--brain_triple_memory`, equilibrium wiring).
-  30-step validation run with full stack confirms stability.
-- The diagnostic now serves as both a measurement tool and a living specification for how the real wiring should look. Excellent foundation for the next phase (light trainer integration).
+- v18 (latest): Continued validation run with the full current stack (including all internalization + densing + Trainer Integration Prep notes). The loop remains stable and healthy.
+- The diagnostic is now in a very strong position as both a measurement tool and a living specification. Ready for the next concrete step: light trainer integration prep (dropping the pattern into the main trainer as an optional path).
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
