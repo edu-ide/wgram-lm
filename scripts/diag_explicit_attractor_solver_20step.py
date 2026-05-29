@@ -27,13 +27,38 @@ python scripts/diag_explicit_attractor_solver_20step.py \
   --out_dir checkpoints/diag_attractor_solver_20step \
   --device cuda
 
+# Noisy proposal experiment (first probe for long-term diffusion-style direction)
+python scripts/diag_explicit_attractor_solver_20step.py \
+  --steps 30 \
+  --proposal_noise 0.15 \
+  --noise_mode constant \
+  --device cuda
+
 Watch for (per wiki Section 7.1):
-- solver_residual trending down across the 20 steps
+- solver_residual trending down across the steps
 - internalization_loss trending down (y0 getting closer to equilibrium)
 - No NaN / explosion (Parcae + SOT should prevent this)
+- In noisy mode: q_gap not exploding + recov staying reasonably high (especially constant noise)
 
-If internalization is flat or solver residual stays high → we have hit one of the critical risks
-already (rich proposal engine may already be too good, or basin shaping is insufficient).
+=== New: Noisy Proposal Mode (Option 1) — Improved Recovery Metric (June 2026) ===
+When --proposal_noise > 0:
+- The probe now captures actual equilibria (y*) from BOTH clean and noisy proposals at identical
+  solver budget (6 steps).
+- Two recovery views are logged:
+    recov      = 1 - normalized quality_gap   (primary signal: did noisy start produce worse eq quality?)
+    res_recov  = old residual-ratio version (kept for comparison)
+- q_gap, q_clean, q_noisy = surrogate primary loss on the landed equilibria (higher = worse)
+- densing_sig vs densing_sig_noisy shows Inference Densing impact of noisy start.
+
+Recommended constant-noise sweep (run these three):
+  python scripts/diag_explicit_attractor_solver_20step.py --steps 30 --proposal_noise 0.1 --noise_mode constant --device cuda
+  python scripts/diag_explicit_attractor_solver_20step.py --steps 30 --proposal_noise 0.2 --noise_mode constant --device cuda
+  python scripts/diag_explicit_attractor_solver_20step.py --steps 30 --proposal_noise 0.3 --noise_mode constant --device cuda
+
+Interpretation target (per Section 7.1):
+- If recov stays high (>0.85) and q_gap grows gracefully (not explosion) across 0.1→0.3 → positive signal for
+  "Proposal as noisy latent + Solver as denoiser" direction.
+- If q_gap explodes or recov collapses early → basin shaping is insufficient; need stronger NI/RI or SOT changes first.
 
 After a clean 20-step run, promote the wiring into the real trainer for native 72 RI-1 measurement.
 """
@@ -71,6 +96,14 @@ def main():
     parser.add_argument("--out_dir", type=str, default="checkpoints/diag_attractor_solver_20step")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--log_every", type=int, default=1)
+
+    # === Noisy Proposal Experiment (Option 1 - First step toward Diffusion-style direction) ===
+    parser.add_argument("--proposal_noise", type=float, default=0.0,
+                        help="Add controlled Gaussian noise to the proposal y0 before feeding to solver. "
+                             "This is the first probe for the long-term 'Proposal as noisy latent' direction.")
+    parser.add_argument("--noise_mode", type=str, default="constant",
+                        choices=["constant", "increasing", "decreasing"],
+                        help="How to apply proposal noise across steps.")
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -80,6 +113,8 @@ def main():
     print("=" * 72)
     print(f"Config: steps={args.steps}, sot_h={args.sot_segment_length}, "
           f"solver_w={args.attractor_solver_weight}, int_w={args.internalization_weight}")
+    if args.proposal_noise > 0.0:
+        print(f"Noisy Proposal Mode: scale={args.proposal_noise}, mode={args.noise_mode}  ← Diffusion-style probe")
 
     device = torch.device(args.device)
     D = args.d_model
@@ -134,11 +169,26 @@ def main():
         proposal = proposal_proj(dummy_x.mean(dim=1))   # [B, D] — simulated rich proposal
         proposal = proposal.unsqueeze(1).expand(-1, T, -1)  # make it sequence-like for solver
 
+        # === Noisy Proposal Experiment (Diffusion-style direction probe) ===
+        if args.proposal_noise > 0.0:
+            if args.noise_mode == "constant":
+                noise_scale = args.proposal_noise
+            elif args.noise_mode == "increasing":
+                noise_scale = args.proposal_noise * (step / max(1, args.steps - 1))
+            else:  # decreasing
+                noise_scale = args.proposal_noise * (1 - step / max(1, args.steps - 1))
+
+            noise = torch.randn_like(proposal) * noise_scale
+            noisy_proposal = proposal + noise
+        else:
+            noisy_proposal = proposal
+
         slow_ctx = {"summary": slow_summary}
 
         # === Run one SOT segment on the Dedicated Solver (this is the new core loop) ===
+        # Use noisy_proposal when experimenting with the diffusion-style direction
         logs, sot_total, equilibrium = sot_trainer.train_segment(
-            y0=proposal,
+            y0=noisy_proposal,
             slow_context=slow_ctx,
             target_logits_or_ids=None,
         )
@@ -151,21 +201,61 @@ def main():
         total.backward()
         opt.step()
 
-        # === Quick residual probe (the most important diagnostic signal) ===
+        # === Improved Equilibrium Quality Probe (Option 1 recovery refinement) ===
+        # Key question for diffusion-style direction:
+        #   "At the *same* solver budget, does starting from a noisy proposal produce a
+        #    meaningfully worse equilibrium than a clean proposal?"
+        # We now measure both residual AND surrogate task quality on the landed equilibria.
         with torch.no_grad():
-            _, meta = solver.solve(proposal.detach(), slow_ctx, max_steps=6, tol=5e-3)
-            res = meta.get("final_residual", 1.0)
+            y_star_clean, meta_clean = solver.solve(proposal.detach(), slow_ctx, max_steps=6, tol=5e-3)
+            clean_res = meta_clean.get("final_residual", 1.0)
 
-        # === Inference Densing Signal (Densing Law informed) ===
-        # Primary signal: quality per solver step (lower is better density)
-        densing_signal = float(primary_on_eq) / max(1, solver_res * 10 + 1e-8)   # proxy
+            # Surrogate quality on clean equilibrium (same form as primary loss)
+            eq_quality_clean = float(primary_loss_fn(y_star_clean, None))
+
+            if args.proposal_noise > 0.0:
+                y_star_noisy, meta_noisy = solver.solve(noisy_proposal.detach(), slow_ctx, max_steps=6, tol=5e-3)
+                noisy_res = meta_noisy.get("final_residual", 1.0)
+
+                # Surrogate quality on the equilibrium reached from noisy start
+                eq_quality_noisy = float(primary_loss_fn(y_star_noisy, None))
+
+                # === Core improved recovery metric (equilibrium degradation) ===
+                # quality_gap: how much *worse* (higher surrogate loss) the noisy-started eq is
+                quality_gap = max(0.0, eq_quality_noisy - eq_quality_clean)
+
+                # Recovery = 1 - normalized degradation.
+                # 1.0 = noisy start produced *identical* quality equilibrium
+                # 0.0 = noisy start produced fully degraded equilibrium (no recovery happened)
+                # This is more meaningful for "Inference Densing" than raw residual ratio.
+                recovery = 1.0 - min(1.0, quality_gap / (eq_quality_clean + 1e-6))
+
+                # Also keep the old residual-based view for comparison
+                residual_recovery = max(0.0, (noisy_res - clean_res) / max(1e-8, noisy_res))
+            else:
+                noisy_res = clean_res
+                eq_quality_noisy = eq_quality_clean
+                quality_gap = 0.0
+                recovery = 1.0
+                residual_recovery = 0.0
+
+        # === Inference Densing Signals (Densing Law informed) ===
+        densing_signal = float(primary_on_eq) / max(1, clean_res * 10 + 1e-8)
+        densing_signal_noisy = float(primary_on_eq) / max(1, noisy_res * 10 + 1e-8) if args.proposal_noise > 0.0 else densing_signal
 
         line = (f"step {step+1:02d} | "
                 f"primary_eq={float(primary_on_eq):.5f} | "
                 f"sot={float(sot_total):.5f} | "
                 f"int={float(logs.get('sot_internalization_loss', 0.0)):.5f} | "
-                f"solver_res={res:.4f} | "
-                f"densing_sig={densing_signal:.5f} | "
+                f"clean_res={clean_res:.4f} | "
+                f"noisy_res={noisy_res:.4f} | "
+                f"q_clean={eq_quality_clean:.5f} | "
+                f"q_noisy={eq_quality_noisy:.5f} | "
+                f"q_gap={quality_gap:.5f} | "
+                f"recov={recovery:.3f} | "
+                f"res_recov={residual_recovery:.3f} | "
+                f"dsig={densing_signal:.5f} | "
+                f"dsig_n={densing_signal_noisy:.5f} | "
                 f"total={float(total):.5f}")
 
         log_lines.append(line)
@@ -178,7 +268,9 @@ def main():
 
     elapsed = time.time() - start
     print(f"\n[COMPLETE] {args.steps} steps in {elapsed:.1f}s")
-    print(f"Final solver residual: {res:.4f}")
+    print(f"Final solver residual (clean): {clean_res:.4f}")
+    if args.proposal_noise > 0.0:
+        print(f"Final quality gap (noisy vs clean eq): {quality_gap:.5f} | recovery={recovery:.3f}")
 
     # Persist everything
     log_path = Path(args.out_dir) / "20step_diagnostic.log"
@@ -191,7 +283,9 @@ def main():
         "solver": solver.state_dict(),
         "proposal_proj": proposal_proj.state_dict(),
         "steps": args.steps,
-        "final_residual": res,
+        "final_residual": clean_res,
+        "final_quality_gap": quality_gap if args.proposal_noise > 0.0 else 0.0,
+        "final_recovery": recovery if args.proposal_noise > 0.0 else 1.0,
     }, ckpt)
     print(f"Solver checkpoint saved → {ckpt}")
 

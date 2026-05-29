@@ -594,6 +594,20 @@ Long-term diffusion-style view:
 4. Run small ablations: "clean proposal" vs "noisy proposal + denoiser-style training".
 5. Document results against the Inference Densing curves.
 
+**June 2026 Constant-Noise Sweep Result (Improved Metric)**
+
+Using `scripts/diag_explicit_attractor_solver_20step.py` with the refined recovery probe (now captures actual y* equilibria from clean vs noisy proposals at identical budget, then computes surrogate primary quality on both):
+
+- Swept constant noise 0.1 / 0.2 / 0.3 for 30 steps.
+- **Main result**: Quality recovery (1 − normalized q_gap on landed equilibria) ends at 0.969 / 0.962 / 0.965 respectively. Even at 0.3 noise the solver produces essentially identical task-quality equilibria to the clean case (q_gap → 0.00000 by late training).
+- Residual recovery is more conservative (final ~0.195 / 0.419 / 0.527) — noisy starts still leave higher ||f(y)−y|| — but the *semantically meaningful* attractor quality is recovered.
+- Contrast with earlier decreasing-schedule run (recovery collapsed to 0): constant noise produces stable, usable signal.
+- Internalization remained 0 in this harness (proposal_engine=None in SOT call). Real internalization measurement requires wiring the full proposal engine.
+
+**Judgment (per "너가 선택해" + 하루 마일스톤)**: The current Parcae + SOT + persistent injection substrate already exhibits strong basin robustness under constant proposal noise. This is a positive, non-trivial signal for the long-term "Proposal as noisy latent + Solver as learned denoiser" direction. Worth a modest next push (light denoising auxiliary on solver + timestep conditioning stub) before declaring the direction low-leverage. Risk #1 (rich proposal already near equilibrium) remains live until we see internalization numbers on the real engine.
+
+Full logs + checkpoints: `checkpoints/diag_noisy_sweep/const_{0.1,0.2,0.3}/`
+
 This direction is deliberately long-term and high-uncertainty. It is not meant to replace the current Proposal + Solver sketch in the near term, but rather to explore whether reframing the solver as a learned latent denoiser with explicit noise schedules can unlock a new regime of depth scaling, robustness, and density that pure fixed-point attractors cannot reach.
 
 It represents the most ambitious synthesis of three threads the project cares about:
@@ -818,6 +832,7 @@ The Densing Law + IKP literature adds a strategic filter to every risk above:
 - **Procedural vs. Factual Asymmetry** (from arXiv:2604.24827): Our substrate is optimized for compressible procedural depth (iterative refinement, attractor convergence, slow-memory shaping). It is likely to deliver strong Densing gains here. However, incompressible factual storage still scales classically with parameter count. Over-optimism about "the solver will internalize everything" must be tempered by this distinction. Diagnostic: run parallel IKP-style rare-fact probes alongside pure_72.
 - **Inference Densing as Primary Success Metric**: The ultimate validation of this overhaul is not just raw accuracy, but *performance per inference FLOP* (especially variable solver steps). Track solver steps / residual vs. answer quality as a first-class curve. If internalization works, the curve should shift favorably over training (fewer steps needed for same quality).
 - **Risk of "Densing Theater"**: Many compression techniques improve headline numbers while lowering true density (original Densing paper observation). Our SOT + internalization curriculum must demonstrably increase density, not just move loss curves. The 20-step diagnostic harness (see `docs/wiki/experiments/2026-06_attractor_solver_first_diagnostic.md`) is the minimal instrument for this.
+- **June 2026 update (constant noise probe)**: Early evidence from quality-aware recovery metric shows the solver can absorb 0.1–0.3 constant proposal noise and still land in near-identical quality equilibria (recov 0.96+). This is encouraging for Inference Densing via controlled noise, but must be re-measured once real internalization + full proposal engine is wired. (See Section 7 diffusion-style subsection for numbers.)
 
 #### Success Criteria for the Overhaul Phase (Unambiguous)
 
