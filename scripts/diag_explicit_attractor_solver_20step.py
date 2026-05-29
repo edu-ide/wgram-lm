@@ -506,7 +506,14 @@ def main():
         else:
             noisy_proposal = proposal
 
-        slow_ctx = {"summary": slow_summary}
+        # When we are in strong internalization mode (using wired_base),
+        # also update the slow context to be strongly influenced by the equilibrium.
+        # This simulates that once the proposal internalizes the equilibrium,
+        # the slow memory (triple memory) also starts carrying the wired state.
+        if args.demo_equilibrium_wiring and wired_base is not None:
+            slow_ctx = {"summary": wired_base.mean(dim=1).detach()}
+        else:
+            slow_ctx = {"summary": slow_summary}
 
         # === Run one SOT segment on the Dedicated Solver ===
         # Pass proposal_engine so that internalization_loss becomes active and non-zero (the whole point of Priority 1)
