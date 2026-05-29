@@ -235,7 +235,18 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Interpretation: With the winning recipe, the Section 7 substrate not only maintains but **further strengthens** the internalization signal over longer horizons inside the full trainer loss mixture. The equilibrium distance reached a meaningfully lower regime and stayed there.
 - This is the strongest and most sustained densing + internalization evidence obtained to date in the real training loop.
 - Status: Long-term stability of the optimized substrate confirmed at 50 steps with continued improvement.
-- Next mandated: The substrate is now in excellent shape for promotion. Prepare and execute the first native 72 heldout RI-1 measurement using the locked winning recipe (`--use_explicit_attractor_solver` + sot=2 + int_w=0.18) under the strict-B + Principle Gate contract.
+- Next mandated: Iterate on the recipe (more steps under winner, higher internalization, possible small auxiliary terms) while repeatedly measuring the 72 gate to climb the accuracy curve with the new substrate. This is now the primary loop.
+
+**v33 — First Post-Promotion Climb Iteration (30 steps under locked winner + repeated 72 probes)**
+- 30-step training continuation using the exact v29/v30 winning recipe (`sot=2 + int_w=0.18 + use_explicit_attractor_solver`).
+- Internal signals:
+  - int_mse started ~0.153 and drifted mildly upward to 0.159 by the end (no further deepening).
+  - densing_sig stayed in 6.2–7.3 band (did not recover the 9.0 peak seen in the 50-step stability run).
+- 72 gate probes (every 5 steps, 8-case narrow):
+  - All probes remained **0/8 reasoning, 0/8 memory** (identical to the first promotion measurement in v32).
+- Interpretation: Simply continuing training under the current best substrate configuration did not produce immediate accuracy lift on the 72 gate. The internalization signal has stabilized but is no longer improving in this window. This is expected "climb phase" data — the substrate is live and measurable, but further recipe iteration (weight tuning, auxiliary terms, longer horizon, or different sot/internalization balance) is required to move the 72 numbers.
+- Status: First climb iteration completed. 72 gate flat. Primary loop is now "recipe tweak → train → measure 72".
+- Next mandated: Small recipe adjustment (e.g. raise internalization_weight further to 0.22–0.25, or add a light denoising auxiliary on the solver, or test sot=1) + immediate re-measure of the 72 gate. Repeat until measurable positive movement on RI-1 72 appears.
 
 **v32 — First Native 72 Heldout RI-1 Measurement under Explicit Attractor Solver (Promotion Gate)**
 - First execution of `--run_72_heldout_only` with the full locked winning Section 7 recipe active:
