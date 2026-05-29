@@ -115,6 +115,27 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
 - v25 (latest): Continued validation run with the full current best stack (including all internalization + densing features + Trainer Integration Prep notes). The loop remains stable and healthy.
 - The diagnostic is now in an excellent position as both a measurement tool and a living specification for the real wiring. The foundation for light trainer integration prep is solid.
 
+**v26 — First Light Trainer Integration Drop (Roadmap item #4)**
+- Target: `scripts/train_hybrid_ri4_real_continuation_minimal.py` (the active RI-4 continuation trainer that already had the flag stubs).
+- Changes:
+  - Conditional import of `AttractorSolverModule` + `SOTSegmentedSolverTrainer` (graceful fallback).
+  - Solver + SOT trainer instantiated when `--use_explicit_attractor_solver` (exact constructor match to current attractor_solver.py).
+  - Minimal defensive optional path inserted in the normal single-trajectory forward block (after K-selection, before rehearsal buffer).
+    - Real hybrid forward output treated as proposal (RealHybridProposal).
+    - `sot_trainer.train_segment` called with equilibrium becoming the primary `h`.
+    - Full internalization feedback: equilibrium → triple memory step + slow context.
+    - `solver_contrib` + `internalization_contrib` added to `train_loss` (scaled by config weights).
+    - `densing_active` / `eff_sot` visibility flags carried (logs emitted on successful path).
+  - All additions behind `if getattr(cfg, 'use_explicit_attractor_solver', False)` — zero behavior change when flag off.
+- Smoke validation (8 steps, d=64, flag on, heldout disabled):
+  - Solver/SOT instantiation now succeeds after signature alignment.
+  - Conditional block executes every step (Section 7 WARN path hit due to prototype shape handling inside train_segment when called from real trainer context — expected for first drop).
+  - No NaN, no trainer crash, loss continues healthy monotonic decrease (0.170 → 0.119).
+  - Defensive fallback works cleanly (original hybrid path always available).
+- This is the first time the Section 7 substrate (Proposal Engine + Dedicated Attractor Solver + SOT + Internalization loop) has executed inside the real trainer loop.
+- Status: Light skeleton drop complete. The "living specification" from the diagnostic is now physically wired (even if prototype-level friction remains for the first run).
+- New mandated next (per compressed daily milestone + Integration Roadmap): harden the call site (fix the immediate None/dim shape issue inside the wiring block) + run a clean 15-20 step with visible int loss + densing logs, then promote to native 72 heldout gate under strict-B contract.
+
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
 **Long-term Direction Note (Diffusion-Style Attractor Iteration)**

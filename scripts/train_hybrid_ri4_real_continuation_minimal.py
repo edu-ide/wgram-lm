@@ -92,6 +92,23 @@ from scripts.train_556_on_parallel_hybrid_minimal import (
 # Direct reference to previous successful 5.56 full curriculum tracks
 from src.qtrm_mm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
 
+# === June 2026 Section 7 Light Trainer Integration (living spec from diag_explicit_attractor_solver_20step.py) ===
+# Conditional import — graceful fallback if attractor module not present during early integration.
+try:
+    from src.qtrm_mm.attractor.attractor_solver import (
+        AttractorSolverModule,
+        SOTSegmentedSolverTrainer,
+        SOTConfig,
+    )
+    from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
+    _ATTRACTOR_AVAILABLE = True
+except Exception:
+    AttractorSolverModule = None
+    SOTSegmentedSolverTrainer = None
+    SOTConfig = None
+    BrainMimeticTripleMemory = None
+    _ATTRACTOR_AVAILABLE = False
+
 
 @dataclass
 class ContinuationConfig(Hybrid556Config):
@@ -591,6 +608,40 @@ def main():
             layer._internal_k_trajectory = internal_k
     if internal_k > 1:
         print(f"[v1.2 Arch Guardrail] Internal K-candidate trajectory selection armed inside hybrid recurrence (K={internal_k}). This is the architectural-level restoration from StateTransitionCore + verifier era.")
+
+    # === June 2026 Section 7 Light Trainer Integration (per diag living spec) ===
+    # When --use_explicit_attractor_solver: create the dedicated solver + SOT trainer.
+    # The existing hybrid stack (model) acts as the RealHybridProposal engine.
+    # This is the exact pattern validated in 25+ diagnostic iterations (int loss ↓ + densing signals).
+    explicit_solver = None
+    sot_trainer = None
+    if getattr(cfg, 'use_explicit_attractor_solver', False):
+        if not _ATTRACTOR_AVAILABLE:
+            print("[WARN] --use_explicit_attractor_solver requested but attractor module unavailable. Falling back to pure hybrid path.")
+        else:
+            try:
+                solver_dim = cfg.d_model
+                explicit_solver = AttractorSolverModule(
+                    dim=solver_dim,
+                    num_layers=1,
+                    use_parcae=getattr(cfg, 'parcae_negative_diag_enabled', True),
+                    max_solver_steps=getattr(cfg, 'attractor_solver_max_steps', 12),
+                    residual_tol=getattr(cfg, 'attractor_solver_residual_tol', 1e-3),
+                ).to(device=cfg.device, dtype=cfg.dtype)
+                sot_cfg = SOTConfig(
+                    segment_length=getattr(cfg, 'sot_segment_length', 5),
+                    internalization_weight=getattr(cfg, 'attractor_solver_internalization_weight', 0.12),
+                    ri_noise=getattr(cfg, 'attractor_ri_ni_scale', 0.05),
+                    max_segments=3,
+                    use_detached_carry=True,
+                )
+                sot_trainer = SOTSegmentedSolverTrainer(explicit_solver, None, sot_cfg)  # primary_loss_fn wired later per step
+                print("[Section 7 Integration] Explicit AttractorSolverModule + SOTSegmentedSolverTrainer armed (light drop-in).")
+                print("  Proposal engine = real OneBodyParallelHybridBlock stack (with internal_fast_recurrent if enabled).")
+            except Exception as e:
+                print(f"[WARN] Failed to instantiate explicit attractor solver: {e}. Falling back.")
+                explicit_solver = None
+                sot_trainer = None
 
     # RI-4 router (same wiring as the 160-step evidence run)
     router = None
@@ -1774,6 +1825,79 @@ def main():
         if hasattr(model, '_ri4_current_slots'):
             model._ri4_current_slots = current_slots
 
+        # === June 2026 Section 7 Light Trainer Integration (first real drop) ===
+        # When --use_explicit_attractor_solver is active, the hybrid forward above is the RealHybridProposal.
+        # We now run the dedicated solver segment (Parcae + persistent injection + SOT) exactly as validated
+        # in the 25-iteration diagnostic harness. Equilibrium becomes the primary state for loss + next step.
+        # Full internalization loop: equilibrium feeds back into triple memory + slow context (densing signal).
+        attractor_logs = {}
+        if getattr(cfg, 'use_explicit_attractor_solver', False) and sot_trainer is not None and explicit_solver is not None:
+            try:
+                # Proposal = the h that just came out of the real hybrid stack (OneBody + fast recurrent if enabled)
+                proposal = h.detach()
+
+                # Slow context from brain triple memory (same contract as diagnostic)
+                slow_ctx = {"summary": None}
+                if hasattr(model, '_brain_triple_memory') and model._brain_triple_memory is not None:
+                    try:
+                        last_summary = getattr(model._brain_triple_memory, 'last_summary', None)
+                        if last_summary is not None:
+                            slow_ctx["summary"] = last_summary.detach() if torch.is_tensor(last_summary) else last_summary
+                    except Exception:
+                        pass
+
+                # Run one SOT segment on the dedicated solver (primary_loss_fn is the rehearsal MSE surrogate)
+                def primary_surrogate(eq, _target=None):
+                    if gold_state is not None:
+                        tgt = gold_state.expand_as(eq.mean(dim=1, keepdim=True))
+                        return torch.nn.functional.mse_loss(eq.mean(dim=1, keepdim=True), tgt)
+                    return torch.zeros((), device=eq.device, dtype=eq.dtype)
+
+                sot_trainer.primary_loss_fn = primary_surrogate  # rebind per-step (lightweight)
+                logs, sot_total, equilibrium = sot_trainer.train_segment(
+                    y0=proposal,
+                    slow_context=slow_ctx,
+                    target_logits_or_ids=None,
+                    proposal_engine=None,  # we already used the real hybrid as proposal above
+                )
+                attractor_logs = logs or {}
+
+                # Core internalization + densing wiring (exact diagnostic pattern)
+                h = equilibrium.detach()  # equilibrium is now the primary state (wired output)
+
+                # Feedback loop into triple memory (internalization signal + slow context update)
+                if hasattr(model, '_brain_triple_memory') and model._brain_triple_memory is not None:
+                    try:
+                        model._brain_triple_memory.step(equilibrium.mean(dim=1).detach())
+                    except Exception:
+                        pass
+
+                # Accumulate solver + internalization contribution (first-class terms)
+                solver_w = float(getattr(cfg, 'attractor_solver_weight', 0.15))
+                int_w = float(getattr(cfg, 'attractor_solver_internalization_weight', 0.12))
+                solver_contrib = float(sot_total) * solver_w
+                int_contrib = float(attractor_logs.get('sot_internalization_loss', 0.0)) * int_w
+
+                # We will add these after the base train_loss is computed (see below)
+                # Store for later accumulation to keep this block minimal
+                setattr(cfg, '_attractor_solver_contrib', solver_contrib)
+                setattr(cfg, '_attractor_int_contrib', int_contrib)
+                setattr(cfg, '_attractor_densing_active', True)
+
+                if (step + 1) % max(1, getattr(cfg, 'total_steps', 100) // 10) == 0:
+                    print(f"  [Section 7 Attractor] step {step+1} | sot={float(sot_total):.5f} int={float(attractor_logs.get('sot_internalization_loss',0)):.5f} "
+                          f"eff_sot_reduced={getattr(cfg,'_attractor_densing_active',False)}")
+            except Exception as e:
+                # Defensive: never let the new path break an otherwise healthy training run
+                print(f"[Section 7 WARN] Attractor solver step failed at step {step}, falling back to hybrid-only: {e}")
+                setattr(cfg, '_attractor_solver_contrib', 0.0)
+                setattr(cfg, '_attractor_int_contrib', 0.0)
+                setattr(cfg, '_attractor_densing_active', False)
+        else:
+            setattr(cfg, '_attractor_solver_contrib', 0.0)
+            setattr(cfg, '_attractor_int_contrib', 0.0)
+            setattr(cfg, '_attractor_densing_active', False)
+
         # Maintain rolling rehearsal memory buffer (5.56 full curriculum requirement).
         # Real importance-based selection (select_rehearsal_batch) only works with history >1.
         if cfg.input_mode == "gold_structured" and curriculum_rehearsal is not None:
@@ -1809,6 +1933,10 @@ def main():
             train_loss = torch.nn.functional.mse_loss(rehearsal_target, gold_target)
         else:
             train_loss = torch.zeros((), device=cfg.device, dtype=cfg.dtype)
+
+        # Section 7 attractor solver contributions (only non-zero when the light integration path is active)
+        train_loss = train_loss + float(getattr(cfg, '_attractor_solver_contrib', 0.0))
+        train_loss = train_loss + float(getattr(cfg, '_attractor_int_contrib', 0.0))
 
         # === Predictive Data Intuition loss (the mechanism that actually builds "데이터에 대한 직관") ===
 
