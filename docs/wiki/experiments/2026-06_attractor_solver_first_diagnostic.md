@@ -271,6 +271,17 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest sot=1 run completed. Internal metrics at all-time best. 72 gate completely unresponsive so far.
 - Next mandated: Introduce a minimal light denoising auxiliary on the solver (as repeatedly suggested in prior versions) while keeping sot=1, and immediately re-probe the 72 gate. Alternatively, run significantly longer (80–100+ steps) under sot=1 or combine with other small weight adjustments. The climb loop continues until the 72 numbers finally move.
 
+**v38 — Climb Iteration 5: Longer Run with sot=1 + Light Denoising (35 steps)**
+- 35-step run using the combination from v37: `--sot_segment_length 1 --attractor_internalization_weight 0.18 --attractor_denoising_weight 0.05`.
+- Internal signals:
+  - Started reasonably strong (densing_sig ~13–15 early), but **degraded steadily** over the longer horizon.
+  - By the end: int_mse rose to ~0.079, densing_sig fell to ~12.6 (noticeable regression compared to pure sot=1 runs in v35/v36).
+- 72 gate probes (8-case narrow, at steps 15 / 30 / 35):
+  - All remained **0/8 reasoning, 0/8 memory** — no movement.
+- Interpretation: Adding the current light denoising term on top of the strong sot=1 backbone appears to be **interfering** with the excellent internalization curriculum that pure sot=1 was delivering. The denoising direction (in its current minimal form) is producing negative interaction rather than additive benefit in this regime.
+- Status: First meaningful negative data on the denoising auxiliary when combined with sot=1. The climb loop has now falsified one combination and needs to adjust (either drop/reduce denoising, or change its form, or return to pure sot=1 for much longer training).
+- Next mandated: Either (a) run pure sot=1 (no denoising) for 50–70+ steps with repeated 72 probes, or (b) reduce denoising weight significantly (e.g. 0.01–0.02) while keeping sot=1, or (c) explore a structurally different light denoising formulation. Continue small targeted iterations + 72 measurement until positive movement on the gate appears.
+
 **v37 — Introduction of Light Denoising Auxiliary + 72 Probe (sot=1 base)**
 - First implementation of minimal light denoising auxiliary on the solver (per v36 mandate): small Gaussian noise on proposal + MSE consistency term to equilibrium (controlled by new `--attractor_denoising_weight`).
 - 15-step validation run with best sot=1 recipe + light denoising (weight 0.05).
