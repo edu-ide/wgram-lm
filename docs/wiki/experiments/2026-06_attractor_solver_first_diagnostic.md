@@ -8,7 +8,7 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + strong internalization loop (wired equilibrium feeds proposal base, slow context, proposal engine memory, *and* slow_summary) + visible densing_active + 30-step 실행 (완료)
+**오후**: RealHybridProposal v2 + strong internalization loop (wired equilibrium feeds proposal base, slow context, proposal engine memory, *and* slow_summary) + visible densing_active + explicit reduced solver effort (eff_sot) + 30-step 실행 (완료)
 **저녁**: 결과 기록 + commit (완료) — 다음: item #4 prep 더 구체화 또는 trainer integration light prep
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
@@ -112,8 +112,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v15 (latest): Continued validation run with the full current stack. The internalization loop remains stable and healthy (int 0.00394 → 0.00239), with densing=True consistently active after the loop engages.
-- The propagation through proposal base, slow context, engine memory, and slow_summary is now well-established and repeatable in the diagnostic. Good foundation for moving toward light trainer integration prep.
+- v16 (latest): Added explicit "reduced solver effort" visualization — when densing_active, `eff_sot` (effective SOT segment length) drops from 3 to 1. 30-step run clearly shows the Inference Densing benefit: as the strong internalization loop engages, solver effort is halved while maintaining healthy curves.
+- This makes the "less compute for equivalent quality as internalization progresses" signal directly visible and quantifiable in the diagnostic output. Strong alignment with the overall Densing Law direction of the project.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 

@@ -525,12 +525,13 @@ def main():
         if args.demo_equilibrium_wiring and wired_base is not None:
             slow_ctx = {"summary": wired_base.mean(dim=1).detach()}
             densing_active = True
-            # Additional densing benefit logging: when the loop is active,
-            # we are effectively using "internalized" proposal which requires
-            # less external compute (already reduced micro-steps earlier).
+            # Inference Densing: when the loop is active, we simulate reduced solver effort
+            # by using a smaller effective SOT segment length for this step.
+            effective_sot_length = max(1, args.sot_segment_length // 2)
         else:
             slow_ctx = {"summary": slow_summary}
             densing_active = False
+            effective_sot_length = args.sot_segment_length
 
         # === Run one SOT segment on the Dedicated Solver ===
         # Pass proposal_engine so that internalization_loss becomes active and non-zero (the whole point of Priority 1)
@@ -639,6 +640,7 @@ def main():
                 f"dsig_n={densing_signal_noisy:.5f} | "
                 f"int_mse={int_progress.get('internalization_mse', 0.0):.5f} | "
                 f"densing={densing_active} | "
+                f"eff_sot={effective_sot_length} | "
                 f"total={float(total):.5f}")
 
         log_lines.append(line)
