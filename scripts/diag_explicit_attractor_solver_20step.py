@@ -317,7 +317,11 @@ class RealHybridProposal(nn.Module):
 
         self._last_slow_summary = slow_summary.detach()
 
-        proposal = self.out_proj(h + slow_summary * 0.35)
+        # When internal_fast_recurrent is enabled, give stronger weight to the slow summary.
+        # This simulates that deeper internal recurrence makes the proposal more strongly
+        # shaped by the accumulated (wired) slow context — a direct item #3/#4 interaction.
+        slow_weight = 0.55 if self.internal_fast_recurrent else 0.35
+        proposal = self.out_proj(h + slow_summary * slow_weight)
         proposal = proposal.unsqueeze(1).expand(-1, T, -1)
         return proposal
 
