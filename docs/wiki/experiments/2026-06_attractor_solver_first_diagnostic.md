@@ -8,7 +8,7 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 — _hybrid_forward_only 패턴 적용 (InferenceState + fast_recurrent_state handling) + 20-step 실행 (완료)
+**오후**: RealHybridProposal v2 + minimal --demo_equilibrium_wiring (Roadmap item #3 prep) + 20-step 실행 (완료)
 **저녁**: 결과 기록 + commit (진행)
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
@@ -29,7 +29,7 @@
 SOT / internalization weight ablation matrix 중 critical 2~3개 (A5, A7 등) diagnostic script로 빠르게 돌리기
 
 **Phase 3 진입 조건** (위 1~2가 어느 정도 되면)
-- Full trainer integration (equilibrium를 main loss path에 연결)
+- Full trainer integration (equilibrium를 main loss path에 연결) — minimal demo started inside diagnostic via --demo_equilibrium_wiring
 - Native strict-B 72 heldout RI-1 측정 시작
 
 **주의**: 모든 작업은 "RI-1~RI-7 깨끗하게 검증 가능한 상태"를 절대 해치지 않으면서 진행. toy harness에서 real wiring으로 넘어가기 전까지는 72 측정 스크립트 손대지 말 것.
@@ -106,7 +106,9 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: 0.00395 (step 1) → 0.00058 (step 20) — strong, consistent decrease.
   - No crashes, stable residual.
   - This is the cleanest internalization signal we have obtained while using the actual OneBodyParallelHybridBlock stack inside the diagnostic.
-- Status: Meaningful progress on "replace toy with real call to OneBodyParallelHybridBlock". The pattern reuse is working. Next natural step in the roadmap is wiring equilibrium into the main loss path (item #3).
+- Status: Meaningful progress on "replace toy with real call to OneBodyParallelHybridBlock". The pattern reuse is working.
+- Added minimal `--demo_equilibrium_wiring` (Roadmap item #3 prep): treats the equilibrium y* as the explicit "final output representation" that would go to the LM head. This is the first small wiring signal inside the diagnostic harness.
+- 20-step run with real hybrid + wiring demo completed successfully. Internalization remains healthy.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 

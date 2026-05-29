@@ -333,6 +333,10 @@ def main():
     parser.add_argument("--real_hybrid_proposal", action="store_true",
                         help="Use real OneBodyParallelHybridBlock stack (via build_hybrid_stack) + triple memory as the proposal engine. "
                              "This directly follows the 'replace toy with real hybrid call' step in the milestone roadmap.")
+
+    # Minimal prep for Integration Roadmap item #3 (wiring equilibrium as primary output)
+    parser.add_argument("--demo_equilibrium_wiring", action="store_true",
+                        help="Demonstrate using the solver equilibrium as the 'final' output for primary loss (prep for wiring into main LM head path).")
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -348,6 +352,8 @@ def main():
         print("Real Hybrid Proposal Mode: ON (OneBodyParallelHybridBlock stack) ← Roadmap item #2")
     elif args.rich_proposal:
         print("Rich Proposal Mode: ON (BrainMimeticTripleMemory + fast recurrence) ← Priority 1 internalization test")
+    if args.demo_equilibrium_wiring:
+        print("Demo Equilibrium Wiring: ON (prep for Roadmap item #3 - equilibrium as final output to LM head)")
 
     device = torch.device(args.device)
     D = args.d_model
@@ -397,7 +403,14 @@ def main():
         # Surrogate "next-state" prediction loss on the equilibrium.
         # Real version: decode(y_star) → CE against targets.
         target = y_star.detach() * 0.92 + 0.01 * torch.randn_like(y_star)
-        return F.mse_loss(y_star, target)
+        loss = F.mse_loss(y_star, target)
+
+        if args.demo_equilibrium_wiring:
+            # Demo for Roadmap item #3: treat equilibrium as the "final wired output"
+            # (in real trainer this would be the input to the LM head / CE loss)
+            wiring_bonus = 0.05 * torch.norm(y_star, dim=-1).mean()  # tiny signal that y_star is now the main representation
+            loss = loss + wiring_bonus
+        return loss
 
     sot_trainer = SOTSegmentedSolverTrainer(solver, primary_loss_fn, sot_cfg)
 
