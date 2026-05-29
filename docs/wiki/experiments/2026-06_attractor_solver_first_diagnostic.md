@@ -248,6 +248,29 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: First climb iteration completed. 72 gate flat. Primary loop is now "recipe tweak → train → measure 72".
 - Next mandated: Small recipe adjustment (e.g. raise internalization_weight further to 0.22–0.25, or add a light denoising auxiliary on the solver, or test sot=1) + immediate re-measure of the 72 gate. Repeat until measurable positive movement on RI-1 72 appears.
 
+**v34 — Climb Iteration 2: Stronger Internalization (int_w=0.22) + 72 Probes**
+- 25-step run with raised internalization pressure: `--attractor_internalization_weight 0.22` (sot=2 fixed).
+- Internal signals (negative):
+  - int_mse remained high in **0.162–0.170** band (worse than previous winner runs that reached 0.108–0.13).
+  - densing_sig stayed low in **5.85–6.17** (no recovery toward previous 9.0 peaks).
+- 72 gate probes (8-case narrow, at step 10/20/25):
+  - All remained **0/8 reasoning, 0/8 memory** — completely flat from v32/v33.
+- Interpretation: Pushing internalization weight significantly higher (0.22) in the current regime produced **clear negative signal** on both the internalization metric itself and the downstream 72 accuracy. The curriculum appears to have an optimal range; too much pressure may be interfering with other objectives (rehearsal, data intuition, stochastic breadth).
+- Status: Second climb iteration completed. Stronger internalization direction falsified for now. Need to explore other small adjustments (e.g. shorter sot_segment=1, or light denoising auxiliary, or slight reduction in other competing weights).
+- Next mandated: Test `sot_segment_length=1` with previous best int_w=0.18 (very aggressive short segments) + immediate 72 re-probe. Or introduce minimal denoising term on the solver. Continue the tweak → train → measure loop until positive 72 movement appears.
+
+**v35 — Climb Iteration 3: Very Short SOT (sot=1) + 72 Probes — Strong Internal Signal**
+- 20-step run with aggressive short segments: `--sot_segment_length 1 --attractor_internalization_weight 0.18`.
+- Internal signals (**strong positive**):
+  - int_mse dropped sharply to **0.065–0.068** range (best by far, significantly better than all previous configs including the 50-step winner).
+  - densing_sig reached new highs of **14.5–15.28** (nearly 2× previous best peaks around 9.0).
+  - sot remained stable around 0.061–0.068.
+- 72 gate probes (8-case narrow):
+  - Step 10 and step 20: still **0/8 reasoning, 0/8 memory** — no movement on the actual RI-1 metric yet.
+- Interpretation: `sot=1` produces dramatically better internalization curriculum metrics (much lower proposal-to-equilibrium distance + very strong densing signal). The substrate is responding powerfully to very frequent short SOT segments. However, this has not yet translated to 72 heldout accuracy improvement. This is the most promising internal direction found so far in the climb phase.
+- Status: sot=1 direction validated as high-leverage on the core Section 7 metrics. 72 gate remains the lagging indicator.
+- Next mandated: Run longer horizon (40–50+ steps) with sot=1 + best int_w, or combine sot=1 with other small adjustments (e.g. slightly higher int_w, or light denoising term), and re-probe 72 repeatedly. The goal is to find the combination that finally moves the 72 numbers upward.
+
 **v32 — First Native 72 Heldout RI-1 Measurement under Explicit Attractor Solver (Promotion Gate)**
 - First execution of `--run_72_heldout_only` with the full locked winning Section 7 recipe active:
   - `--use_explicit_attractor_solver`
