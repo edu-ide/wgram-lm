@@ -8,8 +8,8 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + cleaned-up explicit wired_output (always equilibrium as the wired final output) + 30-step 실행 (완료)
-**저녁**: 결과 기록 + commit (완료) — 다음: wiring 데모 더 견고화 또는 item #4 prep (trainer-like flags in diagnostic)
+**오후**: RealHybridProposal v2 + item #4 prep (--internal_fast_recurrent simulation) + wiring demo + 30-step 실행 (완료)
+**저녁**: 결과 기록 + commit (완료) — 다음: item #4 prep 더 구체화 또는 trainer integration light prep
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
 **Real proposal engine로 internalization 숫자 뽑기**
@@ -112,8 +112,8 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v4 (latest): Cleaned up the wiring demo — `wired_output` is now unconditionally the equilibrium from SOT when the flag is active. 30-step run: int 0.00362 → 0.00031 (continued healthy decrease).
-- Equilibrium is treated as the explicit final wired output throughout the loop. This is the strongest minimal item #3 demo we have in the diagnostic so far.
+- v5 (latest): Added `--internal_fast_recurrent` simulation (item #4 prep) — RealHybridProposal does 4 micro-steps when enabled. 30-step run with real hybrid + wiring + internal fast recurrent: int 0.00381 → 0.00031.
+- This is the first time item #2/3/4 concepts were exercised together inside the diagnostic harness.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 

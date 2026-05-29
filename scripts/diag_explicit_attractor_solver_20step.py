@@ -190,12 +190,13 @@ class RealHybridProposal(nn.Module):
     + BrainMimeticTripleMemory for slow context.
     This is the concrete step toward "real call to OneBodyParallelHybridBlock + BrainMimeticTripleMemory".
     """
-    def __init__(self, dim: int, device: torch.device, n_layers: int = 1):
+    def __init__(self, dim: int, device: torch.device, n_layers: int = 1, internal_fast_recurrent: bool = False):
         super().__init__()
         self.dim = dim
         self.device = device
         self._last_slow_summary = None
         self._inf_state = None  # InferenceState carrier (key part of the pattern)
+        self.internal_fast_recurrent = internal_fast_recurrent
 
         if build_hybrid_stack is None or Hybrid556Config is None:
             raise RuntimeError("build_hybrid_stack not available — cannot use real hybrid proposal")
@@ -214,6 +215,7 @@ class RealHybridProposal(nn.Module):
         )
 
         self.hybrid_stack = build_hybrid_stack(hcfg)
+        self.micro_steps = 4 if self.internal_fast_recurrent else 2  # simulate internal recurrence depth
 
         if BrainMimeticTripleMemory is not None:
             try:
@@ -237,7 +239,7 @@ class RealHybridProposal(nn.Module):
         coarse_counter = 0
 
         try:
-            for _ in range(2):  # small number of micro-steps for proposal
+            for _ in range(self.micro_steps):  # controlled by internal_fast_recurrent flag
                 do_full = True  # for diagnostic we always do full for now
 
                 for layer in self.hybrid_stack:
@@ -337,6 +339,10 @@ def main():
     # Minimal prep for Integration Roadmap item #3 (wiring equilibrium as primary output)
     parser.add_argument("--demo_equilibrium_wiring", action="store_true",
                         help="Demonstrate using the solver equilibrium as the 'final' output for primary loss (prep for wiring into main LM head path).")
+
+    # Minimal prep for Integration Roadmap item #4
+    parser.add_argument("--internal_fast_recurrent", action="store_true",
+                        help="Simulate internal fast recurrent participation in proposal generation (item #4 prep in diagnostic).")
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -354,6 +360,8 @@ def main():
         print("Rich Proposal Mode: ON (BrainMimeticTripleMemory + fast recurrence) ← Priority 1 internalization test")
     if args.demo_equilibrium_wiring:
         print("Demo Equilibrium Wiring: ON (Roadmap item #3) — equilibrium is treated as the explicit final wired output")
+    if args.internal_fast_recurrent:
+        print("Internal Fast Recurrent: ON (Roadmap item #4 prep) — proposal generation uses more internal micro-steps")
 
     device = torch.device(args.device)
     D = args.d_model
@@ -367,7 +375,12 @@ def main():
     if args.real_hybrid_proposal:
         print("[Priority 1 / Roadmap #2] Using RealHybridProposal (OneBodyParallelHybridBlock stack + TripleMemory)")
         try:
-            proposal_engine = RealHybridProposal(dim=D, device=device, n_layers=1).to(device)
+            proposal_engine = RealHybridProposal(
+                dim=D, 
+                device=device, 
+                n_layers=1,
+                internal_fast_recurrent=args.internal_fast_recurrent
+            ).to(device)
         except Exception as e:
             print(f"[Warning] real_hybrid_proposal failed to initialize ({e}). Falling back to rich_proposal stub.")
             proposal_engine = RichProposalStub(dim=D, device=device).to(device) if BrainMimeticTripleMemory is not None else None
