@@ -8,7 +8,7 @@
 
 ### 지금 단계 (Phase 2 - Real Internalization + Denoising Signal)
 **오전**: 이전 결과 판단
-**오후**: RealHybridProposal v2 + strong internalization loop (wired equilibrium feeds proposal base, slow context, *and* proposal engine's own triple memory) + visible densing_active + 30-step 실행 (완료)
+**오후**: RealHybridProposal v2 + strong internalization loop (wired equilibrium feeds proposal base, slow context, proposal engine memory, *and* slow_summary) + visible densing_active + 30-step 실행 (완료)
 **저녁**: 결과 기록 + commit (완료) — 다음: item #4 prep 더 구체화 또는 trainer integration light prep
 
 **Priority 1 (최우선, Risk #1 직접 타격 - 추천)**  
@@ -112,12 +112,9 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
   - `int` loss: ~0.00368 → 0.00034 (very healthy decrease)
   - Equilibrium is now explicitly treated as the primary final output representation in the loss.
 - This constitutes a working minimal demonstration of Roadmap item #3 inside the diagnostic harness.
-- v13 (latest): Strongest internalization loop yet — when wiring is active, the equilibrium is fed back into:
-  1. Next proposal base
-  2. Slow context
-  3. The proposal engine's own triple memory (simulating direct internalization into the engine)
-  30-step run: int 0.00385 → 0.00291, with clear densing=True regime and healthy curves.
-- This is the most complete "equilibrium internalization" simulation we have in the diagnostic harness so far. The proposal engine is now actively learning from the wired equilibrium.
+- v14 (latest): Further strengthened the loop — the wired equilibrium now also updates the `slow_summary` variable for the next iteration. This ensures the internalized state propagates through every possible slow context path in the diagnostic.
+  30-step run: int 0.00366 → 0.00311, with persistent densing=True and stable curves.
+- The internalization signal is now propagating through proposal base, slow context, engine memory, *and* slow_summary. This is the most complete propagation we have achieved in the toy harness.
 
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 

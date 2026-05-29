@@ -557,6 +557,11 @@ def main():
                 except Exception:
                     pass
 
+            # Also carry the wired equilibrium into the slow_summary variable
+            # so that any downstream use of slow_summary in the next iteration
+            # reflects the internalized state.
+            slow_summary = equilibrium.mean(dim=1).detach()
+
         # === First-class internalization + primary on equilibrium ===
         solver_contrib = sot_total * args.attractor_solver_weight
 
