@@ -189,6 +189,9 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--use_explicit_attractor_solver", action="store_true", help="June 2026 Fundamental Overhaul (Section 7): Activate explicit ProposalEngine + Dedicated AttractorSolverModule (Solve-the-Loop + Parcae + EqR SOT). Persistent y0 injection, internalization as first-class, SOT segments. High-risk diagnostic path.")
     p.add_argument("--attractor_solver_weight", type=float, default=0.15, help="Weight multiplier for the explicit attractor solver refinement loss (on equilibrium).")
     p.add_argument("--sot_segment_length", type=int, default=5, help="EqR SOT segment length (steps per online optimizer segment).")
+    # === v28+ Small Targeted Ablation Knobs (Section 7 substrate) ===
+    p.add_argument("--attractor_internalization_weight", type=float, default=0.12, help="Internalization curriculum weight for proposal-to-equilibrium distance (key lever for driving int_mse down in real trainer).")
+    p.add_argument("--attractor_ablation_mode", type=str, default=None, help="Quick ablation label for logging (e.g. sot2_int18, sot5_int08).")
     p.add_argument("--brain_triple_memory", action="store_true", help="Proper brain-mimetic memory redefinition: Workspaces + Attractor + Provenance as active, influencing recurrent participants (not side rehearsal). Structural version, not heuristic.")
     p.add_argument("--internal_fast_recurrent", action="store_true", help="D implementation: prefer the new internal Griffin-style FastGatedLinearRecurrence inside OneBodyParallelHybridBlock for per-micro brain participation (reduces external triple.step cost).")
     p.add_argument("--brain_mimetic_stochastic", action="store_true", help="Brain-mimetic upgrade of GRAM/PTRM: structured stochastic sampling of multiple mental trajectories inside WorkingMemory, modulated by Attractor (stability) and Provenance (grounding). Not blind noise.")
@@ -299,6 +302,8 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.use_explicit_attractor_solver = getattr(args, 'use_explicit_attractor_solver', False)
     cfg.attractor_solver_weight = getattr(args, 'attractor_solver_weight', 0.15)
     cfg.sot_segment_length = getattr(args, 'sot_segment_length', 5)
+    cfg.attractor_internalization_weight = getattr(args, 'attractor_internalization_weight', 0.12)
+    cfg.attractor_ablation_mode = getattr(args, 'attractor_ablation_mode', None)
     cfg.brain_triple_memory_enabled = args.brain_triple_memory
     if args.brain_triple_memory:
         cfg.brain_triple_memory_ablation_zero = False  # can be extended later with a separate flag
@@ -630,7 +635,7 @@ def main():
                 ).to(device=cfg.device, dtype=cfg.dtype)
                 sot_cfg = SOTConfig(
                     segment_length=getattr(cfg, 'sot_segment_length', 5),
-                    internalization_weight=getattr(cfg, 'attractor_solver_internalization_weight', 0.12),
+                    internalization_weight=getattr(cfg, 'attractor_internalization_weight', 0.12),
                     ri_noise=getattr(cfg, 'attractor_ri_ni_scale', 0.05),
                     max_segments=3,
                     use_detached_carry=True,
@@ -1876,7 +1881,7 @@ def main():
 
                 # Loss contributions as tensors (graph-safe)
                 solver_w = float(getattr(cfg, 'attractor_solver_weight', 0.15))
-                int_w = float(getattr(cfg, 'attractor_solver_internalization_weight', 0.12))
+                int_w = float(getattr(cfg, 'attractor_internalization_weight', 0.12))
                 solver_contrib_t = (sot_total * solver_w) if torch.is_tensor(sot_total) else torch.tensor(0.0, device=h.device)
                 int_contrib_t = int_mse * int_w
 

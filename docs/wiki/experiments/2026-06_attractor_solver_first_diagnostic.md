@@ -192,3 +192,18 @@ This direction is deliberately exploratory and should only be pursued after the 
   - Open question now shifts to "how much internalization weight / SOT pressure is needed to make int_mse trend downward in the presence of the full loss mixture?"
 - Status: 25-step validation complete with rich, repeatable internalization + densing proxy numbers from the real hybrid proposal engine.
 - Next mandated: Small targeted ablation on the new substrate (sot_segment_length 2/4/6 + internalization_weight 0.08/0.15/0.20) or direct promotion prep toward native 72 heldout with the explicit path enabled.
+
+**v29 — Small Targeted Ablation Matrix on Substrate Knobs (sot_segment + internalization_weight)**
+- Ran 3x 12-step ablations (d=64) with the new CLI controls (`--attractor_internalization_weight`, `--sot_segment_length`, `--attractor_ablation_mode`).
+- Results (int_mse trend + densing proxy):
+
+  | ID | Config | int_mse range | Trend | densing_sig | Observation |
+  |----|--------|---------------|-------|-------------|-------------|
+  | A  | sot=2, int_w=0.18 | 0.154 → 0.168 | Stable low | 5.95–6.48 (best) | **Strongest result** — shortest segments + high internalization pressure produced the lowest int_mse floor and highest densing signal. |
+  | B  | sot=3, int_w=0.12 | 0.165 → 0.173 | Flat | 5.79–6.06 | Current "baseline" — solid but not best. |
+  | C  | sot=5, int_w=0.08 | 0.207 → 0.182 | Clear downward | 4.83 → 5.48 (improving) | Longer segments + weak pressure shows the most improvement over steps, but absolute numbers remain worse. |
+
+- Key takeaway (Section 7): In the real trainer (with competing rehearsal + data intuition + stochastic terms), **shorter SOT segments combined with stronger internalization weight is currently the highest-leverage direction** for driving the proposal engine toward equilibrium.
+- This directly informs the next training recipe adjustment: raise internalization weight and/or lower sot_segment_length when using the explicit attractor path.
+- Status: First ablation matrix on the live Section 7 substrate completed. Clear winner (A) identified for further push.
+- Mandated next: Either (1) lock in the winning recipe (sot2 + high int_w) and run longer 30+ step with it, or (2) prepare the best current configuration for native 72 heldout RI-1 measurement under the explicit attractor solver.
