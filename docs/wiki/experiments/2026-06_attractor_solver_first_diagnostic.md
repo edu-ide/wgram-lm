@@ -136,6 +136,23 @@ When the real rich hybrid citizen (FastGated + TripleMemory + ChunkedSlow) becom
 - Status: Light skeleton drop complete. The "living specification" from the diagnostic is now physically wired (even if prototype-level friction remains for the first run).
 - New mandated next (per compressed daily milestone + Integration Roadmap): harden the call site (fix the immediate None/dim shape issue inside the wiring block) + run a clean 15-20 step with visible int loss + densing logs, then promote to native 72 heldout gate under strict-B contract.
 
+**v27 — Wiring Hardening + First Visible Internalization Signal in Real Trainer**
+- Hardened the light integration wiring block (shape safety for slow_context, correct `loss_fn` attribute, graph-safe equilibrium carry, tensor (not float) loss contributions, safe fallback).
+- 10-step validation run (d=64, flag on):
+  - Attractor path now executes successfully on every step with no fallback after hardening.
+  - Repeated live signals:
+    - `sot` (solver refinement loss) consistently ~0.030–0.034
+    - `int_mse` (proposal → equilibrium distance, the core internalization curriculum) consistently 0.160–0.178
+  - Example logs:
+    - step 3 | sot=0.03003 int_mse=0.16016
+    - step 5 | sot=0.03125 int_mse=0.16895
+    - step 10 | sot=0.03394 int_mse=0.17871
+  - Backward passes cleanly; overall train_loss continues healthy behavior.
+- This is the first time we have measured meaningful, repeating internalization (int_mse) numbers coming from the real hybrid proposal engine inside the actual trainer (not just the isolated diagnostic harness).
+- Strong direct evidence vs Risk #1 (Equilibrium Internalization Fails to Materialize) now exists in the production training loop.
+- Status: Light integration now produces the key Section 7 / Densing Law signal in the real code base.
+- Mandated next: Extend to 20-30 step clean run (or small ablation matrix on sot_segment_length / weights), capture densing_sig trend, then move to native 72 heldout RI-1 gate with the explicit attractor path active.
+
 All numbers and failure modes will be appended here after the first real rich-proposal runs.
 
 **Long-term Direction Note (Diffusion-Style Attractor Iteration)**

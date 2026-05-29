@@ -1836,62 +1836,60 @@ def main():
                 # Proposal = the h that just came out of the real hybrid stack (OneBody + fast recurrent if enabled)
                 proposal = h.detach()
 
-                # Slow context from brain triple memory (same contract as diagnostic)
-                slow_ctx = {"summary": None}
+                # Safe slow context (never None)
+                summary_tensor = proposal.mean(dim=1).detach()
                 if hasattr(model, '_brain_triple_memory') and model._brain_triple_memory is not None:
                     try:
-                        last_summary = getattr(model._brain_triple_memory, 'last_summary', None)
-                        if last_summary is not None:
-                            slow_ctx["summary"] = last_summary.detach() if torch.is_tensor(last_summary) else last_summary
+                        last = getattr(model._brain_triple_memory, 'last_summary', None)
+                        if last is not None:
+                            summary_tensor = last.detach() if torch.is_tensor(last) else last
                     except Exception:
                         pass
+                slow_ctx = {"summary": summary_tensor}
 
-                # Run one SOT segment on the dedicated solver (primary_loss_fn is the rehearsal MSE surrogate)
+                # Primary loss surrogate (rehearsal MSE on equilibrium)
                 def primary_surrogate(eq, _target=None):
                     if gold_state is not None:
                         tgt = gold_state.expand_as(eq.mean(dim=1, keepdim=True))
                         return torch.nn.functional.mse_loss(eq.mean(dim=1, keepdim=True), tgt)
                     return torch.zeros((), device=eq.device, dtype=eq.dtype)
 
-                sot_trainer.primary_loss_fn = primary_surrogate  # rebind per-step (lightweight)
+                sot_trainer.loss_fn = primary_surrogate
+
                 logs, sot_total, equilibrium = sot_trainer.train_segment(
-                    y0=proposal,
-                    slow_context=slow_ctx,
-                    target_logits_or_ids=None,
-                    proposal_engine=None,  # we already used the real hybrid as proposal above
+                    y0=proposal, slow_context=slow_ctx, target_logits_or_ids=None, proposal_engine=None
                 )
                 attractor_logs = logs or {}
 
-                # Core internalization + densing wiring (exact diagnostic pattern)
-                h = equilibrium.detach()  # equilibrium is now the primary state (wired output)
+                # Equilibrium becomes the wired primary state (keep graph)
+                h = equilibrium
 
-                # Feedback loop into triple memory (internalization signal + slow context update)
+                # Internalization signal (proposal → equilibrium distance)
+                int_mse = torch.nn.functional.mse_loss(proposal.detach(), equilibrium)
+
+                # Memory side-effect only (detached)
                 if hasattr(model, '_brain_triple_memory') and model._brain_triple_memory is not None:
                     try:
                         model._brain_triple_memory.step(equilibrium.mean(dim=1).detach())
                     except Exception:
                         pass
 
-                # Accumulate solver + internalization contribution (first-class terms)
+                # Loss contributions as tensors (graph-safe)
                 solver_w = float(getattr(cfg, 'attractor_solver_weight', 0.15))
                 int_w = float(getattr(cfg, 'attractor_solver_internalization_weight', 0.12))
-                solver_contrib = float(sot_total) * solver_w
-                int_contrib = float(attractor_logs.get('sot_internalization_loss', 0.0)) * int_w
+                solver_contrib_t = (sot_total * solver_w) if torch.is_tensor(sot_total) else torch.tensor(0.0, device=h.device)
+                int_contrib_t = int_mse * int_w
 
-                # We will add these after the base train_loss is computed (see below)
-                # Store for later accumulation to keep this block minimal
-                setattr(cfg, '_attractor_solver_contrib', solver_contrib)
-                setattr(cfg, '_attractor_int_contrib', int_contrib)
+                setattr(cfg, '_attractor_solver_contrib', solver_contrib_t)
+                setattr(cfg, '_attractor_int_contrib', int_contrib_t)
                 setattr(cfg, '_attractor_densing_active', True)
 
                 if (step + 1) % max(1, getattr(cfg, 'total_steps', 100) // 10) == 0:
-                    print(f"  [Section 7 Attractor] step {step+1} | sot={float(sot_total):.5f} int={float(attractor_logs.get('sot_internalization_loss',0)):.5f} "
-                          f"eff_sot_reduced={getattr(cfg,'_attractor_densing_active',False)}")
+                    print(f"  [Section 7 Attractor] step {step+1} | sot={float(sot_total):.5f} int_mse={float(int_mse):.5f}")
             except Exception as e:
-                # Defensive: never let the new path break an otherwise healthy training run
-                print(f"[Section 7 WARN] Attractor solver step failed at step {step}, falling back to hybrid-only: {e}")
-                setattr(cfg, '_attractor_solver_contrib', 0.0)
-                setattr(cfg, '_attractor_int_contrib', 0.0)
+                print(f"[Section 7 WARN] Attractor solver step failed at step {step}, falling back: {e}")
+                setattr(cfg, '_attractor_solver_contrib', torch.tensor(0.0, device=h.device if 'h' in dir() else 'cpu'))
+                setattr(cfg, '_attractor_int_contrib', torch.tensor(0.0, device=h.device if 'h' in dir() else 'cpu'))
                 setattr(cfg, '_attractor_densing_active', False)
         else:
             setattr(cfg, '_attractor_solver_contrib', 0.0)
@@ -1935,8 +1933,17 @@ def main():
             train_loss = torch.zeros((), device=cfg.device, dtype=cfg.dtype)
 
         # Section 7 attractor solver contributions (only non-zero when the light integration path is active)
-        train_loss = train_loss + float(getattr(cfg, '_attractor_solver_contrib', 0.0))
-        train_loss = train_loss + float(getattr(cfg, '_attractor_int_contrib', 0.0))
+        # Must stay as tensors (not float()) so that backward works.
+        sc = getattr(cfg, '_attractor_solver_contrib', 0.0)
+        ic = getattr(cfg, '_attractor_int_contrib', 0.0)
+        if torch.is_tensor(sc):
+            train_loss = train_loss + sc
+        else:
+            train_loss = train_loss + float(sc)
+        if torch.is_tensor(ic):
+            train_loss = train_loss + ic
+        else:
+            train_loss = train_loss + float(ic)
 
         # === Predictive Data Intuition loss (the mechanism that actually builds "데이터에 대한 직관") ===
 
