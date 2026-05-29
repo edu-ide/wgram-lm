@@ -191,6 +191,7 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--sot_segment_length", type=int, default=5, help="EqR SOT segment length (steps per online optimizer segment).")
     # === v28+ Small Targeted Ablation Knobs (Section 7 substrate) ===
     p.add_argument("--attractor_internalization_weight", type=float, default=0.12, help="Internalization curriculum weight for proposal-to-equilibrium distance (key lever for driving int_mse down in real trainer).")
+    p.add_argument("--attractor_denoising_weight", type=float, default=0.0, help="Light denoising auxiliary weight on the solver (v36+ climb direction).")
     p.add_argument("--attractor_ablation_mode", type=str, default=None, help="Quick ablation label for logging (e.g. sot2_int18, sot5_int08).")
     p.add_argument("--brain_triple_memory", action="store_true", help="Proper brain-mimetic memory redefinition: Workspaces + Attractor + Provenance as active, influencing recurrent participants (not side rehearsal). Structural version, not heuristic.")
     p.add_argument("--internal_fast_recurrent", action="store_true", help="D implementation: prefer the new internal Griffin-style FastGatedLinearRecurrence inside OneBodyParallelHybridBlock for per-micro brain participation (reduces external triple.step cost).")
@@ -303,6 +304,7 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.attractor_solver_weight = getattr(args, 'attractor_solver_weight', 0.15)
     cfg.sot_segment_length = getattr(args, 'sot_segment_length', 5)
     cfg.attractor_internalization_weight = getattr(args, 'attractor_internalization_weight', 0.12)
+    cfg.attractor_denoising_weight = getattr(args, 'attractor_denoising_weight', 0.0)
     cfg.attractor_ablation_mode = getattr(args, 'attractor_ablation_mode', None)
     cfg.brain_triple_memory_enabled = args.brain_triple_memory
     if args.brain_triple_memory:
@@ -1942,8 +1944,17 @@ def main():
                 solver_contrib_t = (sot_total * solver_w) if torch.is_tensor(sot_total) else torch.tensor(0.0, device=h.device)
                 int_contrib_t = int_mse * int_w
 
+                # === v36: Minimal light denoising auxiliary on the solver (per climb loop mandate) ===
+                denoise_w = float(getattr(cfg, 'attractor_denoising_weight', 0.0))
+                denoise_contrib_t = torch.tensor(0.0, device=h.device)
+                if denoise_w > 0.0:
+                    noise = torch.randn_like(proposal) * 0.04
+                    noisy_prop = proposal + noise
+                    denoise_contrib_t = torch.nn.functional.mse_loss(noisy_prop, equilibrium.detach()) * denoise_w
+
                 setattr(cfg, '_attractor_solver_contrib', solver_contrib_t)
                 setattr(cfg, '_attractor_int_contrib', int_contrib_t)
+                setattr(cfg, '_attractor_denoise_contrib', denoise_contrib_t)
                 setattr(cfg, '_attractor_densing_active', True)
 
                 # Standard trend logging (every 2 steps)
@@ -2013,6 +2024,13 @@ def main():
             train_loss = train_loss + ic
         else:
             train_loss = train_loss + float(ic)
+
+        # v36 light denoising auxiliary
+        dc = getattr(cfg, '_attractor_denoise_contrib', 0.0)
+        if torch.is_tensor(dc):
+            train_loss = train_loss + dc
+        else:
+            train_loss = train_loss + float(dc)
 
         # === Predictive Data Intuition loss (the mechanism that actually builds "데이터에 대한 직관") ===
 

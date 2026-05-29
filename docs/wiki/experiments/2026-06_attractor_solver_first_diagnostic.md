@@ -259,6 +259,26 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Second climb iteration completed. Stronger internalization direction falsified for now. Need to explore other small adjustments (e.g. shorter sot_segment=1, or light denoising auxiliary, or slight reduction in other competing weights).
 - Next mandated: Test `sot_segment_length=1` with previous best int_w=0.18 (very aggressive short segments) + immediate 72 re-probe. Or introduce minimal denoising term on the solver. Continue the tweak → train → measure loop until positive 72 movement appears.
 
+**v36 — Climb Iteration 4: Longer Horizon with sot=1 (45 steps) — Strongest Internal Metrics, 72 Still Flat**
+- 45-step run with the most promising direction so far: `--sot_segment_length 1 --attractor_internalization_weight 0.18`.
+- Internal signals (**new records**):
+  - int_mse reached a new low of **0.0625**.
+  - densing_sig reached a new high of **16.00**.
+  - The excellent internalization performance from the 20-step sot=1 run not only sustained but continued to improve slightly over the longer horizon.
+- 72 gate probes (8-case narrow, at steps 20 / 40 / 45):
+  - All remained **0/8 reasoning, 0/8 memory** — zero movement across the entire run.
+- Interpretation: `sot=1` is confirmed as the strongest lever found for the core Section 7 curriculum (Proposal → Equilibrium distance + densing signal). The substrate is working extremely well internally. However, even with 45+ previous steps under this regime, the 72 heldout accuracy has shown **no response**. This suggests the bottleneck has shifted to how the final equilibrium state is used for answer extraction / LM head, or interference from other loss terms.
+- Status: Longest sot=1 run completed. Internal metrics at all-time best. 72 gate completely unresponsive so far.
+- Next mandated: Introduce a minimal light denoising auxiliary on the solver (as repeatedly suggested in prior versions) while keeping sot=1, and immediately re-probe the 72 gate. Alternatively, run significantly longer (80–100+ steps) under sot=1 or combine with other small weight adjustments. The climb loop continues until the 72 numbers finally move.
+
+**v37 — Introduction of Light Denoising Auxiliary + 72 Probe (sot=1 base)**
+- First implementation of minimal light denoising auxiliary on the solver (per v36 mandate): small Gaussian noise on proposal + MSE consistency term to equilibrium (controlled by new `--attractor_denoising_weight`).
+- 15-step validation run with best sot=1 recipe + light denoising (weight 0.05).
+- Internal signals: Still strong (int_mse ~0.072–0.076, densing_sig ~13.0–13.8), but did not surpass the pure sot=1 peaks from v35/v36 in this short window.
+- 72 gate probes (steps 5/10/15): remained **0/8 reasoning, 0/8 memory** — no movement.
+- Status: Light denoising auxiliary successfully wired and running. First data point shows it is compatible but did not produce immediate further internal gains or 72 accuracy lift in 15 steps.
+- Next mandated: Either (a) longer run (30–50 steps) with sot=1 + small denoising weight, or (b) increase denoising weight slightly, or (c) combine with other small adjustments while keeping the sot=1 backbone. Continue the tweak → train → 72 probe loop.
+
 **v35 — Climb Iteration 3: Very Short SOT (sot=1) + 72 Probes — Strong Internal Signal**
 - 20-step run with aggressive short segments: `--sot_segment_length 1 --attractor_internalization_weight 0.18`.
 - Internal signals (**strong positive**):
