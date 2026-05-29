@@ -240,7 +240,7 @@ class RealHybridProposal(nn.Module):
 
         try:
             for _ in range(self.micro_steps):  # controlled by internal_fast_recurrent flag
-                do_full = True  # for diagnostic we always do full for now
+                do_full = True
 
                 for layer in self.hybrid_stack:
                     if isinstance(layer, OneBodyParallelHybridBlock):
@@ -276,6 +276,27 @@ class RealHybridProposal(nn.Module):
                     slots = slots * 0.98
 
                 coarse_counter += 1
+
+            # When internal_fast_recurrent is on, do one extra internal refinement pass
+            # (simulating deeper internal thinking before slow memory update)
+            if self.internal_fast_recurrent:
+                for _ in range(2):
+                    for layer in self.hybrid_stack:
+                        if isinstance(layer, OneBodyParallelHybridBlock):
+                            out = layer(
+                                h.unsqueeze(1) if h.dim() == 2 else h,
+                                stochastic_breadth_noise=None,
+                                slot_state=slots,
+                                fast_recurrent_state=self._inf_state,
+                            )
+                            if isinstance(out, tuple):
+                                h = out[0]
+                                if len(out) >= 2:
+                                    slots = out[1]
+                            else:
+                                h = out
+                    if h.dim() == 3:
+                        h = h.squeeze(1)
 
         except Exception:
             # Defensive: keep going with whatever h we have
