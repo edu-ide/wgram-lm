@@ -32,6 +32,19 @@ DEFAULT_MODES = [
     "qtrm_core_steps_8_no_evidence",
     "qtrm_core_steps_8_delta_off_no_evidence",
     "qtrm_core_steps_8_residual_gate_off_no_evidence",
+    # RI-1: Hybrid recurrent-depth scaling (current SSOT modes)
+    "hybrid_recurrence_off_no_evidence",
+    "hybrid_recurrence_depth_1_no_evidence",
+    "hybrid_recurrence_depth_4_no_evidence",
+    "hybrid_recurrence_depth_8_no_evidence",
+    "hybrid_recurrence_depth_12_no_evidence",
+    "hybrid_stochastic_breadth_off_no_evidence",
+    # RI-3: full 5.56 causal matrix (current SSOT modes)
+    "hybrid_556_full_no_evidence",
+    "hybrid_556_stoch_zero_no_evidence",
+    "hybrid_556_gold_off_no_evidence",
+    "hybrid_556_protection_off_no_evidence",
+    "hybrid_556_decay_disabled_no_evidence",
     # RI-4: MSA / Raven-style sparse persistent memory inside One-Body hybrid (2026-06)
     "hybrid_sparse_slots_on_no_evidence",
     "hybrid_sparse_slots_off_no_evidence",
@@ -226,6 +239,23 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="QTRM residual scale used on donor/QTRM top-token conflict when the probe gate is enabled.",
     )
+    parser.add_argument(
+        "--core-sparse-surprise-write-trigger-enabled",
+        action="store_true",
+        help="Enable surprise-driven write trigger during evaluation",
+    )
+    parser.add_argument(
+        "--core-sparse-surprise-scale",
+        type=float,
+        default=1.0,
+        help="Scale factor for surprise write trigger (higher = stronger filtering of predictable/low-surprise writes)",
+    )
+    parser.add_argument(
+        "--core-sparse-surprise-threshold",
+        type=float,
+        default=0.0,
+        help="Normalized surprise threshold below which writes are heavily attenuated (Titans-style utility filter)",
+    )
     parser.add_argument("--no-repeat-ngram-size", type=int, default=0)
     parser.add_argument("--suppress-visible-reasoning-tokens", action="store_true")
     parser.add_argument(
@@ -302,6 +332,10 @@ def apply_eval_model_overrides(model_cfg, args: argparse.Namespace) -> None:
     conflict_scale = getattr(args, "donor_qtrm_conflict_qtrm_scale", None)
     if conflict_scale is not None:
         model_cfg.donor_qtrm_conflict_qtrm_scale = float(conflict_scale)
+    if bool(getattr(args, "core_sparse_surprise_write_trigger_enabled", False)):
+        model_cfg.core_sparse_surprise_write_trigger_enabled = True
+        model_cfg.core_sparse_surprise_scale = float(getattr(args, "core_sparse_surprise_scale", 1.0))
+        model_cfg.core_sparse_surprise_threshold = float(getattr(args, "core_sparse_surprise_threshold", 0.0))
 
 
 def _runtime_enable_core_halt(runtime: dict[str, Any]) -> bool:
@@ -415,6 +449,94 @@ def mode_runtime(mode: str) -> dict[str, Any]:
             "memoryos_used": False,
             "retrieval_used": False,
         }
+    match = re.fullmatch(r"hybrid_recurrence_depth_(\d+)_no_evidence", mode)
+    if match:
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": True,
+            "persistence_ablation": False,
+            "router_ablation": False,
+            "stochastic_breadth_enabled": True,
+            "stochastic_breadth_ablation_zero": False,
+            "disable_core": False,
+            "core_steps_override": int(match.group(1)),
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+    if mode == "hybrid_recurrence_off_no_evidence":
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": False,
+            "sparse_slots_enabled": False,
+            "stochastic_breadth_enabled": False,
+            "stochastic_breadth_ablation_zero": True,
+            "disable_core": False,
+            "disable_answer_state_recurrent": True,
+            "core_steps_override": 1,
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+    if mode == "hybrid_stochastic_breadth_off_no_evidence":
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": True,
+            "persistence_ablation": False,
+            "router_ablation": False,
+            "stochastic_breadth_enabled": True,
+            "stochastic_breadth_ablation_zero": True,
+            "disable_core": False,
+            "core_steps_override": 4,
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+    hybrid_556_modes = {
+        "hybrid_556_full_no_evidence": {},
+        "hybrid_556_stoch_zero_no_evidence": {
+            "stochastic_breadth_ablation_zero": True,
+        },
+        "hybrid_556_gold_off_no_evidence": {
+            "gold_state_ablation_zero": True,
+            "gold_injection_alpha": 0.0,
+        },
+        "hybrid_556_protection_off_no_evidence": {
+            "adaptive_rehearsal_protect_attractor": False,
+        },
+        "hybrid_556_decay_disabled_no_evidence": {
+            "scheduled_binding_decay_disabled": True,
+        },
+    }
+    if mode in hybrid_556_modes:
+        runtime = {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": True,
+            "persistence_ablation": False,
+            "router_ablation": False,
+            "stochastic_breadth_enabled": True,
+            "stochastic_breadth_ablation_zero": False,
+            "adaptive_rehearsal_enabled": True,
+            "adaptive_rehearsal_ablation_zero": False,
+            "adaptive_rehearsal_protect_attractor": True,
+            "gold_state_ablation_zero": False,
+            "gold_injection_alpha": None,
+            "scheduled_binding_decay_disabled": False,
+            "disable_core": False,
+            "core_steps_override": 4,
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+        runtime.update(hybrid_556_modes[mode])
+        return runtime
     if mode in {"qtrm_core_off_qtrm_only_no_evidence", "qtrm_core_off_low_donor_no_evidence"}:
         return {
             "mode": mode,
@@ -2686,23 +2808,96 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                 try:
                     from src.qtrm_mm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
                     from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
+                    from src.qtrm_mm.memory.decoupled_latent_memory_bank import make_decoupled_latent_memory_bank, DecoupledLatentMemoryBank
 
-                    hybrid_cfg = cfg.model  # reuse the loaded config shape
-                    # Create a small stack (single block for PoC latency; can be deeper later)
-                    ri4_hybrid_model = build_parallel_hybrid_block(hybrid_cfg)
+                    from copy import deepcopy
+
+                    hybrid_cfg = deepcopy(cfg.model)  # preserve loaded shape without leaking per-mode flags
+                    hybrid_cfg.core_sparse_slot_router_enabled = True
+                    hybrid_cfg.core_sparse_slot_ablation_zero = bool(
+                        (not runtime.get("sparse_slots_enabled", True))
+                        or runtime.get("router_ablation", False)
+                    )
+                    hybrid_cfg.core_stochastic_breadth_enabled = bool(
+                        runtime.get("stochastic_breadth_enabled", True)
+                    )
+                    hybrid_cfg.core_stochastic_breadth_ablation_zero = bool(
+                        runtime.get("stochastic_breadth_ablation_zero", False)
+                    )
+                    hybrid_cfg.core_adaptive_rehearsal_enabled = bool(
+                        runtime.get("adaptive_rehearsal_enabled", False)
+                    )
+                    hybrid_cfg.core_adaptive_rehearsal_ablation_zero = bool(
+                        runtime.get("adaptive_rehearsal_ablation_zero", False)
+                    )
+                    hybrid_cfg.core_adaptive_rehearsal_protect_attractor = bool(
+                        runtime.get("adaptive_rehearsal_protect_attractor", True)
+                    )
+                    if runtime.get("gold_injection_alpha") is not None:
+                        hybrid_cfg.core_adaptive_rehearsal_gold_injection_alpha = float(
+                            runtime["gold_injection_alpha"]
+                        )
+                    hybrid_cfg.core_gold_states_ablation_zero = bool(
+                        runtime.get("gold_state_ablation_zero", False)
+                    )
+                    if runtime.get("scheduled_binding_decay_disabled", False):
+                        hybrid_cfg.core_adaptive_rehearsal_scheduled_binding_end = (
+                            hybrid_cfg.core_adaptive_rehearsal_scheduled_binding_start
+                        )
+                    # Create a small stack (single block for PoC latency; can be deeper later).
+                    # CPU runs use GQA because the vendored official MLA path can route through Triton.
+                    attention_type = "mla" if device == "cuda" else "gqa"
+                    ri4_hybrid_model = build_parallel_hybrid_block(
+                        hybrid_cfg,
+                        attention_type=attention_type,
+                    ).to(device).eval()
+
+                    # Instantiates bank if use_decoupled_memory_bank is active
+                    bank = None
+                    use_decoupled = (
+                        getattr(cfg.model, "use_decoupled_memory_bank", False)
+                        or getattr(hybrid_cfg, "use_decoupled_memory_bank", False)
+                        or getattr(cfg.train, "use_decoupled_memory_bank", False)
+                    )
+                    if use_decoupled:
+                        try:
+                            bank = make_decoupled_latent_memory_bank(
+                                d_model=cfg.model.d_model,
+                                num_slots=getattr(cfg.model, "decoupled_bank_num_slots", 16) if hasattr(cfg.model, "decoupled_bank_num_slots") else 16,
+                                top_k=getattr(cfg.model, "decoupled_bank_top_k", 4) if hasattr(cfg.model, "decoupled_bank_top_k") else 4,
+                            ).to(device).eval()
+
+                            # Load bank slots from checkpoint
+                            ckpt = torch.load(args.checkpoint, map_location=device)
+                            if "decoupled_bank" in ckpt and ckpt["decoupled_bank"] is not None:
+                                with torch.no_grad():
+                                    bank.slots.copy_(ckpt["decoupled_bank"].to(device=device))
+                                print(f"[RI-4 Eval] Decoupled Memory Bank state successfully restored from checkpoint")
+                        except Exception as e:
+                            print(f"[RI-4 Eval] Failed to restore decoupled bank state: {e}")
 
                     # Configure RI-4 flags on the block(s) — these are read by the block forward
                     slots_on = bool(runtime.get("sparse_slots_enabled", True))
                     pers_ablate = bool(runtime.get("persistence_ablation", False))
                     router_ablate = bool(runtime.get("router_ablation", False))
 
-                    for layer in ri4_hybrid_model:
+                    ri4_layers = (
+                        (ri4_hybrid_model,)
+                        if isinstance(ri4_hybrid_model, OneBodyParallelHybridBlock)
+                        else tuple(ri4_hybrid_model)
+                    )
+                    for layer in ri4_layers:
                         if isinstance(layer, OneBodyParallelHybridBlock):
                             if hasattr(layer, "sparse_slot_router") and layer.sparse_slot_router is not None:
                                 layer.sparse_slot_router.set_ablation(
                                     enabled=slots_on and not router_ablate,
                                     ablation_zero=(not slots_on) or router_ablate,
                                 )
+                            if bank is not None:
+                                layer.set_decoupled_memory_bank(bank, ablation_zero=(not slots_on) or router_ablate)
+                                layer._decoupled_bank_enabled = slots_on and not router_ablate
+                                layer._decoupled_bank_ablation_zero = (not slots_on) or router_ablate
+
                             # Store flags (used by some internal paths)
                             layer._ri4_persistence_ablation = pers_ablate
                             layer._ri4_slots_on = slots_on and not router_ablate

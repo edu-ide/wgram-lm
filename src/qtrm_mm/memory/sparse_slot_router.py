@@ -107,14 +107,13 @@ class SparseSlotRouter(nn.Module):
             nn.Sigmoid()
         )
 
-        # === Next Big-Jump candidate (post-GSMU falsification): Surprise-Driven Write Trigger ===
-        # Per skill Big-Jump Rule after GSMU negative: change the *write trigger* route.
-        # Write strength is now modulated by a surprise signal (e.g. distance between
-        # incoming proposal and current memory read or simple state prediction).
-        # This implements the "surprise / utility driven write" mechanism repeatedly
-        # successful in 2025-2026 literature (Titans, surprise-gated memory papers).
+        # === Surprise-Driven Write Trigger (Titans / LeJEPA style) ===
+        # High-surprise updates are allowed to write more strongly into selected slots.
+        # Low-surprise (predictable) updates are attenuated → prevents slot pollution.
         self._use_surprise_write_trigger = False
-        self.surprise_scale = 1.0  # multiplier on how strongly surprise affects write
+        self.surprise_scale = 1.0
+        self.surprise_threshold = 0.0          # values below this (after normalization) are heavily downweighted
+        self.surprise_mode = "l2_to_mean"      # "l2_to_mean" | "l2_to_std" | "cosine" (future)
 
     def set_ablation(self, enabled: bool = True, ablation_zero: bool = False):
         """Called by training/eval harness for clean ablations."""
@@ -133,12 +132,23 @@ class SparseSlotRouter(nn.Module):
         """
         self._use_gated_memory_update = bool(enabled)
 
-    def enable_surprise_write_trigger(self, enabled: bool = True, surprise_scale: float = 1.0):
-        """Big-Jump candidate (post-GSMU): surprise-driven modulation of write strength.
-        Changes the write *trigger* causal route (surprise/utility instead of always-apply to routed slots).
+    def enable_surprise_write_trigger(
+        self,
+        enabled: bool = True,
+        surprise_scale: float = 1.0,
+        surprise_threshold: float = 0.0,
+        surprise_mode: str = "l2_to_mean",
+    ):
+        """
+        Titans-style surprise-driven write modulation.
+        - surprise_scale: how strongly surprise affects write strength (>1.0 = more aggressive filtering)
+        - surprise_threshold: normalized surprise below this value gets strongly attenuated
+        - surprise_mode: currently only "l2_to_mean" is well supported
         """
         self._use_surprise_write_trigger = bool(enabled)
         self.surprise_scale = max(0.0, float(surprise_scale))
+        self.surprise_threshold = max(0.0, float(surprise_threshold))
+        self.surprise_mode = surprise_mode
 
     def enable_fast_eval(self, enabled: bool = True, cache_interval: int = 4, decay: float = 0.9):
         """
@@ -320,9 +330,8 @@ class SparseSlotRouter(nn.Module):
                     slots = slot_state
 
                 mask = self._cached_mask
-                if mask.dim() == 2:
-                    mask = mask.unsqueeze(-1)
-                selected = slots * mask
+                mask_for_slots = mask.unsqueeze(-1) if mask.dim() == 2 else mask
+                selected = slots * mask_for_slots
                 read = selected.sum(dim=1) / max(1, self.top_k)
                 read_signal = self.read_proj(read) * self._cached_read_scale
                 return read_signal, self._cached_mask, slots
@@ -365,13 +374,15 @@ class SparseSlotRouter(nn.Module):
         else:
             slots = slot_state
 
-        # Sparse read: only selected slots contribute (robust broadcasting)
-        if mask.dim() == 2:
-            mask = mask.unsqueeze(-1)
-        if slots.shape[0] != mask.shape[0]:
+        # Sparse read: only selected slots contribute. Keep the public mask
+        # contract 2D so callers can reuse it for clean slot-write ablations.
+        mask_2d = mask.squeeze(-1) if mask.dim() == 3 and mask.shape[-1] == 1 else mask
+        mask_for_slots = mask_2d.unsqueeze(-1)
+        if slots.shape[0] != mask_for_slots.shape[0]:
             # batch mismatch safety
-            mask = mask.expand(slots.shape[0], -1, -1) if mask.dim() == 3 else mask
-        selected = slots * mask  # (B, num_slots, d)
+            mask_for_slots = mask_for_slots.expand(slots.shape[0], -1, -1)
+            mask_2d = mask_for_slots.squeeze(-1)
+        selected = slots * mask_for_slots  # (B, num_slots, d)
         read = selected.sum(dim=1) / max(1, self.top_k)  # average of selected
         read_signal = self.read_proj(read)
 
@@ -379,7 +390,7 @@ class SparseSlotRouter(nn.Module):
         # happens in the caller (the mixer or rehearsal logic) using the mask.
         # This keeps the router pure and easy to ablate.
 
-        return read_signal, mask, slots
+        return read_signal, mask_2d, slots
 
     def compute_selectivity_aux_loss(self, x: torch.Tensor, loss_weight: float = 0.01) -> torch.Tensor:
         """
@@ -449,31 +460,42 @@ class SparseSlotRouter(nn.Module):
             write = self.write_gate(combined)            # (B, num_slots, 1)
 
             # Gated update only on selected slots, strong protection elsewhere
-            gated_update = write * learning_rate * update_signal * slot_mask.unsqueeze(-1)
-            mask_f = slot_mask.unsqueeze(-1).float()
+            slot_mask_2d = slot_mask.squeeze(-1) if slot_mask.dim() == 3 and slot_mask.shape[-1] == 1 else slot_mask
+            gated_update = write * learning_rate * update_signal * slot_mask_2d.unsqueeze(-1)
+            mask_f = slot_mask_2d.unsqueeze(-1).float()
             gated_persistence = forget * mask_f + (1.0 - mask_f) * persistence
 
             new_slots = slot_state * gated_persistence + gated_update
         else:
             # Original fixed-persistence behavior (perfect backward + ablation compatibility)
-            selected_update = learning_rate * update_signal * slot_mask.unsqueeze(-1)
-            non_selected_persistence = persistence + (1.0 - persistence) * slot_mask.unsqueeze(-1)
+            slot_mask_2d = slot_mask.squeeze(-1) if slot_mask.dim() == 3 and slot_mask.shape[-1] == 1 else slot_mask
+            selected_update = learning_rate * update_signal * slot_mask_2d.unsqueeze(-1)
+            non_selected_persistence = persistence + (1.0 - persistence) * slot_mask_2d.unsqueeze(-1)
             new_slots = slot_state * non_selected_persistence + selected_update
 
-        # === Big-Jump candidate: Surprise-Driven Write Trigger (post-GSMU) ===
-        # If enabled, modulate the effective write by a simple surprise signal.
-        # Surprise here = norm of the update signal relative to current slot statistics.
-        # This changes the write *trigger* route: updates are down-weighted when the incoming
-        # information is not surprising (low utility/novelty), per Titans-style mechanisms.
+        # === Surprise-Driven Write Trigger (Titans-style) ===
+        # Only surprising (high-utility) information is allowed to strongly modify memory.
+        # Predictable / redundant updates are attenuated.
         if self._use_surprise_write_trigger and not (not self._router_enabled or self._ablation_zero):
-            # Simple surprise: how large is the update relative to current slot std (or mean norm)
             slot_mean = slot_state.mean(dim=1, keepdim=True)
-            surprise = (update_signal.unsqueeze(1) - slot_mean).norm(dim=-1, keepdim=True)  # (B, 1, 1) or (B, num_slots, 1) after broadcast
-            # Normalize and scale
-            surprise = surprise / (surprise.mean() + 1e-6)
-            surprise_mod = torch.sigmoid((surprise - 1.0) * self.surprise_scale)  # 0~1 modulator, higher surprise = stronger write
-            # Apply only to the update part (selected slots)
-            new_slots = slot_state * (1.0 - slot_mask.unsqueeze(-1) * (1.0 - surprise_mod)) + new_slots * (slot_mask.unsqueeze(-1) * surprise_mod)  # rough modulation; refined in full version
+            raw_surprise = (update_signal.unsqueeze(1) - slot_mean).norm(dim=-1, keepdim=True)
+
+            # Better normalization: z-score style using running mean of surprise
+            surprise_mean = raw_surprise.mean()
+            surprise_std = raw_surprise.std() + 1e-6
+            surprise_z = (raw_surprise - surprise_mean) / surprise_std
+
+            # Apply threshold + scale
+            surprise_z = torch.clamp(surprise_z - self.surprise_threshold, min=0.0)
+            surprise_mod = torch.sigmoid(surprise_z * self.surprise_scale)
+
+            # Modulate only the selected slots' update strength
+            slot_mask_2d = slot_mask.squeeze(-1) if slot_mask.dim() == 3 and slot_mask.shape[-1] == 1 else slot_mask
+            mask_f = slot_mask_2d.unsqueeze(-1).float()
+
+            # High surprise → write more of the new value
+            # Low surprise → stay closer to previous slot value
+            new_slots = slot_state * (1.0 - mask_f * (1.0 - surprise_mod)) + new_slots * (mask_f * surprise_mod)
 
         # Also update the learnable prototype if no external state was provided
         # (for cases where we maintain internal state)

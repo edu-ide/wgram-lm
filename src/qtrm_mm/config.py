@@ -181,6 +181,7 @@ class QTRMConfig:
     core_elastic_depth_enabled: bool = False
     core_elastic_depth_max_steps: int = 8
     core_elastic_depth_train_random: bool = False
+    core_elastic_depth_learn_policy: bool = False
     core_elastic_depth_ablation_zero: bool = False
 
     # === Mega Integration: Learned Slow-Tier Memory Policy (Hierarchical Tiers) ===
@@ -203,6 +204,10 @@ class QTRMConfig:
     core_sparse_slot_top_k: int = 4
     core_sparse_slot_router_hidden_dim: Optional[int] = None
     core_sparse_slot_ablation_zero: bool = False
+    core_sparse_surprise_write_trigger_enabled: bool = False
+    core_sparse_surprise_scale: float = 1.0
+    core_sparse_surprise_threshold: float = 0.0
+    core_sparse_surprise_mode: str = "l2_to_mean"  # currently only l2_to_mean is well supported
 
     # === RI-4 Clean Ablation Flags (for generating comparable records) ===
     ri4_sparse_slots_ablation: bool = False          # Force slots completely off (dense baseline)

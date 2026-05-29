@@ -569,3 +569,38 @@ next expected move (factual only):
   Real anchor continuation from Stage117/118 checkpoint using the now-runnable
   627/625 integration + recurrent state capture. Re-record numbers on actual data.
   Promote only on same-LM-metric exact lift + state-off drop.
+
+### RI-4 Dynamic Slot Memory (Inference Write Lock Unlocked)
+
+file:
+  2026-05-29-ri4-inference-write-lock-unlocked.md
+
+status:
+  active
+
+current read:
+  Dynamic selective slot updates are now fully integrated and executed inside 
+  OneBodyParallelHybridBlock.forward at every micro-step during inference.
+  
+  Heldout 72-case reasoning results (step 50 checkpoint):
+    Slots-On (Active Memory): 34.72%
+    Slots-Off (Memory Ablated): 29.17%
+    Ablation Margin: +5.55% (4 cases)
+
+### Donorless Born-One-Body Revival (Parallel Track)
+
+file:
+  2026-05-29-donorless-one-body-revival-plan.md
+
+status:
+  planning / active investigation
+
+current read:
+  Per user request (2026-05-29), after RI-4 memory write lock was resolved in the hybrid track,
+  we are now also advancing the pure donorless / HRM-Text-style born-one-body track in parallel.
+  Goal: uncontaminated architectural evidence that the recurrent core + dynamic memory system
+  delivers reasoning gains with zero external backbone. Minimal viable revival plan documented.
+
+next expected move:
+  Surprise-Driven Write Trigger tuning: Condition slot updates on L2 surprise relative to slot std
+  to down-weight low-utility/non-surprising memory writes and break the 34.72% ceiling.

@@ -41563,3 +41563,114 @@ This is still not universal open-domain fact checking.  It is a controlled
 free-form provenance world.  But it is no longer merely a parser/card test; it
 is the full final causal path for this thread.
 ```
+
+### 2026-05-29 Latest research aggressive substrate closure
+
+Decision:
+
+```text
+Raw-intelligence work is now managed as a repeat cycle:
+latest papers -> wiki requirements -> substrate/eval gap -> code fix ->
+fresh verification -> wiki update -> next gap.
+```
+
+New wiki pages:
+
+```text
+docs/wiki/sources/2026-latest-recurrent-memory-substrate-papers.md
+docs/wiki/decisions/2026-05-29-latest-research-aggressive-substrate-closure.md
+```
+
+Closure summary:
+
+```text
+The key issue was not only model quality.  Several required mechanisms were
+present but could be silently bypassed, could crash under the current tuple or
+mask contracts, or had no raw-intelligence eval mode.
+
+This pass documents and implements the first closure layer:
+strict backend identity, active hybrid stochastic-breadth registry coverage,
+sparse-slot public mask contract, answer-loop tuple compatibility, RI-1 hybrid
+depth modes, RI-3 stochastic-breadth-off mode, and RI-4 sparse persistent memory
+gate construction.  The second loop tightened the hybrid depth gate so it
+rejects non-monotonic ladders, matching the RI-1 wiki requirement.
+The third loop added the RI-3 full 5.56 causal matrix gate and matching 192 eval
+modes for full, stochastic-zero, gold-off, protection-off, and decay-disabled.
+```
+
+Promotion boundary:
+
+```text
+This makes necessary gates executable.  It does not claim final raw
+intelligence.  Full promotion still requires trained heldout depth ladders,
+trained full 5.56 ablation drops, sparse router/chunk-shuffle/distractor tests,
+150-200+ horizon stability, and matched data-efficiency curves.
+```
+
+Verification:
+
+```text
+compileall: exit 0 on src/qtrm_mm plus changed RI scripts/tests
+unit/regression: 71 tests, OK
+strict stochastic breadth gate: PASS, active replacement OneBodyParallelHybridBlock
+RI-4 A-mode smoke: 4/4 variants pass; pure delegation calls=5, slot_carries=9
+hybrid depth synthetic gate: accepted only for monotonic depth ladder
+hybrid 5.56 synthetic gate: accepted only when full beats all ablation modes
+```
+
+Environment note:
+
+```text
+The filesystem was 99% full during the first compile attempt, so compileall
+initially failed while writing .pyc files.  No user checkpoints/data were
+deleted.  After free space recovered, compileall passed normally.
+```
+
+### 2026-05-29 Dynamic Slot Memory (RI-4) Inference Write Lock Unlocked
+
+**Decision**:
+Unlock active memory selectivity on the hybrid Qwen donor model by resolving the same-score evaluation bottleneck (Slots_On = Slots_Off) and implement Titans-style Surprise-Driven Write Trigger tuning.
+
+**Wiki**:
+- `docs/wiki/decisions/2026-05-29-ri4-inference-write-lock-unlocked.md`
+
+**Result**:
+After injecting real dynamic `update_slots` calls inside `OneBodyParallelHybridBlock.forward` (every recurrent micro-step), the 72-case heldout suite finally shows clean ablation margins for the first time in the RI-4 line.
+
+Step 50: Slots-On 34.72% vs Slots-Off 29.17% (+5.55 pp)  
+Step 200 + Surprise(1.5): new ceiling 36.11%
+
+All architecture closure tests remain green.
+
+### 2026-05-29 Donorless One-Body Track Parallel Revival (User Directive)
+
+**User request**:
+"wiki 에 일단 정리하자, 2 번도 진행하고" — document the RI-4 breakthrough, **and also advance Option 2** (pure donorless born-one-body / HRM-Text track).
+
+**Action taken**:
+Created authoritative planning artifact:
+- `docs/wiki/decisions/2026-05-29-donorless-one-body-revival-plan.md`
+
+**Strategy**:
+- Keep the now-working hybrid track (Qwen-2B + dynamic RI-4 memory) as the fast experimental vehicle for publishable "memory matters" numbers.
+- In parallel, begin minimal revival of a **completely donor-free** one-body student using the current best `OneBodyParallelHybridBlock` + native reader (BPE or BLT) + small random LM head.
+- First target: reproduce clean depth scaling + memory ablation drop on synthetic logical data with zero external backbone (fast falsifier before any language-scale donorless run).
+
+Both tracks are now officially active and cross-pollinating as of 2026-05-29.
+
+### 2026-05-29 Clarification: Engine-level One-Body vs System-level One-Body
+
+During discussion of the RI-4 success, the following distinction was formalized and recorded in two places:
+
+- `docs/wiki/decisions/2026-05-29-ri4-inference-write-lock-unlocked.md` (Architectural Implication section)
+- `docs/wiki/architecture/one-body-architecture-ssot.md` (Banned Main-Path Pattern section)
+
+**Core point**:
+`OneBodyParallelHybridBlock`을 사용하면 **생각하는 엔진 내부**는 donor 모드에서도 진짜 한 몸으로 동작할 수 있다. 
+그러나 강한 Qwen donor가 reader + base policy를 크게 담당하는 한, **전체 시스템**은 strict one-body (SSOT 기준)가 아니다.
+
+**실무적 결론**:
+- 지금 donor + OneBodyHybrid + dynamic memory 방식을 계속 강화하는 것은 단기~중기 실험적으로 매우 좋은 선택이다.
+- 다만 "우리가 만든 recurrent core가 진짜 reasoning을 한다"는 강한 주장을 하려면, donor dependence를 줄이는 증거가 결국 필요하다.
+
+이 구분을 명확히 문서화하여 앞으로 같은 혼란이 반복되지 않도록 했다.

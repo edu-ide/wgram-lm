@@ -81,6 +81,17 @@ from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
 from src.qtrm_mm.memory.decoupled_latent_memory_bank import DecoupledLatentMemoryBank, make_decoupled_latent_memory_bank
 from src.qtrm_mm.memory.latent_episode_memory import LatentEpisodeMemory, make_latent_episode_memory
 
+
+def _unpack_hybrid_output(out, prev_slots=None, prev_fast_state=None):
+    """Normalize hybrid block outputs across legacy 2-tuple and current 3-tuple contracts."""
+    if not isinstance(out, tuple):
+        return out, prev_slots, prev_fast_state
+    hidden = out[0]
+    slots = out[1] if len(out) > 1 else prev_slots
+    fast_state = out[2] if len(out) > 2 else prev_fast_state
+    return hidden, slots, fast_state
+
+
 # Reuse the exact proven helpers from the matrix runner (no drift)
 from scripts.train_556_on_parallel_hybrid_minimal import (
     Hybrid556Config,
@@ -145,6 +156,8 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--enable_surprise_write_trigger", action="store_true", help="Enable surprise-driven modulation of write strength (Titans-style literature mechanism). Changes the write *trigger* causal route. Skill-mandated next Big Jump after previous candidate negative.")
     # === 2026-06 Big Jump: Decoupled Latent Memory Bank (MELT + G-MemLLM style) ===
     p.add_argument("--use_decoupled_memory_bank", action="store_true", help="Use DecoupledLatentMemoryBank (external controller-driven memory instead of per-step embedded slots). This is the topology-level change after repeated falsification of embedded per-block design.")
+    p.add_argument("--decoupled_bank_sigreg_weight", type=float, default=0.05, help="Weight for LeJEPA Sketched Isotropic Gaussian Regularization (SIGReg) loss on decoupled memory slots to prevent representation collapse.")
+    p.add_argument("--counterfactual_memory_drop_prob", type=float, default=0.15, help="Probability of dropping the decoupled memory bank context during training to force the recurrent path to learn a selective policy.")
     p.add_argument("--use_latent_episode_memory", action="store_true", help="Radical 2026-06 direction: Latent Episode Memory (LEM). Memory writes happen sparsely at explicit episode/commit boundaries, not continuously. True causal frequency change.")
     p.add_argument("--uncertainty_gated_memory", action="store_true", help="Direction B: Only allow memory read/commit when internal uncertainty (simple proxy) is high.")
     p.add_argument("--pure_recurrence_then_consolidate", action="store_true", help="Direction C: Run stretches of pure recurrence with memory disabled, then explicit consolidation pass for memory writes.")
@@ -275,6 +288,8 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.enable_gated_memory_update = args.enable_gated_memory_update
     cfg.enable_surprise_write_trigger = args.enable_surprise_write_trigger
     cfg.use_decoupled_memory_bank = args.use_decoupled_memory_bank
+    cfg.decoupled_bank_sigreg_weight = args.decoupled_bank_sigreg_weight
+    cfg.counterfactual_memory_drop_prob = args.counterfactual_memory_drop_prob
     cfg.use_latent_episode_memory = args.use_latent_episode_memory
     cfg.uncertainty_gated_memory = args.uncertainty_gated_memory
     cfg.pure_recurrence_then_consolidate = args.pure_recurrence_then_consolidate
@@ -973,8 +988,14 @@ def main():
         print("[RI-4 Architecture Jump] Learned Gated Selective Memory Update ENABLED (per-slot forget/write gates active)")
 
     if router is not None and getattr(cfg, "enable_surprise_write_trigger", False):
-        router.enable_surprise_write_trigger(True, surprise_scale=1.5)
-        print("[RI-4 Big-Jump Candidate] Surprise-Driven Write Trigger ENABLED (post-GSMU falsification per skill)")
+        scale = getattr(cfg, "surprise_scale", 1.5)
+        threshold = getattr(cfg, "surprise_threshold", 0.0)
+        router.enable_surprise_write_trigger(
+            enabled=True,
+            surprise_scale=scale,
+            surprise_threshold=threshold,
+        )
+        print(f"[RI-4] Surprise-Driven Write Trigger ENABLED (scale={scale}, threshold={threshold})")
 
     # Gold state (real 642 if provided) — exact same robust prep as the 160-step evidence run
     gold_state = None
@@ -1808,7 +1829,7 @@ def main():
                                 slot_state=slots_cand if isinstance(layer, OneBodyParallelHybridBlock) else None,
                                 rehearsal_gold_target=gold_ctx if isinstance(layer, OneBodyParallelHybridBlock) else None)
                     if isinstance(out, tuple):
-                        h_cand, slots_cand = out
+                        h_cand, slots_cand, _ = _unpack_hybrid_output(out, prev_slots=slots_cand)
                     else:
                         h_cand = out
 
@@ -2018,6 +2039,12 @@ def main():
         else:
             train_loss = torch.zeros((), device=cfg.device, dtype=cfg.dtype)
 
+        # Higher-leverage coupling: when explicit attractor is active, make the equilibrium the primary state for the main rehearsal objective
+        if getattr(cfg, 'use_explicit_attractor_solver', False) and 'equilibrium' in locals() and gold_state is not None:
+            eq_for_loss = equilibrium.mean(dim=1, keepdim=True)
+            gold_target_eq = gold_state.expand_as(eq_for_loss)
+            train_loss = train_loss + 1.0 * torch.nn.functional.mse_loss(eq_for_loss, gold_target_eq)  # equilibrium as primary for final loss
+
         # Section 7 attractor solver contributions (only non-zero when the light integration path is active)
         # Must stay as tensors (not float()) so that backward works.
         sc = getattr(cfg, '_attractor_solver_contrib', 0.0)
@@ -2037,6 +2064,13 @@ def main():
             train_loss = train_loss + dc
         else:
             train_loss = train_loss + float(dc)
+
+        # === Higher-leverage coupling: when explicit attractor is active, give strong direct pressure
+        # to the equilibrium being the primary state close to gold (per SSOT "improve equilibrium usage for answer scoring").
+        if getattr(cfg, 'use_explicit_attractor_solver', False) and 'equilibrium' in locals() and gold_state is not None:
+            eq_target = equilibrium.mean(dim=1, keepdim=True)
+            gold_target_eq = gold_state.expand_as(eq_target)
+            train_loss = train_loss + 0.6 * torch.nn.functional.mse_loss(eq_target, gold_target_eq)  # strong additional term on equilibrium
 
         # === Predictive Data Intuition loss (the mechanism that actually builds "데이터에 대한 직관") ===
 
@@ -2303,6 +2337,18 @@ def main():
         # RI-1 M1 sampled depth is now part of the training distribution for C-track visibility
         if (step + 1) % max(1, cfg.total_steps // 10) == 0 and getattr(cfg, 'ri1_variable_depth_active', False):
             print(f"  [RI-1 M1 C-Track] Training distribution now includes variable depth (last sampled ~{_sample_ri1_effective_depth(cfg, step)})")
+
+        # === LeJEPA SIGReg (Sketched Isotropic Gaussian Regularization) Loss ===
+        if bank is not None and getattr(cfg, "use_decoupled_memory_bank", False):
+            # Compute SIGReg loss on the memory slots to prevent representation collapse
+            slots_to_reg = bank.slots.squeeze(0)  # (num_slots, d_model)
+            sigreg_loss = bank.compute_sigreg_loss(slots_to_reg)
+            sigreg_weight = getattr(cfg, "decoupled_bank_sigreg_weight", 0.05)
+            train_loss = train_loss + sigreg_weight * sigreg_loss
+
+            # Print SIGReg loss occasionally for observability
+            if (step + 1) % 50 == 0:
+                print(f"  [LeJEPA SIGReg] step {step+1} | SIGReg Loss = {sigreg_loss.item():.6f} (weight={sigreg_weight})")
 
         # Backward + step on the main model (makes loss meaningful)
         main_optimizer.zero_grad()

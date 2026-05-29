@@ -283,6 +283,16 @@ This is diagnostic-only after Stage99. It may be used to reproduce failure,
 compare against the one-body route, or prove an ablation. It must not be
 promoted as the main architecture.
 
+### Note on "One-Body Recurrent Engine" vs Full System One-Body (2026-05-29 addition)
+
+It is possible (and currently useful) to have a strong **one-body recurrent thinking engine** (`OneBodyParallelHybridBlock` + dynamic memory) even while using a pretrained donor for input representations and base policy.
+
+- The engine itself being one-body (recurrence + memory happening inside a single residual stream) is valuable engineering progress.
+- However, when a strong donor still owns most of the reader role and a large part of the final output distribution, the **overall system** does not meet the strict one-body contract defined in this document.
+- In short: "생각하는 기관이 한 몸" ≠ "전체 모델이 한 몸".
+
+This distinction is recorded in detail in `docs/wiki/decisions/2026-05-29-ri4-inference-write-lock-unlocked.md`.
+
 ## Hard Rejects
 
 Reject a proposed main run before launch if any of these are true:

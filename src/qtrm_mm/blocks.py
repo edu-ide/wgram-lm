@@ -485,20 +485,23 @@ class OneBodyParallelHybridBlock(nn.Module):
         # Prefer official GDN2 when the project's delta_backend indicates it (consistent with "official" philosophy)
         delta_backend = getattr(cfg, "delta_backend", "torch_gated_delta2_v2")
 
-        if delta_backend in {"official_gated_delta2", "official_gdn2", "gdn2_v2"}:
+        if delta_backend in {"official_gated_delta2", "official_gdn2"}:
             # Use official implementation when requested
+            strict_backend = bool(getattr(cfg, "strict_backends", False))
             try:
                 self.recurrence_heads = nn.ModuleList([
                     OfficialGatedDeltaNet2Mixer(
                         d_model=d,
                         n_heads=cfg.n_heads,
-                        strict=False,   # allow graceful fallback inside the official mixer
+                        strict=strict_backend,
                         fallback_dropout=cfg.dropout,
                     )
                     for _ in range(max(1, recurrence_head_count))
                 ])
                 print("[HybridBlock] Using official GDN2 for recurrence branch")
             except Exception:
+                if strict_backend:
+                    raise
                 # Fallback to our improved V2
                 self.recurrence_heads = nn.ModuleList([
                     TorchGatedDeltaNet2MixerV2(d_model=d, n_heads=cfg.n_heads, dropout=cfg.dropout)
@@ -690,6 +693,16 @@ class OneBodyParallelHybridBlock(nn.Module):
                 enabled=not self._sparse_slot_ablation_zero,
                 ablation_zero=self._sparse_slot_ablation_zero,
             )
+            if getattr(cfg, "core_sparse_surprise_write_trigger_enabled", False):
+                self.sparse_slot_router.enable_surprise_write_trigger(
+                    enabled=True,
+                    surprise_scale=getattr(cfg, "core_sparse_surprise_scale", 1.0),
+                    surprise_threshold=getattr(cfg, "core_sparse_surprise_threshold", 0.0),
+                    surprise_mode=getattr(cfg, "core_sparse_surprise_mode", "l2_to_mean"),
+                )
+                print(f"[HybridBlock] RI-4: SparseSlotRouter surprise write trigger enabled "
+                      f"(scale={getattr(cfg, 'core_sparse_surprise_scale', 1.0)}, "
+                      f"threshold={getattr(cfg, 'core_sparse_surprise_threshold', 0.0)})")
             print(f"[HybridBlock] RI-4: SparseSlotRouter enabled (slots={num_slots}, top_k={top_k})")
 
         # === RI-4 Decoupled Latent Memory Bank (MELT + gated bank Big Jump) ===
@@ -1005,7 +1018,19 @@ class OneBodyParallelHybridBlock(nn.Module):
                     stochastic_noise=stochastic_breadth_noise if self._stochastic_breadth_enabled else None,
                     slot_state=router_slot_state,
                 )
-                new_slot_state = returned_slots
+                # Closed integration gap: dynamically update slot memory using current thinking state
+                if x_norm.dim() == 3:
+                    update_signal = x_norm.mean(dim=1)  # (B, d)
+                else:
+                    update_signal = x_norm  # (B, d)
+
+                new_slot_state = self.sparse_slot_router.update_slots(
+                    slot_state=returned_slots,
+                    update_signal=update_signal,
+                    slot_mask=slot_mask,
+                    persistence=0.92,
+                    learning_rate=0.08,
+                )
             except Exception:
                 # Safe fallback - engine must continue
                 sparse_read = None
@@ -1018,7 +1043,9 @@ class OneBodyParallelHybridBlock(nn.Module):
                 keys = new_slot_state
                 scores = torch.matmul(query, keys.transpose(-2, -1)) / (self.cfg.d_model ** 0.5)
                 if slot_mask is not None:
-                    scores = scores.masked_fill(slot_mask.unsqueeze(1) < 0.5, -1e9)
+                    slot_mask_2d = slot_mask.squeeze(-1) if slot_mask.dim() == 3 and slot_mask.shape[-1] == 1 else slot_mask
+                    if slot_mask_2d.dim() == 2 and slot_mask_2d.shape == (scores.shape[0], scores.shape[-1]):
+                        scores = scores.masked_fill(slot_mask_2d.unsqueeze(1) < 0.5, -1e9)
                 attn_weights = torch.softmax(scores, dim=-1)
                 rich_memory_context = torch.matmul(attn_weights, keys).squeeze(1)
 
@@ -1040,17 +1067,27 @@ class OneBodyParallelHybridBlock(nn.Module):
             and self._decoupled_bank_enabled
             and not self._decoupled_bank_ablation_zero
         ):
-            try:
-                bank_context, _ = self.decoupled_memory_bank.forward_read(x_norm)
-                if bank_context is not None and bank_context.abs().sum() > 0:
-                    bank_strength = 0.35
-                    if x_norm.dim() == 3:
-                        x_norm = x_norm + bank_context.unsqueeze(1) * bank_strength
-                    else:
-                        x_norm = x_norm + bank_context * bank_strength
-            except Exception:
-                # Never crash the engine
+            # Counterfactual memory drop: stochastically drop bank context during training
+            # to force the model to experience "not remembering".
+            is_training = self.training
+            drop_prob = getattr(self.cfg, "counterfactual_memory_drop_prob", 0.15) if self.cfg is not None else 0.15
+
+            if is_training and torch.rand(1).item() < drop_prob:
+                # Whispering to the student: "What if you didn't have notes?"
+                # Force drop: memory context is ignored for this thinking step
                 pass
+            else:
+                try:
+                    bank_context, _ = self.decoupled_memory_bank.forward_read(x_norm)
+                    if bank_context is not None and bank_context.abs().sum() > 0:
+                        bank_strength = 0.35
+                        if x_norm.dim() == 3:
+                            x_norm = x_norm + bank_context.unsqueeze(1) * bank_strength
+                        else:
+                            x_norm = x_norm + bank_context * bank_strength
+                except Exception:
+                    # Never crash the engine
+                    pass
 
             # --- 2026-06 Radical LEM: accumulate fast state for episode ---
             if (
@@ -1102,7 +1139,7 @@ class OneBodyParallelHybridBlock(nn.Module):
                 use_posterior = (
                     self.training
                     and self.stochastic_breadth_posterior is not None
-                    and getattr(cfg, "core_stochastic_posterior_guidance", False)
+                    and getattr(self.cfg, "core_stochastic_posterior_guidance", False)
                 )
 
                 if use_posterior:
