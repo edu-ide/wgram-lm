@@ -192,6 +192,7 @@ def parse_continuation_args() -> ContinuationConfig:
     # === v28+ Small Targeted Ablation Knobs (Section 7 substrate) ===
     p.add_argument("--attractor_internalization_weight", type=float, default=0.12, help="Internalization curriculum weight for proposal-to-equilibrium distance (key lever for driving int_mse down in real trainer).")
     p.add_argument("--attractor_denoising_weight", type=float, default=0.0, help="Light denoising auxiliary weight on the solver (v36+ climb direction).")
+    p.add_argument("--rehearsal_pressure_scale", type=float, default=1.0, help="Higher-leverage re-balancing knob: scale down overall rehearsal/gold injection pressure while keeping strong attractor curriculum (e.g. 0.15~0.3).")
     p.add_argument("--attractor_ablation_mode", type=str, default=None, help="Quick ablation label for logging (e.g. sot2_int18, sot5_int08).")
     p.add_argument("--brain_triple_memory", action="store_true", help="Proper brain-mimetic memory redefinition: Workspaces + Attractor + Provenance as active, influencing recurrent participants (not side rehearsal). Structural version, not heuristic.")
     p.add_argument("--internal_fast_recurrent", action="store_true", help="D implementation: prefer the new internal Griffin-style FastGatedLinearRecurrence inside OneBodyParallelHybridBlock for per-micro brain participation (reduces external triple.step cost).")
@@ -305,6 +306,7 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.sot_segment_length = getattr(args, 'sot_segment_length', 5)
     cfg.attractor_internalization_weight = getattr(args, 'attractor_internalization_weight', 0.12)
     cfg.attractor_denoising_weight = getattr(args, 'attractor_denoising_weight', 0.0)
+    cfg.rehearsal_pressure_scale = getattr(args, 'rehearsal_pressure_scale', 1.0)
     cfg.attractor_ablation_mode = getattr(args, 'attractor_ablation_mode', None)
     cfg.brain_triple_memory_enabled = args.brain_triple_memory
     if args.brain_triple_memory:
@@ -1775,6 +1777,10 @@ def main():
             if warmup > 0:
                 progress = min(1.0, (step - start_step) / max(1, warmup))
                 effective_alpha = cfg.gold_injection_alpha * progress
+
+            # Higher-leverage re-balancing: scale down rehearsal pressure
+            rehearsal_scale = getattr(cfg, 'rehearsal_pressure_scale', 1.0)
+            effective_alpha = effective_alpha * rehearsal_scale
             gold_delta = gold_state * (effective_alpha * decay)
 
         x = make_input(step, start_step + total_to_run)

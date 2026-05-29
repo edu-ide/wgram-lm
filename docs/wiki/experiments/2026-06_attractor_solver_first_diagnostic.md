@@ -349,6 +349,22 @@ This direction is deliberately exploratory and should only be pursued after the 
 - Status: Longest pure sot=1 run to date (100 steps). Highest internal peaks recorded. 72 gate remains at 0/8. The data now clearly demands changes outside the narrow attractor tuning space (competing loss re-balancing or direct improvement of equilibrium-to-answer coupling).
 - Next mandated: Shift to higher-leverage directions — e.g., (a) run even longer if desired, but more importantly (b) deliberately lower one or more competing loss weights (rehearsal, data intuition, trajectory monotonic, etc.) while keeping the strong attractor curriculum active, or (c) directly improve how the final equilibrium state is used for LM head / answer scoring. Begin targeted experiments in these directions + repeated 72 measurement.
 
+**v44 — First Aggressive Rehearsal Re-balancing (Higher-Leverage) + sot=1**
+- 40-step run with the strongest attractor curriculum (sot=1 + int_w=0.18) + deliberate heavy reduction of competing rehearsal pressure: `--rehearsal_pressure_scale 0.2` (rehearsal/gold injection at 20% of normal).
+- Internal signals: **Best performance recorded to date**.
+  - densing_sig reached a new all-time high of **21.00**.
+  - int_mse went down to ~0.0476.
+  - Metrics stayed strong and continued improving through the end of the run (much better behavior than previous long sot=1 runs with full rehearsal pressure).
+- 72 gate probes (8-case narrow, at steps 20 / 40):
+  - Still **0/8 reasoning, 0/8 memory** — no movement in this 40-step window.
+- Interpretation: Aggressively lowering the competing rehearsal objective while keeping the strong attractor curriculum produced the clearest win yet on the core Section 7 internalization metrics. The substrate is thriving when the old rehearsal pressure is reduced. However, the 72 heldout accuracy has still not responded in this window.
+- Status: Strong validation of the higher-leverage re-balancing direction. The best internal results so far were achieved by weakening the old objective rather than only tuning the attractor.
+- Next mandated: Continue in this higher-leverage space — e.g.:
+  - Run longer (60–80+ steps) under low rehearsal + strong sot=1 with 72 probes.
+  - Try even more aggressive rehearsal reduction (0.1 or lower).
+  - Or combine with direct improvements to how the equilibrium state is fed into final answer scoring.
+  - Keep measuring the 72 gate repeatedly. The goal is to finally see positive movement on RI-1 72 under a properly re-balanced loss mixture.
+
 **v43 — Climb Iteration 12: Lower Competing Loss (data_intuition 0.02) + sot=1 — Internal Degradation, 72 Flat**
 - 40-step run combining the strongest attractor curriculum (sot=1 + int_w=0.18) with a deliberate reduction of one competing term: `--data_intuition_loss_weight 0.02`.
 - Internal signals: Started at moderate levels but showed clear degradation over the horizon (densing_sig ~14+ → ~13.0 by the end). Not as strong as pure long sot=1 runs.
