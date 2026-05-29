@@ -693,6 +693,9 @@ class OneBodyParallelHybridBlock(nn.Module):
                 enabled=not self._sparse_slot_ablation_zero,
                 ablation_zero=self._sparse_slot_ablation_zero,
             )
+            # Surprise is currently disabled by default (see config.py comment).
+            # On available RI-4 checkpoints, it regressed performance vs pure dynamic write.
+            # Only enable explicitly for dedicated surprise tuning experiments.
             if getattr(cfg, "core_sparse_surprise_write_trigger_enabled", False):
                 self.sparse_slot_router.enable_surprise_write_trigger(
                     enabled=True,

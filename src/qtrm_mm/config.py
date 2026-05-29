@@ -204,6 +204,10 @@ class QTRMConfig:
     core_sparse_slot_top_k: int = 4
     core_sparse_slot_router_hidden_dim: Optional[int] = None
     core_sparse_slot_ablation_zero: bool = False
+    # Surprise-Driven Write Trigger (Titans/LeJEPA style)
+    # Tested on RI-4 dynamic memory (2026-05-29). On current step50 checkpoints,
+    # enabling surprise caused clear regression (23.61% vs 34.72% without it).
+    # Therefore disabled by default. Can be re-enabled for future tuning experiments.
     core_sparse_surprise_write_trigger_enabled: bool = False
     core_sparse_surprise_scale: float = 1.0
     core_sparse_surprise_threshold: float = 0.0

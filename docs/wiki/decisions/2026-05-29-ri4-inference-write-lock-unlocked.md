@@ -85,6 +85,16 @@ This experiment closes one of the longest-standing "why doesn't memory help?" my
 
 이 구분을 명확히 기록하지 않으면 프로젝트가 계속 "지금 donor 쓰면서 한몸이라고 할 수 있나?" 논쟁을 반복하게 된다.
 
+## Decision: Surprise Temporarily Disabled (2026-05-29 update)
+
+Full 72-case reproduction on the tagged commit (`ri4-le-ttt-dynamic-memory-2026-05-29`) with `hybrid_ri4_cont_step50.pt` produced the following results:
+
+- Pure dynamic write (no surprise): **34.72%** (25/72) — matches the historically claimed best number
+- Memory OFF: 30.56% (22/72)
+- With Surprise (scale=1.5): **23.61%** (17/72) — clear regression
+
+**Conclusion**: The core RI-4 win is the dynamic slot write (Inference Write Lock removal). The Surprise modulation, in its current form, is net-negative on available checkpoints. It has therefore been disabled by default across config, blocks, and scripts. The feature code remains for future dedicated tuning experiments.
+
 ## Follow-up (per user direction 2026-05-29)
 
 1. Wiki + log documentation completed (this file + log.md).

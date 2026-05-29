@@ -242,19 +242,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--core-sparse-surprise-write-trigger-enabled",
         action="store_true",
-        help="Enable surprise-driven write trigger during evaluation",
+        help="EXPERIMENTAL: Enable surprise-driven write trigger (Titans-style). "
+             "Disabled by default after 72-case ablation on step50 showed regression (23.61% vs 34.72%).",
     )
     parser.add_argument(
         "--core-sparse-surprise-scale",
         type=float,
         default=1.0,
-        help="Scale factor for surprise write trigger (higher = stronger filtering of predictable/low-surprise writes)",
+        help="EXPERIMENTAL: Scale factor for surprise write trigger",
     )
     parser.add_argument(
         "--core-sparse-surprise-threshold",
         type=float,
         default=0.0,
-        help="Normalized surprise threshold below which writes are heavily attenuated (Titans-style utility filter)",
+        help="EXPERIMENTAL: Normalized surprise threshold",
     )
     parser.add_argument("--no-repeat-ngram-size", type=int, default=0)
     parser.add_argument("--suppress-visible-reasoning-tokens", action="store_true")

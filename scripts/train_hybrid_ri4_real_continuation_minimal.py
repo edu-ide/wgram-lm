@@ -995,7 +995,7 @@ def main():
             surprise_scale=scale,
             surprise_threshold=threshold,
         )
-        print(f"[RI-4] Surprise-Driven Write Trigger ENABLED (scale={scale}, threshold={threshold})")
+        print(f"[RI-4] [EXPERIMENTAL] Surprise-Driven Write Trigger ENABLED (currently known to regress on some checkpoints)")
 
     # Gold state (real 642 if provided) — exact same robust prep as the 160-step evidence run
     gold_state = None
