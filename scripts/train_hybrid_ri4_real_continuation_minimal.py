@@ -1889,7 +1889,7 @@ def main():
                 setattr(cfg, '_attractor_int_contrib', int_contrib_t)
                 setattr(cfg, '_attractor_densing_active', True)
 
-                # Trend-enhanced logging (every 2 steps for normal use, rich during validation)
+                # Standard trend logging (every 2 steps)
                 prev = getattr(cfg, '_prev_int_mse', None)
                 int_val = float(int_mse) if torch.is_tensor(int_mse) else float(int_mse)
                 delta = (prev - int_val) if prev is not None else 0.0
