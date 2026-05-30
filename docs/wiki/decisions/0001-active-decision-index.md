@@ -609,19 +609,64 @@ next expected move:
 
 file:
   2026-06-missing-inductive-biases-restoration-roadmap.md
+  2026-05-30-lora-rank8-depth-sweep-clarification.md
 
 status:
-  active / completed M1 & M2
+  active diagnostic / completed M1 & M2
 
 current read:
   We successfully completed the M1 and M2 phases of the 2026-06 Restoration Roadmap. We wired and
   activated the learnable elastic depth policy (dynamic early-exiting & supervised BCE Halting Loss)
   and trained loop-wise Mythos LoRA adapters to steer the latent manifold under 8 steps of recurrence.
+  The S040 config from commit fc8c9133 uses Mythos LoRA rank 8, confirmed by checkpoint tensor shapes
+  `(8, 512)`, `(512, 8)`, and `(16, 8)`.
   
-  Causal forced-choice evaluation verified that under 8 core steps, the trained Loop LM achieves
-  perfect correct mathematical answers (exact match '300015' on list-arithmetic), successfully
-  healing the latent drift bottleneck where unadapted baselines completely fail.
+  Local causal forced-choice necessity smoke verified the narrow depth signal:
+    donor/core-off/depth1 = 0/2
+    canonical depth4/depth8 = 2/2
+    donor-logit scale-1.0 depth1/depth4/depth8 = 0/2
+  Read this as evidence that the rank-8 recurrent answer path can open the target answer basin only
+  under the canonical no-donor-logit-blend eval contract.
+
+  Boundary: this does not promote the S040 answer-loop checkpoint as a free-generation renderer or
+  a second canonical reasoning core. The historical S040 rejection still stands for generation 0/8
+  and decoder-off beating full in the original forced-choice smoke.
 
 next expected move:
   Transition to M3 (Full 5.56 Composite Rehearsal Curriculum) and evaluate downstream hard-family
   state ablation margins under long-horizon multi-step reasoning.
+
+### S041 Donor-Preserving Free-Generation Repair
+
+file:
+  2026-05-30-s041-donor-preserving-freegen-smoke.md
+
+status:
+  active design direction / negative promotion smoke
+
+current read:
+  S041 tested the S040 rank-8 LoRA checkpoint with Qwen donor logits preserved
+  as the fluent mouth and QTRM residuals added under a donor/QTRM conflict gate.
+  On 8 free-generation rows, donor-only reached 2/8 exact, QTRM-only depth2/4/8
+  reached 0/8 exact, and all donor-preserving guided depth/alpha modes tied
+  donor-only at 2/8 exact.  This rejects inference-only alpha sweeping as a
+  solution, but supports training a donor-preserving free-running renderer path.
+
+next expected move:
+  Run UltraData SFT only with explicit renderer-repair objectives: first-token
+  margin on donor-wrong rows, donor-correct preservation, self-rollout repair,
+  and unlikelihood against observed generation collapse strings.
+
+### Two-Track Recurrent LoRA vs Byte-Latent Pretraining Split
+
+file:
+  0002-two-track-lora-blt-recurrent-pretrain-split.md
+
+status:
+  active policy (Approved by user "마일스톤대로 진행해, 투 트랙으로 하자")
+
+current read (2026-05-29):
+  Project officially split into two mutual-spine tracks to tackle the multilingual BPE fragmentation wall (Korean fertility warning at mean 1.439, max 2.667).
+  1. Local Track (RTX 4090): Qwen-2B LoRA + UltraData-SFT-2605. Practical recurrent thought muscle steering using high-quality SFT data.
+  2. DGX Track: 1B Byte-Latent (BLT) pretraining from-scratch (240k steps) with online OPUS selection to natively solve vocabulary fragmentation.
+  Active processes: `task-2094` downloading UltraData locally (~4.0s/file); `stage95_supervisor_pid=15409` active on DGX Server.

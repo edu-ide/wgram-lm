@@ -1,5 +1,60 @@
 # QTRM LLM Wiki Log
 
+## [2026-05-30] LoRA Rank-8 Depth-Sweep Clarification
+
+Clarified the `fc8c9133` M1/M2 LoRA result in the wiki.
+
+Details:
+- Verified that the S040 Mythos answer-loop config used `answer_state_loop_mythos_lora_rank: 8`.
+- Verified the local checkpoint tensors:
+  - `answer_state_loop_mythos_lora_down.weight`: `(8, 512)`
+  - `answer_state_loop_mythos_lora_up.weight`: `(512, 8)`
+  - `answer_state_loop_mythos_lora_scale.weight`: `(16, 8)`
+- Recorded the good diagnostic checkpoint:
+  - `/mnt/nvme0n1p2/qtrm-runs/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_loop_joint_decoder_s040_from_selfrollout/last.pt`
+- Recorded the local causal forced-choice necessity smoke:
+  - canonical depth4/depth8: `2/2`
+  - donor/core-off/depth1: `0/2`
+  - donor-logit scale-1.0 depth1/depth4/depth8: `0/2`
+- Clarified the historical `8/20` number:
+  - same S040 rank-8 checkpoint
+  - `causal_forced_choice_smoke4.jsonl` aggregate over 5 modes x 4 cases
+  - not a free-generation score
+- Ran the missing explicit free-generation depth sweep on the same checkpoint:
+  - free generation donor/core-off/depth1/depth2/depth4/depth8: `0/8` each, aggregate `0/48`
+  - matched causal forced-choice: donor/core-off `0/8`, depth1 `2/8`, depth2 `4/8`, depth4 `3/8`, depth8 `3/8`
+  - verdict: forced-choice answer-basin signal exists, but renderer/free generation is still closed
+
+Decision boundary:
+- This is a useful local forced-choice depth-sweep diagnostic.
+- It does not promote the S040 answer-loop checkpoint as a free-generation
+  renderer or broad raw-intelligence checkpoint.
+
+Wiki:
+- `docs/wiki/decisions/2026-05-30-lora-rank8-depth-sweep-clarification.md`
+
+## [2026-05-29] Two-Track Co-Evolution Strategy Established & Training Launched
+
+Established the **Two-Track (Local 2B Recurrent LoRA vs. DGX 1B BLT from-scratch)** strategic pipeline to overcome BPE multilingual tokenizer fertility degradation (audited Korean fertility rates showing severe fragmentation: mean **1.439**, max **2.667**).
+
+Details:
+- **Local Track (RTX 4090)**:
+  - Initiated portable, multi-config cross-platform dataset download for high-quality L3 SFT data `openbmb/UltraData-SFT-2605` under active task **`task-2094`**. Bandwidth is highly stable, downloading shard files into `data/raw/` at a rate of **~4.0s per file**.
+  - Preparing configs and training routines to train loop-wise recurrent LoRA thought steering and BCE halting policy on UltraData SFT once downloads are complete.
+- **DGX Track (Server)**:
+  - Successfully resolved supervisor startup dry-run bypass checks by isolating today's training outputs.
+  - Launched the **1B Byte-Latent (BLT) Spine Pretraining Supervisor** from-scratch over 240,000 steps under PID **`15409`** (Log: `/tmp/20260529_STAGE95G_SUPERVISOR.log`).
+  - Active directories and configurations:
+    - Partial: `local_eval/20260529_STAGE95G_DGX_1B_PARTIAL`
+    - Full: `local_eval/20260529_STAGE95I_DGX_1B_FULL`
+    - Gated configs: `ONLINE_OPUS_ENABLED=1`, `GD_LITE_ENABLED=1`, `OPUS_PROXY_SCORE_MODE=minimax_mean`.
+- **Telemetry & Visualization**:
+  - Successfully spun up live, synchronous TensorBoards on both platforms for granular tracking:
+    - Local TensorBoard: `http://127.0.0.1:6007` (monitoring local LoRA training progress)
+    - DGX TensorBoard: `http://192.168.219.113:6008` (monitoring DGX BLT spine pretraining loss and OPUS selection dynamics)
+- **Decision Records**:
+  - Authored and formally integrated [0002-two-track-lora-blt-recurrent-pretrain-split.md](file:///home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/docs/wiki/decisions/0002-two-track-lora-blt-recurrent-pretrain-split.md) into the active policies index.
+
 ## [2026-05-29] RI-1 Substrate | LoRA-Steered Loop LM Pipeline Completed & Validated (M1/M2)
 
 Successfully completed the M1 (Stochastic Recurrent Breadth - Modern Realization) and M2 (Elastic Recurrence Depth policy learning) phases of the 2026-06 Restoration Roadmap.
@@ -41704,3 +41759,23 @@ During discussion of the RI-4 success, the following distinction was formalized 
 - 다만 "우리가 만든 recurrent core가 진짜 reasoning을 한다"는 강한 주장을 하려면, donor dependence를 줄이는 증거가 결국 필요하다.
 
 이 구분을 명확히 문서화하여 앞으로 같은 혼란이 반복되지 않도록 했다.
+
+### 2026-05-30 S041 Donor-Preserving Free Generation Smoke
+
+**Decision**:
+Created the S041 donor-preserving LoopLM/free-generation repair source page,
+implemented a local conflict-gated donor-logit sweep runner, and executed the
+first free-generation smoke on the S040 rank-8 LoRA checkpoint.
+
+**Wiki**:
+- `docs/wiki/sources/2026-donor-preserving-looplm-freegen-repair.md`
+- `docs/wiki/decisions/2026-05-30-s041-donor-preserving-freegen-smoke.md`
+
+**Result**:
+The guided donor-preserving modes tie donor-only at 2/8 exact and do not beat it.
+QTRM-only depth 2/4/8 remains 0/8 exact under free generation.  The result is a
+negative promotion smoke but a useful design signal: UltraData-scale SFT should
+not be run as plain teacher-forced data loading alone.  It should train the
+donor-preserving free-running renderer contract with first-token margin,
+donor-correct preservation, unlikelihood against observed collapse strings, and
+self-rollout repair.
