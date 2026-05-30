@@ -656,10 +656,22 @@ current read:
   alpha modes again tie donor-only at 2/8, so the untrained blend masks the CFC
   gain.
 
+  S042 repaired the masking mechanism for candidate-discrimination probes:
+  replacing the downscale-only conflict gate with `adaptive_margin` lets
+  donor-preserving `qtrm_scale=2, donor_scale=1` recover 3/8 exact at
+  depth2/4/8 versus donor-only 2/8 and core-off 0/8.  This means donor usage is
+  viable, but only when the gate preserves QTRM residuals on high-margin QTRM
+  conflicts.  It still does not promote free generation: greedy adaptive
+  generation ties donor-only at 2/8 exact, beam8 does not improve it, and the
+  DGX 40-step UltraData rehearsal checkpoint reports generation_smoke8 hits=0/40
+  and causal_forced_choice_smoke4 hits=2/20.
+
 next expected move:
-  Run UltraData SFT only with explicit renderer-repair objectives: first-token
-  margin on donor-wrong rows, donor-correct preservation, self-rollout repair,
-  and unlikelihood against observed generation collapse strings.
+  Keep `adaptive_margin` as the donor-preserving CFC probe contract, but do not
+  call S042 generation-ready.  Run UltraData SFT only with explicit
+  renderer-repair objectives: first-token/answer-boundary margin on donor-wrong
+  rows, donor-correct preservation, self-rollout repair, and unlikelihood against
+  observed generation collapse strings.
 
 ### Two-Track Recurrent LoRA vs Byte-Latent Pretraining Split
 

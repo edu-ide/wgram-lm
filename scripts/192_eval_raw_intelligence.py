@@ -240,6 +240,28 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="QTRM residual scale used on donor/QTRM top-token conflict when the probe gate is enabled.",
     )
     parser.add_argument(
+        "--donor-qtrm-conflict-gate-mode",
+        default=None,
+        choices=["downscale", "adaptive_margin"],
+        help=(
+            "Conflict gate policy. downscale preserves the legacy behavior; "
+            "adaptive_margin keeps or boosts QTRM residual when its top-token margin "
+            "is stronger than the donor margin."
+        ),
+    )
+    parser.add_argument(
+        "--donor-qtrm-conflict-qtrm-boost-scale",
+        type=float,
+        default=None,
+        help="QTRM residual scale used by adaptive_margin when QTRM has the stronger margin.",
+    )
+    parser.add_argument(
+        "--donor-qtrm-conflict-margin-threshold",
+        type=float,
+        default=None,
+        help="Minimum QTRM margin advantage required before adaptive_margin preserves or boosts QTRM.",
+    )
+    parser.add_argument(
         "--core-sparse-surprise-write-trigger-enabled",
         action="store_true",
         help="EXPERIMENTAL: Enable surprise-driven write trigger (Titans-style). "
@@ -333,6 +355,19 @@ def apply_eval_model_overrides(model_cfg, args: argparse.Namespace) -> None:
     conflict_scale = getattr(args, "donor_qtrm_conflict_qtrm_scale", None)
     if conflict_scale is not None:
         model_cfg.donor_qtrm_conflict_qtrm_scale = float(conflict_scale)
+    conflict_mode = getattr(args, "donor_qtrm_conflict_gate_mode", None)
+    if conflict_mode is not None:
+        model_cfg.donor_qtrm_conflict_gate_mode = str(conflict_mode)
+    conflict_boost_scale = getattr(args, "donor_qtrm_conflict_qtrm_boost_scale", None)
+    if conflict_boost_scale is not None:
+        model_cfg.donor_qtrm_conflict_qtrm_boost_scale = float(conflict_boost_scale)
+    conflict_margin_threshold = getattr(
+        args,
+        "donor_qtrm_conflict_margin_threshold",
+        None,
+    )
+    if conflict_margin_threshold is not None:
+        model_cfg.donor_qtrm_conflict_margin_threshold = float(conflict_margin_threshold)
     if bool(getattr(args, "core_sparse_surprise_write_trigger_enabled", False)):
         model_cfg.core_sparse_surprise_write_trigger_enabled = True
         model_cfg.core_sparse_surprise_scale = float(getattr(args, "core_sparse_surprise_scale", 1.0))

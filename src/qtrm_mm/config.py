@@ -308,7 +308,10 @@ class QTRMConfig:
     qtrm_residual_gate_normalize: bool = True
     qtrm_residual_gate_min: float = 0.0
     donor_qtrm_conflict_gate_enabled: bool = False
+    donor_qtrm_conflict_gate_mode: str = "downscale"
     donor_qtrm_conflict_qtrm_scale: float = 0.0
+    donor_qtrm_conflict_qtrm_boost_scale: float = 1.0
+    donor_qtrm_conflict_margin_threshold: float = 0.0
     evidence_bottleneck_enabled: bool = False
     evidence_bottleneck_applies_to_residual: bool = True
     evidence_bottleneck_gate_init_bias: float = -2.0

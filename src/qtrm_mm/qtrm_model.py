@@ -16,6 +16,54 @@ from .world_model import JepaWorldModelHead, SIGReg
 from .agentic.transition_controller import TransitionStatePredictor
 
 
+def _top_logit_margin(logits: torch.Tensor) -> torch.Tensor:
+    if logits.shape[-1] < 2:
+        return logits.squeeze(-1)
+    top2 = logits.topk(k=2, dim=-1).values
+    return top2[..., 0] - top2[..., 1]
+
+
+def compute_donor_qtrm_conflict_gate(
+    qtrm_text_logits: torch.Tensor,
+    donor_text_logits: torch.Tensor,
+    *,
+    enabled: bool,
+    mode: str,
+    conflict_scale: float,
+    boost_scale: float,
+    margin_threshold: float,
+) -> torch.Tensor:
+    gate = qtrm_text_logits.new_ones(qtrm_text_logits.shape[:2])
+    if not enabled:
+        return gate
+
+    safe_conflict_scale = min(max(float(conflict_scale), 0.0), 1.0)
+    donor_top = donor_text_logits.argmax(dim=-1)
+    qtrm_top = qtrm_text_logits.argmax(dim=-1)
+    conflict = donor_top != qtrm_top
+    mode = str(mode or "downscale")
+
+    if mode in {"downscale", "legacy"}:
+        return torch.where(
+            conflict,
+            gate.new_full(gate.shape, safe_conflict_scale),
+            gate,
+        )
+
+    if mode in {"adaptive_margin", "margin"}:
+        qtrm_margin = _top_logit_margin(qtrm_text_logits)
+        donor_margin = _top_logit_margin(donor_text_logits)
+        qtrm_wins = qtrm_margin >= donor_margin + float(margin_threshold)
+        conflict_gate = torch.where(
+            qtrm_wins,
+            gate.new_full(gate.shape, max(float(boost_scale), 0.0)),
+            gate.new_full(gate.shape, safe_conflict_scale),
+        )
+        return torch.where(conflict, conflict_gate, gate)
+
+    raise ValueError(f"unknown donor_qtrm_conflict_gate_mode: {mode}")
+
+
 class QTRMMultimodalModel(nn.Module):
     """Standalone multimodal QTRM model."""
 
@@ -5281,19 +5329,18 @@ class QTRMMultimodalModel(nn.Module):
         qtrm_text_logits: torch.Tensor,
         donor_text_logits: torch.Tensor,
     ) -> torch.Tensor:
-        gate = qtrm_text_logits.new_ones(qtrm_text_logits.shape[:2])
-        if not self.cfg.donor_qtrm_conflict_gate_enabled:
-            return gate
-        conflict_scale = min(
-            max(float(self.cfg.donor_qtrm_conflict_qtrm_scale), 0.0),
-            1.0,
-        )
-        donor_top = donor_text_logits.argmax(dim=-1)
-        qtrm_top = qtrm_text_logits.argmax(dim=-1)
-        return torch.where(
-            donor_top != qtrm_top,
-            gate.new_full(gate.shape, conflict_scale),
-            gate,
+        return compute_donor_qtrm_conflict_gate(
+            qtrm_text_logits,
+            donor_text_logits,
+            enabled=bool(self.cfg.donor_qtrm_conflict_gate_enabled),
+            mode=str(getattr(self.cfg, "donor_qtrm_conflict_gate_mode", "downscale")),
+            conflict_scale=float(self.cfg.donor_qtrm_conflict_qtrm_scale),
+            boost_scale=float(
+                getattr(self.cfg, "donor_qtrm_conflict_qtrm_boost_scale", 1.0)
+            ),
+            margin_threshold=float(
+                getattr(self.cfg, "donor_qtrm_conflict_margin_threshold", 0.0)
+            ),
         )
 
     def _compute_evidence_bottleneck(

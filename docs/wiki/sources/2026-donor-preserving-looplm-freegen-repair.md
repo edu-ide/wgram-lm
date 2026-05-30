@@ -154,3 +154,56 @@ untrained donor-preserving blend does not preserve that gain, so the training
 target should focus on gate/delta calibration rather than simple donor-logit
 mixing.
 ```
+
+## 2026-05-30 S042 Adaptive-Gate Update
+
+Root cause:
+
+```text
+The first S041 conflict gate was downscale-only.  It suppressed QTRM residuals
+exactly when donor and QTRM disagreed, which is where the small reasoning gain
+needed to appear.
+```
+
+No-conflict high-alpha CFC smoke:
+
+```text
+donor-only: 2/8
+donor + QTRM, qtrm_scale=2, donor_scale=1, depth2/4/8: 3/8 each
+```
+
+Repair:
+
+```text
+adaptive_margin conflict gate:
+  donor/QTRM agree -> gate 1.0
+  conflict and QTRM margin wins -> keep/boost QTRM residual
+  conflict and donor margin wins -> downscale QTRM residual
+```
+
+Adaptive CFC smoke:
+
+```text
+donor-only: 2/8
+core-off: 0/8
+adaptive donor + QTRM, qtrm_scale=2, donor_scale=1, depth2/4/8: 3/8 each
+```
+
+Free-generation smoke:
+
+```text
+greedy adaptive donor + QTRM best: 2/8 exact, ties donor-only
+beam8 adaptive donor + QTRM best: 1/8 exact, 2/8 loose hit
+DGX 40-step UltraData rehearsal checkpoint:
+  generation_smoke8 hits=0/40
+  causal_forced_choice_smoke4 hits=2/20
+```
+
+Conclusion:
+
+```text
+Donor-preserving QTRM guidance is viable for candidate-discrimination once the
+gate stops muting QTRM on every conflict.  It is not yet a free-generation
+solution.  Free generation still needs a trained answer-boundary / first-token /
+self-rollout objective, not just alpha search, beam search, or short plain SFT.
+```

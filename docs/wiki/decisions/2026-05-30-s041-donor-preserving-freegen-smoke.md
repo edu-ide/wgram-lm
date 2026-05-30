@@ -150,3 +150,117 @@ depth and qtrm/donor scale sweeps as the promotion gate
 
 Promotion requires free-generation exact improvement over donor-only plus
 causal drops under core/delta/gate ablations.
+
+## S042 Follow-Up: Adaptive-Margin Conflict Gate
+
+User follow-up:
+
+```text
+해결 해봐 그럼
+```
+
+Root-cause test:
+
+```text
+reports/s041_donor_preserving_freegen/s042_no_conflict_high_alpha_cfc_smoke8.jsonl
+reports/s041_donor_preserving_freegen/s042_no_conflict_high_alpha_cfc_smoke8.summary.md
+```
+
+Finding:
+
+| Mode | Exact |
+| --- | ---: |
+| `donor_only_no_evidence` | 2/8 |
+| no-conflict `qtrm_scale=2, donor_scale=1`, depth2 | 3/8 |
+| no-conflict `qtrm_scale=2, donor_scale=1`, depth4 | 3/8 |
+| no-conflict `qtrm_scale=2, donor_scale=1`, depth8 | 3/8 |
+
+This falsifies "donor 사용 자체가 QTRM reasoning을 불가능하게 만든다".  The
+specific masking cause was the downscale-only conflict gate, which reduced QTRM
+residuals whenever donor and QTRM disagreed.
+
+Implemented repair:
+
+```text
+src/qtrm_mm/qtrm_model.py
+src/qtrm_mm/config.py
+scripts/192_eval_raw_intelligence.py
+tests/test_donor_qtrm_conflict_gate.py
+```
+
+New policy:
+
+```text
+donor_qtrm_conflict_gate_mode = adaptive_margin
+if donor_top != qtrm_top:
+  keep or boost QTRM when QTRM top-token margin >= donor margin + threshold
+  otherwise downscale QTRM to the legacy conflict scale
+```
+
+Validation:
+
+```text
+PYTHONPATH=. python3 tests/test_donor_qtrm_conflict_gate.py
+PYTHONPATH=. python3 -m py_compile src/qtrm_mm/qtrm_model.py src/qtrm_mm/config.py scripts/192_eval_raw_intelligence.py tests/test_donor_qtrm_conflict_gate.py
+```
+
+Adaptive CFC artifacts:
+
+```text
+reports/s041_donor_preserving_freegen/s042_adaptive_margin_cfc_smoke8.jsonl
+reports/s041_donor_preserving_freegen/s042_adaptive_margin_cfc_smoke8.summary.md
+```
+
+Adaptive CFC result:
+
+| Mode | Exact |
+| --- | ---: |
+| `donor_only_no_evidence` | 2/8 |
+| `qtrm_core_off_no_evidence` | 0/8 |
+| canonical QTRM depth2/4/8 | 2/8 each |
+| adaptive donor-preserving `qtrm_scale=2, donor_scale=1`, depth2 | 3/8 |
+| adaptive donor-preserving `qtrm_scale=2, donor_scale=1`, depth4 | 3/8 |
+| adaptive donor-preserving `qtrm_scale=2, donor_scale=1`, depth8 | 3/8 |
+
+Decision: the donor-preserving CFC masking bug is repaired.  The current
+promotion recipe for candidate-discrimination probes is:
+
+```text
+donor_qtrm_conflict_gate: on
+donor_qtrm_conflict_gate_mode: adaptive_margin
+donor_qtrm_conflict_qtrm_scale: 0.25
+qtrm_scale: 2.0
+donor_scale: 1.0
+depth sweep: 2, 4, 8
+```
+
+Free-generation follow-up artifacts:
+
+```text
+reports/s041_donor_preserving_freegen/s042_adaptive_margin_free_generation_smoke8.jsonl
+reports/s041_donor_preserving_freegen/s042_adaptive_margin_free_generation_smoke8.summary.md
+reports/s041_donor_preserving_freegen/s042_adaptive_margin_beam_generation_smoke8.jsonl
+reports/s041_donor_preserving_freegen/s042_adaptive_margin_beam_generation_smoke8.summary.md
+```
+
+Free-generation result:
+
+| Decoder | Best guided exact | Donor-only exact | Read |
+| --- | ---: | ---: | --- |
+| greedy generation | 2/8 | 2/8 | guided depth2 ties donor, does not beat it |
+| beam generation, beam8 mean | 1/8 exact, 2/8 loose hit | 0/8 exact, 2/8 loose hit | beam does not unlock the answer path |
+
+DGX UltraData rehearsal checkpoint check:
+
+```text
+/mnt/data4tb/qtrm_multimodal_memoryos/checkpoints/qwen35_2b_ultradata_rehearsal_sft/last.pt
+generation_smoke8: hits=0/40
+causal_forced_choice_smoke4: hits=2/20
+```
+
+Decision: S042 is not generation-ready.  It repairs the donor/QTRM CFC blend,
+but free generation remains a training objective problem, not a decoding-only
+problem.  The next accepted path must train the free-running donor mouth with
+self-rollout repair, unlikelihood against observed collapse strings, and
+first-answer-token / answer-boundary objectives.  Plain 40-step UltraData SFT is
+not enough evidence that full UltraData volume alone will solve free generation.

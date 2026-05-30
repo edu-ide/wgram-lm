@@ -41785,3 +41785,29 @@ The matched causal forced-choice sweep gives canonical QTRM depth2/4/8 = 3/8
 exact versus donor-only = 2/8 and core-off = 0/8.  However every donor-preserving
 guided depth/alpha mode ties donor-only at 2/8.  Conclusion: the current core has
 a small candidate-discrimination gain, but untrained donor blending masks it.
+
+### 2026-05-30 S042 Adaptive-Margin Donor/QTRM Conflict Gate
+
+**Decision**:
+Repair the donor-preserving CFC masking bug by replacing the downscale-only
+conflict gate with an `adaptive_margin` policy.  The new gate keeps or boosts
+QTRM residuals on donor/QTRM conflicts when QTRM has the stronger top-token
+margin, and only downscales QTRM when the donor margin is stronger.
+
+**Code**:
+- `src/qtrm_mm/qtrm_model.py`
+- `src/qtrm_mm/config.py`
+- `scripts/192_eval_raw_intelligence.py`
+- `tests/test_donor_qtrm_conflict_gate.py`
+
+**Result**:
+No-conflict root-cause smoke and adaptive-gate smoke both show the same
+candidate-discrimination recovery: `qtrm_scale=2, donor_scale=1` reaches 3/8 at
+depth2/4/8 versus donor-only 2/8 and core-off 0/8.
+
+**Free-generation status**:
+Not solved.  Greedy adaptive free generation ties donor-only at 2/8 exact, beam8
+does not improve it, and the DGX 40-step UltraData rehearsal checkpoint reports
+generation_smoke8 hits=0/40 and causal_forced_choice_smoke4 hits=2/20.  The
+next route is trained free-running answer-boundary/self-rollout repair, not more
+inference-only alpha search.
