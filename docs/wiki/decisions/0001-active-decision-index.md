@@ -651,6 +651,10 @@ current read:
   reached 0/8 exact, and all donor-preserving guided depth/alpha modes tied
   donor-only at 2/8 exact.  This rejects inference-only alpha sweeping as a
   solution, but supports training a donor-preserving free-running renderer path.
+  The matched causal forced-choice check shows a narrow canonical QTRM reasoning
+  lift (depth2/4/8 = 3/8 exact versus donor-only = 2/8), but donor-preserving
+  alpha modes again tie donor-only at 2/8, so the untrained blend masks the CFC
+  gain.
 
 next expected move:
   Run UltraData SFT only with explicit renderer-repair objectives: first-token

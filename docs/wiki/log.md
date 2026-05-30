@@ -41779,3 +41779,9 @@ not be run as plain teacher-forced data loading alone.  It should train the
 donor-preserving free-running renderer contract with first-token margin,
 donor-correct preservation, unlikelihood against observed collapse strings, and
 self-rollout repair.
+
+**Follow-up CFC reasoning check**:
+The matched causal forced-choice sweep gives canonical QTRM depth2/4/8 = 3/8
+exact versus donor-only = 2/8 and core-off = 0/8.  However every donor-preserving
+guided depth/alpha mode ties donor-only at 2/8.  Conclusion: the current core has
+a small candidate-discrimination gain, but untrained donor blending masks it.

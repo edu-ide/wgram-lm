@@ -175,7 +175,6 @@ def _markdown(summary: dict[str, Any], title: str, source: Path) -> str:
             "## Interpretation Contract",
             "",
             "This report is a smoke diagnostic, not a promotion gate. A mode can only be promoted if it improves free generation over donor-only, keeps delta/core ablations causal, and does not replace the donor language path with a private renderer.",
-            "",
         ]
     )
     return "\n".join(lines)

@@ -63,7 +63,7 @@ reports/s041_donor_preserving_freegen/s041_conflict_gated_free_generation_smoke8
 
 ## Result
 
-Aggregate:
+Free-generation aggregate:
 
 ```text
 records: 112
@@ -71,7 +71,7 @@ modes: 14
 hits: 23/112
 ```
 
-Exact-match summary:
+Free-generation exact-match summary:
 
 | Mode family | Exact | Read |
 | --- | ---: | --- |
@@ -83,13 +83,50 @@ Exact-match summary:
 The guided modes remove the most severe QTRM-only loop strings in several rows,
 but the best exact score ties donor-only rather than beating it.
 
+## Follow-Up CFC Reasoning Smoke
+
+User challenge:
+
+```text
+그럼 이제 추론 성능 올라가는지 테스트 다시해야되는거 아니야?
+```
+
+Follow-up artifact:
+
+```text
+reports/s041_donor_preserving_freegen/s041_conflict_gated_cfc_reasoning_smoke8.jsonl
+reports/s041_donor_preserving_freegen/s041_conflict_gated_cfc_reasoning_smoke8.summary.md
+```
+
+Causal forced-choice aggregate:
+
+```text
+records: 112
+modes: 14
+hits: 29/112
+```
+
+CFC exact-match summary:
+
+| Mode family | Exact | Read |
+| --- | ---: | --- |
+| `donor_only_no_evidence` | 2/8 | donor baseline |
+| `qtrm_core_off_no_evidence` | 0/8 | no answer path |
+| canonical `qtrm_core_steps_{2,4,8}_no_evidence` | 3/8 each | narrow reasoning/candidate-discrimination gain |
+| donor-preserving `donor_scale=1.0` guided modes | 2/8 each | donor blend masks the extra QTRM CFC gain |
+
+Interpretation: CFC does show a small reasoning lift for the canonical QTRM
+path over donor-only, but the S041 donor-preserving inference-time mix does not
+preserve that lift.  The next training objective must teach the donor-preserving
+gate when to let the QTRM delta override donor bias.
+
 ## Decision
 
 Do not promote S041 as solved.
 
 The smoke supports the donor-preserving hypothesis as the right path to train,
 but it rejects inference-only alpha/conflict-gate sweeping as enough to open
-free generation.
+free generation or to preserve the narrow CFC reasoning gain.
 
 ## UltraData Implication
 

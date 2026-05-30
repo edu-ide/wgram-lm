@@ -98,7 +98,7 @@ Free generation must improve over donor-only while delta/core ablations prove ca
 
 ## 2026-05-30 Smoke Result
 
-Artifacts:
+Free-generation artifacts:
 
 ```text
 reports/s041_donor_preserving_freegen/s041_conflict_gated_free_generation_smoke8.jsonl
@@ -129,4 +129,28 @@ Training on all UltraData is likely useful for coverage and instruction format,
 but not sufficient by itself.  The full-data run must include free-running
 renderer objectives: first-answer-token margin, donor-correct preservation,
 self-rollout repair, and unlikelihood against the observed collapse strings.
+```
+
+Follow-up causal forced-choice reasoning artifacts:
+
+```text
+reports/s041_donor_preserving_freegen/s041_conflict_gated_cfc_reasoning_smoke8.jsonl
+reports/s041_donor_preserving_freegen/s041_conflict_gated_cfc_reasoning_smoke8.summary.md
+```
+
+CFC result:
+
+```text
+donor-only: 2/8 exact
+canonical QTRM depth2/4/8: 3/8 exact
+donor-preserving alpha sweep: 2/8 exact
+```
+
+Interpretation:
+
+```text
+The existing core has a narrow reasoning/candidate-discrimination gain.  The
+untrained donor-preserving blend does not preserve that gain, so the training
+target should focus on gate/delta calibration rather than simple donor-logit
+mixing.
 ```
