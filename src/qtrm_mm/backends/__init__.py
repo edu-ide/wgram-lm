@@ -104,6 +104,9 @@ def get_delta_backend(name: str):
     if name == "torch_gated_delta":
         from ..mixers import TorchGatedDeltaMixer
         return TorchGatedDeltaMixer
+    if name in {"torch_gated_delta2_v2", "gated_delta2_v2", "gdn2_v2"}:
+        from ..mixers import TorchGatedDeltaNet2MixerV2
+        return TorchGatedDeltaNet2MixerV2
     if name in {"official_gated_delta2", "official_gdn2"}:
         if not _HAS_OFFICIAL_GDN2:
             import warnings
@@ -179,13 +182,3 @@ __all__ = [
     "HAS_FLA_KDA",
     "HAS_OFFICIAL_GDN2",
 ]
-
-    # === Gating v2 (2026-05-30) - Torch reference ===
-    if name == "torch_gated_delta2_v2":
-        from ..mixers import TorchGatedDeltaNet2MixerV2
-        return TorchGatedDeltaNet2MixerV2
-
-    # Allow alias
-    if name in {"gated_delta2_v2", "gdn2_v2"}:
-        from ..mixers import TorchGatedDeltaNet2MixerV2
-        return TorchGatedDeltaNet2MixerV2

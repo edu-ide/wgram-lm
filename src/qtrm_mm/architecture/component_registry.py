@@ -63,6 +63,24 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         ),
         active_in_primary_onebody_path=False,  # Historical note preserved for audit. As of 2026-06 Reverse I→G→A, self-contained training-time stochastic breadth generation was added directly inside OneBodyParallelHybridBlock (the active RI-4 recurrent engine). See 2026-06-reverse-iga-stochastic-breadth-hybrid-engine.md. The legacy state_transition_core remains library-only; the bias is now executable again in the primary path via the hybrid block.
     ),
+    "hybrid_stochastic_breadth_engine": ComponentRecord(
+        name="hybrid_stochastic_breadth_engine",
+        status=ComponentStatus.SCAFFOLD,
+        locations=(
+            "src/qtrm_mm/blocks.py",
+            "src/qtrm_mm/config.py",
+            "scripts/train_hybrid_ri4_real_continuation_minimal.py",
+            "tests/test_ri_latest_architecture_closure.py",
+        ),
+        note=(
+            "Active OneBodyParallelHybridBlock replacement for the legacy state_transition_core true_gram bias: "
+            "learned stochastic prior/posterior, optional target-conditioned posterior guidance, internal K>1 "
+            "trajectory selection, and clean --enable_stochastic_breadth / --stochastic_ablation_zero style gates. "
+            "This record proves executability in the primary one-body path, not final paper-grade performance; "
+            "promotion still requires full heldout K=1 vs K>1 and ablation matrices."
+        ),
+        active_in_primary_onebody_path=True,
+    ),
     "bltd_byte_latent_prefixlm": ComponentRecord(
         name="bltd_byte_latent_prefixlm",
         status=ComponentStatus.SCAFFOLD,
@@ -304,10 +322,16 @@ def get_inactive_primary_path_components() -> list[ComponentRecord]:
     Use this in promotion scripts, gate runners, or at trainer startup to detect
     when a historically important inductive bias has become unreachable due to pivot drift.
     """
-    return [
-        rec for rec in COMPONENT_REGISTRY.values()
-        if rec.status is ComponentStatus.PROMOTED and not rec.active_in_primary_onebody_path
-    ]
+    inactive: list[ComponentRecord] = []
+    for rec in COMPONENT_REGISTRY.values():
+        if rec.status is not ComponentStatus.PROMOTED or rec.active_in_primary_onebody_path:
+            continue
+        if rec.name == "state_transition_core":
+            replacement = COMPONENT_REGISTRY.get("hybrid_stochastic_breadth_engine")
+            if replacement is not None and replacement.active_in_primary_onebody_path:
+                continue
+        inactive.append(rec)
+    return inactive
 
 
 def warn_on_missing_primary_path_biases() -> None:

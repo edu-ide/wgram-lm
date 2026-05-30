@@ -89,3 +89,71 @@ Mythos/OpenMythos ideas = stability references only
 
 The next architecture work should strengthen the TRM core itself and then solve
 renderer alignment without creating a parallel hidden answer path.
+
+## 2026-05-30 Clarification
+
+The `fc8c9133` M1/M2 work did use loop-wise Mythos LoRA rank 8:
+
+```text
+answer_state_loop_mythos_lora_rank: 8
+```
+
+The good local checkpoint path for the rank-8 diagnostic is:
+
+```text
+/mnt/nvme0n1p2/qtrm-runs/qwen35_2b_pure_recursive_transition_joint_dynamic_halt_v3_ouro_answer_loop_joint_decoder_s040_from_selfrollout/last.pt
+```
+
+Tensor audit confirms the rank:
+
+```text
+answer_state_loop_mythos_lora_down.weight  (8, 512)
+answer_state_loop_mythos_lora_up.weight    (512, 8)
+answer_state_loop_mythos_lora_scale.weight (16, 8)
+```
+
+A later local causal forced-choice smoke on two rows reproduced the narrow
+necessity signal:
+
+```text
+donor_only_no_evidence:      0/2
+qtrm_core_off_no_evidence:   0/2
+qtrm_core_steps_1_no_evidence: 0/2
+qtrm_core_steps_4_no_evidence: 2/2
+qtrm_core_steps_8_no_evidence: 2/2
+```
+
+But this is only a forced-choice depth-sweep diagnostic. With donor-logit
+scale-1.0 blending, depth 1/4/8 all return the intermediate doubled list and
+score `0/2`. Generation remains governed by the historical rejection above.
+
+The earlier remembered `8/20` number is this same checkpoint's
+`causal_forced_choice_smoke4.jsonl` aggregate, not a free-generation result:
+
+```text
+donor_only:              0/4
+core_off:                0/4
+core8 full:              2/4
+decoder_off:             4/4
+halt_gate_off:           2/4
+aggregate:               8/20
+generation_smoke8 full:  0/8
+```
+
+The 2026-05-30 explicit free-generation depth sweep confirms the same boundary:
+
+```text
+free generation depth sweep:
+  donor/core-off/depth1/depth2/depth4/depth8 = 0/8 each
+  aggregate = 0/48
+
+matched causal forced-choice depth sweep:
+  donor/core-off = 0/8
+  depth1 = 2/8
+  depth2 = 4/8
+  depth4 = 3/8
+  depth8 = 3/8
+```
+
+So the checkpoint can improve candidate discrimination under recurrence, but it
+is still not generation-ready.

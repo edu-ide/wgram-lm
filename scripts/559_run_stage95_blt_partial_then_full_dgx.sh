@@ -487,7 +487,6 @@ train_args_common() {
     --backbone trm_qwen35_3to1 \
     --think-structure trm_dual_z \
     --train-think-steps "${TRAIN_THINK_STEPS}" \
-    --activation-checkpointing \
     --hybrid-layers 4 \
     --attn-every 4 \
     --delta-backend official_gated_delta2 \

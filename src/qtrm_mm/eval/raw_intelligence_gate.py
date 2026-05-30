@@ -31,6 +31,25 @@ DEFAULT_HYBRID_SLOTS_ON_MODE = "hybrid_sparse_slots_on_no_evidence"
 DEFAULT_HYBRID_SLOTS_OFF_MODE = "hybrid_sparse_slots_off_no_evidence"
 DEFAULT_HYBRID_PERSISTENCE_ABLATION_MODE = "hybrid_persistent_memory_ablation_no_evidence"
 DEFAULT_HYBRID_ROUTER_ABLATION_MODE = "hybrid_sparse_router_ablation_no_evidence"
+DEFAULT_HYBRID_RECURRENCE_OFF_MODE = "hybrid_recurrence_off_no_evidence"
+DEFAULT_HYBRID_DEPTH_MODES = [
+    "hybrid_recurrence_depth_1_no_evidence",
+    "hybrid_recurrence_depth_4_no_evidence",
+    "hybrid_recurrence_depth_8_no_evidence",
+    "hybrid_recurrence_depth_12_no_evidence",
+]
+DEFAULT_HYBRID_STOCHASTIC_OFF_MODE = "hybrid_stochastic_breadth_off_no_evidence"
+DEFAULT_HYBRID_556_FULL_MODE = "hybrid_556_full_no_evidence"
+DEFAULT_HYBRID_556_STOCH_ZERO_MODE = "hybrid_556_stoch_zero_no_evidence"
+DEFAULT_HYBRID_556_GOLD_OFF_MODE = "hybrid_556_gold_off_no_evidence"
+DEFAULT_HYBRID_556_PROTECTION_OFF_MODE = "hybrid_556_protection_off_no_evidence"
+DEFAULT_HYBRID_556_DECAY_DISABLED_MODE = "hybrid_556_decay_disabled_no_evidence"
+DEFAULT_HYBRID_556_ABLATION_MODES = [
+    DEFAULT_HYBRID_556_STOCH_ZERO_MODE,
+    DEFAULT_HYBRID_556_GOLD_OFF_MODE,
+    DEFAULT_HYBRID_556_PROTECTION_OFF_MODE,
+    DEFAULT_HYBRID_556_DECAY_DISABLED_MODE,
+]
 
 
 PURE_RECURSIVE_MODE_SEMANTICS: dict[str, str] = {
@@ -64,6 +83,32 @@ PURE_RECURSIVE_MODE_SEMANTICS: dict[str, str] = {
     "hybrid_persistent_memory_ablation": (
         "RI-4 strong ablation: Persistent slots are carried but receive no selective update / persistence protection "
         "(effectively dense rehearsal on all slots). Tests the value of selective write + strong persistence."
+    ),
+    "hybrid_recurrence_depth": (
+        "RI-1 candidate: OneBodyParallelHybridBlock used as the answer-state recurrent engine at a named "
+        "test-time depth budget. Used for causal depth-scaling curves."
+    ),
+    "hybrid_recurrence_off": (
+        "RI-1 ablation: answer-state recurrence is disabled while the same no-retrieval scoring contract is kept."
+    ),
+    "hybrid_stochastic_breadth_off": (
+        "RI-3 ablation: hybrid recurrent engine remains active but stochastic breadth is zeroed."
+    ),
+    "hybrid_556_full": (
+        "RI-3 candidate: full 5.56-style hybrid recipe with stochastic breadth, gold structural injection, "
+        "attractor protection, and scheduled binding decay active."
+    ),
+    "hybrid_556_stoch_zero": (
+        "RI-3 ablation: full hybrid recipe except stochastic breadth is zeroed."
+    ),
+    "hybrid_556_gold_off": (
+        "RI-3 ablation: full hybrid recipe except gold structural injection is disabled."
+    ),
+    "hybrid_556_protection_off": (
+        "RI-3 ablation: full hybrid recipe except attractor protection during rehearsal is disabled."
+    ),
+    "hybrid_556_decay_disabled": (
+        "RI-3 ablation: full hybrid recipe except scheduled binding decay is disabled."
     ),
 }
 
@@ -130,6 +175,11 @@ def _compare(candidate: dict[str, Any], baseline: dict[str, Any]) -> dict[str, A
 
 def _core_step_from_mode(mode: str) -> int | None:
     match = re.search(r"core_steps_(\d+)", mode)
+    return int(match.group(1)) if match else None
+
+
+def _hybrid_depth_from_mode(mode: str) -> int | None:
+    match = re.fullmatch(r"hybrid_recurrence_depth_(\d+)_no_evidence", mode)
     return int(match.group(1)) if match else None
 
 
@@ -451,6 +501,114 @@ def build_ri4_sparse_memory_gate(
     }
 
 
+def build_hybrid_recurrence_depth_gate(
+    records: Iterable[dict[str, Any]],
+    *,
+    recurrence_off_mode: str = DEFAULT_HYBRID_RECURRENCE_OFF_MODE,
+    depth_modes: Iterable[str] = DEFAULT_HYBRID_DEPTH_MODES,
+    stochastic_off_mode: str = DEFAULT_HYBRID_STOCHASTIC_OFF_MODE,
+    min_hit_advantage: int = 1,
+) -> dict[str, Any]:
+    """RI-1/RI-3 gate for hybrid recurrent-depth and stochastic breadth scaling."""
+    record_list = list(records)
+    by_mode = _records_by_mode(record_list)
+    requested_depth_modes = list(depth_modes)
+    present_depth_modes = [mode for mode in requested_depth_modes if mode in by_mode]
+    depth_ladder = [
+        _mode_summary(by_mode, mode)
+        for mode in sorted(present_depth_modes, key=lambda item: _hybrid_depth_from_mode(item) or 0)
+    ]
+    recurrence_off = _mode_summary(by_mode, recurrence_off_mode)
+    stochastic_off = (
+        _mode_summary(by_mode, stochastic_off_mode)
+        if stochastic_off_mode in by_mode
+        else None
+    )
+
+    missing_modes = [
+        mode for mode in [recurrence_off_mode, *requested_depth_modes] if mode not in by_mode
+    ]
+    failed_checks: list[str] = []
+    passed_checks: list[str] = []
+
+    if len(depth_ladder) >= 2:
+        hit_pairs = [
+            (int(earlier["hits"]), int(later["hits"]))
+            for earlier, later in zip(depth_ladder, depth_ladder[1:])
+        ]
+        if any(later > earlier for earlier, later in hit_pairs):
+            passed_checks.append("depth_scaling_gain_present")
+        else:
+            failed_checks.append("no_depth_scaling_gain")
+        if all(later >= earlier for earlier, later in hit_pairs):
+            passed_checks.append("depth_scaling_monotonic")
+        else:
+            failed_checks.append("depth_scaling_not_monotonic")
+    else:
+        failed_checks.append("no_depth_scaling_gain")
+        failed_checks.append("depth_scaling_not_monotonic")
+
+    if depth_ladder:
+        deepest = depth_ladder[-1]
+        if int(deepest["hits"]) - int(recurrence_off["hits"]) >= min_hit_advantage:
+            passed_checks.append("deepest_hybrid_beats_recurrence_off")
+        else:
+            failed_checks.append("deepest_hybrid_does_not_beat_recurrence_off")
+    else:
+        deepest = {"mode": "", "count": 0, "hits": 0, "accuracy": 0.0}
+        failed_checks.append("no_hybrid_depth_modes")
+
+    if stochastic_off is not None and depth_ladder:
+        comparable_depth = next(
+            (row for row in depth_ladder if row["mode"] == "hybrid_recurrence_depth_4_no_evidence"),
+            deepest,
+        )
+        if int(comparable_depth["hits"]) - int(stochastic_off["hits"]) >= min_hit_advantage:
+            passed_checks.append("stochastic_breadth_beats_zero_ablation")
+        else:
+            failed_checks.append("stochastic_breadth_does_not_beat_zero_ablation")
+
+    shortcuts = _shortcut_records(record_list)
+    if shortcuts:
+        failed_checks.append("non_raw_shortcut_present")
+    else:
+        passed_checks.append("no_memoryos_shortcut")
+
+    mode_summaries = {recurrence_off_mode: recurrence_off}
+    mode_summaries.update({row["mode"]: row for row in depth_ladder})
+    if stochastic_off is not None:
+        mode_summaries[stochastic_off_mode] = stochastic_off
+    status = _status_from_checks(
+        missing_modes=missing_modes,
+        failed_checks=failed_checks,
+        mode_summaries=mode_summaries,
+    )
+
+    return {
+        "gate_type": "hybrid_recurrence_depth_scaling",
+        "claim": (
+            "OneBodyParallelHybridBlock must show causal no-retrieval test-time depth scaling "
+            "and beat the recurrence-off baseline; stochastic breadth should add measurable lift "
+            "when the matching ablation is present."
+        ),
+        "status": status,
+        "recurrence_off_mode": recurrence_off_mode,
+        "depth_modes": requested_depth_modes,
+        "stochastic_off_mode": stochastic_off_mode,
+        "recurrence_off": recurrence_off,
+        "stochastic_off": stochastic_off or {},
+        "deepest_hybrid": deepest,
+        "depth_ladder": depth_ladder,
+        "depth_output_diversity": _depth_output_diversity(by_mode, present_depth_modes),
+        "failed_checks": failed_checks,
+        "passed_checks": passed_checks,
+        "missing_modes": missing_modes,
+        "shortcut_records": shortcuts,
+        "mode_semantics": PURE_RECURSIVE_MODE_SEMANTICS,
+        "recommendation": "Run the hybrid recurrence depth sweep plus recurrence-off and stochastic-zero ablations on no-retrieval heldouts.",
+    }
+
+
 def build_trainable_memory_gate(
     records: Iterable[dict[str, Any]],
     *,
@@ -692,6 +850,69 @@ def build_temporal_spatial_context_gate(
     }
 
 
+def build_hybrid_556_causal_matrix_gate(
+    records: Iterable[dict[str, Any]],
+    *,
+    full_mode: str = DEFAULT_HYBRID_556_FULL_MODE,
+    ablation_modes: Iterable[str] = DEFAULT_HYBRID_556_ABLATION_MODES,
+    min_hit_drop: int = 1,
+) -> dict[str, Any]:
+    """RI-3 gate for full 5.56 recipe causal ablation matrix on the hybrid."""
+    record_list = list(records)
+    by_mode = _records_by_mode(record_list)
+    requested_ablation_modes = list(ablation_modes)
+    full = _mode_summary(by_mode, full_mode)
+    ablations = {mode: _mode_summary(by_mode, mode) for mode in requested_ablation_modes}
+    missing_modes = [
+        mode for mode in [full_mode, *requested_ablation_modes] if mode not in by_mode
+    ]
+    failed_checks: list[str] = []
+    passed_checks: list[str] = []
+
+    for mode, ablation in ablations.items():
+        drop = int(full["hits"]) - int(ablation["hits"])
+        if drop >= min_hit_drop:
+            passed_checks.append(f"full_beats_{mode}")
+        else:
+            failed_checks.append(f"full_does_not_beat_{mode}")
+
+    shortcuts = _shortcut_records(record_list)
+    if shortcuts:
+        failed_checks.append("non_raw_shortcut_present")
+    else:
+        passed_checks.append("no_memoryos_shortcut")
+
+    mode_summaries = {full_mode: full, **ablations}
+    status = _status_from_checks(
+        missing_modes=missing_modes,
+        failed_checks=failed_checks,
+        mode_summaries=mode_summaries,
+    )
+
+    return {
+        "gate_type": "hybrid_556_causal_matrix",
+        "claim": (
+            "The full 5.56-style hybrid recipe must causally outperform clean ablations "
+            "of stochastic breadth, gold structural injection, attractor protection, and "
+            "scheduled binding decay on no-retrieval heldouts."
+        ),
+        "status": status,
+        "full_mode": full_mode,
+        "ablation_modes": requested_ablation_modes,
+        "full": full,
+        "ablations": ablations,
+        "full_vs_ablations": {
+            mode: _compare(full, ablation) for mode, ablation in ablations.items()
+        },
+        "failed_checks": failed_checks,
+        "passed_checks": passed_checks,
+        "missing_modes": missing_modes,
+        "shortcut_records": shortcuts,
+        "mode_semantics": PURE_RECURSIVE_MODE_SEMANTICS,
+        "recommendation": "Run the full 5.56 matrix on the same checkpoint, seed, heldout split, and no-retrieval contract.",
+    }
+
+
 def build_raw_intelligence_gate(
     records: Iterable[dict[str, Any]],
     *,
@@ -705,6 +926,12 @@ def build_raw_intelligence_gate(
         return build_composition_gate(records)
     if gate_type == "temporal_spatial_context":
         return build_temporal_spatial_context_gate(records)
+    if gate_type == "ri4_sparse_persistent_memory":
+        return build_ri4_sparse_memory_gate(records)
+    if gate_type == "hybrid_recurrence_depth_scaling":
+        return build_hybrid_recurrence_depth_gate(records)
+    if gate_type == "hybrid_556_causal_matrix":
+        return build_hybrid_556_causal_matrix_gate(records)
     raise ValueError(f"unknown raw intelligence gate_type: {gate_type}")
 
 

@@ -95,7 +95,19 @@ Full 72-case reproduction on the tagged commit (`ri4-le-ttt-dynamic-memory-2026-
 
 **Conclusion**: The core RI-4 win is the dynamic slot write (Inference Write Lock removal). The Surprise modulation, in its current form, is net-negative on available checkpoints. It has therefore been disabled by default across config, blocks, and scripts. The feature code remains for future dedicated tuning experiments.
 
+## Decoupled Latent Memory Bank (Le-TTT / LeJEPA direction) — Deferred
+
+As of 2026-05-29, the **DecoupledLatentMemoryBank** (controller-driven, in-place JEPA surprise + SIGReg updates) is documented as the intended longer-term topology (see `raw-intelligence-necessary-conditions-2026-06.md` where "Raven-style slots with Le-TTT memory bank" is declared canonical).
+
+However, per current priority:
+- Serious development and testing of the Decoupled Bank is **deferred**.
+- It will only be documented in wiki/roadmaps for now.
+- All near-term inference improvement testing and ablation work will focus on the **Raven-style embedded dynamic memory** (SparseSlotRouter inside OneBodyParallelHybridBlock with per-micro-step writes).
+
+This keeps momentum on the approach that has already delivered clear, reproducible gains (34.72% with strong ablation margin).
+
 ## Follow-up (per user direction 2026-05-29)
 
 1. Wiki + log documentation completed (this file + log.md).
 2. Parallel activation of **Option 2 (pure donorless born-one-body track)** has been requested. See related planning in the donorless HRM-Text revival thread.
+3. Focus shifted to **inference improvement testing** using the current embedded dynamic memory (Surprise disabled by default). Decoupled Bank work postponed.

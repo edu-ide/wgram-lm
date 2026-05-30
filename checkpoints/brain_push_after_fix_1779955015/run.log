@@ -1,7 +1,0 @@
-step 510/780 | train_loss=0.007979 | eval_loss=0.042930
-step 540/780 | train_loss=0.002656 | eval_loss=0.042634
-step 570/780 | train_loss=0.003184 | eval_loss=0.042423
-step 600/780 | train_loss=0.002101 | eval_loss=0.042388
-step 630/780 | train_loss=0.001755 | eval_loss=0.042203
-step 660/780 | train_loss=0.001649 | eval_loss=0.042301
-step 690/780 | train_loss=0.001806 | eval_loss=0.042089

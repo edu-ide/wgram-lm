@@ -1,4 +1,0 @@
-step 1250/1700 | train_loss=0.006020 | eval_loss=0.023752
-step 1300/1700 | train_loss=0.004388 | eval_loss=0.023808
-step 1350/1700 | train_loss=0.007755 | eval_loss=0.024266
-step 1400/1700 | train_loss=0.001973 | eval_loss=0.025071

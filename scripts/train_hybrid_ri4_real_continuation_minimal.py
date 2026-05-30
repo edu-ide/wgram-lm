@@ -204,6 +204,13 @@ def parse_continuation_args() -> ContinuationConfig:
     p.add_argument("--sot_segment_length", type=int, default=5, help="EqR SOT segment length (steps per online optimizer segment).")
     # === v28+ Small Targeted Ablation Knobs (Section 7 substrate) ===
     p.add_argument("--attractor_internalization_weight", type=float, default=0.12, help="Internalization curriculum weight for proposal-to-equilibrium distance (key lever for driving int_mse down in real trainer).")
+    # === EqR aggressive substrate controls (H/L cycles + NI/RI) ===
+    p.add_argument("--attractor_h_cycles", type=int, default=2, help="EqR H-cycles (slow high-level).")
+    p.add_argument("--attractor_l_cycles", type=int, default=6, help="EqR L-cycles (fast noisy refinement).")
+    p.add_argument("--attractor_ri_scale", type=float, default=0.08, help="RI scale.")
+    p.add_argument("--attractor_l_noise_base", type=float, default=0.022, help="L-cycle NI base noise.")
+    p.add_argument("--attractor_lambda_mix", type=float, default=0.91, help="Lambda residual mix.")
+    p.add_argument("--attractor_noise_scale", type=float, default=0.012, help="General noise.")
     p.add_argument("--attractor_denoising_weight", type=float, default=0.0, help="Light denoising auxiliary weight on the solver (v36+ climb direction).")
     p.add_argument("--rehearsal_pressure_scale", type=float, default=1.0, help="Higher-leverage re-balancing knob: scale down overall rehearsal/gold injection pressure while keeping strong attractor curriculum (e.g. 0.15~0.3).")
     p.add_argument("--attractor_ablation_mode", type=str, default=None, help="Quick ablation label for logging (e.g. sot2_int18, sot5_int08).")
@@ -280,6 +287,34 @@ def parse_continuation_args() -> ContinuationConfig:
         print("[Coarse Granularity] Stronger mode active: full hybrid 3-track updates reduced during M1 variable-depth thinking (every 3 micro-steps).")
     cfg.ri4_sparse_slots_ablation = args.ri4_slots_off
     cfg.ri4_persistence_ablation = args.ri4_persistence_off
+
+    # === INTUITIVE LONG-HORIZON LIGHT MODE (직관적 실행) ===
+    # After 5 early deaths, for runs >80 steps we force minimal viable config
+    # so the experiment can actually produce a long trajectory for RI-1 validation.
+    if args.steps > 80:
+        print("\n" + "="*72)
+        print("[RI-1 LONG SUBSTRATE FORMATION - LIGHT MODE ACTIVATED]")
+        print("  Goal: Complete 150-300+ steps to bake depth + memory inductive bias.")
+        print("  Using deliberately lighter stack to survive cgroup limits.")
+        print("="*72)
+        cfg.attractor_h_cycles = 2
+        cfg.attractor_l_cycles = 4
+        cfg.brain_triple_memory_enabled = False
+        cfg.internal_fast_recurrent = False
+        cfg.rehearsal_pressure_scale = 0.4
+        cfg.v0x_trajectory_selection = 1
+        cfg.attractor_internalization_weight = min(getattr(cfg, 'attractor_internalization_weight', 0.40), 0.28)
+        cfg.depth_consistency_weight = min(getattr(cfg, 'depth_consistency_weight', 0.06), 0.03)
+        print("  Applied: H=2/L=4, no brain_triple, no internal_fast, rehearsal=0.4,")
+        print("           int=0.28, dcons=0.03, K=1")
+        print("  Long trajectory first → pressure re-introduced later.\n")
+        try:
+            from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
+            if BrainMimeticTripleMemory is not None:
+                BrainMimeticTripleMemory._force_long_horizon_light = True
+        except Exception:
+            pass
+
     cfg.internal_ri4_primary = args.internal_ri4_primary
     cfg.router_temperature = args.router_temperature
     cfg.router_temperature_end = args.router_temperature_end if args.router_temperature_end is not None else args.router_temperature
@@ -320,6 +355,12 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.attractor_solver_weight = getattr(args, 'attractor_solver_weight', 0.15)
     cfg.sot_segment_length = getattr(args, 'sot_segment_length', 5)
     cfg.attractor_internalization_weight = getattr(args, 'attractor_internalization_weight', 0.12)
+    cfg.attractor_h_cycles = getattr(args, 'attractor_h_cycles', 2)
+    cfg.attractor_l_cycles = getattr(args, 'attractor_l_cycles', 6)
+    cfg.attractor_ri_scale = getattr(args, 'attractor_ri_scale', 0.08)
+    cfg.attractor_l_noise_base = getattr(args, 'attractor_l_noise_base', 0.022)
+    cfg.attractor_lambda_mix = getattr(args, 'attractor_lambda_mix', 0.91)
+    cfg.attractor_noise_scale = getattr(args, 'attractor_noise_scale', 0.012)
     cfg.attractor_denoising_weight = getattr(args, 'attractor_denoising_weight', 0.0)
     cfg.rehearsal_pressure_scale = getattr(args, 'rehearsal_pressure_scale', 1.0)
     cfg.attractor_ablation_mode = getattr(args, 'attractor_ablation_mode', None)
@@ -354,8 +395,16 @@ def parse_continuation_args() -> ContinuationConfig:
     cfg.trajectory_monotonic_weight = args.trajectory_monotonic_weight
     cfg.depth_consistency_weight = args.depth_consistency_weight
     if getattr(cfg, 'internal_fast_recurrent', False) and cfg.depth_consistency_weight == 0.0:
-        cfg.depth_consistency_weight = 0.06  # stronger default when we have a real fast recurrent citizen
-        print("[Training Recipe] internal_fast_recurrent active → defaulting depth_consistency_weight to 0.06 for stronger shortcut-consistency")
+        base = 0.06
+        int_w = getattr(cfg, 'attractor_internalization_weight', 0.12)
+        if int_w >= 0.45:
+            base = 0.10   # more conservative cap even at very high int
+        elif int_w >= 0.40:
+            base = 0.08   # mild boost only, not aggressive
+        elif int_w >= 0.30:
+            base = 0.07
+        cfg.depth_consistency_weight = base
+        print(f"[Training Recipe] internal_fast_recurrent + high int ({int_w}) → depth_consistency_weight auto-set to {base} (conservative)")
     cfg.gold_injection_warmup_steps = args.gold_injection_warmup_steps
     cfg.v0x_trajectory_selection = args.v0x_trajectory_selection
 
@@ -447,8 +496,8 @@ def parse_continuation_args() -> ContinuationConfig:
         if getattr(cfg, 'brain_triple_memory_enabled', False) or getattr(cfg, 'brain_mimetic_stochastic_enabled', False):
             # brain memory가 켜지면 무조건 CUDA + float32로 강제 (bfloat16 + device mismatch 방지)
             cfg.device = "cuda"
-            cfg.dtype = torch.float32
-            print("[GPU FORCE] Brain memory enabled → forcing device=cuda, dtype=float32 to prevent cpu/cuda + dtype mismatches")
+            cfg.dtype = torch.bfloat16   # FlashAttention requires fp16/bf16; float32 crashes MLA
+            print("[GPU FORCE] Brain memory enabled → forcing device=cuda, dtype=bfloat16 (FlashAttention compatible + EqR substrate)")
         elif cfg.device == "cpu":
             cfg.device = "cuda"
             print("[GPU FORCE] CUDA available → forcing device=cuda")
@@ -619,6 +668,14 @@ def main():
         print("    + RI-1 M1 Variable Depth Training (Huginn-style sampling in pressure/rehearsal loops)")
         print("      (properly ported per research-driven skill: now first-class + ablatable in active trainer)")
 
+    # === INTUITIVE LONG-HORIZON MEMORY SAFETY (직관적 실행) ===
+    # 5 identical early deaths proved the full heavy EqR + brain triple memory stack
+    # is incompatible with long horizons on current resources. For any run >80 steps
+    # we switch to "RI-1 long substrate formation light mode": minimal viable attractor
+    # pressure that can actually finish and produce a usable trajectory for later
+    # depth + memory causal testing.
+
+
     # Build the exact proven stack
     model = build_hybrid_stack(cfg)
 
@@ -633,6 +690,14 @@ def main():
     if internal_k > 1:
         print(f"[v1.2 Arch Guardrail] Internal K-candidate trajectory selection armed inside hybrid recurrence (K={internal_k}). This is the architectural-level restoration from StateTransitionCore + verifier era.")
 
+    # === Long Horizon Light Recurrence (직관적 실행) ===
+    # When we are in the long substrate formation phase, make the per-block recurrence itself cheap.
+    long_horizon = getattr(cfg, 'total_steps', 0) > 80
+    if long_horizon:
+        for layer in model:
+            if isinstance(layer, OneBodyParallelHybridBlock):
+                layer.set_long_horizon_light_recurrence(True)
+
     # === June 2026 Section 7 Light Trainer Integration (per diag living spec) ===
     # When --use_explicit_attractor_solver: create the dedicated solver + SOT trainer.
     # The existing hybrid stack (model) acts as the RealHybridProposal engine.
@@ -645,17 +710,25 @@ def main():
         else:
             try:
                 solver_dim = cfg.d_model
+                # AGGRESSIVE EqR H/L + NI/RI substrate (the June 2026 attack version)
                 explicit_solver = AttractorSolverModule(
                     dim=solver_dim,
-                    num_layers=1,
+                    H_cycles=getattr(cfg, 'attractor_h_cycles', 2),
+                    L_cycles=getattr(cfg, 'attractor_l_cycles', 6),
+                    ri_scale=getattr(cfg, 'attractor_ri_scale', 0.08),
+                    noise_scale=getattr(cfg, 'attractor_noise_scale', 0.012),
+                    l_noise_base=getattr(cfg, 'attractor_l_noise_base', 0.022),
+                    lambda_=getattr(cfg, 'attractor_lambda_mix', 0.91),
                     use_parcae=getattr(cfg, 'parcae_negative_diag_enabled', True),
-                    max_solver_steps=getattr(cfg, 'attractor_solver_max_steps', 12),
+                    max_solver_steps=getattr(cfg, 'attractor_solver_max_steps', 16),
                     residual_tol=getattr(cfg, 'attractor_solver_residual_tol', 1e-3),
+                    use_latent_carry=True,
+                    cross_level_mix=0.18,
                 ).to(device=cfg.device, dtype=cfg.dtype)
                 sot_cfg = SOTConfig(
                     segment_length=getattr(cfg, 'sot_segment_length', 5),
                     internalization_weight=getattr(cfg, 'attractor_internalization_weight', 0.12),
-                    ri_noise=getattr(cfg, 'attractor_ri_ni_scale', 0.05),
+                    ri_noise=getattr(cfg, 'attractor_ri_ni_scale', 0.08),
                     max_segments=3,
                     use_detached_carry=True,
                 )

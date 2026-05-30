@@ -78,6 +78,6 @@ All experiments use the existing clean probes and real gold infrastructure. No m
 
 This structured verification of the necessary conditions is now treated as the main "most valuable work" track.
 
-**Raw Intelligence sharpening**: The reasoning-specific version of these conditions (with emphasis on no-retrieval causal latent computation) is defined in the 2026-06 SSOT [Raw Intelligence / Actual Reasoning Necessary Conditions](../docs/wiki/decisions/raw-intelligence-necessary-conditions-2026-06.md). The two documents are intentionally aligned (RI-1..RI-7 map to the 7 S2 conditions).
+**Raw Intelligence sharpening**: The reasoning-specific version of these conditions (with emphasis on no-retrieval causal latent computation) is defined in the 2026-06 SSOT [Raw Intelligence / Actual Reasoning Necessary Conditions](../wiki/decisions/raw-intelligence-necessary-conditions-2026-06.md). The two documents are intentionally aligned (RI-1..RI-7 map to the 7 S2 conditions).
 
-Detailed execution plan for completing the raw intelligence conditions on current hybrid infrastructure: [RI Raw Intelligence PoC Execution Plan](../docs/roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md).
+Detailed execution plan for completing the raw intelligence conditions on current hybrid infrastructure: [RI Raw Intelligence PoC Execution Plan](RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md).

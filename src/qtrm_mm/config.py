@@ -312,6 +312,20 @@ class QTRMConfig:
     donor_qtrm_conflict_qtrm_scale: float = 0.0
     donor_qtrm_conflict_qtrm_boost_scale: float = 1.0
     donor_qtrm_conflict_margin_threshold: float = 0.0
+
+    # === S043 Phase 0 (strictly minimal, fluency-first) ===
+    # Tiny additive steering on the QTRM residual before donor fusion.
+    # Goal: test whether a very small number of parameters (bias vectors)
+    # can provide the first-token / recovery signal while the donor mouth
+    # remains almost completely untouched (per Bias-Only Steering paper).
+    # Everything defaults to zero effect. Strong donor-correct preservation
+    # is MANDATORY when these are enabled.
+    donor_residual_steering_bias_enabled: bool = False
+    donor_residual_steering_bias_init_scale: float = 0.0
+    donor_first_token_margin_weight: float = 0.0
+    donor_correct_preservation_weight: float = 0.0
+    donor_preservation_temperature: float = 1.0
+
     evidence_bottleneck_enabled: bool = False
     evidence_bottleneck_applies_to_residual: bool = True
     evidence_bottleneck_gate_init_bias: float = -2.0
@@ -615,6 +629,9 @@ class TrainConfig:
     loss_repeat_unlikelihood_weight: float = 0.0
     loss_greedy_token_margin_weight: float = 0.0
     loss_donor_correct_margin_weight: float = 0.0
+    # === S043 Phase 0 additions (map to / extend existing preservation logic) ===
+    loss_donor_correct_preservation_weight: float = 0.0   # strong recommendation when using bias
+    loss_first_token_margin_weight: float = 0.0
     loss_preference_weight: float = 0.0
     loss_workspace_contrastive_weight: float = 0.0
     loss_logical_evidence_weight: float = 0.0

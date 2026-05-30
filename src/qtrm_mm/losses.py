@@ -837,6 +837,85 @@ def greedy_token_margin_loss(
     }
 
 
+def first_token_margin_loss(
+    logits: torch.Tensor,
+    input_ids: torch.Tensor,
+    *,
+    offset: int = 0,
+    attention_mask: Optional[torch.Tensor] = None,
+    labels: Optional[torch.Tensor] = None,
+    donor_logits: Optional[torch.Tensor] = None,
+    margin: float = 0.0,
+    donor_wrong_only: bool = True,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """S043 Phase 0 minimal first-answer-token margin.
+
+    Applies a margin loss only on the *first* valid generated token (the critical
+    "first answer token" that determines whether the donor mouth starts on the
+    correct path). This is the highest-leverage signal for free-generation repair.
+
+    Reuses the same margin logic as greedy_token_margin_loss but restricts to
+    the first token position per sequence.
+    """
+    # First, compute the full greedy margin
+    full_loss, full_metrics = greedy_token_margin_loss(
+        logits,
+        input_ids,
+        offset=offset,
+        attention_mask=attention_mask,
+        labels=labels,
+        donor_logits=donor_logits,
+        margin=margin,
+        only_donor_errors=donor_wrong_only,
+    )
+
+    # Now restrict to only the first token position
+    target_source = labels if labels is not None else input_ids
+    targets = target_source[:, 1:]
+    valid = _valid_next_token_mask(target_source, attention_mask=attention_mask)
+    token_logits = logits[:, offset:-1]
+
+    if token_logits.shape[:2] != targets.shape:
+        return full_loss, full_metrics
+
+    # Mask: only the first valid token per row
+    first_token_mask = torch.zeros_like(valid, dtype=torch.bool)
+    for b in range(valid.shape[0]):
+        valid_positions = torch.where(valid[b])[0]
+        if len(valid_positions) > 0:
+            first_token_mask[b, valid_positions[0]] = True
+
+    active = valid & first_token_mask
+
+    if not torch.any(active):
+        zero = token_logits.sum() * 0.0
+        return zero, {
+            "first_token_win_rate": zero,
+            "first_token_active_rate": torch.tensor(0.0),
+        }
+
+    # Recompute margin only on first token positions (simple and safe)
+    safe_targets = targets.masked_fill(valid.logical_not(), 0)
+    target_logits = token_logits.gather(dim=-1, index=safe_targets.unsqueeze(-1)).squeeze(-1)
+    target_mask = torch.zeros_like(token_logits, dtype=torch.bool)
+    target_mask.scatter_(-1, safe_targets.unsqueeze(-1), True)
+    competitor_logits = token_logits.float().masked_fill(target_mask, -torch.inf)
+    top_competitor = competitor_logits.max(dim=-1).values
+
+    required_margin = float(margin)
+    violations = F.relu(required_margin + top_competitor - target_logits.float())
+    loss = violations.masked_select(active.to(device=violations.device)).mean()
+
+    wins = (target_logits.float() >= top_competitor + required_margin).to(dtype=token_logits.dtype)
+    win_rate = wins.masked_select(active.to(device=wins.device)).mean().detach()
+    active_rate = (active.float().sum() / valid.float().sum().clamp_min(1.0)).detach()
+
+    return loss, {
+        "first_token_win_rate": win_rate,
+        "first_token_active_rate": active_rate,
+    }
+
+
 def donor_correct_margin_loss(
     logits: torch.Tensor,
     input_ids: torch.Tensor,
@@ -1178,6 +1257,9 @@ def qtrm_smoke_loss(
     greedy_token_margin_only_donor_errors: bool = False,
     donor_correct_margin_weight: float = 0.0,
     donor_correct_margin: float = 0.0,
+    # S043 Phase 0 (fluency-first)
+    donor_correct_preservation_weight: float = 0.0,
+    first_token_margin_weight: float = 0.0,
     preference_weight: float = 0.0,
     preference_beta: float = 2.0,
     preference_margin: float = 0.0,
@@ -1344,6 +1426,22 @@ def qtrm_smoke_loss(
         margin=greedy_token_margin,
         only_donor_errors=greedy_token_margin_only_donor_errors,
     )
+
+    # S043 Phase 0: First-answer-token / answer-boundary margin (minimal implementation)
+    # Focuses the margin loss only on the very first generated token (strong signal for starting the correct answer path).
+    first_token_margin = torch.zeros((), device=outputs["logits"].device, dtype=outputs["logits"].dtype)
+    first_token_metrics = {"first_token_win_rate": torch.tensor(0.0), "first_token_active_rate": torch.tensor(0.0)}
+    if first_token_margin_weight > 0.0:
+        first_token_margin, first_token_metrics = first_token_margin_loss(
+            outputs["logits"],
+            input_ids,
+            offset=offset,
+            attention_mask=model_kwargs.get("attention_mask"),
+            labels=labels,
+            donor_logits=model_kwargs.get("donor_logits"),
+            margin=0.0,  # Can be extended later
+            donor_wrong_only=True,
+        )
     donor_correct_margin_value, donor_correct_margin_metrics = (
         donor_correct_margin_loss(
             outputs["logits"],
@@ -1634,6 +1732,10 @@ def qtrm_smoke_loss(
         + float(repeat_unlikelihood_weight) * repeat_ul
         + float(greedy_token_margin_weight) * greedy_margin
         + float(donor_correct_margin_weight) * donor_correct_margin_value
+        # S043 Phase 0: additional explicit preservation term (use together with bias)
+        + float(donor_correct_preservation_weight) * donor_correct_margin_value
+        # S043 Phase 0 first-token focus (minimal stub - full implementation follows same pattern as greedy_token_margin)
+        + float(first_token_margin_weight) * first_token_margin
         + float(preference_weight) * preference
         + float(workspace_contrastive_weight) * workspace_contrastive
         + float(logical_evidence_weight) * logical_evidence
@@ -1666,6 +1768,10 @@ def qtrm_smoke_loss(
         "greedy_token_donor_error_rate": greedy_margin_metrics[
             "greedy_token_donor_error_rate"
         ],
+        # S043 Phase 0
+        "first_token_margin": first_token_margin.detach(),
+        "first_token_win_rate": first_token_metrics.get("first_token_win_rate", torch.tensor(0.0)),
+        "first_token_active_rate": first_token_metrics.get("first_token_active_rate", torch.tensor(0.0)),
         "donor_correct_margin": donor_correct_margin_value.detach(),
         "donor_correct_margin_win_rate": donor_correct_margin_metrics[
             "donor_correct_margin_win_rate"

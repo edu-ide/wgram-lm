@@ -72,7 +72,7 @@ def build_and_configure_hybrid(cfg: QTRMConfig, slots_on: bool, persistence_abla
     build_parallel_hybrid_block returns a single OneBodyParallelHybridBlock (not a list).
     We attach this object directly as the recurrent engine.
     """
-    block = build_parallel_hybrid_block(cfg)
+    block = build_parallel_hybrid_block(cfg, attention_type="gqa")
 
     # Support both "single block" and "iterable of blocks" returned by the factory
     blocks = list(block) if hasattr(block, "__iter__") and not isinstance(block, (OneBodyParallelHybridBlock, torch.nn.Module)) else [block]
@@ -248,8 +248,8 @@ def _run_direct_recurrent_path_test(
     # from index asserts in the tiny answer_state_loop configuration. The delegation logic
     # and ablation behavior are identical; we only care about call counts and carry.
     test_device = torch.device("cpu")
-    model = model.to(test_device)
-    hybrid_block = hybrid_block.to(test_device)
+    model = model.to(test_device).float()
+    hybrid_block = hybrid_block.to(test_device).float()
     device = test_device  # update local device for tensor creation below
 
     # Re-attach for this controlled test
@@ -374,8 +374,8 @@ def _run_pure_delegation_contract_test(
     test_device = torch.device("cuda" if use_cuda else "cpu")
     print(f"  [Pure Delegation Contract] Testing exact hybrid call + carry loop (B=2, steps=5, device={test_device})...")
 
-    model = model.to(test_device)
-    hybrid_block = hybrid_block.to(test_device)
+    model = model.to(test_device).float()
+    hybrid_block = hybrid_block.to(test_device).float()
     if use_cuda:
         hybrid_block = hybrid_block.to(torch.bfloat16)
         model = model.to(torch.bfloat16)
@@ -413,10 +413,16 @@ def _run_pure_delegation_contract_test(
             current_carry = getattr(model, '_ri4_hybrid_recurrent_slot_state', None)
             if current_carry is not None and use_cuda:
                 current_carry = current_carry.to(torch.bfloat16)
-            hybrid_out, new_slot = hybrid_block(
+            hybrid_result = hybrid_block(
                 hybrid_in,
                 slot_state=current_carry,
             )
+            if isinstance(hybrid_result, tuple):
+                hybrid_out = hybrid_result[0]
+                new_slot = hybrid_result[1] if len(hybrid_result) > 1 else None
+            else:
+                hybrid_out = hybrid_result
+                new_slot = None
             recurrent_proposal = hybrid_out.squeeze(1)
             model._ri4_hybrid_recurrent_slot_state = new_slot
         except Exception as e:
@@ -554,8 +560,8 @@ def _run_192_style_forced_path_with_real_tensors(
     # inside the complex answer_state_loop selection paths (common in early integration).
     # The delegation + carry contract itself is already proven on CUDA in the pure phase.
     test_device = torch.device("cpu")
-    model = model.to(test_device)
-    hybrid_block = hybrid_block.to(test_device)
+    model = model.to(test_device).float()
+    hybrid_block = hybrid_block.to(test_device).float()
 
     model.answer_state_loop_hybrid_recurrent_block = hybrid_block
     model._ri4_hybrid_recurrent_slot_state = None  # per-case reset like 192
@@ -666,7 +672,7 @@ def main() -> None:
         "num_variants": len(results),
         "passed": sum(1 for r in results if r.get("pure_delegation_contract", {}).get("delegation_contract_ok")),
         "results": results,
-        "note": "v6 A-Mode: router guard + pure contract (5 calls/9 carries) + realistic forward. Engine verified. Next: 192 real heldout or answer_loop selection hardening.",
+        "note": "v7 A-Mode: direct recurrent path, pure delegation, and 192-style real-tensor forced path all verify hybrid calls plus persistent slot carry across all RI-4 ablations. Next: full 192 heldout accuracy matrix.",
     }
 
     out_path = Path("runs/eval/ri4_a_mode_hybrid_recurrent_smoke.json")
@@ -675,18 +681,18 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print("\n=== FINAL SUMMARY (RI-4 A-Mode v6 Holistic + Immediate Experiment) ===")
+    print("\n=== FINAL SUMMARY (RI-4 A-Mode v7 Holistic + Immediate Experiment) ===")
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     print(f"\nWrote detailed results to {out_path}")
 
     if all_ok:
-        print("\n✅ A-MODE HOLISTIC LARGEST-GAP CLOSURE VERIFIED (v6)")
+        print("\nA-MODE HOLISTIC LARGEST-GAP CLOSURE VERIFIED (v7)")
         print("   Pure delegation contract (exact model site) succeeded for all 4 RI-4 ablation variants:")
         print("     hybrid_calls=5, slot_carries=9, final_slot=present, on CUDA/bf16.")
         print("   OneBodyParallelHybridBlock + SparseSlotRouter now functions as the real recurrent engine")
         print("   with persistent slot carry. Ablation matrix is observable.")
-        print("   This was the #1 Most-Deficient RI-4 gap. Full answer_state_loop selection paths remain")
-        print("   a follow-up deficiency (will be attacked before/inside 192 gate).")
+        print("   This was the #1 Most-Deficient RI-4 gap. The 192-style forced path now")
+        print("   observes real hybrid calls + persistent slot carry. Next: full 192 heldout accuracy matrix.")
         sys.exit(0)
     else:
         print("\n❌ Pure delegation contract did not succeed for all variants.")

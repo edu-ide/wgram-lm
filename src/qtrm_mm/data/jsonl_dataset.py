@@ -224,6 +224,18 @@ class JsonlTextVisionDataset(IterableDataset):
         preference = bool(prompt and chosen and rejected and not text)
         answer = row.get("answer") or (chosen if preference else "")
         supervised = bool(prompt and answer and not text)
+
+        # S043 DenoiseRL-style recovery (autonomous fix for free-gen):
+        # Rows from denoise_bad_prefixes_*.jsonl have "text" = (problem + bad/wrong prefix)
+        # and "correct_continuation". We treat the bad text as prompt/context (donor sees wrong path)
+        # and supervise ONLY the correct continuation tokens. This forces QTRM residual + bias
+        # to learn recovery steering on the critical first recovery token and beyond.
+        # Reuses existing supervised label masking (prompt masked, answer supervised).
+        if not supervised and not preference and row.get("correct_continuation") and row.get("text"):
+            prompt = row["text"]
+            answer = row["correct_continuation"]
+            supervised = True
+
         workspace_text = ""
         if supervised:
             if self.workspace_evidence_injection:

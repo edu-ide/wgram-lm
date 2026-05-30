@@ -28,7 +28,7 @@ SEED="${SEED:-9595}"
 
 # Keep JSONL shelves explicit and broad.  These are stable across local/DGX
 # cleaned HRM-Text snapshots and prevent Stage95 from becoming math-only.
-SOURCE_FILES="${SOURCE_FILES:-data/no_robots.jsonl data/natural_reasoning.jsonl data/webinstruct_verified.jsonl data/gsm8k_train.jsonl data/math_train.jsonl data/numinamath.jsonl data/omnimath.jsonl data/Platypus/openbookqa.jsonl data/Platypus/arb_physics.jsonl data/Platypus/arb_law.jsonl}"
+SOURCE_FILES="${SOURCE_FILES:-data/no_robots.jsonl data/natural_reasoning.jsonl data/webinstruct_verified.jsonl data/gsm8k_train.jsonl data/math_train.jsonl data/numinamath.jsonl data/omnimath.jsonl data/Platypus/openbookqa.jsonl data/Platypus/arb_physics.jsonl data/Platypus/arb_law.jsonl data/raw/ultradata_sft_2605_math_train.jsonl data/raw/ultradata_sft_2605_multi_lang_math_train.jsonl data/raw/ultradata_sft_2605_if_train.jsonl data/raw/ultradata_sft_2605_code_train.jsonl data/raw/ultradata_sft_2605_knowledge_train.jsonl data/raw/ultradata_sft_2605_multi_lang_knowledge_train.jsonl}"
 
 # Parquet shelves carry most of the DGX data.  FLAN is filtered by the builder's
 # row caps; it is included here because Stage95 must learn ordinary language and

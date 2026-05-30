@@ -99,14 +99,34 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
 
     # Reconstruct config (minimal fields needed)
-    cfg = ckpt.get("config")
-    if cfg is None:
-        # Fallback defaults matching our previous runs
-        cfg = type("obj", (object,), {
-            "d_model": 128, "batch_size": 2, "enable_stochastic_breadth": True,
-            "ri4_sparse_slots_ablation": False, "ri4_persistence_ablation": False,
-            "gold_injection_alpha": 0.25, "attractor_protection": 0.7,
-        })()
+    cfg_data = ckpt.get("config")
+    from types import SimpleNamespace
+    cfg = SimpleNamespace(
+        total_steps=100,
+        batch_size=4,
+        d_model=128,
+        n_layers=4,
+        recurrence_heads=3,
+        attention_heads=2,
+        attention_type="mla",
+        delta_backend="torch_gated_delta2_v2",
+        enable_stochastic_breadth=True,
+        stochastic_breadth_ablation_zero=False,
+        gold_injection_alpha=0.25,
+        attractor_protection=0.7,
+        decay_start=0.40,
+        decay_end=0.04,
+        log_every=10,
+        gold_path=None,
+        eval_ri4_heldout=False,
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+    )
+    if isinstance(cfg_data, dict):
+        for k, v in cfg_data.items():
+            setattr(cfg, k, v)
+    elif cfg_data is not None:
+        cfg = cfg_data
 
     # === Infer real d_model from the checkpoint before building the stack ===
     # This is required to support d=128, 256, etc. without hardcoding.
@@ -308,7 +328,7 @@ def run_192_proxy_on_continuation(
         with torch.no_grad():
             out = engine(scoring_in, stochastic_breadth_noise=None, slot_state=current_slot_state)
             if isinstance(out, tuple) and len(out) >= 2:
-                _, current_slot_state = out
+                current_slot_state = out[1]
             else:
                 current_slot_state = out if not isinstance(out, torch.Tensor) else current_slot_state
 
@@ -347,7 +367,8 @@ def run_192_proxy_on_continuation(
             with torch.no_grad():
                 out = engine(thinking_in, stochastic_breadth_noise=None, slot_state=current_slot_state)
                 if isinstance(out, tuple) and len(out) >= 2:
-                    proposal_out, current_slot_state = out
+                    proposal_out = out[0]
+                    current_slot_state = out[1]
                     recurrent_state = proposal_out.squeeze(1).detach()
                 else:
                     current_slot_state = out if not isinstance(out, torch.Tensor) else current_slot_state

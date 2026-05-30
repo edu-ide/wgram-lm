@@ -33,6 +33,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "trainable_memory_intelligence",
             "reasoning_memory_composition",
             "temporal_spatial_context",
+            "ri4_sparse_persistent_memory",
+            "hybrid_recurrence_depth_scaling",
+            "hybrid_556_causal_matrix",
         ],
     )
     parser.add_argument(

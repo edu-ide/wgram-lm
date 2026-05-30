@@ -18,6 +18,7 @@ wandb/
 # Training outputs and checkpoints
 runs/
 local_eval/
+checkpoints/
 *.pt
 *.pth
 *.ckpt

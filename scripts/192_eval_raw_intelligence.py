@@ -50,6 +50,16 @@ DEFAULT_MODES = [
     "hybrid_sparse_slots_off_no_evidence",
     "hybrid_persistent_memory_ablation_no_evidence",
     "hybrid_sparse_router_ablation_no_evidence",
+
+    # RI-1 + RI-4 combined: Depth scaling with dynamic memory (new for RI-1 progress)
+    "hybrid_sparse_slots_on_depth_1_no_evidence",
+    "hybrid_sparse_slots_on_depth_4_no_evidence",
+    "hybrid_sparse_slots_on_depth_8_no_evidence",
+    "hybrid_sparse_slots_on_depth_12_no_evidence",
+    "hybrid_sparse_slots_off_depth_1_no_evidence",
+    "hybrid_sparse_slots_off_depth_4_no_evidence",
+    "hybrid_sparse_slots_off_depth_8_no_evidence",
+    "hybrid_sparse_slots_off_depth_12_no_evidence",
 ]
 FORCED_CHOICE_TIE_EPS = 1.0e-6
 FORCED_CHOICE_TIE_COMPLETION = "__FORCED_CHOICE_TIE__"
@@ -261,6 +271,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Minimum QTRM margin advantage required before adaptive_margin preserves or boosts QTRM.",
     )
+    # === S043 Phase 0 (minimal, fluency-first steering bias) ===
+    parser.add_argument(
+        "--donor-residual-steering-bias",
+        action="store_true",
+        help="Enable tiny learnable residual bias on QTRM logits before donor fusion (Phase 0 experiment). STRICT: always compare vs donor-only baseline and monitor preservation.",
+    )
+    parser.add_argument(
+        "--donor-residual-steering-bias-init-scale",
+        type=float,
+        default=None,
+        help="Scale for the Phase 0 residual steering bias (very small recommended, e.g. 0.01).",
+    )
     parser.add_argument(
         "--core-sparse-surprise-write-trigger-enabled",
         action="store_true",
@@ -368,6 +390,14 @@ def apply_eval_model_overrides(model_cfg, args: argparse.Namespace) -> None:
     )
     if conflict_margin_threshold is not None:
         model_cfg.donor_qtrm_conflict_margin_threshold = float(conflict_margin_threshold)
+
+    # === S043 Phase 0 overrides (strictly optional, zero by default) ===
+    if bool(getattr(args, "donor_residual_steering_bias", False)):
+        model_cfg.donor_residual_steering_bias_enabled = True
+    bias_init_scale = getattr(args, "donor_residual_steering_bias_init_scale", None)
+    if bias_init_scale is not None:
+        model_cfg.donor_residual_steering_bias_init_scale = float(bias_init_scale)
+
     if bool(getattr(args, "core_sparse_surprise_write_trigger_enabled", False)):
         model_cfg.core_sparse_surprise_write_trigger_enabled = True
         model_cfg.core_sparse_surprise_scale = float(getattr(args, "core_sparse_surprise_scale", 1.0))
@@ -437,7 +467,9 @@ def mode_runtime(mode: str) -> dict[str, Any]:
             "persistence_ablation": False,
             "router_ablation": False,
             "disable_core": False,
-            "core_steps_override": 4,   # default moderate depth for RI-4 PoC
+            # RI-1 support: default to 4 for backward compat, but now respects
+            # runtime["core_steps_override"] when provided (see run_eval).
+            "core_steps_override": 4,
             "qtrm_logits_scale": None,
             "donor_logits_scale": None,
             "memoryos_used": False,
@@ -452,6 +484,25 @@ def mode_runtime(mode: str) -> dict[str, Any]:
             "router_ablation": False,
             "disable_core": False,
             "core_steps_override": 4,
+            "qtrm_logits_scale": None,
+            "donor_logits_scale": None,
+            "memoryos_used": False,
+            "retrieval_used": False,
+        }
+
+    # === RI-1 + RI-4: Explicit depth + memory combinations (for depth scaling sweeps) ===
+    depth_match = re.fullmatch(r"hybrid_sparse_slots_(on|off)_depth_(\d+)_no_evidence", mode)
+    if depth_match:
+        mem_on = depth_match.group(1) == "on"
+        depth = int(depth_match.group(2))
+        return {
+            "mode": mode,
+            "use_parallel_hybrid": True,
+            "sparse_slots_enabled": mem_on,
+            "persistence_ablation": False,
+            "router_ablation": False,
+            "disable_core": False,
+            "core_steps_override": depth,
             "qtrm_logits_scale": None,
             "donor_logits_scale": None,
             "memoryos_used": False,
@@ -1008,7 +1059,10 @@ def load_cases(path: str | Path, *, max_cases: int | None = None) -> list[dict[s
             if not case.get("prompt") and not case.get("question"):
                 raise ValueError(f"{path}:{line_no}: missing prompt/question")
             if not case.get("answer_aliases"):
-                raise ValueError(f"{path}:{line_no}: missing answer_aliases")
+                if case.get("answer"):
+                    case["answer_aliases"] = [case["answer"]]
+                else:
+                    raise ValueError(f"{path}:{line_no}: missing answer_aliases")
             if case.get("evidence"):
                 raise ValueError(f"{path}:{line_no}: raw-intelligence cases must not include evidence")
             cases.append(case)
@@ -3151,12 +3205,67 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
     return records
 
 
+def _print_s043_phase0_diagnostic(args, records):
+    """S043 Phase 0 - Structured diagnostic output (recommended order).
+
+    This block is the primary way to quickly judge whether a Phase 0 bias run
+    is showing the desired first-token signal without destroying donor fluency.
+    """
+    if not getattr(args, "donor_residual_steering_bias", False):
+        return
+
+    print("\n" + "=" * 72)
+    print("S043 PHASE 0 DIAGNOSTIC BLOCK")
+    print("=" * 72)
+
+    bias_scale = getattr(args, "donor_residual_steering_bias_init_scale", None) or "default (0.01)"
+    print(f"Bias active: True   |   init_scale: {bias_scale}")
+
+    # First-token metrics (highest priority for Phase 0)
+    ft_win_rates = [r.get("first_token_win_rate") for r in records if r.get("first_token_win_rate") is not None]
+    ft_active_rates = [r.get("first_token_active_rate") for r in records if r.get("first_token_active_rate") is not None]
+
+    if ft_win_rates:
+        avg_win = sum(ft_win_rates) / len(ft_win_rates)
+        print(f"first_token_win_rate     avg: {avg_win:.4f}   (n={len(ft_win_rates)})")
+    else:
+        print("first_token_win_rate     : not present in records (check loss weights)")
+
+    if ft_active_rates:
+        avg_active = sum(ft_active_rates) / len(ft_active_rates)
+        print(f"first_token_active_rate  avg: {avg_active:.4f}")
+
+    # Donor-correct preservation signals
+    dc_win = [r.get("donor_correct_margin_win_rate") for r in records if r.get("donor_correct_margin_win_rate") is not None]
+    if dc_win:
+        print(f"donor_correct_win_rate   avg: {sum(dc_win)/len(dc_win):.4f}")
+
+    # Repetition / fluency proxy (if present in records)
+    rep_rates = []
+    for r in records:
+        for key in ["repetition_rate", "repetition_stats", "collapse_rate"]:
+            if key in r and isinstance(r[key], (int, float)):
+                rep_rates.append(r[key])
+                break
+    if rep_rates:
+        print(f"repetition_proxy         avg: {sum(rep_rates)/len(rep_rates):.4f}")
+
+    print("\n>>> NEXT ACTIONS (per Verification Guide):")
+    print("    1. Compare the numbers above against a pure donor_only baseline run")
+    print("    2. Check donor-correct cases manually for fluency regression")
+    print("    3. If first_token_win_rate improved but donor fluency dropped → raise preservation weight")
+    print("=" * 72 + "\n")
+
+
 def main() -> None:
     args = build_arg_parser().parse_args()
     records = run_eval(args)
     hits = sum(1 for record in records if bool(record.get("hit")))
     print(f"wrote {len(records)} records to {args.out}")
     print(f"hits={hits}/{len(records)}")
+
+    # S043 Phase 0: Structured diagnostic block (recommended order)
+    _print_s043_phase0_diagnostic(args, records)
 
     # === RI-4 A-Mode: Automatic 192-Style Readiness Report + JSON artifact (Most-Deficient closure)
     # When any of the 4 hybrid RI-4 modes were exercised, emit the exact same

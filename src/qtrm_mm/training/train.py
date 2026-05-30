@@ -48,6 +48,18 @@ def configure_trainable_parameters(model, policy: str = "all") -> list[str]:
             param.requires_grad_(True)
         return [name for name, param in model.named_parameters() if param.requires_grad]
 
+    # === S043 Phase 0 (strict fluency-first) ===
+    # If the minimal residual steering bias feature is enabled, we always make
+    # the bias parameter trainable. This is the only new parameter in Phase 0.
+    # IMPORTANT: This must be paired with strong donor_correct_preservation_weight
+    # and donor_first_token_margin_weight. Never enable bias without preservation.
+    bias_param_name = "_donor_residual_steering_bias"
+    bias_enabled = bool(getattr(getattr(model, "cfg", None), "donor_residual_steering_bias_enabled", False))
+    if bias_enabled:
+        for name, param in model.named_parameters():
+            if name == bias_param_name or name.endswith("." + bias_param_name):
+                param.requires_grad_(True)
+
     if policy == "controller_only":
         trainable_names = []
         for name, param in model.named_parameters():
@@ -1710,6 +1722,9 @@ def main():
                 ),
                 donor_correct_margin_weight=cfg.train.loss_donor_correct_margin_weight,
                 donor_correct_margin=cfg.train.donor_correct_margin,
+                # S043 Phase 0: explicit preservation + first-token focus when bias is active
+                donor_correct_preservation_weight=cfg.train.loss_donor_correct_preservation_weight or cfg.train.loss_donor_correct_margin_weight,
+                first_token_margin_weight=cfg.train.loss_first_token_margin_weight,
                 preference_weight=cfg.train.loss_preference_weight,
                 preference_beta=cfg.train.preference_beta,
                 preference_margin=cfg.train.preference_margin,

@@ -666,12 +666,25 @@ current read:
   DGX 40-step UltraData rehearsal checkpoint reports generation_smoke8 hits=0/40
   and causal_forced_choice_smoke4 hits=2/20.
 
+  S043 synthesizes 2025–2026 literature (DenoiseRL arXiv:2605.28421, Bias-Only
+  Steering arXiv:2505.18706, UniR arXiv:2505.19075, Unified Steering Dynamics
+  ~2602.02343) into a concrete training recipe for the free-running donor mouth:
+  Denoise-style self-rollout repair on self-generated failure prefixes, first-
+  token/answer-boundary margin on donor-wrong rows, donor-correct preservation,
+  targeted unlikelihood on observed collapses, plus extreme-efficiency options
+  (bias-only vectors, minimal LoRA). The contract keeps the donor as the primary
+  fluent generator under the S042 `adaptive_margin` gate. Promotion still
+  requires free-generation exact improvement over donor-only with clean
+  ablations and no fluency regression.
+
 next expected move:
-  Keep `adaptive_margin` as the donor-preserving CFC probe contract, but do not
-  call S042 generation-ready.  Run UltraData SFT only with explicit
-  renderer-repair objectives: first-token/answer-boundary margin on donor-wrong
-  rows, donor-correct preservation, self-rollout repair, and unlikelihood against
-  observed generation collapse strings.
+  Implement S043 objectives (Denoise prefix recovery + first-token margin +
+  donor-correct preservation + collapse unlikelihood) on top of the existing
+  donor-adapter training stack + adaptive_margin gate. Start with small local
+  smokes (bias-vector only, then minimal Denoise prefix repair). Prefer LoRA /
+  bias-only hybrids on the Local track per the 0002 Two-Track policy. Do not
+  declare generation-ready until free-gen exact beats donor-only with full
+  ablations and utility preservation.
 
 ### Two-Track Recurrent LoRA vs Byte-Latent Pretraining Split
 

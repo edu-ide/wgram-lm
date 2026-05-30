@@ -38,7 +38,7 @@ Raw intelligence claims are **not** allowed from:
 
 These are the minimal conditions that must be verifiably met (via PoC experiments with clean metrics and ablations) before stronger "raw intelligence" or "1B >> 27B reasoning" claims are made on the current architecture.
 
-They are deliberately mapped to the 7 S2 PoC conditions for 1B vs 27B (see [S2 PoC Verification Plan](../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md)).
+They are deliberately mapped to the 7 S2 PoC conditions for 1B vs 27B (see [S2 PoC Verification Plan](../../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md)).
 
 ### RI-1: Causal Test-Time Compute Scaling via Hybrid Recurrence Depth (maps to S2 #2)
 Increasing the number of recurrence steps / latent iterations in the OneBodyParallelHybridBlock (with attention sync every 4) must produce large, predictable, monotonic gains on held-out raw reasoning tasks.
@@ -76,14 +76,16 @@ The model must use structured sparse routing (top-k / learned router over past l
 **Current Status (2026-06)**: First concrete implementation work started — this was the *most insufficient* condition at the time of the audit.
 - `src/qtrm_mm/memory/sparse_slot_router.py` created (full `SparseSlotRouter` with `set_ablation` for clean experiments).
 - Read path integrated into `TorchGatedDeltaNet2MixerV2` (mixers.py).
-- Detailed status + next micro-steps: see [RI PoC Execution Plan](../roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md#P2.1).
+- **Le-TTT & LeJEPA Substrate (2026-06 Upgrade)**: Exclusively adopted the **Le-TTT (Lean Joint-Embedding Test-Time Training)** and **LeJEPA SIGReg** paradigm as the canonical realization. Long-term memory is represented as learnable fast weights within `DecoupledLatentMemoryBank` updated in-place via online gradient descent on a JEPA-style prediction error. Isotropic representation collapse is mathematically prevented via Sketched Isotropic Gaussian Regularization (SIGReg).
+- Detailed status + next micro-steps: see [RI PoC Execution Plan](../../roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md#P2.1).
 
 **Required evidence** (once fully wired + trained):
 - Router-on vs router-off (dense) or top-k=0 ablations produce clear drops on long-horizon recall, compositional reasoning, and state stability.
-- Non-selected slots show near-perfect persistence.
-- 5.56 rehearsal and router co-evolve (router chooses *what* to update, 5.56 policy controls *how* with gold + attractor + stochastic).
+- Non-selected slots show near-perfect persistence (with `carry_rate < 0.90` showing active selectivity).
+- 5.56 rehearsal and router co-evolve (router chooses *what* to update, 5.56 policy controls *how* with gold + attractor + stochastic + JEPA prediction error surprise).
+- **SIGReg Loss Active**: The SIGReg covariance/variance regularization is actively optimized during continuation to maintain isotropic Gaussian distribution of slots and states.
 
-Raven-style slots inside recurrence heads remains the leading design (see MSA memory page for alternatives).
+Raven-style slots with Le-TTT memory bank is the official canonical design.
 
 ### RI-5: Efficient One-Body Hybrid Synergy for Raw Reasoning (maps to S2 #5)
 The parallel hybrid design (recurrence-primary + attention-secondary with vector gating) must produce positive synergy for raw intelligence, not destructive interference.
@@ -125,11 +127,34 @@ When work on Predictive Data Intuition (or data-grounded world model components)
 These diagnostics do not create a new top-level RI-8 at this time, but are required evidence that the combination of predictive world model + structured stochastic mental simulation is producing genuine causal sensitivity rather than mere statistical pattern matching.
 - Task-family labeling (parallelizable vs sequential/stochastic counting) as recommended in the old gates document.
 
-The existing `raw_intelligence_gate.py` and scripts must be extended with new modes:
-- `hybrid_recurrence_depth_N`
-- `sparse_memory_router_on/off`
-- `556_full / stoch_zero / gold_off / protection_off`
-- Hybrid vs pure-recurrence comparisons
+The existing `raw_intelligence_gate.py` and scripts were extended on
+2026-05-29 with the first executable hybrid modes:
+
+- `hybrid_recurrence_depth_1_no_evidence`
+- `hybrid_recurrence_depth_4_no_evidence`
+- `hybrid_recurrence_depth_8_no_evidence`
+- `hybrid_recurrence_depth_12_no_evidence`
+- `hybrid_recurrence_off_no_evidence`
+- `hybrid_stochastic_breadth_off_no_evidence`
+- `hybrid_556_full_no_evidence`
+- `hybrid_556_stoch_zero_no_evidence`
+- `hybrid_556_gold_off_no_evidence`
+- `hybrid_556_protection_off_no_evidence`
+- `hybrid_556_decay_disabled_no_evidence`
+- `ri4_sparse_persistent_memory`
+- `hybrid_recurrence_depth_scaling`
+- `hybrid_556_causal_matrix`
+
+**Quick status snapshot**: See [RI Status Snapshot (May 2026)](ri-status-snapshot-2026-05.md) for a concise overview of what was recently advanced (especially RI-4) and remaining priorities.
+
+Still required for full promotion:
+
+- Full `556_full / stoch_zero / gold_off / protection_off / decay_disabled`
+  matrix on trained checkpoints. The gate and eval modes now exist; the trained
+  run evidence still must be produced.
+- Router-on/off, persistent-memory-off, chunk-shuffle, and distractor-robustness
+  runs on harder heldout datasets.
+- Hybrid vs pure-recurrence vs attention-only trained comparisons.
 
 ---
 
@@ -156,28 +181,37 @@ Raw intelligence is the **reasoning-specific sharpening** of the general 1B>>27B
 - Real 642 gold direct baseline infrastructure.
 - Clean "pure stochastic effect" metric + state robustness probe.
 - ~5.5× gap evidence at 120 steps real-gold (hybrid advantage on the stochastic / memory-quality proxy).
+- 2026-05-29 closure: strict stochastic breadth gate now recognizes the active
+  OneBodyParallelHybridBlock replacement; hybrid recurrence depth modes and
+  RI-4 sparse persistent memory gate are wired into the raw intelligence eval
+  harness; RI-4 A-mode smoke covers direct recurrent, pure delegation, and
+  192-style real-tensor forced paths; the hybrid depth gate rejects
+  non-monotonic ladders instead of accepting any isolated gain; the RI-3 full
+  5.56 causal matrix gate is wired for stochastic-zero, gold-off,
+  protection-off, and decay-disabled ablations.
 
 **Highest immediate priorities for Raw Intelligence**:
-1. Extend the raw intelligence eval harness and datasets to the hybrid substrate (new modes + heldout families that stress long-horizon latent composition).
-2. Run the full 5.56 ablation matrix on the hybrid using both the cheap clean proxy **and** direct raw reasoning heldouts (this simultaneously advances S2 PoC #3 and RI-3).
-3. Prototype the leading MSA positioning (Raven-style sparse slots inside the recurrence heads of OneBodyParallelHybridBlock) and measure its causal contribution to RI-2 and RI-4.
+1. Run the full 5.56 ablation matrix on the hybrid using both the cheap clean proxy **and** direct raw reasoning heldouts (this simultaneously advances S2 PoC #3 and RI-3).
+2. Run the new hybrid recurrence depth ladder on no-retrieval heldouts and require monotonic depth scaling against recurrence-off.
+3. Run trained MSA/sparse-slot causality: router-on/off, persistent-memory-off, chunk-shuffle, and distractor robustness for RI-2 and RI-4.
 4. 150–200+ step horizon scaling experiments on real gold with the hybrid + full 5.56 recipe (RI-1 + RI-2).
+5. Add attractor/fixed-point residual and halt telemetry in the next loop, following the EqR/LT2 paper evidence.
 
 These are the concrete next steps that complete the necessary conditions for raw intelligence under the current architecture.
 
-**Detailed executable plan**: [RI Raw Intelligence PoC Execution Plan (2026-06)](../roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md) — priority-ordered experiments, exact file targets, success signals, and reuse of existing S2 real-gold + clean probe infrastructure.
+**Detailed executable plan**: [RI Raw Intelligence PoC Execution Plan (2026-06)](../../roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md) — priority-ordered experiments, exact file targets, success signals, and reuse of existing S2 real-gold + clean probe infrastructure.
 
 ---
 
 ## 6. Navigation
 
-- S2 PoC Verification Plan: [../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md](../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md)
-- PHASE S Strategy: [../roadmaps/PHASE_S_Surpassing_5.6_Experiments.md](../roadmaps/PHASE_S_Surpassing_5.6_Experiments.md)
+- S2 PoC Verification Plan: [../../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md](../../roadmaps/S2_PoC_Verification_Plan_for_1B_vs_27B.md)
+- PHASE S Strategy: [../../roadmaps/PHASE_S_Surpassing_5.6_Experiments.md](../../roadmaps/PHASE_S_Surpassing_5.6_Experiments.md)
 - MSA Memory Architecture SSOT: [../concepts/memory-architecture-msa.md](../concepts/memory-architecture-msa.md) (includes positioning options)
 - Historical Raw Gates (pre-2026-06): [raw-intelligence-gates.md](./raw-intelligence-gates.md)
 - Actual Reasoning Roadmap (historical framing): [actual-reasoning-architecture-roadmap.md](./actual-reasoning-architecture-roadmap.md)
 - Terminology (operational definition of actual reasoning): [../concepts/qtrm-terminology.md](../concepts/qtrm-terminology.md)
-- Implementation: `src/qtrm_mm/blocks.py` (OneBodyParallelHybridBlock), `src/qtrm_mm/eval/raw_intelligence_gate.py` (to be extended), rehearsal logic in S2 training scripts.
+- Implementation: `src/qtrm_mm/blocks.py` (OneBodyParallelHybridBlock), `src/qtrm_mm/eval/raw_intelligence_gate.py`, `scripts/191_build_raw_intelligence_gate.py`, `scripts/192_eval_raw_intelligence.py`, rehearsal logic in S2 training scripts.
 
 ---
 

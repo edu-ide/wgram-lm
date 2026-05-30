@@ -207,3 +207,24 @@ gate stops muting QTRM on every conflict.  It is not yet a free-generation
 solution.  Free generation still needs a trained answer-boundary / first-token /
 self-rollout objective, not just alpha search, beam search, or short plain SFT.
 ```
+
+## 2026-05-30 S043 Paper Synthesis & Concrete Repair Recipe
+
+**Selected 2025–2026 papers with direct mappings**:
+
+- **DenoiseRL** (arXiv:2605.28421, May 2026): Uses self-generated wrong prefixes as structured noise. Trains the policy with RL to recover correct answers from truncated erroneous prefixes (loss only on continuation). Exact operationalization of the required "self-rollout repair on generated failure prefixes".
+  - GitHub: https://github.com/ALEX-nlp/DenoiseRL
+
+- **Bias-Only Steering** (arXiv:2505.18706, 2025): Per-layer residual bias vectors (~0.0016% params) trained with RL while freezing the backbone match full RL tuning on math reasoning. Logit-lens shows amplification of validation and causal tokens. Strongest evidence that extreme parameter efficiency can preserve donor fluency (utility).
+
+- **Universal Reasoner (UniR)** (arXiv:2505.19075, ICML 2026): Small independent reasoner module whose logits are added to any frozen LLM at inference. Composable and weak-to-strong. Mirrors the QTRM-residual + donor-logits design.
+
+- **Unified Steering Dynamics** (~2602.02343, 2026): Formalizes the preference–utility tradeoff. Any strong steering objective must be counter-balanced by explicit donor-correct preservation to avoid destroying the fluent mouth.
+
+**S043 Contract Summary** (see full version in the linked decision file):
+- Donor mouth kept as primary free-running generator (LoRA-minimal or bias-only preferred).
+- QTRM as steerer under `adaptive_margin` gate (S042 contract).
+- Objectives: first-token/boundary margin (donor-wrong), donor-correct preservation, Denoise-style prefix recovery + unlikelihood on observed collapses, optional tiny bias vectors.
+- Must beat donor-only on free generation with clean ablations and no utility regression.
+
+This synthesis replaces vague "add self-rollout" language with concrete, paper-backed mechanisms that can be implemented on top of the existing donor-adapter training stack.

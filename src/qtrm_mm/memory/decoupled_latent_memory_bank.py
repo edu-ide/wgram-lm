@@ -114,6 +114,33 @@ class DecoupledLatentMemoryBank(nn.Module):
 
         return context, weights
 
+    def compute_sigreg_loss(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Sketched Isotropic Gaussian Regularization (SIGReg) approximation.
+        Enforces that slot embeddings follow an isotropic Gaussian distribution
+        to prevent representation collapse in latent space.
+        """
+        n = x.size(0)
+        if n <= 1:
+            return torch.tensor(0.0, device=x.device, dtype=x.dtype)
+
+        mean = x.mean(dim=0)
+        mean_loss = mean.square().mean()
+
+        # Center the data
+        x_centered = x - mean.unsqueeze(0)
+        cov = torch.matmul(x_centered.t(), x_centered) / (n - 1)
+
+        # Off-diagonal loss (decorrelation)
+        diag = torch.diag(cov)
+        off_diag = cov - torch.diag(diag)
+        cov_loss = off_diag.square().mean()
+
+        # Diagonal variance loss (force variance to 1.0)
+        var_loss = (diag - 1.0).square().mean()
+
+        return mean_loss + cov_loss + var_loss
+
     def controller_write(
         self,
         current_state: torch.Tensor,      # (B, d) summary of current recurrent thinking
@@ -137,6 +164,19 @@ class DecoupledLatentMemoryBank(nn.Module):
         state_summary = current_state.mean(dim=1) if current_state.dim() == 3 else current_state
 
         util = utility_signal
+
+        # LeJEPA World Model: if rehearsal target is provided, compute JEPA surprise (reconstruction error)
+        if rehearsal_target is not None:
+            # Predict/read memory using current state
+            bank_context, _ = self.forward_read(rehearsal_target)
+            # JEPA prediction error (L2 distance in joint embedding space)
+            jepa_err = (state_summary - bank_context).square().mean(dim=-1, keepdim=True)
+            # Scale and clamp to [0.0, 1.0] for stable gating
+            jepa_err = torch.clamp(jepa_err * 2.5, 0.0, 1.0)
+            util = jepa_err
+            if torch.rand(1).item() < 0.05:  # log 5% of the time to avoid log flooding
+                print(f"[LeJEPA Memory] Surprise-driven Write: JEPA Prediction Error = {jepa_err.mean().item():.4f}")
+
         if util is None:
             util = torch.zeros(b, 1, device=state_summary.device)
         else:

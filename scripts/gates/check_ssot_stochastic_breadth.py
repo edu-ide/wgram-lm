@@ -42,13 +42,26 @@ def main() -> int:
 
     inactive = get_inactive_primary_path_components()
     state_transition = None
+    hybrid_replacement = None
     try:
         state_transition = get_component_record("state_transition_core")
     except KeyError:
         pass
+    try:
+        hybrid_replacement = get_component_record("hybrid_stochastic_breadth_engine")
+    except KeyError:
+        pass
 
     critical_missing = False
-    if state_transition is not None and not state_transition.active_in_primary_onebody_path:
+    replacement_active = (
+        hybrid_replacement is not None
+        and hybrid_replacement.active_in_primary_onebody_path
+    )
+    if (
+        state_transition is not None
+        and not state_transition.active_in_primary_onebody_path
+        and not replacement_active
+    ):
         critical_missing = True
 
     if args.quiet and not critical_missing:
@@ -63,6 +76,9 @@ def main() -> int:
         print("       is either active in the primary One-Body path or has been")
         print("       explicitly replaced with an equivalent mechanism that still")
         print("       satisfies the SSOT's mandatory K=1 vs K>1 ablation contract.")
+        if replacement_active:
+            print("       Active replacement: OneBodyParallelHybridBlock")
+            print("       Registry record: hybrid_stochastic_breadth_engine")
         print()
         return 0
 

@@ -2912,6 +2912,29 @@ class QTRMMultimodalModel(nn.Module):
             else None
         )
 
+    def _apply_ri4_memory_residual(self, hidden: torch.Tensor) -> torch.Tensor:
+        """Apply RI-4 memory residual to a hidden tensor (for uniform participation
+        across answer paths). Uses the same sources as the main injection.
+        """
+        # Prefer passed kwarg if the method has access (via self or closure), else PoC attribute.
+        # For simplicity in the current structure, read from the same fallback sources.
+        ri4_res = getattr(self, '_ri4_memory_residual', None)
+        ri4_scale = float(getattr(self, '_ri4_memory_residual_scale', 0.3))
+        if ri4_res is None:
+            # Fallback to the kwarg if somehow passed differently, but in practice the attribute is the PoC source.
+            pass
+        if ri4_res is not None:
+            try:
+                res = ri4_res
+                if res.dim() == 1:
+                    res = res.unsqueeze(0).unsqueeze(0)
+                elif res.dim() == 2:
+                    res = res.unsqueeze(1)
+                hidden = hidden + res.to(device=hidden.device, dtype=hidden.dtype) * ri4_scale
+            except Exception:
+                pass
+        return hidden
+
     def forward(
         self,
         input_ids: torch.Tensor,
@@ -4588,29 +4611,6 @@ class QTRMMultimodalModel(nn.Module):
         # Apply RI-4 memory residual uniformly via the helper (clean, no duplication).
         logit_seq = self._apply_ri4_memory_residual(logit_seq)
 
-    def _apply_ri4_memory_residual(self, hidden: torch.Tensor) -> torch.Tensor:
-        """Apply RI-4 memory residual to a hidden tensor (for uniform participation
-        across answer paths). Uses the same sources as the main injection.
-        """
-        # Prefer passed kwarg if the method has access (via self or closure), else PoC attribute.
-        # For simplicity in the current structure, read from the same fallback sources.
-        ri4_res = getattr(self, '_ri4_memory_residual', None)
-        ri4_scale = float(getattr(self, '_ri4_memory_residual_scale', 0.3))
-        if ri4_res is None:
-            # Fallback to the kwarg if somehow passed differently, but in practice the attribute is the PoC source.
-            pass
-        if ri4_res is not None:
-            try:
-                res = ri4_res
-                if res.dim() == 1:
-                    res = res.unsqueeze(0).unsqueeze(0)
-                elif res.dim() == 2:
-                    res = res.unsqueeze(1)
-                hidden = hidden + res.to(device=hidden.device, dtype=hidden.dtype) * ri4_scale
-            except Exception:
-                pass
-        return hidden
-
         qtrm_logits = self.lm_head(logit_seq) * float(self.cfg.qtrm_logits_scale)
         answer_bottleneck_logits = self._empty_answer_bottleneck_logits(
             qtrm_logits,
@@ -5030,6 +5030,27 @@ class QTRMMultimodalModel(nn.Module):
             qtrm_residual_logits = torch.zeros_like(qtrm_residual_logits)
         donor_qtrm_conflict_gate = qtrm_logits.new_empty((b, 0))
         logits = qtrm_residual_logits
+
+        # === S043 Phase 0: Minimal residual steering bias (fluency-first) ===
+        # A single small learnable bias vector added to the QTRM residual logits
+        # before the adaptive conflict gate. This follows the "bias-only adaptation"
+        # philosophy: extremely few parameters, zero-init by default, only enabled
+        # when we explicitly want to test first-token / recovery signal without
+        # touching the donor mouth heavily.
+        if getattr(self.cfg, "donor_residual_steering_bias_enabled", False):
+            if not hasattr(self, "_donor_residual_steering_bias"):
+                vocab = self.cfg.vocab_size
+                init_scale = float(getattr(self.cfg, "donor_residual_steering_bias_init_scale", 0.0))
+                bias = torch.zeros(vocab, dtype=torch.float32)
+                self._donor_residual_steering_bias = nn.Parameter(bias)
+                self.register_parameter("_donor_residual_steering_bias", self._donor_residual_steering_bias)
+            bias_vec = self._donor_residual_steering_bias.to(
+                device=qtrm_residual_logits.device, dtype=qtrm_residual_logits.dtype
+            )
+            scale = float(getattr(self.cfg, "donor_residual_steering_bias_init_scale", 0.01))
+            text_offset = 0 if selected_logit_positions_only else qtrm_residual_logits.shape[1] - s
+            qtrm_residual_logits[:, text_offset:, :] = qtrm_residual_logits[:, text_offset:, :] + (bias_vec * scale)
+
         if donor_logits is not None and self.cfg.donor_logits_scale != 0.0:
             if donor_logits.shape[:2] != (b, s):
                 raise ValueError(
@@ -6240,10 +6261,16 @@ class QTRMMultimodalModel(nn.Module):
                     # Slot state is carried on the model instance across steps for this case.
                     # Falls back to classic recurrent_stack when the attr is None (zero behavior change).
                     hybrid_in = self.answer_state_loop_recurrent_norm(recurrent_input).unsqueeze(1)
-                    hybrid_out, new_slot = self.answer_state_loop_hybrid_recurrent_block(
+                    hybrid_result = self.answer_state_loop_hybrid_recurrent_block(
                         hybrid_in,
                         slot_state=getattr(self, '_ri4_hybrid_recurrent_slot_state', None),
                     )
+                    if isinstance(hybrid_result, tuple):
+                        hybrid_out = hybrid_result[0]
+                        new_slot = hybrid_result[1] if len(hybrid_result) > 1 else None
+                    else:
+                        hybrid_out = hybrid_result
+                        new_slot = None
                     recurrent_proposal = hybrid_out.squeeze(1)
                     self._ri4_hybrid_recurrent_slot_state = new_slot
                 else:

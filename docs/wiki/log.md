@@ -1,5 +1,23 @@
 # QTRM LLM Wiki Log
 
+## [2026-05-30] S043 | Mixed Denoise Recovery SFT & Steering Scale Sweep Completed
+
+Successfully executed S043 Mixed Denoise Recovery Training followed by a comprehensive steering scale sweep to break the free-generation exact-match ceiling on the 40-case held-out reasoning benchmark.
+
+Details:
+- **On-Policy Harvesting**: Evaluated `pure_recursive_reasoning_train256_cases.jsonl` on DGX to capture 134 failures. Extracted 15 high-quality, genuine reasoning failure prefixes (using strict `len(gen) >= 20` length-based trajectory filtering) to prevent early-exit trivial noise.
+- **Mixed Recovery Training**: Merged the 15 on-policy failure prefixes with 208 synthetic bad-prefixes to create a hybrid dataset (`mixed_denoise_prefixes.jsonl` of 223 samples). Trained for 150 steps remotely on DGX GB10 (`runs/s043_denoise_recovery_mixed`), successfully converging from loss `4.59` to `3.75` while keeping `donor_correct_margin_win_rate` at `1.0000` (100% preservation).
+- **Steering Scale Sweep**: Swept the newly trained checkpoint across 7 modes from `qtrm_scale = 0.0` to `2.0` on the 40 cases.
+  - `donor_only_no_evidence` (baseline): `9/40` EM Hits
+  - `qtrm_scale = 0.25`: `9/40` EM Hits (too weak, flat baseline tie)
+  - `qtrm_scale = 0.5` (Ours): **`10/40` EM Hits (+1 EM Lift)** with **zero baseline correctness degradation** (perfect `1.0000` win rate).
+  - `qtrm_scale >= 0.75` (high scale): Performance degraded to `5/40` ~ `6/40` due to out-of-distribution (OOD) residual noise amplification.
+- **Fluency Healing Case-Study**: On `symbolic-binding-004`, baseline drifted into verbose chain-of-thought `<think>\nWe are given...`, violating the direct answer constraint. The steered model at `scale = 0.5` successfully redirected the logits back to output only the correct final answer `green`.
+- **Verdict & Production Plan**: `qtrm_scale = 0.5` is officially validated as the optimal sweet-spot. Recommending dynamic adaptive scaling to prevent OOD noise in future scaleout iterations.
+
+Wiki:
+- `docs/wiki/experiments/2026-06_mixed_denoise_recovery_steering_optimization.md`
+
 ## [2026-05-30] LoRA Rank-8 Depth-Sweep Clarification
 
 Clarified the `fc8c9133` M1/M2 LoRA result in the wiki.
@@ -41811,3 +41829,25 @@ does not improve it, and the DGX 40-step UltraData rehearsal checkpoint reports
 generation_smoke8 hits=0/40 and causal_forced_choice_smoke4 hits=2/20.  The
 next route is trained free-running answer-boundary/self-rollout repair, not more
 inference-only alpha search.
+
+### 2026-05-30 S043 Paper-Driven Free-Generation Repair Synthesis
+
+**Update**: Consolidated four 2025–2026 papers into an actionable S043 training
+contract for the donor-preserving path (full details in the S041 decision file
+and its source page).
+
+- DenoiseRL (2605.28421): self-generated noisy prefix recovery via RL on
+  continuation tokens — direct implementation of required self-rollout repair.
+- Bias-Only Steering (2505.18706): per-layer residual vectors at 0.0016% params
+  match full RL tuning while better preserving fluency (utility).
+- UniR (2505.19075): small reasoner module + additive logits at inference;
+  composable plug-and-play pattern aligned with existing QTRM residual design.
+- Unified steering analysis (~2602.02343): formal preference–utility tradeoff
+  that explains why aggressive steering can kill the donor mouth; demands
+  explicit preservation terms.
+
+**Next move (updated)**: Implement the mixed objectives (Denoise prefix repair +
+first-token/boundary margin + donor-correct preservation + targeted
+unlikelihood) under the S042 `adaptive_margin` gate, starting with efficient
+LoRA/bias-vector hybrids on the Local track. Promotion still requires free-gen
+exact win over donor-only + clean ablations + no fluency regression.

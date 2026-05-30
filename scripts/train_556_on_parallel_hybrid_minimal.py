@@ -137,6 +137,7 @@ def build_hybrid_stack(cfg: Hybrid556Config) -> nn.ModuleList:
         core_stochastic_breadth_ablation_zero=cfg.stochastic_breadth_ablation_zero,
         core_stochastic_mode="delta",
         core_stochastic_scale=0.06,
+        core_elastic_depth_learn_policy=bool(getattr(cfg, "core_elastic_depth_learn_policy", False)),
     )
 
     layers = nn.ModuleList([

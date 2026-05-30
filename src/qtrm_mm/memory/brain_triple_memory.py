@@ -204,6 +204,11 @@ class BrainMimeticTripleMemory(torch.nn.Module):
         self._chunk_size = 64  # FINAL AGGRESSIVE (LaCT/Omega/ATLAS per MD E/H)
         self._cached_slow_summary = None
 
+        # Auto-apply long-horizon light mode if the trainer set the class marker
+        # (INTUITIVE EXECUTION: makes long RI-1 substrate runs actually survivable)
+        if BrainMimeticTripleMemory._force_long_horizon_light:
+            self.set_long_horizon_light_mode(True)
+
     def to(self, *args, **kwargs):
         return self
 
@@ -229,6 +234,26 @@ class BrainMimeticTripleMemory(torch.nn.Module):
         "one body" fast citizen + slow memory real causal composition for RI-1 depth scaling.
         """
         self._ri1_training_relaxed_slow = bool(enabled)
+
+    def set_long_horizon_light_mode(self, enabled: bool = True):
+        """
+        INTUITIVE EXECUTION for RI-1 long substrate formation.
+        When doing 100+ step runs to actually bake the depth + memory inductive bias,
+        we must be brutally memory-efficient. This disables the expensive PredictiveDataIntuition
+        forward passes, vector surprise, chunking overhead, and keeps only the absolute minimum
+        slow summary carry. The goal is "run long enough to form the substrate", not "run the
+        full rich brain simulation the entire time".
+        """
+        self._long_horizon_light = bool(enabled)
+        if enabled:
+            self.data_intuition_enabled = False
+            self.data_intuition_ablation_zero = True
+            self.chunked_slow_enabled = False
+            self._chunk_size = 256  # almost no chunking
+            print("[BrainTripleMemory] LONG_HORIZON_LIGHT_MODE: data_intuition + chunking disabled for memory headroom")
+
+    # Class-level marker set by the trainer for long-horizon safety
+    _force_long_horizon_light = False
 
     def enable_long_term_surprise_driven_memory(self, **kwargs):
         pass
