@@ -1,7 +1,7 @@
 torch>=2.3
 transformers>=4.51
 accelerate>=0.34
-safetensors>=0.4
+safetensors>=0.7.0
 pyyaml>=6.0
 numpy>=1.24
 tqdm>=4.66
