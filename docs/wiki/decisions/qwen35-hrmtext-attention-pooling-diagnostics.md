@@ -3152,8 +3152,8 @@ Primary sources checked:
 
 ```text
 paper=https://sapientinc.github.io/HRM-Text/assets/HRM_Text.pdf
-repo=/home/tripleyoung/qtrm-workspace/external_repos/HRM-Text
-data_repo=/home/tripleyoung/qtrm-workspace/external_repos/data_io
+repo=/home/tripleyoung/wgram-workspace/external_repos/HRM-Text
+data_repo=/home/tripleyoung/wgram-workspace/external_repos/data_io
 ```
 
 Conclusion:
