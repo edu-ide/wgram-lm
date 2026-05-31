@@ -18,7 +18,7 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     normalize_answer_text,
     normalized_alias_set,
@@ -70,17 +70,17 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
     args.max_candidates = int(args.max_candidates or selector_args.get("max_candidates", 4))
     args.hidden_dim = int(args.hidden_dim or selector_args.get("hidden_dim", 0))
 
-    qtrm_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
+    wgram_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
     allowed_chars = list(payload["allowed_chars"])
     selector = stage528.CandidatePoolSelector(
-        d_state=int(qtrm_model.d_state),
+        d_state=int(wgram_model.d_state),
         vocab_size=len(allowed_chars),
         max_chars=int(args.max_candidate_chars),
         hidden_dim=int(args.hidden_dim) if int(args.hidden_dim) > 0 else None,
     ).to(device)
     selector.load_state_dict(payload["selector"], strict=True)
     selector.eval()
-    qtrm_model.eval()
+    wgram_model.eval()
 
     out_rows: list[dict[str, Any]] = []
     pool_oracle_hits = 0
@@ -90,7 +90,7 @@ def materialize(args: argparse.Namespace) -> dict[str, Any]:
     for batch in loader:
         pools = [stage528.candidate_pool(row, max_pool_candidates=args.max_pool_candidates) for row in batch]
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=int(args.max_length),

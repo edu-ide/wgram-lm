@@ -18,7 +18,7 @@ def _load_materialize_module():
 
 class TrainingCheckpointInitTests(unittest.TestCase):
     def test_load_initial_checkpoint_restores_model_state(self):
-        from qtrm_mm.training.train import load_initial_checkpoint
+        from wgram_lm.training.train import load_initial_checkpoint
 
         model = torch.nn.Linear(2, 2)
         wanted = torch.nn.Linear(2, 2)
@@ -36,7 +36,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(torch.equal(model.bias, wanted.bias))
 
     def test_load_initial_checkpoint_skips_shape_mismatched_tensors(self):
-        from qtrm_mm.training.train import load_initial_checkpoint
+        from wgram_lm.training.train import load_initial_checkpoint
 
         model = torch.nn.Linear(3, 2)
         incompatible = torch.nn.Linear(2, 2)
@@ -141,8 +141,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(cfg.model.core_source_position_binder_raw_source_slots_enabled)
 
     def test_core_halt_only_policy_freezes_everything_except_halt_head(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -171,8 +171,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_core_halt_only_policy_requires_halt_head(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         model = QTRMMultimodalModel(
             QTRMConfig(
@@ -198,8 +198,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
             configure_trainable_parameters(model, "core_halt_only")
 
     def test_core_only_policy_freezes_everything_except_recursive_core(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -230,8 +230,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_core_and_loop_readout_policy_freezes_everything_else(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -267,8 +267,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_core_and_answer_state_loop_policy_freezes_everything_else(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -304,8 +304,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_core_and_answer_state_loop_policy_includes_transition_state_when_enabled(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -337,8 +337,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_and_answer_state_loop_policy_includes_final_answer_binder(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -370,8 +370,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_transition_order_bottleneck_policy_freezes_everything_else(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -415,8 +415,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.core.parameters()).requires_grad)
 
     def test_core_and_transition_order_bottleneck_policy_includes_core(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -461,8 +461,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_answer_state_loop_only_policy_freezes_core_and_transition_state(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -497,8 +497,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_role_value_answer_bridge_loop_only_trains_bridge_and_answer_loop(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -546,8 +546,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_primitive_role_value_answer_bridge_loop_policy_is_scoped(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -598,8 +598,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_role_value_answer_bridge_adapter_only_bottlenecks_shortcut(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -648,8 +648,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_role_value_vocab_renderer_only_policy_is_scoped(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -697,8 +697,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_answer_state_loop_only_policy_includes_talker_when_enabled(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -732,8 +732,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_answer_state_loop_only_policy_includes_mythos_update_when_enabled(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -781,7 +781,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(torch.all(A < 1.0))
 
     def test_answer_state_loop_mythos_update_runs_forward_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -817,8 +817,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(out["answer_state_loop_recurrent_gate_mean"].shape, (2, 3))
 
     def test_answer_state_loop_talker_only_policy_freezes_answer_loop(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -854,8 +854,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_answer_state_loop_lm_adapter_only_policy_freezes_answer_core(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -897,8 +897,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_answer_state_loop_next_token_decoder_only_policy_freezes_answer_core(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -941,8 +941,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_answer_state_loop_next_token_decoder_only_policy_requires_decoder(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -970,8 +970,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
             )
 
     def test_lm_head_only_policy_requires_untied_lm_head(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -999,8 +999,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_lm_head_only_policy_rejects_tied_embedding_model(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1025,8 +1025,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
             configure_trainable_parameters(model, "lm_head_only")
 
     def test_answer_state_loop_hidden_bridge_only_policy_freezes_head_and_core(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1070,8 +1070,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_answer_state_loop_hidden_bridge_only_policy_requires_bridge(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1099,8 +1099,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
             )
 
     def test_transition_state_sequence_only_policy_freezes_core_and_code_policy(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1139,8 +1139,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_transition_state_joint_only_policy_freezes_core_and_answer_loop(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1187,7 +1187,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_transition_state_joint_prompt_context_conditions_logits(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1238,7 +1238,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertGreater(float(with_context[0, 0, 0]), 0.0)
 
     def test_transition_state_joint_prompt_token_attention_is_zero_init_residual(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1303,8 +1303,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(torch.allclose(cross_logits, baseline_logits))
 
     def test_core_and_value_state_policy_preserves_joint_code_supervision_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1339,8 +1339,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.prelude.parameters()).requires_grad)
 
     def test_primitive_transition_only_policy_preserves_existing_joint_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1376,8 +1376,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_primitive_transition_and_finality_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1422,8 +1422,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_transition_source_router_only_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1461,8 +1461,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_core_primitive_update_gate_only_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1504,8 +1504,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_transition_state_joint_operation_residual_only_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1541,8 +1541,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_transition_phase_and_joint_phase_residual_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1589,8 +1589,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_transition_phase_only_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1627,8 +1627,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_transition_state_joint_phase_residual_only_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1670,8 +1670,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_transition_state_code_and_joint_code_residual_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1714,8 +1714,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.core.z_l_init.requires_grad)
 
     def test_token_numeric_binder_primitive_policy_trains_internal_binder(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1760,8 +1760,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_prompt_context_binder_primitive_policy_trains_internal_binder(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1803,8 +1803,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_token_numeric_source_slot_policy_trains_source_slots(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1848,8 +1848,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_token_numeric_source_slot_binder_policy_trains_internal_binder(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1896,8 +1896,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_source_slot_binder_answer_policy_trains_binding_and_lm_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1956,8 +1956,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_transition_value_state_only_policy_freezes_core_and_action_head(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1992,8 +1992,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_factorized_value_state_only_policy_freezes_core_and_action_head(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2028,8 +2028,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_role_value_state_only_policy_trains_role_and_value_slots(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2074,8 +2074,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_role_value_state_only_policy_freezes_core_and_action_head(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2123,8 +2123,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_typed_algorithmic_value_state_only_policy_trains_field_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2167,8 +2167,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_and_typed_algorithmic_policy_trains_core_and_field_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2206,8 +2206,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_answer_loop_and_typed_algorithmic_policy_trains_bridge_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2248,8 +2248,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_token_embed_core_and_typed_policy_opens_token_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2290,8 +2290,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertTrue(model.typed_algorithmic_kind_head.weight.requires_grad)
 
     def test_token_core_answer_loop_and_typed_policy_opens_full_lm_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2340,8 +2340,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.lm_head.weight.requires_grad)
 
     def test_primitive_and_typed_algorithmic_policy_trains_only_that_state_path(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2402,8 +2402,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_and_role_value_state_policy_trains_core_action_and_role_tokens(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2457,8 +2457,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         )
 
     def test_core_state_carry_only_policy_freezes_existing_core_and_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2506,8 +2506,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_role_value_delta_only_policy_freezes_existing_core_and_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2552,8 +2552,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_value_delta_code_only_policy_freezes_existing_core_and_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2600,8 +2600,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_typed_register_executor_only_policy_freezes_existing_core_and_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2648,8 +2648,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_typed_register_executor_and_prompt_extract_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2699,8 +2699,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_and_primitive_transition_policy_freezes_everything_else(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2738,8 +2738,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_numeric_projector_primitive_role_value_policy_trains_projector(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2778,8 +2778,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_token_numeric_primitive_role_value_policy_trains_token_numeric_embed(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2822,8 +2822,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_primitive_transition_and_finality_policy_freezes_everything_else(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2866,8 +2866,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_core_context_primitive_transition_and_finality_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2913,8 +2913,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_transition_feedback_and_readouts_policy_is_narrow(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -2961,8 +2961,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.text_embed.weight.requires_grad)
 
     def test_core_answer_state_loop_world_model_policy_freezes_everything_else(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3006,8 +3006,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_workspace_gate_only_policy_freezes_everything_except_workspace_gate(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3041,8 +3041,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_workspace_gate_only_policy_requires_gated_workspace(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         model = QTRMMultimodalModel(
             QTRMConfig(
@@ -3068,8 +3068,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
             configure_trainable_parameters(model, "workspace_gate_only")
 
     def test_generation_verifier_only_policy_freezes_everything_except_verifier_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3102,8 +3102,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_controller_only_policy_freezes_everything_except_controller_heads(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3134,8 +3134,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_controller_only_policy_includes_learned_signal_heads_when_enabled(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3168,8 +3168,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.core.parameters()).requires_grad)
 
     def test_controller_signal_head_only_policy_freezes_action_mapping(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3200,8 +3200,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.ctrl.action.weight.requires_grad)
 
     def test_core_and_controller_signal_head_policy_trains_core_router_only(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3238,8 +3238,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(model.ctrl.action.weight.requires_grad)
 
     def test_core_and_temporal_spatial_context_policy_trains_core_and_context_encoder(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3272,8 +3272,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_answer_bottleneck_evidence_only_policy_freezes_base_model(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3312,8 +3312,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_answer_bottleneck_evidence_only_policy_requires_answer_bottleneck(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         model = QTRMMultimodalModel(
             QTRMConfig(
@@ -3340,8 +3340,8 @@ class TrainingCheckpointInitTests(unittest.TestCase):
             configure_trainable_parameters(model, "answer_bottleneck_evidence_only")
 
     def test_evidence_span_reader_only_policy_freezes_base_model(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.training.train import configure_trainable_parameters
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.training.train import configure_trainable_parameters
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -3380,7 +3380,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertFalse(next(model.coda.parameters()).requires_grad)
 
     def test_prepare_donor_batch_encodes_workspace_memory_inputs(self):
-        from qtrm_mm.training.train import prepare_donor_batch, strip_training_only_batch_keys
+        from wgram_lm.training.train import prepare_donor_batch, strip_training_only_batch_keys
 
         class FakeDonor:
             def encode_inputs(self, *, input_ids, attention_mask=None, return_logits=False):
@@ -3418,7 +3418,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertNotIn("workspace_text_states", zero_extra)
 
     def test_prepare_donor_batch_encodes_rejected_preference_inputs(self):
-        from qtrm_mm.training.train import prepare_donor_batch
+        from wgram_lm.training.train import prepare_donor_batch
 
         class FakeDonor:
             def encode_inputs(self, *, input_ids, attention_mask=None, return_logits=False):
@@ -3446,7 +3446,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(extra["preference_rejected_donor_logits"].shape, (1, 3, 8))
 
     def test_prepare_donor_batch_encodes_counterfactual_workspace_inputs(self):
-        from qtrm_mm.training.train import prepare_donor_batch, strip_training_only_batch_keys
+        from wgram_lm.training.train import prepare_donor_batch, strip_training_only_batch_keys
 
         class FakeDonor:
             def encode_inputs(self, *, input_ids, attention_mask=None, return_logits=False):
@@ -3478,7 +3478,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(extra["workspace_counterfactual_text_states"].shape, (1, 3, 4))
 
     def test_memory_halt_preserve_config_uses_halt_only_training(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_memory_halt_preserve_s050.yaml")
 
@@ -3493,7 +3493,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("memory_halt_preserve", cfg.train.out_dir)
 
     def test_memory_gated_workspace_config_trains_only_workspace_gate(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_memory_gated_workspace_s050.yaml")
 
@@ -3507,7 +3507,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("memory_gated_workspace", cfg.train.out_dir)
 
     def test_generation_verifier_config_trains_only_verifier_heads(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_generation_verifier_s020.yaml")
 
@@ -3519,7 +3519,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("generation_verifier", cfg.train.out_dir)
 
     def test_controller_trace_config_trains_only_controller_heads(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_controller_trace_s050.yaml")
 
@@ -3534,7 +3534,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("controller_trace", cfg.train.out_dir)
 
     def test_controller_signal_config_enables_signal_adapter(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_controller_signal_s300.yaml")
 
@@ -3545,7 +3545,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("controller_signal", cfg.train.out_dir)
 
     def test_controller_learned_signal_config_uses_core_signal_targets(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_controller_learned_signal_s300.yaml")
 
@@ -3558,7 +3558,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("controller_learned_signal", cfg.train.out_dir)
 
     def test_controller_learned_signal_head_config_preserves_action_mapping(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_controller_learned_signal_head_s300.yaml")
 
@@ -3569,7 +3569,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("controller_learned_signal_head", cfg.train.out_dir)
 
     def test_controller_learned_signal_readout_config_is_diagnostic(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_controller_learned_signal_readout_s300.yaml")
 
@@ -3581,7 +3581,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("controller_learned_signal_readout", cfg.train.out_dir)
 
     def test_workspace_answer_bottleneck_causal_config_trains_only_causal_heads(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_workspace_answer_bottleneck_causal_s050.yaml")
 
@@ -3597,7 +3597,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("workspace_answer_bottleneck_causal", cfg.train.out_dir)
 
     def test_canonical_ssot_greedy_causal_config_trains_main_answer_path(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_canonical_ssot_greedy_causal_s050.yaml")
 
@@ -3611,7 +3611,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("canonical_ssot_greedy_causal", cfg.train.out_dir)
 
     def test_canonical_ssot_core_to_text_config_forces_latent_bridge(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_canonical_ssot_coretotext_causal_s050.yaml")
 
@@ -3624,7 +3624,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("canonical_ssot_coretotext_causal", cfg.train.out_dir)
 
     def test_canonical_ssot_core_to_text_forced_config_strengthens_causal_bridge(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_canonical_ssot_coretotext_forced_s150.yaml")
 
@@ -3639,7 +3639,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("canonical_ssot_coretotext_forced", cfg.train.out_dir)
 
     def test_canonical_ssot_core_answer_bottleneck_config_uses_prompt_ssot(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_canonical_ssot_core_answer_bottleneck_s150.yaml"
@@ -3656,7 +3656,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("canonical_ssot_core_answer_bottleneck", cfg.train.out_dir)
 
     def test_canonical_ssot_core_answer_bottleneck_safe_gate_eval_preserves_donor_default(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_canonical_ssot_core_answer_bottleneck_safe_gate_eval.yaml"
@@ -3671,7 +3671,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(cfg.train.steps, 0)
 
     def test_canonical_ssot_core_answer_bottleneck_selective_gate_keeps_donor_default(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_canonical_ssot_core_answer_bottleneck_selective_gate_s150.yaml"
@@ -3687,7 +3687,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("selective_gate", cfg.train.out_dir)
 
     def test_donor_preserving_logit_guider_config_keeps_donor_as_base_policy(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_donor_preserving_logit_guider_s120.yaml")
 
@@ -3705,7 +3705,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("donor_preserving_logit_guider", cfg.train.out_dir)
 
     def test_donor_preserving_bounded_delta_nogate_config_removes_undertrained_gate(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_donor_preserving_bounded_delta_nogate_s120.yaml"
@@ -3723,7 +3723,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("bounded_delta_nogate", cfg.train.out_dir)
 
     def test_donor_preserving_pure_recursive_preference_config_targets_raw_reasoning(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_donor_preserving_pure_recursive_pref_s160.yaml"
@@ -3740,7 +3740,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("pure_recursive_pref", cfg.train.out_dir)
 
     def test_donor_preserving_core_forced_readout_config_keeps_core_causal(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_s160.yaml"
@@ -3760,7 +3760,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("core_forced_readout", cfg.train.out_dir)
 
     def test_donor_preserving_core_forced_readout_outer4_config_trains_deeper_loop(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_donor_preserving_core_forced_readout_pref_outer4_s120.yaml"
@@ -3778,7 +3778,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("outer4", cfg.train.out_dir)
 
     def test_donor_preserving_core_forced_causal_prefix_sharpener_config(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_donor_preserving_core_forced_causal_prefix_sharpener_s080.yaml"
@@ -3795,7 +3795,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("causal_prefix_sharpener", cfg.train.out_dir)
 
     def test_donor_preserving_core_forced_variable_trajectory_config_uses_short_long_loss(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_donor_preserving_core_forced_variable_traj_s080.yaml"
@@ -3813,7 +3813,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("variable_traj", cfg.train.out_dir)
 
     def test_donor_preserving_core_forced_depth_text_ce_config_uses_process_credit(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_donor_preserving_core_forced_depth_text_ce_s080.yaml"
@@ -3829,7 +3829,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("depth_text_ce", cfg.train.out_dir)
 
     def test_ouro_donor_guided_adapter_config_uses_donor_as_renderer(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_donor_guided_adapter_s060.yaml"
@@ -3845,7 +3845,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("donor_guided_adapter", cfg.train.out_dir)
 
     def test_pure_recursive_transition_state_config_has_causal_state_ablation(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_pure_recursive_transition_state_s080.yaml")
 
@@ -3858,7 +3858,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("pure_recursive_transition_state", cfg.train.out_dir)
 
     def test_pure_recursive_latent_action_codebook_config_uses_four_codes(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_latent_action_codebook_s120.yaml"
@@ -3873,7 +3873,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("latent_action_codebook", cfg.train.out_dir)
 
     def test_pure_recursive_latent_action_codebook_v2_config_uses_five_codes(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_latent_action_codebook_v2_s120.yaml"
@@ -3887,7 +3887,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("latent_action_codebook_v2", cfg.train.out_dir)
 
     def test_pure_recursive_transition_finality_config_enables_finality_head(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_transition_finality_s120.yaml"
@@ -3900,7 +3900,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("transition_finality", cfg.train.out_dir)
 
     def test_pure_recursive_latent_action_codebook_finality_config_combines_code_and_halt(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_latent_action_codebook_finality_s120.yaml"
@@ -3914,7 +3914,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("latent_action_codebook_finality", cfg.train.out_dir)
 
     def test_pure_recursive_transition_joint_config_uses_single_code_halt_head(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_transition_joint_s120.yaml"
@@ -3929,7 +3929,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("transition_joint", cfg.train.out_dir)
 
     def test_pure_recursive_transition_joint_dense_config_uses_single_code_halt_head(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_s120.yaml"
@@ -3944,7 +3944,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("transition_joint_dense", cfg.train.out_dir)
 
     def test_pure_recursive_transition_joint_dense_terminal_v2_config_uses_ten_joint_states(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_s120.yaml"
@@ -3958,7 +3958,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("transition_joint_dense_terminal_v2", cfg.train.out_dir)
 
     def test_pure_recursive_transition_text_config_enables_text_state_path(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_pure_recursive_transition_text_s120.yaml"
@@ -3972,7 +3972,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("transition_text", cfg.train.out_dir)
 
     def test_evidence_span_reader_config_trains_span_reader_only(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_evidence_span_reader_s050.yaml")
 
@@ -3985,7 +3985,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertIn("evidence_span_reader", cfg.train.out_dir)
 
     def test_scheduled_donor_logits_scale_linearly_anneals_to_student(self):
-        from qtrm_mm.training.train import scheduled_donor_logits_scale
+        from wgram_lm.training.train import scheduled_donor_logits_scale
 
         values = [
             scheduled_donor_logits_scale(
@@ -4001,7 +4001,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
         self.assertEqual(values, [1.0, 0.75, 0.5, 0.25, 0.0])
 
     def test_scheduled_donor_logits_scale_defaults_to_config_scale(self):
-        from qtrm_mm.training.train import scheduled_donor_logits_scale
+        from wgram_lm.training.train import scheduled_donor_logits_scale
 
         self.assertEqual(
             scheduled_donor_logits_scale(
@@ -4016,7 +4016,7 @@ class TrainingCheckpointInitTests(unittest.TestCase):
 
     def test_build_core_world_model_actions_routes_memory_rows_through_retrieve_verify_answer(self):
         import torch
-        from qtrm_mm.training.train import build_core_world_model_actions
+        from wgram_lm.training.train import build_core_world_model_actions
 
         batch = {
             "input_ids": torch.tensor([[1, 2, 3], [1, 2, 3]]),

@@ -3,7 +3,7 @@ import unittest
 
 class PreferenceEvalTests(unittest.TestCase):
     def test_summarize_preference_scores_reports_margin_accuracy(self):
-        from qtrm_mm.eval.preference import summarize_preference_scores
+        from wgram_lm.eval.preference import summarize_preference_scores
 
         summary = summarize_preference_scores(
             chosen_logps=[-0.5, -2.0, -1.0],
@@ -21,7 +21,7 @@ class PreferenceEvalTests(unittest.TestCase):
         self.assertAlmostEqual(summary["margin_mean"], (1.0 - 1.0 + 0.2) / 3.0, places=5)
 
     def test_summarize_preference_records_ignores_summary_rows(self):
-        from qtrm_mm.eval.preference import summarize_preference_records
+        from wgram_lm.eval.preference import summarize_preference_records
 
         records = [
             {"chosen_logp": -0.5, "rejected_logp": -1.0, "sample_weight": 1.0},

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.algorithmic_value_state import (
+from wgram_lm.algorithmic_value_state import (
     algorithmic_targets_from_row,
     apply_role_value_list_class_mode,
     mixed_even_offsets,
@@ -5238,11 +5238,11 @@ def main() -> None:
     from tqdm import tqdm
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.losses import jepa_world_model_loss
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
-    from qtrm_mm.training.train import (
+    from wgram_lm.config import load_config
+    from wgram_lm.losses import jepa_world_model_loss
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.training.train import (
         build_core_world_model_actions,
         configure_trainable_parameters,
         load_initial_checkpoint,

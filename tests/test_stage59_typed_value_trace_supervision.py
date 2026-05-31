@@ -2758,7 +2758,7 @@ def test_qwen_lm_mouth_direct_ledger_renderer_diagnoses_numeric_ledger_before_mo
     module.stage523.thought_context_for_batch = fake_context
     try:
         summary, records = module.evaluate(
-            qtrm_model=DummyEval(),
+            wgram_model=DummyEval(),
             tokenizer=object(),
             answerer=DummyEval(),
             digit_transition_executor=None,

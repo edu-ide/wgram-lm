@@ -56,7 +56,7 @@ Each row should preserve:
 Code:
 
 ```text
-src/qtrm_mm/history.py
+src/wgram_lm/history.py
 ```
 
 Interactive inference:

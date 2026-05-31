@@ -11,12 +11,12 @@ from pathlib import Path
 
 import torch
 
-from qtrm_mm.qwen_backbone_qtrm import QwenBackboneQTRM
+from wgram_lm.qwen_backbone_wgram import QwenBackboneQTRM
 
 
 def load_gate_module():
-    path = Path(__file__).resolve().parent / "362_train_qwen_backbone_qtrm_core_gate.py"
-    spec = importlib.util.spec_from_file_location("qwen_backbone_qtrm_core_gate", path)
+    path = Path(__file__).resolve().parent / "362_train_qwen_backbone_wgram_core_gate.py"
+    spec = importlib.util.spec_from_file_location("qwen_backbone_wgram_core_gate", path)
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
     sys.modules[spec.name] = module

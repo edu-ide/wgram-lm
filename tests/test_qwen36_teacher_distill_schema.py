@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from qtrm_mm.distill.teacher_schema import (
+from wgram_lm.distill.teacher_schema import (
     Qwen36TeacherRecord,
     TeacherEvidenceDoc,
     TeacherTopKLogprob,

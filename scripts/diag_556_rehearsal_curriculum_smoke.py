@@ -196,7 +196,7 @@ def try_real_integration_mode(steps: int = 20):
     """
     print("\n=== Trying REAL production class integration (순서대로) ===")
     try:
-        from src.qtrm_mm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
+        from wgram_lm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
         import torch
 
         real_cfg = RehearsalConfig(
@@ -250,8 +250,8 @@ if __name__ == "__main__":
 #
 # To move from this smoke to production:
 #
-# from src.qtrm_mm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
-# from src.qtrm_mm.core import QTRMRecursiveCore
+# from wgram_lm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
+# from wgram_lm.core import QTRMRecursiveCore
 #
 # real_reh = AdaptiveRehearsal(RehearsalConfig(...), core_cfg)
 # real_reh.set_total_steps(total_training_steps)

@@ -13,7 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from qtrm_mm.eval.memory_retrieval import canonical_answer_text, score_answer
+from wgram_lm.eval.memory_retrieval import canonical_answer_text, score_answer
 
 
 UNKNOWN_COMPLETION = "Answer: UNKNOWN"

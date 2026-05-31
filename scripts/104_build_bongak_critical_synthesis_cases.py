@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from qtrm_mm.training.bongak_critical_synthesis_cases import (
+from wgram_lm.training.bongak_critical_synthesis_cases import (
     DEFAULT_BONGAK_MANUAL,
     DEFAULT_BONGAK_SUMMARY,
     write_bongak_cases_jsonl,

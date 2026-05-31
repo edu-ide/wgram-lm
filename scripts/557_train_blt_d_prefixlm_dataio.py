@@ -36,8 +36,12 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader
 
-from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
-from qtrm_mm.models.blt_prefixlm import BLTDByteLatentPrefixLM
+from wgram_lm.architecture.blt_runtime_contract import (
+    build_active_blt_runtime_contract,
+    validate_active_blt_runtime_contract,
+)
+from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
+from wgram_lm.models.blt_prefixlm import BLTDByteLatentPrefixLM
 
 
 IGNORE_LABEL_ID = -100
@@ -300,6 +304,23 @@ def refresh_model_runtime_summary(model_summary: dict[str, Any], model: nn.Modul
     global_core = model_summary.setdefault("global_core", {})
     if isinstance(global_core, dict):
         global_core["delta_runtime"] = runtime
+    hnet_one_body = model_summary.setdefault("hnet_one_body", {})
+    if isinstance(hnet_one_body, dict) and hasattr(model, "hnet_byte_residual_gate_logit"):
+        hnet_one_body["byte_residual_gate"] = float(
+            torch.sigmoid(getattr(model, "hnet_byte_residual_gate_logit")).detach().cpu().item()
+        )
+        hnet_one_body["latent_residual_gate"] = float(
+            torch.sigmoid(getattr(model, "hnet_latent_residual_gate_logit")).detach().cpu().item()
+        )
+    imta = model_summary.setdefault("imta", {})
+    if isinstance(imta, dict) and hasattr(model, "imta_trajectories"):
+        imta["trajectory_count"] = int(getattr(model, "imta_trajectories"))
+        imta["active"] = bool(int(getattr(model, "imta_trajectories")) > 1)
+        imta["noise_std"] = float(getattr(model, "imta_noise_std", 0.0))
+        imta["selector_temperature"] = float(getattr(model, "imta_selector_temperature", 1.0))
+    own_latent = model_summary.setdefault("own_latent_prediction", {})
+    if isinstance(own_latent, dict) and hasattr(model, "own_latent_prediction_enabled"):
+        own_latent["enabled"] = bool(getattr(model, "own_latent_prediction_enabled"))
     return runtime
 
 
@@ -978,6 +999,28 @@ def evaluate(
         "hnet_selected_len": [],
         "hnet_mean_selected_len": [],
         "hnet_dechunked_tokens": [],
+        "hnet_causal_chunk_summary_count": [],
+        "hnet_causal_chunk_summary_mean_len": [],
+        "hnet_causal_chunk_summary_nonboundary_tokens": [],
+        "hnet_causal_chunk_summary_mean_norm": [],
+        "imta_trajectory_count": [],
+        "imta_active": [],
+        "imta_selector_entropy": [],
+        "imta_selector_confidence": [],
+        "imta_selector_margin": [],
+        "imta_trajectory_state_std": [],
+        "imta_adapter_gate_mean": [],
+        "imta_adapter_delta_norm": [],
+        "imta_diversity_weight": [],
+        "imta_diversity_loss": [],
+        "imta_diversity_mean_cosine": [],
+        "own_latent_prediction_enabled": [],
+        "own_latent_prediction_weight": [],
+        "own_latent_prediction_loss": [],
+        "own_latent_prediction_targets": [],
+        "own_latent_prediction_cosine": [],
+        "own_latent_prediction_pred_norm": [],
+        "own_latent_prediction_target_norm": [],
         "hnetpp_flow_boundary_score_mean": [],
         "hnetpp_flow_selected_boundaries": [],
         "hier_chunk_gate_mean": [],
@@ -1145,6 +1188,10 @@ def adapt_resume_state_dict_for_current_model(
     initialized_missing_answer_readback_gate = 0
     initialized_missing_answer_anchor_head = 0
     initialized_missing_answer_workspace_selector = 0
+    initialized_missing_hnet_one_body_bridge = 0
+    initialized_missing_hnet_causal_speaker = 0
+    initialized_missing_imta = 0
+    initialized_missing_own_latent_prediction = 0
 
     legacy_markers = (
         ".mixer.runtime_fallback.",
@@ -1174,6 +1221,45 @@ def adapt_resume_state_dict_for_current_model(
         if key.startswith("answer_workspace_selector.") and key not in adapted:
             adapted[key] = target_value.clone() if hasattr(target_value, "clone") else target_value
             initialized_missing_answer_workspace_selector += 1
+        if (
+            key in {"hnet_byte_residual_gate_logit", "hnet_latent_residual_gate_logit"}
+            or key.startswith("hnet_latent_bridge.")
+        ) and key not in adapted:
+            adapted[key] = target_value.clone() if hasattr(target_value, "clone") else target_value
+            initialized_missing_hnet_one_body_bridge += 1
+        if key.startswith("hnet_causal_speaker.") and key not in adapted:
+            legacy_key = ""
+            if key == "hnet_causal_speaker.head.weight":
+                legacy_key = "hnet_byte_speaker.1.weight"
+            elif key == "hnet_causal_speaker.norm.weight":
+                legacy_key = "hnet_byte_speaker.0.weight"
+            elif key == "hnet_causal_speaker.norm.bias":
+                legacy_key = "hnet_byte_speaker.0.bias"
+            if legacy_key and legacy_key in source_state_dict:
+                legacy_value = source_state_dict[legacy_key]
+                if getattr(legacy_value, "shape", None) == getattr(target_value, "shape", None):
+                    adapted[key] = legacy_value.clone() if hasattr(legacy_value, "clone") else legacy_value
+                else:
+                    adapted[key] = target_value.clone() if hasattr(target_value, "clone") else target_value
+            else:
+                adapted[key] = target_value.clone() if hasattr(target_value, "clone") else target_value
+            initialized_missing_hnet_causal_speaker += 1
+        if key.startswith("imta_"):
+            adapted_value = adapted.get(key)
+            if (
+                key not in adapted
+                or getattr(adapted_value, "shape", None) != getattr(target_value, "shape", None)
+            ):
+                adapted[key] = target_value.clone() if hasattr(target_value, "clone") else target_value
+                initialized_missing_imta += 1
+        if key.startswith("own_latent_predictor."):
+            adapted_value = adapted.get(key)
+            if (
+                key not in adapted
+                or getattr(adapted_value, "shape", None) != getattr(target_value, "shape", None)
+            ):
+                adapted[key] = target_value.clone() if hasattr(target_value, "clone") else target_value
+                initialized_missing_own_latent_prediction += 1
 
     for key, value in list(adapted.items()):
         target_value = target_state_dict.get(key)
@@ -1190,6 +1276,10 @@ def adapt_resume_state_dict_for_current_model(
         "initialized_missing_answer_readback_gate": int(initialized_missing_answer_readback_gate),
         "initialized_missing_answer_anchor_head": int(initialized_missing_answer_anchor_head),
         "initialized_missing_answer_workspace_selector": int(initialized_missing_answer_workspace_selector),
+        "initialized_missing_hnet_one_body_bridge": int(initialized_missing_hnet_one_body_bridge),
+        "initialized_missing_hnet_causal_speaker": int(initialized_missing_hnet_causal_speaker),
+        "initialized_missing_imta": int(initialized_missing_imta),
+        "initialized_missing_own_latent_prediction": int(initialized_missing_own_latent_prediction),
     }
 
 
@@ -1308,6 +1398,13 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         answer_readback_mode=str(args.answer_readback_mode),
         answer_readback_gate_init=float(args.answer_readback_gate_init),
         answer_readback_temperature=float(args.answer_readback_temperature),
+        hnet_one_body_byte_gate_init=float(args.hnet_one_body_byte_gate_init),
+        hnet_one_body_latent_gate_init=float(args.hnet_one_body_latent_gate_init),
+        imta_trajectories=int(args.imta_trajectories),
+        imta_noise_std=float(args.imta_noise_std),
+        imta_selector_temperature=float(args.imta_selector_temperature),
+        imta_adapter_gate_init=float(args.imta_adapter_gate_init),
+        own_latent_prediction_enabled=bool(args.own_latent_prediction_enabled),
     ).to(device)
     if str(args.patch_boundary_mode) == "blt_ngram_entropy":
         unigram_surprisal, bigram_surprisal = build_ngram_entropy_tables(
@@ -1340,6 +1437,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     writer = make_metric_writer(str(args.tensorboard_dir))
     model_summary = {
         "contract": "fast_blt_d_4_style_prefixlm",
+        "active_runtime_contract": build_active_blt_runtime_contract(args),
         "vocab_size": int(byte_vocab),
         "d_model": int(args.d_model),
         "patch_size": int(args.patch_size),
@@ -1352,6 +1450,38 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         "dynamic_min_patch_size": int(args.dynamic_min_patch_size),
         "dynamic_soft_patch_size": int(args.dynamic_soft_patch_size),
         "hbf_boundary_threshold": float(args.hbf_boundary_threshold),
+        "hnet_one_body": {
+            "byte_gate_init": float(args.hnet_one_body_byte_gate_init),
+            "latent_gate_init": float(args.hnet_one_body_latent_gate_init),
+            "plain_language_role": (
+                "For hnet_dechunk + decoder_latent_mode=one_body, keep the byte "
+                "identity residual small and route the speaker through dechunked "
+                "recurrent latent state so think_steps can causally affect logits."
+            ),
+        },
+        "imta": {
+            "trajectory_count": int(args.imta_trajectories),
+            "active": bool(int(args.imta_trajectories) > 1),
+            "noise_std": float(args.imta_noise_std),
+            "selector_temperature": float(args.imta_selector_temperature),
+            "adapter_gate_init": float(args.imta_adapter_gate_init),
+            "diversity_weight": float(args.imta_diversity_weight),
+            "plain_language_role": (
+                "Same-body GRAM/PTRM-style internal trajectory breadth. K latent "
+                "attempts use trajectory adapters, are kept diverse by an optional "
+                "auxiliary, and are selected or aggregated before hnet_causal_speaker; "
+                "no external answer table is allowed."
+            ),
+        },
+        "own_latent_prediction": {
+            "enabled": bool(args.own_latent_prediction_enabled),
+            "loss_weight": float(args.own_latent_prediction_weight),
+            "plain_language_role": (
+                "2605.27734-style same-model latent forecast: recurrent BLT "
+                "boundary states predict the next internal latent state while "
+                "the normal hnet_causal_speaker remains the only answer mouth."
+            ),
+        },
         "ngram_entropy_max_tokens": int(args.ngram_entropy_max_tokens),
         "ngram_entropy_alpha": float(args.ngram_entropy_alpha),
         "diffusion_weight": float(args.diffusion_weight),
@@ -1672,6 +1802,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                     workspace_selector_final_ce_critic_max_targets=int(
                         args.workspace_selector_final_ce_critic_max_targets
                     ),
+                    imta_diversity_weight=float(args.imta_diversity_weight),
+                    own_latent_prediction_weight=float(args.own_latent_prediction_weight),
                 )
             if teacher_model is not None:
                 with autocast_context(device, amp_dtype):
@@ -1906,6 +2038,40 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                     "hnet_selected_len": float(metrics.get("hnet_selected_len", 0.0)),
                     "hnet_mean_selected_len": float(metrics.get("hnet_mean_selected_len", 0.0)),
                     "hnet_dechunked_tokens": float(metrics.get("hnet_dechunked_tokens", 0.0)),
+                    "hnet_causal_chunk_summary_count": float(
+                        metrics.get("hnet_causal_chunk_summary_count", 0.0)
+                    ),
+                    "hnet_causal_chunk_summary_mean_len": float(
+                        metrics.get("hnet_causal_chunk_summary_mean_len", 0.0)
+                    ),
+                    "hnet_causal_chunk_summary_nonboundary_tokens": float(
+                        metrics.get("hnet_causal_chunk_summary_nonboundary_tokens", 0.0)
+                    ),
+                    "hnet_causal_chunk_summary_mean_norm": float(
+                        metrics.get("hnet_causal_chunk_summary_mean_norm", 0.0)
+                    ),
+                    "imta_trajectory_count": float(metrics.get("imta_trajectory_count", 0.0)),
+                    "imta_active": float(metrics.get("imta_active", 0.0)),
+                    "imta_selector_entropy": float(metrics.get("imta_selector_entropy", 0.0)),
+                    "imta_selector_confidence": float(metrics.get("imta_selector_confidence", 0.0)),
+                    "imta_selector_margin": float(metrics.get("imta_selector_margin", 0.0)),
+                    "imta_trajectory_state_std": float(metrics.get("imta_trajectory_state_std", 0.0)),
+                    "imta_adapter_gate_mean": float(metrics.get("imta_adapter_gate_mean", 0.0)),
+                    "imta_adapter_delta_norm": float(metrics.get("imta_adapter_delta_norm", 0.0)),
+                    "imta_diversity_weight": float(metrics.get("imta_diversity_weight", 0.0)),
+                    "imta_diversity_loss": float(metrics.get("imta_diversity_loss", 0.0)),
+                    "imta_diversity_mean_cosine": float(metrics.get("imta_diversity_mean_cosine", 0.0)),
+                    "own_latent_prediction_enabled": float(metrics.get("own_latent_prediction_enabled", 0.0)),
+                    "own_latent_prediction_weight": float(metrics.get("own_latent_prediction_weight", 0.0)),
+                    "own_latent_prediction_loss": float(metrics.get("own_latent_prediction_loss", 0.0)),
+                    "own_latent_prediction_targets": int(metrics.get("own_latent_prediction_targets", 0)),
+                    "own_latent_prediction_cosine": float(metrics.get("own_latent_prediction_cosine", 0.0)),
+                    "own_latent_prediction_pred_norm": float(
+                        metrics.get("own_latent_prediction_pred_norm", 0.0)
+                    ),
+                    "own_latent_prediction_target_norm": float(
+                        metrics.get("own_latent_prediction_target_norm", 0.0)
+                    ),
                     "hnetpp_flow_boundary_score_mean": float(
                         metrics.get("hnetpp_flow_boundary_score_mean", 0.0)
                     ),
@@ -2203,7 +2369,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=(
             "^(byte_embed|byte_pos_embed|patch_len_embed|bos_latent|patch_proj|"
             "semantic_boundary_scorer|semantic_chunk_proj|hierarchical_chunk_proj|"
-            "hierarchical_chunk_gate|clean_decoder|hnet_byte_speaker)"
+            "hierarchical_chunk_gate|clean_decoder|hnet_byte_speaker|"
+            "hnet_causal_speaker|hnet_latent_bridge|hnet_.*_gate_logit|"
+            "imta_|own_latent_predictor)"
         ),
         help="Regex selecting tensors used for the online OPUS update sketch.",
     )
@@ -2468,8 +2636,90 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "upper-level chunk memory over the previous two latent notes; "
             "'hier_add_cross' combines that learned hierarchy with cross-attention. "
             "'one_body' removes the direct byte decoder shortcut so the LM head "
-            "reads recurrent thought-conditioned decoder states."
+            "reads recurrent thought-conditioned decoder states in the non-hnet "
+            "clean_decoder branch. hnet_dechunk modes use hnet_byte_speaker over "
+            "byte embeddings plus dechunked global hidden instead."
         ),
+    )
+    parser.add_argument(
+        "--hnet-one-body-byte-gate-init",
+        type=float,
+        default=-2.0,
+        help=(
+            "Initial logit for the byte residual gate in hnet_dechunk + one_body. "
+            "Negative values reduce the direct byte shortcut so recurrent latent "
+            "state has to carry more answer information."
+        ),
+    )
+    parser.add_argument(
+        "--hnet-one-body-latent-gate-init",
+        type=float,
+        default=2.0,
+        help=(
+            "Initial logit for the dechunked recurrent-latent gate in "
+            "hnet_dechunk + one_body."
+        ),
+    )
+    parser.add_argument(
+        "--imta-trajectories",
+        type=int,
+        default=1,
+        help=(
+            "Number of same-body IMTA/GRAM/PTRM latent trajectories in the "
+            "hnet_dechunk path. Values >1 activate internal breadth before "
+            "hnet_causal_speaker."
+        ),
+    )
+    parser.add_argument(
+        "--imta-noise-std",
+        type=float,
+        default=0.0,
+        help=(
+            "Training-only Gaussian noise added to non-anchor IMTA trajectories. "
+            "Learned trajectory offsets remain active at eval/inference."
+        ),
+    )
+    parser.add_argument(
+        "--imta-selector-temperature",
+        type=float,
+        default=1.0,
+        help="Temperature for the internal IMTA trajectory selector/aggregator.",
+    )
+    parser.add_argument(
+        "--imta-adapter-gate-init",
+        type=float,
+        default=-1.0,
+        help=(
+            "Initial logit for non-anchor per-trajectory IMTA adapters. "
+            "Adapters let K>1 trajectories transform the latent input instead "
+            "of only receiving learned offsets."
+        ),
+    )
+    parser.add_argument(
+        "--imta-diversity-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Weight for the IMTA trajectory diversity auxiliary. The loss "
+            "penalizes positive cosine similarity between answer-facing "
+            "trajectory states before the same hnet_causal_speaker."
+        ),
+    )
+    parser.add_argument(
+        "--own-latent-prediction-enabled",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Enable 2605.27734-style same-model latent prediction over BLT "
+            "boundary states. The auxiliary is used only when its loss weight "
+            "is positive."
+        ),
+    )
+    parser.add_argument(
+        "--own-latent-prediction-weight",
+        type=float,
+        default=0.0,
+        help="Weight for next-own-latent prediction auxiliary loss.",
     )
     parser.add_argument(
         "--teacher-checkpoint",
@@ -2733,6 +2983,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 def validate_architecture_contract(args: argparse.Namespace) -> None:
     validate_one_body_architecture_contract(args)
+    validate_active_blt_runtime_contract(args)
 
 
 def main() -> None:

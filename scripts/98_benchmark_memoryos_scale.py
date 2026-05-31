@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from qtrm_mm.memoryos.scale_benchmark import build_scale_benchmark_records
+from wgram_lm.memoryos.scale_benchmark import build_scale_benchmark_records
 
 
 def main() -> None:

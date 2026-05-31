@@ -115,11 +115,11 @@ Implementation contract:
 
 Current code anchors:
 
-- `src/qtrm_mm/architecture/one_body_contract.py`: code SSOT for one-body
+- `src/wgram_lm/architecture/one_body_contract.py`: code SSOT for one-body
   launch guards and Stage99 diagnostic-bridge rejection.
-- `src/qtrm_mm/architecture/component_registry.py`: code SSOT for
+- `src/wgram_lm/architecture/component_registry.py`: code SSOT for
   promoted/diagnostic/deprecated/pending-extraction component status.
-- `src/qtrm_mm/provenance.py`: example of proper I→G→A extraction
+- `src/wgram_lm/provenance.py`: example of proper I→G→A extraction
   (Stage102Z Provenance components moved from scripts/ to native src/
   following the Improvement→Generalization→Architecture-ization loop).
 - Recent promotions (after large-scale joint ablation evidence):
@@ -137,9 +137,9 @@ Current code anchors:
   - LeWM predictive tier: full native port (JEPA-style predictor anchored to binding/workspace state; computes and injects forecasted answer-causal next state into z_h; ablation supported).
 - Joint "training" evidence (toy 30-step surrogate optimization with all 5 mechanisms): massive post-training margin improvement + huge ablation drops when individual mechanisms disabled (see diag_iga script).
 - All changes preserve the canonical One-Body path (reader → recurrent core with mechanisms → same LM head).
-- `src/qtrm_mm/models/blt_components.py`: reusable BLT local decoder and
+- `src/wgram_lm/models/blt_components.py`: reusable BLT local decoder and
   next-implicit byte projector components.
-- `src/qtrm_mm/models/blt_prefixlm.py`: full BLT-D PrefixLM model class.
+- `src/wgram_lm/models/blt_prefixlm.py`: full BLT-D PrefixLM model class.
 - `scripts/557_train_blt_d_prefixlm_dataio.py`: trainer/launcher that imports
   the BLT-D model class and uses `decoder_latent_mode=one_body`.
 - `scripts/557_train_blt_d_prefixlm_dataio.py`: imports the code SSOT through
@@ -196,9 +196,9 @@ docs/wiki/decisions/2026-05-26-stage104-bpe-control-blt-reading-bottleneck.md
 
 Current cleanup status:
 
-- GRAM/PTRM-style thinking cores have reusable classes under `src/qtrm_mm`.
+- GRAM/PTRM-style thinking cores have reusable classes under `src/wgram_lm`.
 - BLT local decoder pieces and the full `BLTDByteLatentPrefixLM` class now live
-  under `src/qtrm_mm/models`.
+  under `src/wgram_lm/models`.
 - The full BLT-D model remains a scaffold in `component_registry.py` until
   held-out/generation/depth gates promote it. Source placement alone is not a
   BEST claim.

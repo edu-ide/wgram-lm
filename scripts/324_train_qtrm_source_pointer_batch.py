@@ -11,7 +11,7 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.algorithmic_value_state import (
+from wgram_lm.algorithmic_value_state import (
     relative_source_slot_parity_ids,
     role_value_initial_targets_from_row,
     role_value_targets_from_row,
@@ -543,10 +543,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
-    from qtrm_mm.training.train import (
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.training.train import (
         configure_trainable_parameters,
         load_initial_checkpoint,
     )

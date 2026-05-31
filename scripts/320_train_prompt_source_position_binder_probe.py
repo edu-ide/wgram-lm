@@ -11,7 +11,7 @@ from typing import Any
 import torch
 from torch import nn
 
-from qtrm_mm.algorithmic_value_state import (
+from wgram_lm.algorithmic_value_state import (
     parse_int_list_state,
     relative_source_slot_parity_ids,
     row_input_list,
@@ -507,8 +507,8 @@ def main() -> None:
             }
         ).to(device)
     else:
-        from qtrm_mm.config import load_config
-        from qtrm_mm.qwen_donor import QwenDonorAdapter
+        from wgram_lm.config import load_config
+        from wgram_lm.qwen_donor import QwenDonorAdapter
 
         if not args.config:
             raise ValueError("--config is required for donor_hidden input")

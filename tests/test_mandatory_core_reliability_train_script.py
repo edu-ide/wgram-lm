@@ -1,7 +1,7 @@
 from pathlib import Path
 import unittest
 
-from qtrm_mm.config import load_config
+from wgram_lm.config import load_config
 
 
 class MandatoryCoreReliabilityTrainScriptTests(unittest.TestCase):

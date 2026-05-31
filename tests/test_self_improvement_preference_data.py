@@ -3,7 +3,7 @@ import unittest
 
 class SelfImprovementPreferenceDataTests(unittest.TestCase):
     def test_build_preference_rows_from_missed_eval_records_reconstructs_prompt(self):
-        from qtrm_mm.training.self_improvement_data import build_preference_rows
+        from wgram_lm.training.self_improvement_data import build_preference_rows
 
         case = {
             "id": "temporal-ko-room",
@@ -62,7 +62,7 @@ class SelfImprovementPreferenceDataTests(unittest.TestCase):
         self.assertEqual(row["failure_tags"], ["wrong_answer"])
 
     def test_missing_answer_prefers_needs_search_not_final_unknown(self):
-        from qtrm_mm.training.self_improvement_data import build_preference_rows
+        from wgram_lm.training.self_improvement_data import build_preference_rows
 
         case = {
             "id": "missing-answer",

@@ -10,7 +10,7 @@ from typing import Sequence
 
 import torch
 
-from qtrm_mm.qwen_backbone_qtrm import QwenBackboneQTRM
+from wgram_lm.qwen_backbone_wgram import QwenBackboneQTRM
 
 
 def parse_int_list(value: str) -> tuple[int, ...] | None:

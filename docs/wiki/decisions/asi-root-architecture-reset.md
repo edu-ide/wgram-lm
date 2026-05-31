@@ -98,11 +98,11 @@ graph TD
 
 The first implementation slice is deliberately small:
 
-- `src/qtrm_mm/agentic/cognitive_loop.py`
-- `src/qtrm_mm/agentic/context_tape.py`
-- `src/qtrm_mm/agentic/causal_gate.py`
-- `src/qtrm_mm/agentic/harness.py`
-- `src/qtrm_mm/agentic/trace_replay.py`
+- `src/wgram_lm/agentic/cognitive_loop.py`
+- `src/wgram_lm/agentic/context_tape.py`
+- `src/wgram_lm/agentic/causal_gate.py`
+- `src/wgram_lm/agentic/harness.py`
+- `src/wgram_lm/agentic/trace_replay.py`
 - `tests/test_asi_cognitive_loop_contract.py`
 - `tests/test_asi_causal_loop_gate_script.py`
 - `scripts/154_build_asi_causal_loop_gate.py`

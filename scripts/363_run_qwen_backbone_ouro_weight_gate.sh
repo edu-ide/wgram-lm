@@ -23,8 +23,8 @@ if [[ ! -f "$OURO_MODEL_ID/model.safetensors" ]]; then
   exit 2
 fi
 
-SMOKE_DIR="${SMOKE_DIR:-local_eval/qwen_backbone_qtrm_ouro_weight_wrapped_smoke_${RUN_STAMP}}"
-TRAIN_DIR="${TRAIN_DIR:-local_eval/qwen_backbone_qtrm_ouro_weight_wrapped_train_gate_s${STEPS}_${RUN_STAMP}}"
+SMOKE_DIR="${SMOKE_DIR:-local_eval/qwen_backbone_wgram_ouro_weight_wrapped_smoke_${RUN_STAMP}}"
+TRAIN_DIR="${TRAIN_DIR:-local_eval/qwen_backbone_wgram_ouro_weight_wrapped_train_gate_s${STEPS}_${RUN_STAMP}}"
 
 echo "=== Actual Ouro-weight QTRM smoke ==="
 echo "Qwen:  $QWEN_MODEL_ID"
@@ -32,7 +32,7 @@ echo "Ouro:  $OURO_MODEL_ID"
 echo "Layer: $OURO_LAYER"
 echo "Out:   $SMOKE_DIR"
 
-.venv/bin/python scripts/361_qwen_backbone_qtrm_smoke.py \
+.venv/bin/python scripts/361_qwen_backbone_wgram_smoke.py \
   --model-id "$QWEN_MODEL_ID" \
   --out-dir "$SMOKE_DIR" \
   --device "$DEVICE" \
@@ -50,7 +50,7 @@ echo "Out:   $SMOKE_DIR"
 echo "=== Actual Ouro-weight QTRM short train gate ==="
 echo "Out: $TRAIN_DIR"
 
-.venv/bin/python scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+.venv/bin/python scripts/362_train_qwen_backbone_wgram_core_gate.py \
   --model-id "$QWEN_MODEL_ID" \
   --out-dir "$TRAIN_DIR" \
   --device "$DEVICE" \

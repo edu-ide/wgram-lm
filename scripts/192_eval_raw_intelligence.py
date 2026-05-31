@@ -1329,7 +1329,7 @@ def _token_numeric_ids_for_prompt_prefix(
     if not case.get("input_list"):
         return None
     import torch
-    from qtrm_mm.algorithmic_value_state import token_numeric_value_ids
+    from wgram_lm.algorithmic_value_state import token_numeric_value_ids
 
     enc = tokenizer(
         prompt,
@@ -1369,7 +1369,7 @@ def _token_numeric_source_slots_for_prompt_prefix(
     if not enabled:
         return None, None, None
     import torch
-    from qtrm_mm.algorithmic_value_state import (
+    from wgram_lm.algorithmic_value_state import (
         relative_source_slot_parity_ids,
         row_input_list,
         token_numeric_source_slot_ids,
@@ -1439,7 +1439,7 @@ def _token_numeric_source_slot_spans_for_prompt_prefix(
     if not enabled:
         return None, None
     import torch
-    from qtrm_mm.algorithmic_value_state import (
+    from wgram_lm.algorithmic_value_state import (
         row_input_list,
         token_numeric_source_slot_token_spans,
     )
@@ -2784,10 +2784,10 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
-    from qtrm_mm.training.train import load_initial_checkpoint
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.training.train import load_initial_checkpoint
 
     cfg = load_config(args.config)
     apply_eval_model_overrides(cfg.model, args)
@@ -2896,9 +2896,9 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                 # (cross-attn → hybrid recurrent proposal with persistent slots → gate).
                 # This replaces the previous side-car pre-run + residual injection.
                 try:
-                    from src.qtrm_mm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
-                    from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
-                    from src.qtrm_mm.memory.decoupled_latent_memory_bank import make_decoupled_latent_memory_bank, DecoupledLatentMemoryBank
+                    from wgram_lm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
+                    from wgram_lm.memory.sparse_slot_router import SparseSlotRouter
+                    from wgram_lm.memory.decoupled_latent_memory_bank import make_decoupled_latent_memory_bank, DecoupledLatentMemoryBank
 
                     from copy import deepcopy
 
@@ -3032,7 +3032,7 @@ def run_eval(args: argparse.Namespace) -> list[dict[str, Any]]:
                     # The previous side-car block that pre-ran the hybrid on question-derived input
                     # and injected via runtime["ri4_memory_residual"] has been removed for the 4
                     # hybrid_* modes. The hybrid now participates natively as the recurrent
-                    # proposal engine inside _compute_answer_state_loop_outputs (see qtrm_model.py:6159).
+                    # proposal engine inside _compute_answer_state_loop_outputs (see wgram_model.py:6159).
                     # All ablation flags, persistence, and stochastic breadth continue to work
                     # because they live on the attached block.
                     #

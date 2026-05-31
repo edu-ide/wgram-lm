@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     normalize_answer_text,
     normalized_alias_set,
@@ -275,7 +275,7 @@ def collate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def train_epoch(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     proposer: StateCandidateProposer,
     rows: list[dict[str, Any]],
@@ -284,7 +284,7 @@ def train_epoch(
     args: argparse.Namespace,
     device: torch.device,
 ) -> dict[str, float]:
-    qtrm_model.eval()
+    wgram_model.eval()
     proposer.train()
     loader = DataLoader(rows, batch_size=int(args.batch_size), shuffle=True, collate_fn=collate_rows)
     total_loss = 0.0
@@ -292,7 +292,7 @@ def train_epoch(
     started = time.time()
     for batch in loader:
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -333,7 +333,7 @@ def train_epoch(
 @torch.no_grad()
 def evaluate(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     proposer: StateCandidateProposer,
     verifier: stage524.ChoiceVerifier | None,
@@ -343,7 +343,7 @@ def evaluate(
     args: argparse.Namespace,
     device: torch.device,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    qtrm_model.eval()
+    wgram_model.eval()
     proposer.eval()
     if verifier is not None:
         verifier.eval()
@@ -351,7 +351,7 @@ def evaluate(
     records: list[dict[str, Any]] = []
     for batch in loader:
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -489,10 +489,10 @@ def main() -> None:
     train_rows = stage523.load_jsonl(args.train_jsonl, limit=int(args.train_limit))
     eval_rows = stage523.load_jsonl(args.eval_jsonl, limit=int(args.eval_limit))
     allowed_chars = build_candidate_char_vocab([*train_rows, *eval_rows])
-    qtrm_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
+    wgram_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
     proposer_cls = WorkspaceAwareCandidateProposer if args.proposer_context_mode == "trajectory_workspace" else StateCandidateProposer
     proposer_kwargs = {
-        "d_state": int(qtrm_model.d_state),
+        "d_state": int(wgram_model.d_state),
         "vocab_size": len(allowed_chars),
         "max_candidates": int(args.max_candidates),
         "max_candidate_chars": int(args.max_candidate_chars),
@@ -504,7 +504,7 @@ def main() -> None:
     proposer = proposer_cls(**proposer_kwargs).to(device)
     verifier, verifier_allowed_chars, verifier_max_choice_chars = load_verifier(
         args,
-        d_state=int(qtrm_model.d_state),
+        d_state=int(wgram_model.d_state),
         device=device,
     )
     if verifier_max_choice_chars:
@@ -518,7 +518,7 @@ def main() -> None:
     best_selected = -1.0
     for epoch in range(1, int(args.epochs) + 1):
         train = train_epoch(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             proposer=proposer,
             rows=train_rows,
@@ -528,7 +528,7 @@ def main() -> None:
             device=device,
         )
         eval_summary, eval_records = evaluate(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             proposer=proposer,
             verifier=verifier,

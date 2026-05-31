@@ -1,14 +1,14 @@
 # Raw Intelligence / Actual Reasoning Necessary Conditions — SSOT (2026-06)
 
-**Status**: Canonical SSOT replacing the 2026-05-02 "Raw Intelligence Gates" definition for all new work.  
-**Date**: 2026-06  
+**Status**: Canonical SSOT replacing the 2026-05-02 "Raw Intelligence Gates" definition for all new work.
+**Date**: 2026-06
 **Context**: Updated for the OneBodyParallelHybridBlock architecture (recurrence-primary + attention sync), MSA as first-class internal memory mechanism, deep 5.56 Adaptive Rehearsal integration, Gating v2, and the explicit goal of a ~1B model surpassing Qwen3.6-27B-class models via architecture (not scale).
 
 This document supersedes:
 - `raw-intelligence-gates.md` (2026-05-02 version — historical, pre-hybrid, pre-MSA elevation)
 - Older pure-recursive depth gates that assumed the old QTRMRecursiveCore substrate
 
-The old definition (pure recursive depth + memory on/off + composition, no-retrieval) remains valuable historical context and its eval infrastructure (`src/qtrm_mm/eval/raw_intelligence_gate.py`, pure_recursive_reasoning_* scripts and datasets) should be **extended**, not discarded.
+The old definition (pure recursive depth + memory on/off + composition, no-retrieval) remains valuable historical context and its eval infrastructure (`src/wgram_lm/eval/raw_intelligence_gate.py`, pure_recursive_reasoning_* scripts and datasets) should be **extended**, not discarded.
 
 ---
 
@@ -67,14 +67,14 @@ Stochastic recurrent breadth, real gold (bos_latent) structural injection, attra
 - Stochastic breadth remains the dominant driver (as seen in S2), but gold injection and protection must still show measurable positive contribution to long-horizon raw reasoning stability and correctness.
 
 **Substrate update (2026-06 attractor-centric + brain-mimetic triple memory)**:
-In the new OneBodyParallelHybridBlock + attractor-centric substrate with BrainMimeticTripleMemory, "stochastic recurrent breadth" is realized as **structured, data-aware K-trajectory mental simulation** (inside ActiveWorkingMemory) modulated by StabilizingAttractorMemory, ProvenanceEpisodicMemory, and the Predictive Data Intuition surprise signal. 
+In the new OneBodyParallelHybridBlock + attractor-centric substrate with BrainMimeticTripleMemory, "stochastic recurrent breadth" is realized as **structured, data-aware K-trajectory mental simulation** (inside ActiveWorkingMemory) modulated by StabilizingAttractorMemory, ProvenanceEpisodicMemory, and the Predictive Data Intuition surprise signal.
 This modern form must demonstrate equivalent or stronger causal contribution than historical GRAM/PTRM-style breadth. The ablation (`brain_mimetic_stochastic` off or `data_intuition_ablation_zero=True`) must produce clear drops on the same gates. Historical prior/posterior noise injection on z_h is no longer the canonical form; the structured mental simulation + surprise modulation inside the triple memory is the required realization.
 
 ### RI-4: Sparse Selective Memory Access is Causally Active Inside the Latent Reasoning Loop (MSA/Raven-style) (maps to S2 #1 + #3)
 The model must use structured sparse routing (top-k / learned router over past latent states, thought chunks, or memory slots) rather than dense updates or simple FIFO rehearsal. Untouched or low-weight memory must exhibit high persistence (anti-interference).
 
 **Current Status (2026-06)**: First concrete implementation work started — this was the *most insufficient* condition at the time of the audit.
-- `src/qtrm_mm/memory/sparse_slot_router.py` created (full `SparseSlotRouter` with `set_ablation` for clean experiments).
+- `src/wgram_lm/memory/sparse_slot_router.py` created (full `SparseSlotRouter` with `set_ablation` for clean experiments).
 - Read path integrated into `TorchGatedDeltaNet2MixerV2` (mixers.py).
 - **Le-TTT & LeJEPA Substrate (2026-06 Upgrade)**: Exclusively adopted the **Le-TTT (Lean Joint-Embedding Test-Time Training)** and **LeJEPA SIGReg** paradigm as the canonical realization. Long-term memory is represented as learnable fast weights within `DecoupledLatentMemoryBank` updated in-place via online gradient descent on a JEPA-style prediction error. Isotropic representation collapse is mathematically prevented via Sketched Isotropic Gaussian Regularization (SIGReg).
 - Detailed status + next micro-steps: see [RI PoC Execution Plan](../../roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md#P2.1).
@@ -211,7 +211,7 @@ These are the concrete next steps that complete the necessary conditions for raw
 - Historical Raw Gates (pre-2026-06): [raw-intelligence-gates.md](./raw-intelligence-gates.md)
 - Actual Reasoning Roadmap (historical framing): [actual-reasoning-architecture-roadmap.md](./actual-reasoning-architecture-roadmap.md)
 - Terminology (operational definition of actual reasoning): [../concepts/qtrm-terminology.md](../concepts/qtrm-terminology.md)
-- Implementation: `src/qtrm_mm/blocks.py` (OneBodyParallelHybridBlock), `src/qtrm_mm/eval/raw_intelligence_gate.py`, `scripts/191_build_raw_intelligence_gate.py`, `scripts/192_eval_raw_intelligence.py`, rehearsal logic in S2 training scripts.
+- Implementation: `src/wgram_lm/blocks.py` (OneBodyParallelHybridBlock), `src/wgram_lm/eval/raw_intelligence_gate.py`, `scripts/191_build_raw_intelligence_gate.py`, `scripts/192_eval_raw_intelligence.py`, rehearsal logic in S2 training scripts.
 
 ---
 

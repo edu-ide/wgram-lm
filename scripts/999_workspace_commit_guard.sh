@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos"
+REPO="/home/tripleyoung/qtrm-workspace/wgram-lm"
 cd "$REPO"
 
 printf "== HEAD ==\n"

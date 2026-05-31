@@ -172,8 +172,8 @@ fusion boundary:
 ## Files
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 scripts/192_eval_raw_intelligence.py
 scripts/204_run_metacog_fusion_conflict_gate_sweep.sh
 scripts/205_localize_metacog_checkpoints.sh

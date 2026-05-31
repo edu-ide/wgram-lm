@@ -26,12 +26,12 @@ Run (GPU recommended, takes time):
 import argparse
 import torch
 from pathlib import Path
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
-from src.qtrm_mm.utils.gold_state_loader import load_642_gold_states
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
+from wgram_lm.utils.gold_state_loader import load_642_gold_states
 
 # Binding loss
-LOSS_FILE = Path(__file__).parent.parent / "src" / "qtrm_mm" / "losses" / "equation_state_binding.py"
+LOSS_FILE = Path(__file__).parent.parent / "src" / "wgram_lm" / "losses" / "equation_state_binding.py"
 _loss_globals = {"__name__": "equation_state_binding"}
 with open(LOSS_FILE, "r", encoding="utf-8") as f:
     exec(compile(f.read(), str(LOSS_FILE), "exec"), _loss_globals)

@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from qtrm_mm.data.hrm_text_source_mix import (
+from wgram_lm.data.hrm_text_source_mix import (
     DATASET_VIEWER_BASE,
     build_hrm_text_source_mix,
     resolve_sources,

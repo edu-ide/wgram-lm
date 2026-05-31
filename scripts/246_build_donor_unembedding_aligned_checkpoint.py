@@ -9,10 +9,10 @@ from typing import Any
 import torch
 import yaml
 
-from qtrm_mm.config import DonorConfig, load_config
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
-from qtrm_mm.training.train import load_initial_checkpoint
+from wgram_lm.config import DonorConfig, load_config
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
+from wgram_lm.training.train import load_initial_checkpoint
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

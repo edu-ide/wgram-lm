@@ -68,7 +68,7 @@ proving broad language ability without heldout generation gates
 Implemented primitive:
 
 ```text
-src/qtrm_mm/tst.py
+src/wgram_lm/tst.py
   next_token_bags
   superpose_embeddings
   multi_hot_cross_entropy

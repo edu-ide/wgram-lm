@@ -3,7 +3,7 @@ set -euo pipefail
 
 ACTION="${1:-run}"
 DGX_HOST="${DGX_HOST:-dgx}"
-DGX_REPO="${DGX_REPO:-/mnt/data4tb/qtrm_multimodal_memoryos}"
+DGX_REPO="${DGX_REPO:-/mnt/data4tb/wgram-lm}"
 REMOTE_PYTHON="${REMOTE_PYTHON:-/mnt/data4tb/ws_llm/.venv/bin/python}"
 OUT_TAG="${OUT_TAG:-$(date +%Y%m%d_%H%M%S)}"
 

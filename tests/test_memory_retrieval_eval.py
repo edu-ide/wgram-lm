@@ -14,14 +14,14 @@ def load_memory_eval_script():
 
 class MemoryRetrievalEvalTests(unittest.TestCase):
     def test_answer_hit_normalizes_case_punctuation_and_korean_spacing(self):
-        from qtrm_mm.eval.memory_retrieval import answer_hit
+        from wgram_lm.eval.memory_retrieval import answer_hit
 
         self.assertTrue(answer_hit("정답은 루미나 17입니다.", ["루미나-17"]))
         self.assertTrue(answer_hit("The code is vx 913.", ["VX-913"]))
         self.assertFalse(answer_hit("The code is VX-914.", ["VX-913"]))
 
     def test_score_answer_separates_exact_normalized_loose_and_audit(self):
-        from qtrm_mm.eval.memory_retrieval import score_answer
+        from wgram_lm.eval.memory_retrieval import score_answer
 
         exact = score_answer("VX-913", ["VX-913"])
         self.assertTrue(exact["hit"])
@@ -47,7 +47,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertIn("loose_contains_match", loose["audit_reasons"])
 
     def test_score_answer_marks_unknown_repetition_for_audit(self):
-        from qtrm_mm.eval.memory_retrieval import score_answer
+        from wgram_lm.eval.memory_retrieval import score_answer
 
         clean = score_answer("Answer: UNKNOWN", ["UNKNOWN"], expected_unknown=True)
         self.assertTrue(clean["hit"])
@@ -87,7 +87,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual(safe["forward_ablation"]["disable_workspace"], False)
 
     def test_build_case_prompt_can_include_or_omit_evidence(self):
-        from qtrm_mm.eval.memory_retrieval import build_case_prompt
+        from wgram_lm.eval.memory_retrieval import build_case_prompt
 
         case = {
             "id": "synthetic-code",
@@ -111,7 +111,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertIn("What is the access code?", without_evidence)
 
     def test_build_case_prompt_and_workspace_memory_splits_evidence_path(self):
-        from qtrm_mm.eval.memory_retrieval import build_case_prompt_and_workspace_memory
+        from wgram_lm.eval.memory_retrieval import build_case_prompt_and_workspace_memory
 
         case = {
             "id": "synthetic-code",
@@ -151,8 +151,8 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertIsNone(prompt_workspace_memory)
 
     def test_build_case_prompt_and_workspace_memory_dual_path_keeps_visible_and_workspace_evidence(self):
-        from qtrm_mm.data.jsonl_dataset import split_memory_prompt_for_workspace
-        from qtrm_mm.eval.memory_retrieval import (
+        from wgram_lm.data.jsonl_dataset import split_memory_prompt_for_workspace
+        from wgram_lm.eval.memory_retrieval import (
             build_case_prompt_and_workspace_memory,
             build_shared_evidence_context,
         )
@@ -186,7 +186,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertIn("VX-913", workspace_memory)
 
     def test_build_case_prompt_and_workspace_memory_ssot_uses_one_canonical_prompt(self):
-        from qtrm_mm.eval.memory_retrieval import build_case_prompt_and_workspace_memory
+        from wgram_lm.eval.memory_retrieval import build_case_prompt_and_workspace_memory
 
         case = {
             "id": "synthetic-code",
@@ -213,7 +213,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertIsNone(workspace_memory)
 
     def test_build_case_prompt_includes_case_instruction(self):
-        from qtrm_mm.eval.memory_retrieval import build_case_prompt
+        from wgram_lm.eval.memory_retrieval import build_case_prompt
 
         case = {
             "id": "temporal-code",
@@ -228,7 +228,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertIn("What is the current archive code?", prompt)
 
     def test_distractor_retrieval_ranks_target_and_preserves_roles(self):
-        from qtrm_mm.eval.memory_retrieval import (
+        from wgram_lm.eval.memory_retrieval import (
             build_case_prompt,
             evidence_records,
             lexical_retrieve_case,
@@ -276,7 +276,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertIn("jade-circuit", prompt)
 
     def test_select_evidence_results_supports_target_all_and_lexical_modes(self):
-        from qtrm_mm.eval.memory_retrieval import select_evidence_results
+        from wgram_lm.eval.memory_retrieval import select_evidence_results
 
         case = {
             "id": "archive-code",
@@ -298,7 +298,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual(lexical[0][1]["evidence_role"], "target")
 
     def test_evidence_source_governor_prefers_signed_over_anonymous(self):
-        from qtrm_mm.eval.memory_retrieval import evidence_records, govern_evidence_sources
+        from wgram_lm.eval.memory_retrieval import evidence_records, govern_evidence_sources
 
         case = {
             "id": "garnet-vault",
@@ -324,7 +324,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual([rec["source"] for _, rec in governed], ["signed_garnet_vault.md"])
 
     def test_evidence_source_governor_prefers_current_latest_temporal_record(self):
-        from qtrm_mm.eval.memory_retrieval import evidence_records, govern_evidence_sources
+        from wgram_lm.eval.memory_retrieval import evidence_records, govern_evidence_sources
 
         case = {
             "id": "garnet-observatory",
@@ -350,7 +350,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual([rec["source"] for _, rec in governed], ["garnet_observatory_2026_ko.md"])
 
     def test_evidence_source_governor_prunes_decoy_multihop_records(self):
-        from qtrm_mm.eval.memory_retrieval import evidence_records, govern_evidence_sources
+        from wgram_lm.eval.memory_retrieval import evidence_records, govern_evidence_sources
 
         case = {
             "id": "project-frost",
@@ -376,7 +376,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertNotIn("project_other_frost.md", sources)
 
     def test_case_index_records_preserve_target_metadata_for_memoryos_index(self):
-        from qtrm_mm.eval.memory_retrieval import case_index_records
+        from wgram_lm.eval.memory_retrieval import case_index_records
 
         cases = [
             {
@@ -396,7 +396,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual(records[1]["evidence_role"], "distractor")
 
     def test_filter_results_for_case_keeps_case_scoped_memoryos_hits(self):
-        from qtrm_mm.eval.memory_retrieval import filter_results_for_case
+        from wgram_lm.eval.memory_retrieval import filter_results_for_case
 
         results = [
             (0.99, {"case_id": "other", "source": "other.md"}),
@@ -410,7 +410,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual(filtered[0][1]["source"], "target.md")
 
     def test_link_expansion_adds_records_named_by_selected_multihop_evidence(self):
-        from qtrm_mm.eval.memory_retrieval import expand_linked_evidence_results
+        from wgram_lm.eval.memory_retrieval import expand_linked_evidence_results
 
         selected = [
             (
@@ -473,7 +473,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertEqual(sum(1 for _, rec in expanded if rec.get("is_target")), 3)
 
     def test_target_retrieval_stats_counts_multihop_targets(self):
-        from qtrm_mm.eval.memory_retrieval import evidence_records, target_retrieval_stats
+        from wgram_lm.eval.memory_retrieval import evidence_records, target_retrieval_stats
 
         case = {
             "id": "project-label",
@@ -495,7 +495,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertAlmostEqual(stats["target_recall"], 0.5)
 
     def test_summarize_records_counts_accuracy_by_mode(self):
-        from qtrm_mm.eval.memory_retrieval import summarize_records
+        from wgram_lm.eval.memory_retrieval import summarize_records
 
         records = [
             {
@@ -565,7 +565,7 @@ class MemoryRetrievalEvalTests(unittest.TestCase):
         self.assertAlmostEqual(summary["by_task_family"]["conflict"]["accuracy"], 1.0)
 
     def test_case_task_family_detects_unknown_conflict_and_multihop(self):
-        from qtrm_mm.eval.memory_retrieval import case_task_family, expected_unknown_case
+        from wgram_lm.eval.memory_retrieval import case_task_family, expected_unknown_case
 
         self.assertTrue(expected_unknown_case({"answer_aliases": ["UNKNOWN"]}))
         self.assertEqual(case_task_family({"category": "negative_missing"}), "abstention")

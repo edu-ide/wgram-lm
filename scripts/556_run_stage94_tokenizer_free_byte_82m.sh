@@ -8,7 +8,7 @@ set -euo pipefail
 #   same instruction/response row contract,
 #   UTF-8 bytes instead of BPE token ids.
 
-ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos}"
+ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/wgram-lm}"
 PYTHON="${PYTHON:-${ROOT}/.venv/bin/python}"
 RUN_NAME="${RUN_NAME:-20260524_STAGE94C_LOCAL_BYTEFREE82M_LANGSAMPLE}"
 OUT_DIR="${OUT_DIR:-${ROOT}/local_eval/${RUN_NAME}}"

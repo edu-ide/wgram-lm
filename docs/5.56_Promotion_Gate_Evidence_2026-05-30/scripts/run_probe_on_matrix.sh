@@ -14,7 +14,7 @@ MATRIX_DIR="$1"
 PROBE_SCRIPT="scripts/probe_state_ablation_robustness.py"
 OUTPUT_DIR="$MATRIX_DIR/probe_results"
 
-VENV_PY="/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python"
+VENV_PY="/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/bin/python"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -24,7 +24,7 @@ for variant in "$MATRIX_DIR"/*/; do
     if [ -d "$variant" ]; then
         name=$(basename "$variant")
         ckpt="$variant/best.pt"
-        
+
         if [ -f "$ckpt" ]; then
             echo ""
             echo "=== Probing variant: $name ==="

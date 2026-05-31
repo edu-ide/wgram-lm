@@ -19,7 +19,7 @@ try:
 except ImportError:
     load_dataset = None
 
-from qtrm_mm.qwen_backbone_state_transition import build_qwen_state_transition_model
+from wgram_lm.qwen_backbone_state_transition import build_qwen_state_transition_model
 
 # --- Synthetic Data Generation ---
 
@@ -120,12 +120,12 @@ def train_one_epoch(model, loader, optimizer, device, args, writer, epoch):
     model.train()
     total_loss, total_r_loss, total_h_loss = 0, 0, 0
     total_acc, n_r = 0, 0
-    
+
     for batch_idx, batch in enumerate(loader):
         b = batch["input_ids"].size(0)
         batch_loss = torch.tensor(0.0, device=device)
         r_loss_val, h_loss_val = 0.0, 0.0
-        
+
         if "r_indices" in batch:
             idx = batch["r_indices"]
             r_in = batch["input_ids"][idx].to(device)
@@ -155,12 +155,12 @@ def train_one_epoch(model, loader, optimizer, device, args, writer, epoch):
 
         optimizer.zero_grad()
         batch_loss.backward()
-        
+
         grad_norm = 0.0
         if args.grad_clip > 0:
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
         optimizer.step()
-        
+
         total_loss += batch_loss.item() * b
         total_r_loss += r_loss_val * b
         total_h_loss += h_loss_val * b
@@ -178,7 +178,7 @@ def train_one_epoch(model, loader, optimizer, device, args, writer, epoch):
     writer.add_scalar("Epoch/Loss_Healing", total_h_loss / len(loader.dataset), epoch)
     writer.add_scalar("Epoch/Accuracy_Reasoning", avg_acc, epoch)
     writer.add_scalar("Epoch/Learning_Rate", optimizer.param_groups[0]['lr'], epoch)
-    
+
     return total_loss / len(loader.dataset), avg_acc
 
 def main():
@@ -192,29 +192,29 @@ def main():
     args = parser.parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model, tokenizer = build_qwen_state_transition_model(args.qwen_model_id, freeze_qwen=False, device=device)
-    
+
     if args.resume and os.path.exists(args.resume):
         print(f"Resuming from checkpoint: {args.resume}")
         model.load_state_dict(torch.load(args.resume, map_location=device))
-    
+
     train_ds = ConcatDataset([SyntheticDataset(tokenizer, 2800), HealingDataset(tokenizer, 1200)])
     loader = DataLoader(train_ds, batch_size=8, shuffle=True, collate_fn=collate_fn)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    
+
     os.makedirs(args.out_dir, exist_ok=True)
     writer = SummaryWriter(log_dir=os.path.join(args.out_dir, "logs"))
-    
+
     for epoch in range(1, args.epochs + 1):
         start_time = time.time()
         loss, acc = train_one_epoch(model, loader, optimizer, device, args, writer, epoch)
         duration = time.time() - start_time
         print(f"Epoch {epoch:3d} | loss={loss:.4f} | acc={acc:.4f} | time={duration:.1f}s")
-        
+
         # Save checkpoints
         if epoch % 5 == 0:
             torch.save(model.state_dict(), os.path.join(args.out_dir, f"epoch_{epoch}.pt"))
         torch.save(model.state_dict(), os.path.join(args.out_dir, "last.pt"))
-        
+
     writer.close()
 
 if __name__ == "__main__": main()

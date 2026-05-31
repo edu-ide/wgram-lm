@@ -16,10 +16,10 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.blocks import QTRMBlockStack
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.mixers import FLADeltaMixer, TorchGatedDeltaMixer, build_delta_mixer
-from qtrm_mm.training_optimizers import build_memory_efficient_optimizer
+from wgram_lm.blocks import QTRMBlockStack
+from wgram_lm.config import QTRMConfig
+from wgram_lm.mixers import FLADeltaMixer, TorchGatedDeltaMixer, build_delta_mixer
+from wgram_lm.training_optimizers import build_memory_efficient_optimizer
 
 
 def sync(device: torch.device) -> None:

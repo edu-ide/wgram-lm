@@ -16,7 +16,7 @@ Core contract:
 
 QTRM implication:
 
-- `src/qtrm_mm/core.py` has z_H/z_L names and H/L loops, but it does not yet
+- `src/wgram_lm/core.py` has z_H/z_L names and H/L loops, but it does not yet
   implement TRM carry semantics or ACT halting.
 - Treat current recursive core as experimental until those gaps are closed or
   deliberately documented.

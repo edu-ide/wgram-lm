@@ -33,8 +33,8 @@ from pathlib import Path
 
 import torch
 
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 # Always-on principle gate (user requirement: 추론 테스트에서 원칙 항상 자동 검증)
 try:

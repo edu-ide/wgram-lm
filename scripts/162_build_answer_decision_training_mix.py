@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from qtrm_mm.eval.memory_retrieval import (
+from wgram_lm.eval.memory_retrieval import (
     build_case_prompt,
     expected_unknown_case,
     load_cases,

@@ -106,7 +106,7 @@ Every residual experiment should log:
 
 Implementation status:
 
-- `src/qtrm_mm/diagnostics.py` provides `residual_logit_telemetry`.
+- `src/wgram_lm/diagnostics.py` provides `residual_logit_telemetry`.
 - `scripts/92_eval_qtrm_logits.py` emits `residual_telemetry` in JSON records
   and prints a compact text summary when donor logits are available.
 - `scripts/92_eval_qtrm_logits.py` supports `--ablation-mode residual`,
@@ -118,7 +118,7 @@ Implementation status:
   modes.
 - `scripts/106_run_ablation_proof.sh` runs the held-out proof matrix for
   donor-only, residual, workspace-off, core-off, and no-evidence controls.
-- `src/qtrm_mm/losses.py` provides `donor_logit_distillation_loss`, gated by
+- `src/wgram_lm/losses.py` provides `donor_logit_distillation_loss`, gated by
   `loss_donor_kl_weight`, `donor_kl_beta`, and `donor_kl_temperature`, so donor
   preservation/distillation can be enabled without changing default training.
 - `QTRMMultimodalModel` returns `qtrm_logits` before donor fusion, and

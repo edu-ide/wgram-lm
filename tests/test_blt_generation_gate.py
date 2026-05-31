@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -74,6 +75,25 @@ class BLTGenerationGateTests(unittest.TestCase):
 
         self.assertEqual(text, "hi<eos>")
 
+    def test_load_optional_tokenizer_uses_tokenizer_path(self) -> None:
+        try:
+            from tokenizers import Tokenizer
+            from tokenizers.models import WordLevel
+            from tokenizers.pre_tokenizers import Whitespace
+        except Exception as exc:  # pragma: no cover - optional dependency guard
+            self.skipTest(f"tokenizers unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tokenizer_path = Path(tmp_dir) / "tokenizer.json"
+            tokenizer = Tokenizer(WordLevel({"hello": 0, "world": 1, "<unk>": 2}, unk_token="<unk>"))
+            tokenizer.pre_tokenizer = Whitespace()
+            tokenizer.save(str(tokenizer_path))
+
+            loaded = self.module.load_optional_tokenizer({"tokenizer_path": str(tokenizer_path)})
+
+        self.assertIsNotNone(loaded)
+        self.assertEqual(loaded.decode([0, 1]), "hello world")
+
     def test_generate_one_stops_on_eos(self) -> None:
         generated = self.module.generate_one(
             model=_StepModel([5, 1]),
@@ -86,6 +106,38 @@ class BLTGenerationGateTests(unittest.TestCase):
         )
 
         self.assertEqual(generated, [5, 1])
+
+    def test_apply_repetition_penalty_demotes_recent_tokens(self) -> None:
+        logits = torch.tensor([0.0, 1.0, -1.0, 4.0, -4.0])
+
+        adjusted = self.module.apply_generation_logit_controls(
+            logits,
+            generated=[3, 4, 3],
+            repetition_penalty=2.0,
+            repetition_window=8,
+            frequency_penalty=0.0,
+            no_repeat_ngram_size=0,
+        )
+
+        self.assertEqual(float(logits[3]), 4.0)
+        self.assertEqual(float(adjusted[3]), 2.0)
+        self.assertEqual(float(adjusted[4]), -8.0)
+        self.assertEqual(float(adjusted[1]), 1.0)
+
+    def test_no_repeat_ngram_blocks_tokens_that_repeat_a_recent_pattern(self) -> None:
+        logits = torch.zeros(16)
+
+        adjusted = self.module.apply_generation_logit_controls(
+            logits,
+            generated=[7, 8, 7, 8],
+            repetition_penalty=1.0,
+            repetition_window=8,
+            frequency_penalty=0.0,
+            no_repeat_ngram_size=3,
+        )
+
+        self.assertTrue(torch.isneginf(adjusted[7]))
+        self.assertFalse(torch.isneginf(adjusted[8]))
 
     def test_generation_stats_reports_samples_and_repetition_fields(self) -> None:
         report = self.module.generation_stats(

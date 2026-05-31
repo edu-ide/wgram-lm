@@ -3,7 +3,7 @@ from unittest import mock
 
 import torch
 
-from qtrm_mm.training_optimizers import (
+from wgram_lm.training_optimizers import (
     build_memory_efficient_optimizer,
     resolve_optimizer_name,
 )
@@ -43,7 +43,7 @@ class TrainingOptimizerTests(unittest.TestCase):
             pass
 
         with mock.patch(
-            "qtrm_mm.training_optimizers._import_galore",
+            "wgram_lm.training_optimizers._import_galore",
             return_value=(FakeGaLoreAdamW, FakeGaLoreAdamW),
         ):
             _optimizer, report = build_memory_efficient_optimizer(
@@ -70,7 +70,7 @@ class TrainingOptimizerTests(unittest.TestCase):
             pass
 
         with mock.patch(
-            "qtrm_mm.training_optimizers._import_bitsandbytes_adamw8bit",
+            "wgram_lm.training_optimizers._import_bitsandbytes_adamw8bit",
             return_value=(FakeAdamW8bit, FakePagedAdamW8bit),
         ):
             optimizer, report = build_memory_efficient_optimizer(
@@ -96,7 +96,7 @@ class TrainingOptimizerTests(unittest.TestCase):
                 super().__init__(params, betas=betas[:2], **kwargs)
 
         with mock.patch(
-            "qtrm_mm.training_optimizers._import_bitsandbytes_ademamix8bit",
+            "wgram_lm.training_optimizers._import_bitsandbytes_ademamix8bit",
             return_value=(FakeAdEMAMix8bit, FakePagedAdEMAMix8bit),
         ):
             optimizer, report = build_memory_efficient_optimizer(

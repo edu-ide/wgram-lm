@@ -89,7 +89,7 @@ Update this list whenever a new Pivot Impact Review is completed.
 - `docs/wiki/architecture/inductive-bias-map.md`
 - `docs/wiki/decisions/2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md`
 - `docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md`
-- `src/qtrm_mm/architecture/component_registry.py`
+- `src/wgram_lm/architecture/component_registry.py`
 - Research-driven-architecture-debugging skill (Pivot Safety + Reverse I→G→A section)
 
 **Last updated**: 2026-06 (after the discovery that the IMTA SSOT's core ablation was unexecutable on the active RI-4 substrate)

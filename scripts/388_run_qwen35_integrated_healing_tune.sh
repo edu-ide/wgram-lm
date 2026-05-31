@@ -11,7 +11,7 @@ OUT_DIR="${OUT_DIR:-local_eval/qwen35_integrated_healing_l23_langkl_s100_2026051
 DEVICE="${DEVICE:-cuda}"
 DTYPE="${DTYPE:-bfloat16}"
 
-"${PYTHON}" scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+"${PYTHON}" scripts/362_train_qwen_backbone_wgram_core_gate.py \
   --model-id "${MODEL_ID}" \
   --out-dir "${OUT_DIR}" \
   --device "${DEVICE}" \

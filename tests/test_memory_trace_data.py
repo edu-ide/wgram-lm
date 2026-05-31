@@ -3,7 +3,7 @@ import unittest
 
 class MemoryTraceDataTests(unittest.TestCase):
     def test_build_memory_trace_rows_turns_missing_answer_cases_into_unknown_traces(self):
-        from qtrm_mm.training.memory_trace_data import build_memory_trace_rows
+        from wgram_lm.training.memory_trace_data import build_memory_trace_rows
 
         case = {
             "id": "missing-north-vault",
@@ -29,7 +29,7 @@ class MemoryTraceDataTests(unittest.TestCase):
         self.assertTrue(any("Polaris-42" in row["prompt"] for row in rows))
 
     def test_build_memory_trace_rows_keeps_short_gold_answer_for_conflict_cases(self):
-        from qtrm_mm.training.memory_trace_data import build_memory_trace_rows
+        from wgram_lm.training.memory_trace_data import build_memory_trace_rows
 
         case = {
             "id": "signed-vault",

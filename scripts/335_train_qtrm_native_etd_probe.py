@@ -26,10 +26,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
-from qtrm_mm.blocks import QTRMBlockStack
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.mixers import OfficialMamba3Mixer, build_delta_mixer
-from qtrm_mm.training_optimizers import (
+from wgram_lm.blocks import QTRMBlockStack
+from wgram_lm.config import QTRMConfig
+from wgram_lm.mixers import OfficialMamba3Mixer, build_delta_mixer
+from wgram_lm.training_optimizers import (
     MEMORY_EFFICIENT_OPTIMIZERS,
     build_memory_efficient_optimizer,
 )

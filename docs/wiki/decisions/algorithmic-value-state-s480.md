@@ -32,10 +32,10 @@ depth 4 scalar: 300015                  -> kind=scalar, slots=[7,10]
 
 ```text
 shared target/scorer:
-  src/qtrm_mm/algorithmic_value_state.py
+  src/wgram_lm/algorithmic_value_state.py
 
 model:
-  src/qtrm_mm/qtrm_model.py
+  src/wgram_lm/wgram_model.py
 
 training:
   scripts/196_train_pure_recursive_depth_supervised.py

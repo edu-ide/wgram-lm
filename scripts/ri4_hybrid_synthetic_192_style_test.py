@@ -33,9 +33,9 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
+from wgram_lm.config import QTRMConfig
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
 
 import json
 from pathlib import Path as _Path  # avoid name clash with existing Path

@@ -331,8 +331,8 @@ def build_dataset(args: argparse.Namespace) -> dict:
             file_cap = int(bucket_max_rows_per_file.get(bucket, max_rows_per_file))
             if file_cap > 0 and accepted_in_file >= file_cap:
                 break
-            instruction = row.get("instruction")
-            response = row.get("response")
+            instruction = row.get("instruction") or row.get("prompt")
+            response = row.get("response") or row.get("answer")
             if instruction is None or response is None:
                 rejected["missing_fields"] += 1
                 continue

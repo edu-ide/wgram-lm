@@ -552,7 +552,7 @@ def summarize_pointer_logits(
 
 
 def _load_checkpoint_stack(model, *, checkpoint: str, base_checkpoint: str | None, device: str) -> None:
-    from qtrm_mm.training.train import load_initial_checkpoint
+    from wgram_lm.training.train import load_initial_checkpoint
 
     if base_checkpoint:
         load_initial_checkpoint(model, base_checkpoint, map_location=device)
@@ -703,9 +703,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
 
     raw_eval = _load_raw_eval_module()
     cfg = load_config(args.config)

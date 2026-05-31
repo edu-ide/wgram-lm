@@ -22,7 +22,7 @@ execution out of free-form string generation.
 
 ```text
 module:
-  src/qtrm_mm/agentic/solver_state_machine.py
+  src/wgram_lm/agentic/solver_state_machine.py
 
 train script:
   scripts/216_train_pure_recursive_solver_state_machine.py
@@ -493,7 +493,7 @@ script:
   scripts/221_eval_qtrm_primitive_transition_rollout.py
 
 shared primitive:
-  qtrm_mm.agentic.solver_state_machine.rollout_solver_trace_from_operations
+  wgram_lm.agentic.solver_state_machine.rollout_solver_trace_from_operations
 ```
 
 Heldout7000 rollout:
@@ -547,7 +547,7 @@ script:
   scripts/222_infer_qtrm_primitive_transition_answer.py
 
 runtime primitive:
-  qtrm_mm.agentic.solver_state_machine.answer_from_primitive_operations
+  wgram_lm.agentic.solver_state_machine.answer_from_primitive_operations
 ```
 
 Arithmetic smoke:

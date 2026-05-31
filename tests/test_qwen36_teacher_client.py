@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from qtrm_mm.distill.qwen36_teacher_client import (
+from wgram_lm.distill.qwen36_teacher_client import (
     build_teacher_messages,
     parse_teacher_json_response,
 )
-from qtrm_mm.distill.teacher_schema import TeacherEvidenceDoc
+from wgram_lm.distill.teacher_schema import TeacherEvidenceDoc
 
 
 def test_build_teacher_messages_requests_structured_distillation_record() -> None:

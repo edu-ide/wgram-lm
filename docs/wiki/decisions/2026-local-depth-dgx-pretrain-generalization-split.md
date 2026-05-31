@@ -166,10 +166,10 @@ Current DGX run:
 
 ```text
 out:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260525_STAGE95I_DGX_1B_OPUS_GD_OFFICIAL_GDN2_ONEBODY_FULL
+  /mnt/data4tb/wgram-lm/local_eval/20260525_STAGE95I_DGX_1B_OPUS_GD_OFFICIAL_GDN2_ONEBODY_FULL
 
 sample:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/stage95_blt_foundation_byte_curriculum_broad_240k_opus_gd/sampled
+  /mnt/data4tb/wgram-lm/local_eval/stage95_blt_foundation_byte_curriculum_broad_240k_opus_gd/sampled
 ```
 
 What is proven applied:
@@ -243,7 +243,7 @@ script:
   scripts/620_watch_stage95i_dgx_gd_lite_on.sh
 
 DGX copy:
-  /mnt/data4tb/qtrm_multimodal_memoryos/scripts/620_watch_stage95i_dgx_gd_lite_on.sh
+  /mnt/data4tb/wgram-lm/scripts/620_watch_stage95i_dgx_gd_lite_on.sh
 
 watchdog log:
   /tmp/20260525_STAGE95I_GD_LITE_ON_WATCHDOG.log

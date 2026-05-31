@@ -64,7 +64,7 @@ Kill criterion:
 Added typed targets/scorers:
 
 ```text
-src/qtrm_mm/algorithmic_value_state.py
+src/wgram_lm/algorithmic_value_state.py
 ```
 
 Added model outputs:

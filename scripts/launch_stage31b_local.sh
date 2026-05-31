@@ -2,7 +2,7 @@
 set -euo pipefail
 
 WAIT_PID="${1:-}"
-ROOT="/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos"
+ROOT="/home/tripleyoung/qtrm-workspace/wgram-lm"
 
 if [ -n "${WAIT_PID}" ]; then
   while kill -0 "${WAIT_PID}" 2>/dev/null; do

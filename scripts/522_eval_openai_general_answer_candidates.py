@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from urllib import error, request
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     answer_kind,
     extract_answer_candidate_text,

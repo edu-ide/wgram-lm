@@ -19,8 +19,8 @@ sys.path.insert(0, str(ROOT))
 import torch
 import traceback
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.config import QTRMConfig
+from wgram_lm.blocks import OneBodyParallelHybridBlock
 
 
 def print_tensor_info(name: str, tensor: torch.Tensor):

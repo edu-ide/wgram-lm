@@ -42,7 +42,7 @@ Ablation in proxy not yet causal (micro model collapse).
 Record as L1 probe signal. Requires real anchor continuation for falsification. No promotion. No nearby scalar tweak on preference. If next real run shows same-family exact lift + state ablation drop on the same LM metric, promote to L2.
 
 ## Artifacts
-- loss: src/qtrm_mm/losses/equation_state_binding.py (full compute + config)
+- loss: src/wgram_lm/losses/equation_state_binding.py (full compute + config)
 - trainer hook: scripts/625 (guarded)
 - runnable probe: scripts/627 (self-contained)
 - this ledger + probe_results_2026-05-26.md

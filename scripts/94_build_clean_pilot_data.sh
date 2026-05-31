@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd ~/qtrm-workspace/qtrm_multimodal_memoryos
+cd ~/qtrm-workspace/wgram-lm
 if [[ -f .venv/bin/activate ]]; then
   source .venv/bin/activate
 fi
@@ -15,7 +15,7 @@ INPUTS=${INPUTS:-"data/raw/text_train.jsonl data/raw/math_train.jsonl data/raw/m
 
 read -r -a INPUT_FILES <<< "$INPUTS"
 
-python -m qtrm_mm.data.clean_filter \
+python -m wgram_lm.data.clean_filter \
   --input "${INPUT_FILES[@]}" \
   --output "$OUTPUT" \
   --max-rows "$MAX_ROWS" \

@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from qtrm_mm.distill.training_mix import build_training_mix
+from wgram_lm.distill.training_mix import build_training_mix
 
 
 def parse_args() -> argparse.Namespace:

@@ -8,9 +8,9 @@ from typing import Iterable, Sequence
 
 import torch
 
-from qtrm_mm.config import load_config
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
+from wgram_lm.config import load_config
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

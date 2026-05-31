@@ -1,6 +1,6 @@
 import torch
-from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-from qtrm_mm.losses import qtrm_smoke_loss
+from wgram_lm import QTRMConfig, QTRMMultimodalModel
+from wgram_lm.losses import qtrm_smoke_loss
 
 
 def main():

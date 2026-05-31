@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate BLT-D PrefixLM checkpoints with first-token and generation gates."""
+"""Evaluate BLT-D PrefixLM checkpoints with free autoregressive generation."""
 
 from __future__ import annotations
 
@@ -78,6 +78,21 @@ def decode_ids(tokenizer: Any | None, token_ids: list[int], tokenizer_info: dict
     return " ".join(str(int(token_id)) for token_id in token_ids)
 
 
+def load_optional_tokenizer(tokenizer_info: dict[str, Any]) -> Any | None:
+    tokenizer_path = str(tokenizer_info.get("tokenizer_path") or "")
+    if not tokenizer_path:
+        return None
+    path = Path(tokenizer_path)
+    if not path.exists():
+        return None
+    try:
+        from tokenizers import Tokenizer
+
+        return Tokenizer.from_file(str(path))
+    except Exception:
+        return None
+
+
 def resolve_eoa_id(tokenizer_info: dict[str, Any], tokenizer: Any | None) -> int:
     eoa_text = tokenizer_info.get("eoa")
     if eoa_text is not None and tokenizer is not None:
@@ -99,6 +114,83 @@ def gold_response_until_eoa(resp: np.ndarray, eoa_id: int) -> list[int]:
         if int(token_id) == int(eoa_id):
             break
     return out
+
+
+def _banned_no_repeat_ngram_tokens(generated: list[int], no_repeat_ngram_size: int) -> set[int]:
+    ngram_size = int(no_repeat_ngram_size)
+    if ngram_size <= 1 or len(generated) < ngram_size - 1:
+        return set()
+    prefix = tuple(int(token_id) for token_id in generated[-(ngram_size - 1) :])
+    banned: set[int] = set()
+    for start in range(0, len(generated) - ngram_size + 1):
+        if tuple(int(token_id) for token_id in generated[start : start + ngram_size - 1]) == prefix:
+            banned.add(int(generated[start + ngram_size - 1]))
+    return banned
+
+
+def apply_generation_logit_controls(
+    logits: torch.Tensor,
+    *,
+    generated: list[int],
+    repetition_penalty: float,
+    repetition_window: int,
+    frequency_penalty: float,
+    no_repeat_ngram_size: int,
+) -> torch.Tensor:
+    adjusted = logits.detach().clone()
+    recent = [int(token_id) for token_id in generated[-max(0, int(repetition_window)) :]]
+
+    penalty = float(repetition_penalty)
+    if penalty > 1.0 and recent:
+        for token_id in set(recent):
+            if 0 <= token_id < adjusted.numel():
+                if adjusted[token_id] > 0:
+                    adjusted[token_id] = adjusted[token_id] / penalty
+                else:
+                    adjusted[token_id] = adjusted[token_id] * penalty
+
+    freq_penalty = float(frequency_penalty)
+    if freq_penalty > 0.0 and recent:
+        for token_id, count in Counter(recent).items():
+            if 0 <= int(token_id) < adjusted.numel():
+                adjusted[int(token_id)] = adjusted[int(token_id)] - (freq_penalty * int(count))
+
+    for token_id in _banned_no_repeat_ngram_tokens(
+        [int(token_id) for token_id in generated],
+        int(no_repeat_ngram_size),
+    ):
+        if 0 <= int(token_id) < adjusted.numel():
+            adjusted[int(token_id)] = -float("inf")
+
+    return adjusted
+
+
+def choose_next_token(
+    logits: torch.Tensor,
+    *,
+    decode: str,
+    temperature: float,
+    top_p: float,
+) -> int:
+    mode = str(decode)
+    if mode == "greedy" or float(temperature) <= 0.0:
+        return int(logits.argmax(dim=-1).detach().cpu().item())
+
+    next_logits = logits.clone()
+    temp = max(float(temperature), 1.0e-6)
+    next_logits = next_logits / temp
+
+    nucleus_p = float(top_p)
+    if nucleus_p < 1.0:
+        sorted_logits, sorted_indices = torch.sort(next_logits, descending=True)
+        cumulative_probs = torch.cumsum(torch.softmax(sorted_logits, dim=-1), dim=-1)
+        sorted_indices_to_remove = cumulative_probs > max(0.0, nucleus_p)
+        sorted_indices_to_remove[1:] = sorted_indices_to_remove[:-1].clone()
+        sorted_indices_to_remove[0] = False
+        next_logits[sorted_indices[sorted_indices_to_remove]] = -float("inf")
+
+    probs = torch.softmax(next_logits, dim=-1)
+    return int(torch.multinomial(probs, num_samples=1).detach().cpu().item())
 
 
 def first_response_stats(
@@ -377,6 +469,13 @@ def generate_one(
     think_steps: int,
     seq_len: int,
     max_new_tokens: int,
+    decode: str = "greedy",
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    repetition_penalty: float = 1.0,
+    repetition_window: int = 64,
+    frequency_penalty: float = 0.0,
+    no_repeat_ngram_size: int = 0,
 ) -> list[int]:
     generated: list[int] = []
     current = [int(token_id) for token_id in prefix_ids]
@@ -392,7 +491,20 @@ def generate_one(
                 attention_mask,
                 think_steps=int(think_steps),
             )
-            next_id = int(logits[0, len(current) - 1].argmax(dim=-1).detach().cpu().item())
+            next_logits = apply_generation_logit_controls(
+                logits[0, len(current) - 1],
+                generated=generated,
+                repetition_penalty=float(repetition_penalty),
+                repetition_window=int(repetition_window),
+                frequency_penalty=float(frequency_penalty),
+                no_repeat_ngram_size=int(no_repeat_ngram_size),
+            )
+            next_id = choose_next_token(
+                next_logits,
+                decode=str(decode),
+                temperature=float(temperature),
+                top_p=float(top_p),
+            )
             generated.append(next_id)
             current.append(next_id)
             if next_id == int(eoa_id):
@@ -412,6 +524,13 @@ def generation_stats(
     seq_len: int,
     max_rows: int,
     max_new_tokens: int,
+    decode: str = "greedy",
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    repetition_penalty: float = 1.0,
+    repetition_window: int = 64,
+    frequency_penalty: float = 0.0,
+    no_repeat_ngram_size: int = 0,
 ) -> dict[str, Any]:
     rows = min(int(max_rows), len(dataset))
     exact = 0
@@ -434,6 +553,13 @@ def generation_stats(
             think_steps=int(think_steps),
             seq_len=int(seq_len),
             max_new_tokens=int(max_new_tokens),
+            decode=str(decode),
+            temperature=float(temperature),
+            top_p=float(top_p),
+            repetition_penalty=float(repetition_penalty),
+            repetition_window=int(repetition_window),
+            frequency_penalty=float(frequency_penalty),
+            no_repeat_ngram_size=int(no_repeat_ngram_size),
         )
         if generated and generated[0] == int(eoa_id):
             starts_with_eoa += 1
@@ -477,6 +603,13 @@ def generation_stats(
         "prefix_positions": int(prefix_positions),
         "repeated_token_loops": int(repeated_token_loops),
         "repeated_token_loop_fraction": float(repeated_token_loops / rows) if rows else 0.0,
+        "decode": str(decode),
+        "temperature": float(temperature),
+        "top_p": float(top_p),
+        "repetition_penalty": float(repetition_penalty),
+        "repetition_window": int(repetition_window),
+        "frequency_penalty": float(frequency_penalty),
+        "no_repeat_ngram_size": int(no_repeat_ngram_size),
         "samples": samples,
     }
 
@@ -506,33 +639,9 @@ def run_gate(args: argparse.Namespace) -> dict[str, Any]:
     )
     metadata = prefix.load_prefixlm_metadata(Path(sampled_data))
     tokenizer_info = dict(metadata.tokenizer_info or {})
-    tokenizer = None
+    tokenizer = load_optional_tokenizer(tokenizer_info)
     eoa_id = resolve_eoa_id(tokenizer_info, tokenizer)
     think_steps = int(args.think_steps) if int(args.think_steps) > 0 else int(ckpt_args.train_think_steps)
-    first_stats = first_response_stats(
-        prefix=prefix,
-        model=model,
-        dataset=dataset,
-        tokenizer=tokenizer,
-        tokenizer_info=tokenizer_info,
-        eoa_id=int(eoa_id),
-        device=device,
-        think_steps=int(think_steps),
-        max_rows=int(args.max_first_token_rows),
-        batch_size=int(args.first_token_batch_size),
-    )
-    continuation_stats = response_continuation_stats(
-        prefix=prefix,
-        model=model,
-        dataset=dataset,
-        tokenizer=tokenizer,
-        tokenizer_info=tokenizer_info,
-        eoa_id=int(eoa_id),
-        device=device,
-        think_steps=int(think_steps),
-        max_rows=int(args.max_continuation_rows),
-        batch_size=int(args.continuation_batch_size),
-    )
     gen_stats = generation_stats(
         model=model,
         dataset=dataset,
@@ -544,9 +653,17 @@ def run_gate(args: argparse.Namespace) -> dict[str, Any]:
         seq_len=int(args.seq_len or ckpt_args.seq_len),
         max_rows=int(args.max_generation_rows),
         max_new_tokens=int(args.max_new_tokens),
+        decode=str(args.generation_decode),
+        temperature=float(args.temperature),
+        top_p=float(args.top_p),
+        repetition_penalty=float(args.repetition_penalty),
+        repetition_window=int(args.repetition_window),
+        frequency_penalty=float(args.frequency_penalty),
+        no_repeat_ngram_size=int(args.no_repeat_ngram_size),
     )
-    return {
+    report: dict[str, Any] = {
         "gate_type": "blt_generation_gate",
+        "evaluation_policy": "free_generation_only",
         "checkpoint": str(checkpoint_path),
         "sampled_data": str(sampled_data),
         "epoch": int(args.epoch),
@@ -554,10 +671,40 @@ def run_gate(args: argparse.Namespace) -> dict[str, Any]:
         "think_steps": int(think_steps),
         "eoa": {"token_id": int(eoa_id)},
         "tokenizer_info": tokenizer_info,
-        "first_response": first_stats,
-        "response_continuation": continuation_stats,
+        "tokenizer_loaded": bool(tokenizer is not None),
+        "checkpoint_key_adaptations": loaded.get("checkpoint_key_adaptations", {}),
         "generation": gen_stats,
     }
+    if bool(args.include_teacher_forced_diagnostics):
+        first_stats = first_response_stats(
+            prefix=prefix,
+            model=model,
+            dataset=dataset,
+            tokenizer=tokenizer,
+            tokenizer_info=tokenizer_info,
+            eoa_id=int(eoa_id),
+            device=device,
+            think_steps=int(think_steps),
+            max_rows=int(args.max_first_token_rows),
+            batch_size=int(args.first_token_batch_size),
+        )
+        continuation_stats = response_continuation_stats(
+            prefix=prefix,
+            model=model,
+            dataset=dataset,
+            tokenizer=tokenizer,
+            tokenizer_info=tokenizer_info,
+            eoa_id=int(eoa_id),
+            device=device,
+            think_steps=int(think_steps),
+            max_rows=int(args.max_continuation_rows),
+            batch_size=int(args.continuation_batch_size),
+        )
+        report["diagnostic_not_promotion"] = {
+            "first_response": first_stats,
+            "response_continuation": continuation_stats,
+        }
+    return report
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -573,8 +720,23 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--first-token-batch-size", type=int, default=8)
     parser.add_argument("--max-continuation-rows", type=int, default=256)
     parser.add_argument("--continuation-batch-size", type=int, default=8)
+    parser.add_argument(
+        "--include-teacher-forced-diagnostics",
+        action="store_true",
+        help=(
+            "Optional debugging only. Active promotion reports stay "
+            "free-generation-only and omit teacher-forced first/continuation stats."
+        ),
+    )
     parser.add_argument("--max-generation-rows", type=int, default=16)
     parser.add_argument("--max-new-tokens", type=int, default=64)
+    parser.add_argument("--generation-decode", choices=("greedy", "sample"), default="greedy")
+    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--top-p", type=float, default=1.0)
+    parser.add_argument("--repetition-penalty", type=float, default=1.0)
+    parser.add_argument("--repetition-window", type=int, default=64)
+    parser.add_argument("--frequency-penalty", type=float, default=0.0)
+    parser.add_argument("--no-repeat-ngram-size", type=int, default=0)
     parser.add_argument("--out", default="")
     return parser
 

@@ -1,7 +1,7 @@
 # Memory Architecture Pillar (MSA First-Class) — SSOT
 
-**Status**: Canonical single source of truth for the memory architecture track as of 2026-06.  
-**Last Major Update**: 2026-06 (post user clarification "memory sparse attention MSA 임" + "wiki 를 정리해").  
+**Status**: Canonical single source of truth for the memory architecture track as of 2026-06.
+**Last Major Update**: 2026-06 (post user clarification "memory sparse attention MSA 임" + "wiki 를 정리해").
 **Supersedes**: Pre-2026-06 workspace-memory-architecture.md framing for new architecture work.
 
 ---
@@ -141,7 +141,7 @@ See:
 5. [S0 Gate LOCKED](../roadmaps/S0_Surpassing_5.6_Gate_LOCKED.md) + S1/S2 detailed plans
 
 **Implementation**:
-- `src/qtrm_mm/blocks.py` — OneBodyParallelHybridBlock + Gating v2 + stochastic injection points
+- `src/wgram_lm/blocks.py` — OneBodyParallelHybridBlock + Gating v2 + stochastic injection points
 - `scripts/train_556_on_parallel_hybrid_minimal.py` — faithful 5.56 rehearsal on hybrid + clean probes
 - `scripts/run_s2_historical_baseline.py` — production-grade real 642 gold direct baseline system
 

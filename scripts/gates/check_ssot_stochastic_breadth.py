@@ -24,7 +24,7 @@ from pathlib import Path
 # Make sure we can import from src
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.qtrm_mm.architecture.component_registry import (
+from wgram_lm.architecture.component_registry import (
     get_inactive_primary_path_components,
     get_component_record,
 )

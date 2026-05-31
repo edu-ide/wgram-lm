@@ -21,8 +21,8 @@ Usage:
 import argparse
 import itertools
 import torch
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 MECHANISMS = [
     "workspace",

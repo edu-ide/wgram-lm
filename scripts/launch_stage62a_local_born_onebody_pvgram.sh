@@ -9,7 +9,7 @@ set -euo pipefail
 #   There is no Qwen donor, no side renderer, and no external calculator.
 
 ACTION="${1:-plan}"
-ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos}"
+ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/wgram-lm}"
 TS="${TS:-$(date +%Y%m%d_%H%M%S)}"
 OUT_DIR="${OUT_DIR:-/tmp/stage62a_born_onebody_pvgram_gdn2_3to1_${TS}}"
 LOG="${LOG:-/tmp/stage62a_born_onebody_pvgram_gdn2_3to1_${TS}.log}"

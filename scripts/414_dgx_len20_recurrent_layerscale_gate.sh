@@ -3,11 +3,11 @@ set -euo pipefail
 
 ACTION="${1:-run}"
 DGX_HOST="${DGX_HOST:-dgx}"
-DGX_REPO="${DGX_REPO:-/mnt/data4tb/qtrm_multimodal_memoryos_gate}"
+DGX_REPO="${DGX_REPO:-/mnt/data4tb/wgram-lm_gate}"
 REMOTE_PYTHON="${REMOTE_PYTHON:-/mnt/data4tb/ws_llm/.venv/bin/python}"
 OUT_TAG="${OUT_TAG:-$(date +%Y%m%d_%H%M%S)}"
 
-RESUME_FROM="${RESUME_FROM:-/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/dgx_single_order_router_len20_familyfloor_select_20260517_222156/last.pt}"
+RESUME_FROM="${RESUME_FROM:-/mnt/data4tb/wgram-lm/local_eval/dgx_single_order_router_len20_familyfloor_select_20260517_222156/last.pt}"
 PROGRAM_LEN="${PROGRAM_LEN:-20}"
 THINK_STEPS="${THINK_STEPS:-20}"
 STEPS="${STEPS:-600}"

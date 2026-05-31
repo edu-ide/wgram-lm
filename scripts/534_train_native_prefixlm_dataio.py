@@ -35,7 +35,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, Sampler
 
-from qtrm_mm.training_optimizers import (
+from wgram_lm.training_optimizers import (
     MEMORY_EFFICIENT_OPTIMIZERS,
     build_memory_efficient_optimizer,
 )

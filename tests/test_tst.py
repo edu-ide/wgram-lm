@@ -3,7 +3,7 @@ import unittest
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.tst import (
+from wgram_lm.tst import (
     multi_hot_cross_entropy,
     next_token_bags,
     superpose_embeddings,

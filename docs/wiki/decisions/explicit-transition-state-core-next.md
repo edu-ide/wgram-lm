@@ -92,7 +92,7 @@ donor-only is beaten on heldout smoke before scale-up
 The repo already has the narrow prior component:
 
 ```text
-src/qtrm_mm/agentic/transition_controller.py
+src/wgram_lm/agentic/transition_controller.py
 tests/test_transition_state_controller.py
 scripts/158_train_transition_state_controller.py
 scripts/159_eval_learned_state_answer_loop.py
@@ -211,7 +211,7 @@ renderer is the blocker and must be redesigned before any more core training.
 The cleaner recurrent state-machine probe was implemented and tested:
 
 ```text
-src/qtrm_mm/agentic/solver_state_machine.py
+src/wgram_lm/agentic/solver_state_machine.py
 scripts/216_train_pure_recursive_solver_state_machine.py
 ```
 

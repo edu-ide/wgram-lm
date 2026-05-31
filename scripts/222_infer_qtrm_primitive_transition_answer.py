@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any, Sequence
 
-from qtrm_mm.agentic.solver_state_machine import (
+from wgram_lm.agentic.solver_state_machine import (
     answer_from_primitive_operations,
     operation_names_from_logits,
 )
@@ -55,10 +55,10 @@ def predict_operations_for_prompt(
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
-    from qtrm_mm.training.train import load_initial_checkpoint
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.training.train import load_initial_checkpoint
 
     depth_train = _load_depth_train_module()
     cfg = load_config(config_path)

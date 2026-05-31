@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 
-from qtrm_mm.distill.teacher_schema import Qwen36TeacherRecord, TeacherEvidenceDoc
+from wgram_lm.distill.teacher_schema import Qwen36TeacherRecord, TeacherEvidenceDoc
 
 
 def test_teacher_record_with_evidence_becomes_workspace_preference_row() -> None:
-    from qtrm_mm.distill.training_mix import teacher_record_to_training_row
+    from wgram_lm.distill.training_mix import teacher_record_to_training_row
 
     record = Qwen36TeacherRecord(
         prompt="What is the access code?",
@@ -37,7 +37,7 @@ def test_teacher_record_with_evidence_becomes_workspace_preference_row() -> None
 
 
 def test_refuted_teacher_record_sets_refute_target() -> None:
-    from qtrm_mm.distill.training_mix import teacher_record_to_training_row
+    from wgram_lm.distill.training_mix import teacher_record_to_training_row
 
     record = Qwen36TeacherRecord(
         prompt="Judge the claim.",
@@ -65,7 +65,7 @@ def test_refuted_teacher_record_sets_refute_target() -> None:
 
 
 def test_unsupported_evidence_record_becomes_needs_search_preference() -> None:
-    from qtrm_mm.distill.training_mix import teacher_record_to_training_row
+    from wgram_lm.distill.training_mix import teacher_record_to_training_row
 
     record = Qwen36TeacherRecord(
         prompt="Who won the hidden tournament?",
@@ -87,7 +87,7 @@ def test_unsupported_evidence_record_becomes_needs_search_preference() -> None:
 
 
 def test_build_training_mix_caps_each_source(tmp_path: Path) -> None:
-    from qtrm_mm.distill.training_mix import build_training_mix
+    from wgram_lm.distill.training_mix import build_training_mix
 
     first = tmp_path / "yana.jsonl"
     first.write_text(
@@ -125,7 +125,7 @@ def test_build_training_mix_caps_each_source(tmp_path: Path) -> None:
 
 
 def test_hf_first_wave_warmup_keeps_general_qtrm_residual_active() -> None:
-    from qtrm_mm.config import load_config
+    from wgram_lm.config import load_config
 
     cfg = load_config("configs/qwen35_2b_4090_hf_first_wave_warmup_s400.yaml")
 
@@ -134,7 +134,7 @@ def test_hf_first_wave_warmup_keeps_general_qtrm_residual_active() -> None:
 
 
 def test_openmythos_style_warmup_v2_keeps_core_on_the_text_causal_path() -> None:
-    from qtrm_mm.config import load_config
+    from wgram_lm.config import load_config
 
     cfg = load_config("configs/qwen35_2b_4090_hf_first_wave_warmup_v2_s400.yaml")
 

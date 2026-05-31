@@ -85,16 +85,16 @@ Positive conclusion: 새 시야는 모든 전통을 부정하는 것이 아니�
 
 Added a lightweight evaluation/data contract:
 
-- Module: `src/qtrm_mm/eval/critical_synthesis.py`
+- Module: `src/wgram_lm/eval/critical_synthesis.py`
 - Probe data: `data/eval/critical_synthesis_probe.jsonl`
-- Trace builder: `src/qtrm_mm/training/critical_synthesis_data.py`
+- Trace builder: `src/wgram_lm/training/critical_synthesis_data.py`
 - Trace CLI: `scripts/103_build_critical_synthesis_traces.py`
 - Generated trace data: `data/filtered/critical_synthesis_traces.jsonl`
 - Tests: `tests/test_critical_synthesis_eval.py`
 
 Added a Bongakgyo-specific expansion pass:
 
-- Case generator: `src/qtrm_mm/training/bongak_critical_synthesis_cases.py`
+- Case generator: `src/wgram_lm/training/bongak_critical_synthesis_cases.py`
 - Case/trace CLI: `scripts/104_build_bongak_critical_synthesis_cases.py`
 - Generated cases: `data/filtered/critical_synthesis_bongak_cases.jsonl`
 - Generated traces: `data/filtered/critical_synthesis_bongak_traces.jsonl`

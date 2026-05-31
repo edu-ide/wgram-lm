@@ -245,7 +245,7 @@ def build_rows(
     cases: list[dict[str, Any]],
     tokenizer,
     donor,
-    qtrm_model,
+    wgram_model,
     device: str,
     core_steps: int,
     max_length: int,
@@ -255,8 +255,8 @@ def build_rows(
     state_feature_mode: str = "softmax",
 ) -> list[dict[str, Any]]:
     raw_eval = _load_raw_eval_module()
-    old_outer_steps = int(qtrm_model.cfg.outer_steps)
-    qtrm_model.cfg.outer_steps = int(core_steps)
+    old_outer_steps = int(wgram_model.cfg.outer_steps)
+    wgram_model.cfg.outer_steps = int(core_steps)
     runtime = raw_eval.mode_runtime(f"qtrm_core_steps_{int(core_steps)}_no_evidence")
     rows: list[dict[str, Any]] = []
     try:
@@ -282,7 +282,7 @@ def build_rows(
                 enabled=(device == "cuda"),
                 dtype=torch.bfloat16,
             ):
-                outputs = qtrm_model(
+                outputs = wgram_model(
                     input_ids,
                     attention_mask=attention_mask,
                     text_states=donor_out["text_states"].to(device),
@@ -312,7 +312,7 @@ def build_rows(
                 }
             )
     finally:
-        qtrm_model.cfg.outer_steps = old_outer_steps
+        wgram_model.cfg.outer_steps = old_outer_steps
     return rows
 
 
@@ -800,9 +800,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> None:
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
 
     args = build_arg_parser().parse_args()
     raw_eval = _load_raw_eval_module()
@@ -818,11 +818,11 @@ def main() -> None:
     )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-    qtrm_model = QTRMMultimodalModel(cfg.model).to(device_name)
+    wgram_model = QTRMMultimodalModel(cfg.model).to(device_name)
     state = torch.load(args.checkpoint, map_location=device_name, weights_only=False)
-    qtrm_model.load_state_dict(state.get("model", state), strict=False)
-    qtrm_model.eval()
-    for param in qtrm_model.parameters():
+    wgram_model.load_state_dict(state.get("model", state), strict=False)
+    wgram_model.eval()
+    for param in wgram_model.parameters():
         param.requires_grad_(False)
 
     donor = QwenDonorAdapter(cfg.donor)
@@ -841,7 +841,7 @@ def main() -> None:
         cases=train_cases,
         tokenizer=tokenizer,
         donor=donor,
-        qtrm_model=qtrm_model,
+        wgram_model=wgram_model,
         device=device_name,
         core_steps=int(args.core_steps),
         max_length=int(args.max_length),
@@ -855,7 +855,7 @@ def main() -> None:
         cases=eval_cases,
         tokenizer=tokenizer,
         donor=donor,
-        qtrm_model=qtrm_model,
+        wgram_model=wgram_model,
         device=device_name,
         core_steps=int(args.core_steps),
         max_length=int(args.max_length),

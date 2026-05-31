@@ -15,7 +15,7 @@ SEED="${SEED:-20260515}"
 BATCH_SIZE="${BATCH_SIZE:-1}"
 TRAIN_CASES="${TRAIN_CASES:-192}"
 EVAL_CASES="${EVAL_CASES:-192}"
-BASE_DIR="${BASE_DIR:-local_eval/qwen_backbone_qtrm_nested_curriculum_20260515}"
+BASE_DIR="${BASE_DIR:-local_eval/qwen_backbone_wgram_nested_curriculum_20260515}"
 FORCE="${FORCE:-0}"
 STEP_CONDITIONING="${STEP_CONDITIONING:-1}"
 STEP_CONDITIONING_MAX_STEPS="${STEP_CONDITIONING_MAX_STEPS:-64}"
@@ -58,7 +58,7 @@ run_stage() {
     init_args+=(--init-checkpoint "$init_checkpoint")
   fi
   set +e
-  .venv/bin/python scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+  .venv/bin/python scripts/362_train_qwen_backbone_wgram_core_gate.py \
     --model-id "$MODEL_ID" \
     --out-dir "$out_dir" \
     --device "$DEVICE" \

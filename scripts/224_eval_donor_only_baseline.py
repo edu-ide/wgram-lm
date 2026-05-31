@@ -239,8 +239,8 @@ def evaluate_rows(
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.config import load_config
+    from wgram_lm.qwen_donor import QwenDonorAdapter
 
     cfg = load_config(config_path)
     tokenizer = AutoTokenizer.from_pretrained(

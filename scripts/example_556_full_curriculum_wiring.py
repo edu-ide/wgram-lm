@@ -20,7 +20,7 @@ import torch
 
 # Import the production classes we extended
 try:
-    from src.qtrm_mm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
+    from wgram_lm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
 except ImportError:
     AdaptiveRehearsal = None
     RehearsalConfig = None

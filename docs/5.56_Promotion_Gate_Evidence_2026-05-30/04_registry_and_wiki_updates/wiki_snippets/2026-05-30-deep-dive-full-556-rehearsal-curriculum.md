@@ -1,7 +1,7 @@
 # Deep Dive: Full Adaptive Rehearsal 5.56 Gold Curriculum (Highest Priority Remaining Composite)
 
-**Date**: 2026-05-30  
-**Linked to**: 
+**Date**: 2026-05-30
+**Linked to**:
 - 2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md
 - 2026-05-30-historical-reconstruction-other-tracks.md
 - Inductive Bias Map
@@ -109,7 +109,7 @@ We created and actually ran the smoke:
 
 This is now the working test harness for the Reverse I→G→A of the 5.56 curriculum.
 
-**Real next engineering step**: Extend the production `src/qtrm_mm/rehearsal/adaptive_rehearsal.py` to support the full scheduled curriculum mode and integrate it with the real `QTRMRecursiveCore`.
+**Real next engineering step**: Extend the production `src/wgram_lm/rehearsal/adaptive_rehearsal.py` to support the full scheduled curriculum mode and integrate it with the real `QTRMRecursiveCore`.
 **2026-05-30 Update — Major Progress (순서대로 실행)**
 
 1. Created and executed the 5.56 Rehearsal Curriculum Smoke:
@@ -117,7 +117,7 @@ This is now the working test harness for the Reverse I→G→A of the 5.56 curri
    - Includes scheduled decay, gold injection, attractor protection during rehearsal, + stochastic breadth (on vs ablation_zero).
 
 2. Extended the real production module:
-   - `src/qtrm_mm/rehearsal/adaptive_rehearsal.py` now has `full_curriculum_rehearsal_step(...)` with explicit `stochastic_breadth_fn` hook.
+   - `src/wgram_lm/rehearsal/adaptive_rehearsal.py` now has `full_curriculum_rehearsal_step(...)` with explicit `stochastic_breadth_fn` hook.
    - Added `attractor_protection_during_rehearsal` and `set_total_steps()`.
 
 3. Smoke script updated with clear migration comments showing how to call the real `AdaptiveRehearsal` class.
@@ -252,13 +252,13 @@ Next recommended execution (in torch env with the 642 ckpt):
 **2026-05-30 Sequential Update - First Real Execution + Integration Bugs Surfaced + Ablation Harness (Reverse I→G→A evidence accumulation)**
 
 **Execution Environment Discovered & Used**:
-- Project `.venv` (`/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python`) with torch 2.7.1+cu126 + CUDA.
+- Project `.venv` (`/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/bin/python`) with torch 2.7.1+cu126 + CUDA.
 - Correct invocation: `PYTHONPATH=. python scripts/train_556_full_curriculum_minimal.py ...` (confirmed via direct import tests).
 
 **First Real Torch Execution of the Full Instrumented 5.56 Curriculum (2026-05-30)**:
 - 8-step smoke (batch=3, d_model=48, stochastic breadth enabled, ablation_zero=false, synthetic gold).
 - After two bug fixes surfaced by the attempt:
-  1. `src/qtrm_mm/core.py`: Stochastic breadth flag reading + prior/posterior network creation was incorrectly placed inside `forward()` (causing IndentationError on the empty multi_trajectory if + duplicate init). Moved to `__init__` (correct One-Body location, like other projections). Call site in forward retained.
+  1. `src/wgram_lm/core.py`: Stochastic breadth flag reading + prior/posterior network creation was incorrectly placed inside `forward()` (causing IndentationError on the empty multi_trajectory if + duplicate init). Moved to `__init__` (correct One-Body location, like other projections). Call site in forward retained.
   2. Trainer gold handling: Added shape guard + temporary bypass for synthetic proxy during tiny validation (real 642 path already supported; rehearsal injection shape contract will be hardened in next long-run prep).
 - **Observed 5.56 signals in real execution** (directly from trainer logging + metrics.json):
   - Scheduled binding decay: 0.400 → 0.085 (heading toward 0.04; curriculum schedule active).

@@ -130,7 +130,7 @@ Verification:
 ```bash
 PYTHONPATH=src python -m unittest tests.test_raw_intelligence_eval_script
 PYTHONPATH=src python tests/test_depth_breadth_probe.py
-python -m py_compile scripts/192_eval_raw_intelligence.py tests/test_raw_intelligence_eval_script.py src/qtrm_mm/eval/depth_breadth_probe.py scripts/548_build_depth_breadth_probe_report.py
+python -m py_compile scripts/192_eval_raw_intelligence.py tests/test_raw_intelligence_eval_script.py src/wgram_lm/eval/depth_breadth_probe.py scripts/548_build_depth_breadth_probe_report.py
 ```
 
 Result:

@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     normalize_answer_text,
     normalized_alias_set,

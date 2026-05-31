@@ -63,7 +63,7 @@ if [[ ! -s "$DATA" ]]; then
 fi
 
 echo "training data=$DATA"
-python -m qtrm_mm.training.train \
+python -m wgram_lm.training.train \
   --config "$CONFIG" \
   --use-donor \
   --data-jsonl "$DATA" \

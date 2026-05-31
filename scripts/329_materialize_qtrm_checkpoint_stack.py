@@ -82,7 +82,7 @@ def materialize_checkpoint_stack(
 ) -> dict[str, Any]:
     import torch
 
-    from qtrm_mm.training.train import load_initial_checkpoint
+    from wgram_lm.training.train import load_initial_checkpoint
 
     checkpoint_path = Path(checkpoint)
     out_path = Path(out)
@@ -155,8 +155,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
 
     cfg = load_config(args.config)
     configure_source_pointer_model_from_args(cfg, args)

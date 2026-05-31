@@ -10,7 +10,7 @@ CAULDRON_CONFIGS=${CAULDRON_CONFIGS:-scienceqa,ai2d,chartqa,docvqa,textvqa}
 INCLUDE_FALLBACKS=${INCLUDE_FALLBACKS:-1}
 MAX_CHARS=${MAX_CHARS:-6000}
 
-python -m qtrm_mm.data.download_datasets \
+python -m wgram_lm.data.download_datasets \
   --out-dir "$DATA_DIR" \
   --profile "$PROFILE" \
   --text-samples "$TEXT_SAMPLES" \

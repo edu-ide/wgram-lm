@@ -1,6 +1,6 @@
 # 2026-05-29 Donorless Born-One-Body Track Revival Plan (Option 2)
 
-**Date**: 2026-05-29  
+**Date**: 2026-05-29
 **Context**: After successfully unlocking real ablation margin in the hybrid (Qwen donor + RI-4 dynamic slots) track, the user explicitly requested parallel progress on the pure donorless / HRM-Text-style born-one-body direction.
 
 ## Strategic Rationale
@@ -21,7 +21,7 @@ This is the spiritual continuation of:
 Positive:
 - `OneBodyParallelHybridBlock` + internal Griffin-style fast recurrence + Parcae stability + RI-4 SparseSlotRouter is now the strongest recurrent engine we have ever had inside a true one-body block.
 - The dynamic write patch + surprise modulation are now proven to deliver measurable capability.
-- `src/qtrm_mm/models/blt_prefixlm.py` and related BLT one-body components already exist with `--decoder-latent-mode one_body` support.
+- `src/wgram_lm/models/blt_prefixlm.py` and related BLT one-body components already exist with `--decoder-latent-mode one_body` support.
 - `references/ri7_clean_reference/` contains a clean, minimal contract + trainer for donorless RI-1~RI-7 gates.
 
 Gaps / Risks:

@@ -36,7 +36,7 @@ echo "Plain-answer data: $TRAIN_JSONL"
 echo "Init checkpoint: $INIT_CHECKPOINT"
 echo "============================================================"
 
-python -m qtrm_mm.training.train \
+python -m wgram_lm.training.train \
   --config "$CONFIG" \
   --use-donor \
   --data-jsonl "$TRAIN_JSONL" \
@@ -45,7 +45,7 @@ python -m qtrm_mm.training.train \
 
 CHECKPOINT="$(python - "$CONFIG" <<'PY'
 import sys
-from qtrm_mm.config import load_config
+from wgram_lm.config import load_config
 
 cfg = load_config(sys.argv[1])
 print(f"{cfg.train.out_dir}/last.pt")

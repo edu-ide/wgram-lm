@@ -27,7 +27,7 @@ transition state controller.
 
 Added:
 
-- `src/qtrm_mm/agentic/transition_controller.py`
+- `src/wgram_lm/agentic/transition_controller.py`
 - `scripts/158_train_transition_state_controller.py`
 - `tests/test_transition_state_controller.py`
 - `return_features_only=True` in `QTRMMultimodalModel.forward` so feature

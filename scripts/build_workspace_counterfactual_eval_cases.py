@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.eval.memory_retrieval import load_cases, normalize_answer
+from wgram_lm.eval.memory_retrieval import load_cases, normalize_answer
 
 
 def _case_answer_key(case: dict[str, Any]) -> str:

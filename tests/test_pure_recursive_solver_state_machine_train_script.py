@@ -55,7 +55,7 @@ class PureRecursiveSolverStateMachineTrainScriptTests(unittest.TestCase):
 
     def test_row_tensors_use_padded_input_and_shifted_target(self):
         module = _load_module()
-        from qtrm_mm.agentic.solver_state_machine import CharVocab
+        from wgram_lm.agentic.solver_state_machine import CharVocab
 
         row = {
             "prompt": "Question?\nAnswer:",

@@ -20,8 +20,8 @@ import argparse
 import torch
 from pathlib import Path
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 
 def load_trainer_checkpoint(ckpt_path: str, device="cpu"):

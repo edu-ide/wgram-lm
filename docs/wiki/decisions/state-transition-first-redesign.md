@@ -102,11 +102,11 @@ total = (
 ## Implementation
 
 ### Files Created
-- `src/qtrm_mm/state_transition_core.py` - Core module
+- `src/wgram_lm/state_transition_core.py` - Core module
   - `OperationConditionedTransition` - Operation-conditioned state transition
   - `StateReadoutHead` - Digit logits from state
   - `StateTransitionCore` - Full recurrent core
-- `src/qtrm_mm/losses.py` - Added loss functions
+- `src/wgram_lm/losses.py` - Added loss functions
   - `state_transition_loss` - Primary loss
   - `state_transition_causality_loss` - Causality gate
   - `state_monotonic_improvement_loss` - Monotonic improvement

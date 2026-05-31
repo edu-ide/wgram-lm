@@ -92,7 +92,7 @@ Implemented 2026-05-03:
 scripts/190_build_pure_recursive_reasoning_cases.py
 scripts/192_eval_raw_intelligence.py
 scripts/194_build_pure_recursive_reasoning_preferences.py
-src/qtrm_mm/eval/raw_intelligence_gate.py
+src/wgram_lm/eval/raw_intelligence_gate.py
 ```
 
 The raw-intelligence case builder now emits:

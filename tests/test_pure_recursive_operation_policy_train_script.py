@@ -38,7 +38,7 @@ class PureRecursiveOperationPolicyTrainScriptTests(unittest.TestCase):
 
     def test_policy_row_tensors_shape_and_label(self):
         module = _load_module()
-        from qtrm_mm.agentic.solver_state_machine import CharVocab, OperationVocab
+        from wgram_lm.agentic.solver_state_machine import CharVocab, OperationVocab
 
         row = {
             "question": "Compute ((7 + 3) * 2) - 3.",

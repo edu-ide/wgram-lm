@@ -28,7 +28,7 @@ from typing import Any
 
 import torch
 
-from qtrm_mm.tst import multi_hot_cross_entropy, next_token_bags, superpose_embeddings
+from wgram_lm.tst import multi_hot_cross_entropy, next_token_bags, superpose_embeddings
 
 
 def load_text_probe_module():

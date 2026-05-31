@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd ~/qtrm-workspace/qtrm_multimodal_memoryos
+cd ~/qtrm-workspace/wgram-lm
 source .venv/bin/activate
 export PYTHONPATH=$PWD/src
 
@@ -53,10 +53,10 @@ echo "============================================================"
 
 python - "$CHECKPOINT" "$CONFIG" "$PROMPT" "$MAX_NEW_TOKENS" "$DONOR_LOGITS_SCALE" "$QTRM_LOGITS_SCALE" "$QTRM_RESIDUAL_CLAMP" "$QTRM_RESIDUAL_GATE" "$QTRM_RESIDUAL_GATE_BIAS" "$SUPPRESS_VISIBLE_REASONING" "$NO_REPEAT_NGRAM_SIZE" "$ANSWER_CONTRACT" "$HISTORY_JSONL" "$LANGUAGE_SAFE" "$STOP_AFTER_SENTENCE" "$MIN_NEW_TOKENS_BEFORE_STOP" <<'PYEOF'
 import re, sys, torch
-from qtrm_mm.config import load_config
-from qtrm_mm.history import append_generation_history
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
+from wgram_lm.config import load_config
+from wgram_lm.history import append_generation_history
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
 from transformers import AutoTokenizer
 
 checkpoint = sys.argv[1]

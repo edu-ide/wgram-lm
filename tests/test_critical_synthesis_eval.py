@@ -3,7 +3,7 @@ import unittest
 
 class CriticalSynthesisEvalTests(unittest.TestCase):
     def test_build_prompt_requires_positive_conclusion_after_critique(self):
-        from qtrm_mm.eval.critical_synthesis import build_critical_synthesis_prompt
+        from wgram_lm.eval.critical_synthesis import build_critical_synthesis_prompt
 
         case = {
             "id": "bon-gakgyo-frame",
@@ -28,7 +28,7 @@ class CriticalSynthesisEvalTests(unittest.TestCase):
         self.assertIn("호흡", prompt)
 
     def test_build_target_preserves_values_and_positive_conclusion(self):
-        from qtrm_mm.eval.critical_synthesis import build_critical_synthesis_target
+        from wgram_lm.eval.critical_synthesis import build_critical_synthesis_target
 
         case = {
             "id": "atonement-growth",
@@ -48,7 +48,7 @@ class CriticalSynthesisEvalTests(unittest.TestCase):
         self.assertIn("기초와 열매", target)
 
     def test_probe_cases_require_positive_non_cynical_synthesis(self):
-        from qtrm_mm.eval.critical_synthesis import load_critical_synthesis_cases
+        from wgram_lm.eval.critical_synthesis import load_critical_synthesis_cases
 
         cases = load_critical_synthesis_cases("data/eval/critical_synthesis_probe.jsonl")
 

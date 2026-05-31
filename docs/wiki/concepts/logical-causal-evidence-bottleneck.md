@@ -60,9 +60,9 @@ evidence bottleneck is bypassed.
 
 Files:
 
-- `src/qtrm_mm/qtrm_model.py`: evidence verifier heads and residual gate.
-- `src/qtrm_mm/losses.py`: logical evidence and causal evidence gate losses.
-- `src/qtrm_mm/data/jsonl_dataset.py`: default support/gate targets for
+- `src/wgram_lm/wgram_model.py`: evidence verifier heads and residual gate.
+- `src/wgram_lm/losses.py`: logical evidence and causal evidence gate losses.
+- `src/wgram_lm/data/jsonl_dataset.py`: default support/gate targets for
   workspace-evidence rows.
 - `configs/qwen35_2b_4090_logical_causal_bottleneck_s050.yaml`: first probe
   config.

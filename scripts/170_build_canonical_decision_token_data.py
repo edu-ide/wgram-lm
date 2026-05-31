@@ -6,13 +6,13 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.eval.memory_retrieval import (
+from wgram_lm.eval.memory_retrieval import (
     case_task_family,
     expected_unknown_case,
     load_cases,
     select_evidence_results,
 )
-from qtrm_mm.infer import build_prompt_with_memory, format_memory_context
+from wgram_lm.infer import build_prompt_with_memory, format_memory_context
 
 
 def _clean_answer(text: str) -> str:

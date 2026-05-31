@@ -9,7 +9,7 @@ set -euo pipefail
 #   sampling packs those boundaries into the HRM-Text training tensor layout.
 
 ACTION="${1:-plan}"
-ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos}"
+ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/wgram-lm}"
 DATA_IO_DIR="${DATA_IO_DIR:-${ROOT}/references/official/data_io}"
 CLEANED_DATA_PATH="${CLEANED_DATA_PATH:-/mnt/sdc1/datasets/hrm-text-data-io-cleaned-20260515}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-${DATA_IO_DIR}/trained_tokenizers/bpe/tokenizer.json}"

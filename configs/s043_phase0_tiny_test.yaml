@@ -1,0 +1,35 @@
+# S043 Phase 0 - Tiny safe test config
+# Much smaller seq_len + tiny data slice for first successful run.
+
+model:
+  vocab_size: 248320
+  donor_residual_steering_bias_enabled: true
+  donor_residual_steering_bias_init_scale: 0.01
+
+  donor_qtrm_conflict_gate_enabled: true
+  donor_qtrm_conflict_gate_mode: "adaptive_margin"
+  donor_qtrm_conflict_qtrm_scale: 0.25
+  donor_qtrm_conflict_qtrm_boost_scale: 1.0
+  donor_qtrm_conflict_margin_threshold: 0.0
+
+train:
+  steps: 25                     # Very short for debug
+  lr: 0.0001
+  batch_size: 1                 # Even safer
+  seq_len: 256                  # Significantly reduced
+  out_dir: runs/s043_phase0_tiny_test
+
+  loss_donor_correct_preservation_weight: 0.8
+  loss_donor_correct_margin_weight: 0.3
+  donor_correct_margin: 0.15
+
+  loss_first_token_margin_weight: 0.4
+
+  trainable_param_policy: "all"
+  loss_lm_weight: 1.0
+
+donor:
+  model_id: "Qwen/Qwen3.5-2B-Base"
+  load_in_4bit: true
+  freeze_donor: true
+  train_lora: false

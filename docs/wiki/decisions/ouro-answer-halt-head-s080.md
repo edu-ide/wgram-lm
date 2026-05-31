@@ -36,8 +36,8 @@ smoke gate. Autoregressive answer rendering remains unsolved.
 Code:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 scripts/192_eval_raw_intelligence.py
 scripts/196_train_pure_recursive_depth_supervised.py
 ```

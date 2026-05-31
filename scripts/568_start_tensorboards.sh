@@ -20,7 +20,7 @@ Environment overrides:
   DGX_SSH=dgx
   DGX_PORT=6008
   DGX_HOST=0.0.0.0
-  DGX_ROOT=/mnt/data4tb/qtrm_multimodal_memoryos
+  DGX_ROOT=/mnt/data4tb/wgram-lm
   DGX_LOGDIR_SPEC=dgx_qtrm:/mnt/data4tb/qtrm_eval,dgx_local:local_eval
   DGX_LOG=/tmp/qtrm_tensorboard_dgx_6008.log
   DGX_PYTHON=/mnt/data4tb/venv_sglang_pr23000/bin/python
@@ -39,7 +39,7 @@ LOCAL_PYTHON="${LOCAL_PYTHON:-.venv/bin/python}"
 DGX_SSH="${DGX_SSH:-dgx}"
 DGX_PORT="${DGX_PORT:-6008}"
 DGX_HOST="${DGX_HOST:-0.0.0.0}"
-DGX_ROOT="${DGX_ROOT:-/mnt/data4tb/qtrm_multimodal_memoryos}"
+DGX_ROOT="${DGX_ROOT:-/mnt/data4tb/wgram-lm}"
 DGX_LOGDIR_SPEC="${DGX_LOGDIR_SPEC:-dgx_qtrm:/mnt/data4tb/qtrm_eval,dgx_local:local_eval}"
 DGX_LOG="${DGX_LOG:-/tmp/qtrm_tensorboard_dgx_${DGX_PORT}.log}"
 DGX_PYTHON="${DGX_PYTHON:-/mnt/data4tb/venv_sglang_pr23000/bin/python}"

@@ -194,7 +194,7 @@ def _prepare_prompt_and_source_slots(
     max_slots: int,
 ):
     import torch
-    from qtrm_mm.algorithmic_value_state import (
+    from wgram_lm.algorithmic_value_state import (
         token_numeric_source_slot_ids,
         token_numeric_source_slot_token_ids,
     )
@@ -237,10 +237,10 @@ def run_probe(args: argparse.Namespace) -> dict[str, Any]:
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
-    from qtrm_mm.training.train import load_initial_checkpoint
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.training.train import load_initial_checkpoint
 
     cfg = load_config(args.config)
     cfg.model.token_numeric_source_slot_embedding_enabled = True

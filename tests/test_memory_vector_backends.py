@@ -8,7 +8,7 @@ import numpy as np
 
 class MemoryVectorBackendTests(unittest.TestCase):
     def test_numpy_flat_backend_round_trips_and_returns_inner_product_order(self):
-        from qtrm_mm.memoryos.vector_backends import build_vector_index, search_vector_index
+        from wgram_lm.memoryos.vector_backends import build_vector_index, search_vector_index
 
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
@@ -36,7 +36,7 @@ class MemoryVectorBackendTests(unittest.TestCase):
         except Exception:
             self.skipTest("faiss is not installed")
 
-        from qtrm_mm.memoryos.vector_backends import build_vector_index, search_vector_index
+        from wgram_lm.memoryos.vector_backends import build_vector_index, search_vector_index
 
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
@@ -51,7 +51,7 @@ class MemoryVectorBackendTests(unittest.TestCase):
             self.assertEqual(ids[0].tolist(), [2])
 
     def test_unknown_backend_fails_clearly(self):
-        from qtrm_mm.memoryos.vector_backends import build_vector_index
+        from wgram_lm.memoryos.vector_backends import build_vector_index
 
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(ValueError):

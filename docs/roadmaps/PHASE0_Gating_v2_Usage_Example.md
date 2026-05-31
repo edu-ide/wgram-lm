@@ -20,7 +20,7 @@ python scripts/335_train_qtrm_native_etd_probe.py \
 ### 방법 2: Python 코드에서 직접 지정
 
 ```python
-from src.qtrm_mm.qwen_backbone_qtrm import build_small_qwen_qtrm_core
+from wgram_lm.qwen_backbone_wgram import build_small_qwen_qtrm_core
 
 core_cfg = build_small_qwen_qtrm_core(
     qwen_config=your_qwen_config,
@@ -37,7 +37,7 @@ core_cfg = build_small_qwen_qtrm_core(
 ### 방법 3: QTRMConfig 직접 생성 시
 
 ```python
-from src.qtrm_mm.config import QTRMConfig
+from wgram_lm.config import QTRMConfig
 
 cfg = QTRMConfig(
     d_model=1024,
@@ -59,4 +59,3 @@ cfg = QTRMConfig(
 
 - `strict_backends=True` 로 설정하면 아직 FLA 쪽 v2가 없어서 fallback 될 수 있음 → 개발 중에는 `False` 추천.
 - v2는 현재 Torch reference 구현이므로, 대규모 학습에서는 속도가 느릴 수 있음 (나중에 FLA 포팅 필요).
-

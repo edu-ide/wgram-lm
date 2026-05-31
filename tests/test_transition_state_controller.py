@@ -8,7 +8,7 @@ import torch
 
 
 def test_transition_state_controller_requires_recurrence_when_inputs_repeat() -> None:
-    from qtrm_mm.agentic.transition_controller import (
+    from wgram_lm.agentic.transition_controller import (
         TransitionStateController,
         transition_action_loss,
     )
@@ -41,7 +41,7 @@ def test_transition_state_controller_requires_recurrence_when_inputs_repeat() ->
 
 
 def test_transition_state_controller_accepts_explicit_transition_state() -> None:
-    from qtrm_mm.agentic.transition_controller import TransitionStateController
+    from wgram_lm.agentic.transition_controller import TransitionStateController
 
     controller = TransitionStateController(
         d_model=8,
@@ -75,7 +75,7 @@ def test_transition_state_controller_accepts_explicit_transition_state() -> None
 
 
 def test_transition_state_predictor_trains_against_state_targets() -> None:
-    from qtrm_mm.agentic.transition_controller import (
+    from wgram_lm.agentic.transition_controller import (
         TransitionStatePredictor,
         transition_state_prediction_loss,
     )
@@ -127,7 +127,7 @@ def _load_train_script():
 
 def test_trace_sequence_collate_groups_rows_by_task(tmp_path: Path) -> None:
     module = _load_train_script()
-    from qtrm_mm.data.jsonl_dataset import HashTokenizer
+    from wgram_lm.data.jsonl_dataset import HashTokenizer
 
     rows = [
         {
@@ -173,7 +173,7 @@ def test_trace_sequence_collate_groups_rows_by_task(tmp_path: Path) -> None:
 
 def test_trace_sequence_collate_builds_previous_observation_state(tmp_path: Path) -> None:
     module = _load_train_script()
-    from qtrm_mm.data.jsonl_dataset import HashTokenizer
+    from wgram_lm.data.jsonl_dataset import HashTokenizer
 
     rows = [
         {

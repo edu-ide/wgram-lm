@@ -39,7 +39,7 @@ class PureRecursiveStructuredOperationPolicyTrainScriptTests(unittest.TestCase):
 
     def test_row_tensors_encode_structured_metadata(self):
         module = _load_module()
-        from qtrm_mm.agentic.solver_state_machine import OperationVocab
+        from wgram_lm.agentic.solver_state_machine import OperationVocab
 
         row = {
             "task_family": "arithmetic_chain",

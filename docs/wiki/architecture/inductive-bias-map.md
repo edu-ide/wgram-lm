@@ -21,7 +21,7 @@
 - Various early GRAM/PTRM-style recurrent cores using `StateTransitionCore` with `stochastic_transition_mode="true_gram"` or `stochastic_high_level_guidance=True`.
 
 **Key Mechanism** (exact code paths in legacy implementation):
-- `src/qtrm_mm/state_transition_core.py`:
+- `src/wgram_lm/state_transition_core.py`:
   - `_apply_true_gram_transition` (lines ~781-809): Replaces z_h with sample from learned prior (or posterior) Gaussian: `z_next = mu + std * eps`.
   - `_apply_stochastic_high_level_guidance` (~743-768): Adds small stochastic delta after shared_core update.
   - Prior/posterior networks (`true_gram_prior_*`, `true_gram_posterior_*`, stochastic_guidance_*).
@@ -50,10 +50,10 @@
 
 **Evidence Links**:
 - Root diagnosis: conversation history + 2026-05-28-ablation-study-plan-literature-extensions.md (stochastic breadth off entry in Phase 4 plan).
-- Legacy implementation: `src/qtrm_mm/state_transition_core.py:639-809, 1421-1459` (the "opt-in near-identity" comment at 640 is the pivot decision point).
+- Legacy implementation: `src/wgram_lm/state_transition_core.py:639-809, 1421-1459` (the "opt-in near-identity" comment at 640 is the pivot decision point).
 - SSOT requirement: `docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md` (Promotion Gate and Required Ablations sections).
-- Component registry: `src/qtrm_mm/architecture/component_registry.py:46-51`.
-- Post-pivot core forward: `src/qtrm_mm/core.py` (no prior/posterior sampling, no stochastic delta on z_h inside recurrence).
+- Component registry: `src/wgram_lm/architecture/component_registry.py:46-51`.
+- Post-pivot core forward: `src/wgram_lm/core.py` (no prior/posterior sampling, no stochastic delta on z_h inside recurrence).
 
 **Notes**:
 - This bias was deliberately kept isolated during the 2026-05-26 new-thought-structure pivot ("so legacy checkpoints remain comparable").
@@ -144,7 +144,7 @@
 - Roadmap P1.4 M1 definition.
 - Lit: Huginn arXiv:2502.05171 (log-normal Poisson + input injection + truncated BPTT); LoopFormer ICLR 2026 (trajectory conditioning + shortcut-consistency).
 - Humanistic preflight + lit mapping recorded in 2026-06 RI-1 session notes.
-- First M1 stub implementation + gate report in experiments/matched_port_evaluation_*/ 
+- First M1 stub implementation + gate report in experiments/matched_port_evaluation_*/
 
 **Notes**:
 - Directly addresses the user's "RI-1 최신 논문 참고해서 진행해봐" + "M1 stub" request.
@@ -172,7 +172,7 @@
 - Primary decision record: `docs/wiki/decisions/2026-05-30-deep-dive-full-556-rehearsal-curriculum.md`
 - Stochastic breadth audit + pivot gap: `docs/wiki/decisions/2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md`
 - Trainer + launcher: `scripts/train_556_full_curriculum_minimal.py`, `scripts/launch_556_local_smoke.sh`
-- Rehearsal implementation: `src/qtrm_mm/rehearsal/adaptive_rehearsal.py`
+- Rehearsal implementation: `src/wgram_lm/rehearsal/adaptive_rehearsal.py`
 - Inductive bias preservation rule: research-driven-architecture-debugging/SKILL.md (Pivot Safety + Reverse I→G→A section)
 
 **Notes**:

@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     answer_kind,
     select_candidate,

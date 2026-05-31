@@ -4,7 +4,7 @@ import unittest
 
 class CanonicalPlainAnswerTrainScriptTests(unittest.TestCase):
     def test_config_and_runner_use_plain_answer_contract_and_kiss_core_path(self) -> None:
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_canonical_plain_answer_kiss_s120.yaml")
         script = Path("scripts/174_run_canonical_plain_answer_kiss_train.sh").read_text(

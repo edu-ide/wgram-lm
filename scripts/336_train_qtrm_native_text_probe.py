@@ -21,8 +21,8 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.mixers import FLADeltaMixer, OfficialMamba3Mixer, TorchGatedDeltaMixer
-from qtrm_mm.training_optimizers import (
+from wgram_lm.mixers import FLADeltaMixer, OfficialMamba3Mixer, TorchGatedDeltaMixer
+from wgram_lm.training_optimizers import (
     MEMORY_EFFICIENT_OPTIMIZERS,
     build_memory_efficient_optimizer,
 )

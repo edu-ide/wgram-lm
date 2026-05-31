@@ -22,7 +22,7 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from qtrm_mm.mixers import (
+from wgram_lm.mixers import (
     FLADeltaMixer,
     OfficialGatedDeltaNet2Mixer,
     OfficialMamba3Mixer,

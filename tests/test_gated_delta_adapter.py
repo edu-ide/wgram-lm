@@ -44,11 +44,11 @@ class GatedDeltaAdapterTests(unittest.TestCase):
             os.environ.pop("QTRM_DISABLE_LOCAL_FLA_REFERENCE", None)
         else:
             os.environ["QTRM_DISABLE_LOCAL_FLA_REFERENCE"] = self._old_disable_local_fla
-        if "qtrm_mm.backends" in sys.modules:
-            importlib.reload(sys.modules["qtrm_mm.backends"])
+        if "wgram_lm.backends" in sys.modules:
+            importlib.reload(sys.modules["wgram_lm.backends"])
 
     def test_fla_gated_delta_uses_official_top_level_fla_layers_import(self):
-        from qtrm_mm.mixers import FLADeltaMixer
+        from wgram_lm.mixers import FLADeltaMixer
 
         mixer = FLADeltaMixer(
             d_model=16,
@@ -67,7 +67,7 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         self.assertEqual(mixer.impl.kwargs["expand_k"], 0.75)
 
     def test_fla_gated_delta_forward_preserves_qtrm_tensor_contract_and_mask(self):
-        from qtrm_mm.mixers import FLADeltaMixer
+        from wgram_lm.mixers import FLADeltaMixer
 
         mixer = FLADeltaMixer(d_model=16, n_heads=4, backend="fla_gated_delta", strict=True)
         x = torch.randn(2, 5, 16)
@@ -80,8 +80,8 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         self.assertIs(mixer.impl.last_attention_mask, mask)
 
     def test_qtrm_block_passes_qwen35_gdn_parameters_to_official_backend(self):
-        from qtrm_mm.blocks import QTRMBlockStack
-        from qtrm_mm.config import QTRMConfig
+        from wgram_lm.blocks import QTRMBlockStack
+        from wgram_lm.config import QTRMConfig
 
         cfg = QTRMConfig(
             d_model=32,
@@ -121,7 +121,7 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         sys.path[:] = [path for path in sys.path if "flash-linear-attention" not in path]
         os.environ["QTRM_DISABLE_LOCAL_FLA_REFERENCE"] = "1"
 
-        from qtrm_mm.mixers import FLADeltaMixer
+        from wgram_lm.mixers import FLADeltaMixer
 
         with self.assertRaisesRegex(RuntimeError, "fla_gated_delta"):
             FLADeltaMixer(d_model=16, n_heads=4, backend="fla_gated_delta", strict=True)
@@ -131,7 +131,7 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         sys.modules.pop("fla.layers", None)
         os.environ["QTRM_DISABLE_LOCAL_FLA_REFERENCE"] = "1"
 
-        from qtrm_mm.mixers import FLADeltaMixer, TorchGatedDeltaMixer
+        from wgram_lm.mixers import FLADeltaMixer, TorchGatedDeltaMixer
 
         mixer = FLADeltaMixer(d_model=16, n_heads=4, backend="fla_gated_delta", strict=False)
 
@@ -139,7 +139,7 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         self.assertIsInstance(mixer.impl, TorchGatedDeltaMixer)
 
     def test_backend_registry_detects_official_gated_delta_symbol(self):
-        import qtrm_mm.backends as backends
+        import wgram_lm.backends as backends
 
         backends = importlib.reload(backends)
 
@@ -150,7 +150,7 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         sys.modules.pop("fla", None)
         sys.modules.pop("fla.layers", None)
 
-        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+        from wgram_lm.mixers import OfficialGatedDeltaNet2Mixer
 
         mixer = OfficialGatedDeltaNet2Mixer(
             d_model=64,
@@ -176,7 +176,7 @@ class GatedDeltaAdapterTests(unittest.TestCase):
             self.assertIsNotNone(mixer.impl.w_proj.weight.grad)
 
     def test_official_gated_delta2_never_constructs_torch_fallback_when_missing(self):
-        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+        from wgram_lm.mixers import OfficialGatedDeltaNet2Mixer
 
         with mock.patch.object(OfficialGatedDeltaNet2Mixer, "_build_impl", return_value=None):
             with self.assertRaisesRegex(RuntimeError, "fallback is disabled"):
@@ -187,7 +187,7 @@ class GatedDeltaAdapterTests(unittest.TestCase):
             def forward(self, hidden_states, attention_mask=None):
                 raise RuntimeError("kernel compile failed")
 
-        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+        from wgram_lm.mixers import OfficialGatedDeltaNet2Mixer
 
         with mock.patch.object(OfficialGatedDeltaNet2Mixer, "_build_impl", return_value=_FailingOfficial()):
             mixer = OfficialGatedDeltaNet2Mixer(d_model=16, n_heads=4, strict=False)
@@ -201,9 +201,9 @@ class GatedDeltaAdapterTests(unittest.TestCase):
         sys.modules.pop("fla", None)
         sys.modules.pop("fla.layers", None)
 
-        from qtrm_mm.blocks import CANONICAL_LT2_ATTN_EVERY, QTRMBlockStack
-        from qtrm_mm.config import QTRMConfig
-        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+        from wgram_lm.blocks import CANONICAL_LT2_ATTN_EVERY, QTRMBlockStack
+        from wgram_lm.config import QTRMConfig
+        from wgram_lm.mixers import OfficialGatedDeltaNet2Mixer
 
         self.assertEqual(CANONICAL_LT2_ATTN_EVERY, 4)
         cfg = QTRMConfig(

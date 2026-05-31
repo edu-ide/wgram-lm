@@ -23,27 +23,26 @@ Testing that OneBodyParallelHybridBlock now drives answer_state_loop recurrence
 
 === Variant: slots_off_ablation (slots_on=False, pers_ablate=False, router_ablate=False) ===
 Traceback (most recent call last):
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 316, in <module>
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 316, in <module>
     main()
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 284, in main
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 284, in main
     res = run_smoke_variant(name, slots_on, pers, rout)
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 93, in run_smoke_variant
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 93, in run_smoke_variant
     model = QTRMMultimodalModel(cfg).to("cuda" if torch.cuda.is_available() else "cpu")
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1355, in to
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1355, in to
     return self._apply(convert)
            ^^^^^^^^^^^^^^^^^^^^
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 915, in _apply
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 915, in _apply
     module._apply(fn)
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 942, in _apply
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 942, in _apply
     param_applied = fn(param)
                     ^^^^^^^^^
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1341, in convert
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1341, in convert
     return t.to(
            ^^^^^
 RuntimeError: CUDA error: device-side assert triggered
 CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
 For debugging consider passing CUDA_LAUNCH_BLOCKING=1
 Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-

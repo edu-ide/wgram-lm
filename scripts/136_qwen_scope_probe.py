@@ -7,7 +7,7 @@ from pathlib import Path
 
 import torch
 
-from qtrm_mm.qwen_scope import (
+from wgram_lm.qwen_scope import (
     decode_token_texts,
     load_qwen_scope_sae_from_hub,
     qwen_scope_feature_records,

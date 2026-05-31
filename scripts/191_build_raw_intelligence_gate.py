@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from qtrm_mm.eval.raw_intelligence_gate import (
+from wgram_lm.eval.raw_intelligence_gate import (
     build_raw_intelligence_gate,
     load_records,
     write_gate,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos"
+REPO="/home/tripleyoung/qtrm-workspace/wgram-lm"
 cd "$REPO"
 
 CURRENT_BRANCH="$(git branch --show-current)"
@@ -29,4 +29,3 @@ else
   echo "Re-run detailed view across branches at any time:"
   echo "  bash scripts/999_workspace_commit_guard.sh"
 fi
-

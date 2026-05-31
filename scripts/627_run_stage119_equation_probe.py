@@ -39,7 +39,7 @@ import torch.nn.functional as F
 # Executes the loss file source in an isolated globals with proper __name__ for dataclasses.
 HERE = Path(__file__).resolve()
 ROOT = HERE.parents[1] if HERE.parent.name == "scripts" else HERE.parent
-LOSS_FILE = ROOT / "src" / "qtrm_mm" / "losses" / "equation_state_binding.py"
+LOSS_FILE = ROOT / "src" / "wgram_lm" / "losses" / "equation_state_binding.py"
 _loss_globals: Dict[str, Any] = {"__name__": "equation_state_binding", "__file__": str(LOSS_FILE)}
 with open(LOSS_FILE, "r", encoding="utf-8") as _f:
     _src = _f.read()

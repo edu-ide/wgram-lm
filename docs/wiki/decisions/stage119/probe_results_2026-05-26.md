@@ -2,7 +2,7 @@
 
 Date: 2026-05-26
 Script: scripts/627_run_stage119_equation_probe.py
-Loss: src/qtrm_mm/losses/equation_state_binding.py (compute_equation_state_binding_loss with logit margin + readback)
+Loss: src/wgram_lm/losses/equation_state_binding.py (compute_equation_state_binding_loss with logit margin + readback)
 Trainer patch: scripts/625_train_bpe_gd_preference.py (guarded integration)
 
 ## Run Config

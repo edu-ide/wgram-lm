@@ -5,7 +5,7 @@ import torch
 
 class AttentionTests(unittest.TestCase):
     def test_causal_attention_remains_causal_when_padding_mask_is_present(self):
-        from qtrm_mm.attention import GroupedQueryAttention
+        from wgram_lm.attention import GroupedQueryAttention
 
         torch.manual_seed(0)
         attn = GroupedQueryAttention(

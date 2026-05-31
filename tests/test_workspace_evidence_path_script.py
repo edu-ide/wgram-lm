@@ -32,7 +32,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("workspace_evidence_injection: true", config)
 
     def test_repeatguard_config_enables_conservative_unlikelihood_loss(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_workspace_evidence_repeatguard_s050.yaml")
 
@@ -55,7 +55,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("workspace-evidence-repeatguard-trained-ablation", script)
 
     def test_preference_config_enables_pairwise_alignment_loss(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_workspace_evidence_preference_s050.yaml")
 
@@ -79,7 +79,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("workspace-evidence-preference-trained-ablation", script)
 
     def test_preference_repeatguard_config_balances_alignment_and_repetition_guard(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_workspace_evidence_preference_repeatguard_s050.yaml"
@@ -106,7 +106,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("workspace-evidence-preference-repeatguard-trained-ablation", script)
 
     def test_bounded_preference_config_preserves_donor_with_capped_residual(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_workspace_evidence_bounded_preference_s050.yaml"
@@ -149,7 +149,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("workspace-evidence-bounded-preference-${name}-quick-ablation", script)
 
     def test_counterfactual_config_adds_workspace_causality_loss(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_workspace_evidence_counterfactual_s050.yaml"
@@ -175,7 +175,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("workspace-evidence-counterfactual-trained-ablation", script)
 
     def test_logical_causal_bottleneck_config_gates_residual_with_evidence_heads(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config(
             "configs/qwen35_2b_4090_logical_causal_bottleneck_s050.yaml"
@@ -204,7 +204,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("logical-causal-bottleneck-trained-ablation", script)
 
     def test_lewm_core_world_model_config_enables_action_conditioned_latent_prediction(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_lewm_core_world_model_probe_s050.yaml")
 
@@ -230,7 +230,7 @@ class WorkspaceEvidencePathScriptTests(unittest.TestCase):
         self.assertIn("lewm-core-world-model-trained-ablation", script)
 
     def test_workspace_answer_bottleneck_config_forces_residual_through_latent_path(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_workspace_answer_bottleneck_s050.yaml")
 

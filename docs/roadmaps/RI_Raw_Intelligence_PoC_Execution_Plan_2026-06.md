@@ -12,7 +12,7 @@ This is the direct "how to complete the necessary conditions" companion to the S
 
 ### P1.1: Extend Raw Intelligence Eval Harness to Hybrid Substrate
 - **Target files**:
-  - `src/qtrm_mm/eval/raw_intelligence_gate.py` — add new modes:
+  - `src/wgram_lm/eval/raw_intelligence_gate.py` — add new modes:
     - `hybrid_recurrence_depth_1/4/8/12`
     - `hybrid_sparse_memory_router_on` / `off` (once prototype exists)
     - `hybrid_556_full`, `hybrid_556_stoch_zero`, `hybrid_556_gold_off`, `hybrid_556_protection_off`
@@ -78,7 +78,7 @@ Now that Workspaces + Attractor + Provenance are properly ported and default-on 
 - First evidence that increasing test-time recurrence depth on the properly ported hybrid + three tracks produces larger, cleaner, more monotonic gains on pure reasoning heldout than previous non-ported or partially ported versions.
 - Clear "depth scaling law" plot (accuracy vs effective depth) with ablations.
 
-**2026-06 Update (M1 progress)**: 
+**2026-06 Update (M1 progress)**:
 - M1 stub + enhanced progress-biased sampling (deeper bias late in training) implemented and verified in trainer.
 - 8-step clean M1 smoke (d=64) produced first monotonic strict-B accuracy on pure_72: 29.17% (d=1) → 31.94% (d=4) → 34.72% (d=8) vs pre-M1 degradation.
 - Pipeline now fully measurable (clean ckpt save + robust loader).
@@ -122,7 +122,7 @@ This P1.4 should be unblocked now that the three tracks are first-class citizens
 ## Priority 2 (Architecture — MSA Sparse Memory Inside Raw Reasoning)
 
 ### P2.1: Minimal Raven-style Sparse Slot Router Prototype inside OneBodyParallelHybridBlock
-**Status (2026-06, Phase 3 landed)**: 
+**Status (2026-06, Phase 3 landed)**:
 
 1. Persistent slot state across steps (done)
 2. Stronger early read & deep integration into recurrence (done)

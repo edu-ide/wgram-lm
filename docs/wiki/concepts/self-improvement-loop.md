@@ -72,7 +72,7 @@ should produce different preference rows and different failure tags.
 
 Added an analysis-only preference-data path:
 
-- Module: `src/qtrm_mm/training/self_improvement_data.py`
+- Module: `src/wgram_lm/training/self_improvement_data.py`
 - CLI: `scripts/101_build_self_improvement_preferences.py`
 - Output:
   `data/filtered/memory_self_improvement_preferences_analysis.jsonl`

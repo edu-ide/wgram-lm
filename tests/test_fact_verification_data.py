@@ -3,7 +3,7 @@ import unittest
 
 class FactVerificationDataTests(unittest.TestCase):
     def test_build_fact_trace_rows_uses_structured_verdict_and_action(self):
-        from qtrm_mm.training.fact_verification_data import build_fact_trace_rows
+        from wgram_lm.training.fact_verification_data import build_fact_trace_rows
 
         case = {
             "id": "unsupported-answer",

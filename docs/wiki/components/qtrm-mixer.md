@@ -2,8 +2,8 @@
 
 Current code:
 
-- `src/qtrm_mm/mixers.py`
-- `src/qtrm_mm/blocks.py`
+- `src/wgram_lm/mixers.py`
+- `src/wgram_lm/blocks.py`
 
 Reference source:
 

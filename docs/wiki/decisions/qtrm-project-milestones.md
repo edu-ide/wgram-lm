@@ -206,7 +206,7 @@ M0:
 
 M1:
   DGX Stage92:
-    /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K
+    /mnt/data4tb/wgram-lm/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K
   final seen:
     step=24000
     eval_loss=0.421623428875682
@@ -218,7 +218,7 @@ M1:
 
 M2:
   Stage93 large data build:
-    /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/stage93_hrm_text_reasoning_nonflan_dataio
+    /mnt/data4tb/wgram-lm/local_eval/stage93_hrm_text_reasoning_nonflan_dataio
   latest checked:
     2026-05-24 01:46 KST
     tokenized=1010 / 1010 files

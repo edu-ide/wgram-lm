@@ -5,7 +5,7 @@ import torch
 
 class WorkspaceMemoryGateTests(unittest.TestCase):
     def test_gated_workspace_reports_per_layer_update_gate(self):
-        from qtrm_mm.workspace import LatentWorkspace
+        from wgram_lm.workspace import LatentWorkspace
 
         workspace = LatentWorkspace(
             d_model=16,
@@ -33,7 +33,7 @@ class WorkspaceMemoryGateTests(unittest.TestCase):
         self.assertTrue(torch.all(info["update_gate_mean"] <= 1.0))
 
     def test_qtrm_config_wires_gated_workspace_to_forward_outputs(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -64,7 +64,7 @@ class WorkspaceMemoryGateTests(unittest.TestCase):
         self.assertEqual(out["workspace_update_gate_mean"].shape, (2, cfg.workspace_layers))
 
     def test_qtrm_forward_can_disable_workspace_memory_gate(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,

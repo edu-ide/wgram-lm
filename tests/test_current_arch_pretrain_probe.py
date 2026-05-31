@@ -4,7 +4,7 @@ import unittest
 
 class CurrentArchPretrainProbeTests(unittest.TestCase):
     def test_probe_config_uses_current_residual_architecture(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_current_arch_pretrain_probe.yaml")
 
@@ -39,7 +39,7 @@ class CurrentArchPretrainProbeTests(unittest.TestCase):
         self.assertIn("post_eval.jsonl", text)
 
     def test_training_parser_accepts_save_every_flag(self):
-        from qtrm_mm.training.train import build_arg_parser
+        from wgram_lm.training.train import build_arg_parser
 
         args = build_arg_parser().parse_args(
             [

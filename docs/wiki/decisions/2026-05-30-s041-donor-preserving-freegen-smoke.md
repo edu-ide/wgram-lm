@@ -182,8 +182,8 @@ residuals whenever donor and QTRM disagreed.
 Implemented repair:
 
 ```text
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/config.py
 scripts/192_eval_raw_intelligence.py
 tests/test_donor_qtrm_conflict_gate.py
 ```
@@ -201,7 +201,7 @@ Validation:
 
 ```text
 PYTHONPATH=. python3 tests/test_donor_qtrm_conflict_gate.py
-PYTHONPATH=. python3 -m py_compile src/qtrm_mm/qtrm_model.py src/qtrm_mm/config.py scripts/192_eval_raw_intelligence.py tests/test_donor_qtrm_conflict_gate.py
+PYTHONPATH=. python3 -m py_compile src/wgram_lm/wgram_model.py src/wgram_lm/config.py scripts/192_eval_raw_intelligence.py tests/test_donor_qtrm_conflict_gate.py
 ```
 
 Adaptive CFC artifacts:
@@ -253,7 +253,7 @@ Free-generation result:
 DGX UltraData rehearsal checkpoint check:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos/checkpoints/qwen35_2b_ultradata_rehearsal_sft/last.pt
+/mnt/data4tb/wgram-lm/checkpoints/qwen35_2b_ultradata_rehearsal_sft/last.pt
 generation_smoke8: hits=0/40
 causal_forced_choice_smoke4: hits=2/20
 ```
@@ -341,7 +341,7 @@ Implementation Path
 
 **Implementation Progress (as of latest)**
 - Phase 0 code artifacts landed:
-  - Config fields + bias injection in `qtrm_model.py` (zero effect by default).
+  - Config fields + bias injection in `wgram_model.py` (zero effect by default).
   - Bias is force-trainable when feature enabled (in `configure_trainable_parameters`).
   - Full CLI support in `192_eval_raw_intelligence.py`.
   - Dedicated safe runners:
@@ -358,7 +358,7 @@ The path forward is no longer "more alpha / beam / plain SFT". It is targeted, o
 
 ## Phase 0 Verification Guide (How to Run & Read Results Safely)
 
-**Goal of Phase 0**  
+**Goal of Phase 0**
 Test whether an extremely small number of parameters (single vocab-sized bias vector + first-token + preservation losses) can give a measurable lift in first-answer-token accuracy and free-generation path-starting, **without regressing donor fluency**.
 
 ### 1. Recommended Minimal Experiment Flow
@@ -531,7 +531,7 @@ Once you have one clean recorded run, we can decide whether to move to Phase 1 (
 **Training command (executed)**:
 ```bash
 mkdir -p runs/s043_denoise_recovery_real1 && \
-python3 -m qtrm_mm.training.train \
+python3 -m wgram_lm.training.train \
   --config configs/s043_denoise_recovery_real1.yaml \
   --use-donor \
   --data-jsonl data/tmp/denoise_bad_prefixes_v3_160.jsonl \

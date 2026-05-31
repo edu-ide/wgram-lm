@@ -4,11 +4,11 @@ Status: implementation snapshot as of 2026-05-03.
 
 Primary code paths:
 
-- `src/qtrm_mm/qtrm_model.py`
-- `src/qtrm_mm/qwen_donor.py`
-- `src/qtrm_mm/workspace.py`
-- `src/qtrm_mm/core.py`
-- `src/qtrm_mm/multimodal_projector.py`
+- `src/wgram_lm/wgram_model.py`
+- `src/wgram_lm/qwen_donor.py`
+- `src/wgram_lm/workspace.py`
+- `src/wgram_lm/core.py`
+- `src/wgram_lm/multimodal_projector.py`
 
 ## Summary
 

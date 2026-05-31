@@ -109,7 +109,7 @@ class EvidenceSpanReaderDatasetTests(unittest.TestCase):
             self.assertEqual(written[0]["case_id"], "case-a")
 
     def test_jsonl_dataset_emits_span_reader_targets(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "span.jsonl"
@@ -146,7 +146,7 @@ class EvidenceSpanReaderDatasetTests(unittest.TestCase):
             self.assertEqual(float(sample["evidence_span_sample_weight"]), 1.0)
 
     def test_jsonl_dataset_keeps_text_span_targets_beyond_visual_token_limit(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "span.jsonl"
@@ -180,7 +180,7 @@ class EvidenceSpanReaderDatasetTests(unittest.TestCase):
             self.assertEqual(float(sample["evidence_span_sample_weight"]), 1.0)
 
     def test_jsonl_dataset_ssot_span_reader_targets_canonical_prompt_tokens(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "span.jsonl"

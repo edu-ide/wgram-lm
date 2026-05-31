@@ -133,9 +133,9 @@ model fields:
   core_loop_readout_hidden
 
 code:
-  src/qtrm_mm/qtrm_model.py
-  src/qtrm_mm/config.py
-  src/qtrm_mm/training/train.py
+  src/wgram_lm/wgram_model.py
+  src/wgram_lm/config.py
+  src/wgram_lm/training/train.py
 
 canonical config:
   configs/qwen35_2b_4090_pure_recursive_depth_fullseq_kiss_s160.yaml

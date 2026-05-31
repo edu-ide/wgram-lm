@@ -22,7 +22,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     normalize_answer_text,
     normalized_alias_set,
@@ -186,7 +186,7 @@ def collate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def train_epoch(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     selector: CandidatePoolSelector,
     rows: list[dict[str, Any]],
@@ -195,7 +195,7 @@ def train_epoch(
     args: argparse.Namespace,
     device: torch.device,
 ) -> dict[str, float]:
-    qtrm_model.eval()
+    wgram_model.eval()
     selector.train()
     loader = DataLoader(rows, batch_size=int(args.batch_size), shuffle=True, collate_fn=collate_rows)
     total_loss = 0.0
@@ -204,7 +204,7 @@ def train_epoch(
     for batch in loader:
         pools = [candidate_pool(row, max_pool_candidates=args.max_pool_candidates) for row in batch]
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -241,7 +241,7 @@ def train_epoch(
 @torch.no_grad()
 def evaluate(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     selector: CandidatePoolSelector,
     verifier: stage524.ChoiceVerifier | None,
@@ -251,7 +251,7 @@ def evaluate(
     args: argparse.Namespace,
     device: torch.device,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    qtrm_model.eval()
+    wgram_model.eval()
     selector.eval()
     if verifier is not None:
         verifier.eval()
@@ -261,7 +261,7 @@ def evaluate(
     for batch in loader:
         pools = [candidate_pool(row, max_pool_candidates=args.max_pool_candidates) for row in batch]
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -424,16 +424,16 @@ def main() -> None:
         [*train_rows, *eval_rows],
         max_pool_candidates=int(args.max_pool_candidates),
     )
-    qtrm_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
+    wgram_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
     selector = CandidatePoolSelector(
-        d_state=int(qtrm_model.d_state),
+        d_state=int(wgram_model.d_state),
         vocab_size=len(allowed_chars),
         max_chars=int(args.max_candidate_chars),
         hidden_dim=int(args.hidden_dim) if int(args.hidden_dim) > 0 else None,
     ).to(device)
     verifier, verifier_allowed_chars, verifier_max_choice_chars = load_verifier(
         args,
-        d_state=int(qtrm_model.d_state),
+        d_state=int(wgram_model.d_state),
         device=device,
     )
     if verifier_max_choice_chars:
@@ -447,7 +447,7 @@ def main() -> None:
     best_selected = -1.0
     for epoch in range(1, int(args.epochs) + 1):
         train = train_epoch(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             selector=selector,
             rows=train_rows,
@@ -457,7 +457,7 @@ def main() -> None:
             device=device,
         )
         eval_summary, eval_records = evaluate(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             selector=selector,
             verifier=verifier,

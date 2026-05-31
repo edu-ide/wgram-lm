@@ -26,7 +26,7 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="one_body_contract",
         status=ComponentStatus.PROMOTED,
         locations=(
-            "src/qtrm_mm/architecture/one_body_contract.py",
+            "src/wgram_lm/architecture/one_body_contract.py",
             "docs/wiki/architecture/one-body-architecture-ssot.md",
         ),
         note="Promoted launch guard for the HRM-Text-style one-body main path.",
@@ -34,19 +34,19 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
     "blt_components": ComponentRecord(
         name="blt_components",
         status=ComponentStatus.PROMOTED,
-        locations=("src/qtrm_mm/models/blt_components.py",),
+        locations=("src/wgram_lm/models/blt_components.py",),
         note="Reusable BLT local decoder and byte projector components.",
     ),
     "qtrm_recursive_core": ComponentRecord(
         name="qtrm_recursive_core",
         status=ComponentStatus.PROMOTED,
-        locations=("src/qtrm_mm/core.py",),
+        locations=("src/wgram_lm/core.py",),
         note="Reusable TRM/QTRM recurrent thought core; promotion still depends on run-specific ablation gates.",
     ),
     "state_transition_core": ComponentRecord(
         name="state_transition_core",
         status=ComponentStatus.PROMOTED,
-        locations=("src/qtrm_mm/state_transition_core.py",),
+        locations=("src/wgram_lm/state_transition_core.py",),
         note=(
             "Reusable GRAM/PTRM-style state transition core family (legacy implementation). "
             "active_in_primary_onebody_path=false (as of 2026-05 post new-thought-structure pivot). "
@@ -61,7 +61,7 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
     "bltd_byte_latent_prefixlm": ComponentRecord(
         name="bltd_byte_latent_prefixlm",
         status=ComponentStatus.SCAFFOLD,
-        locations=("src/qtrm_mm/models/blt_prefixlm.py",),
+        locations=("src/wgram_lm/models/blt_prefixlm.py",),
         note=(
             "Full BLT-D PrefixLM model has been extracted from the trainer, "
             "but remains scaffold until held-out/generation/depth gates promote it."
@@ -71,9 +71,9 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="stage102z_final_freeform_answer_path",
         status=ComponentStatus.PROMOTED,
         locations=(
-            "src/qtrm_mm/provenance.py",           # Native extracted components
-            "src/qtrm_mm/core.py",                 # provenance_register fusion + internal module usage
-            "src/qtrm_mm/config.py",               # core_provenance_register_* flags
+            "src/wgram_lm/provenance.py",           # Native extracted components
+            "src/wgram_lm/core.py",                 # provenance_register fusion + internal module usage
+            "src/wgram_lm/config.py",               # core_provenance_register_* flags
             "scripts/612_train_stage102z_final_freeform_answer_path.py",  # historical reference
             "tests/test_stage102z_final_freeform_answer_path.py",
         ),
@@ -111,7 +111,7 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         status=ComponentStatus.DIAGNOSTIC,
         locations=(
             "scripts/557_train_blt_d_prefixlm_dataio.py",
-            "src/qtrm_mm/architecture/one_body_contract.py",
+            "src/wgram_lm/architecture/one_body_contract.py",
         ),
         note=(
             "Stage99 answer readback, anchor, and selector paths are diagnostic-only "
@@ -132,8 +132,8 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="gated_thought_workspace_broadcast",
         status=ComponentStatus.PROMOTED,
         locations=(
-            "src/qtrm_mm/core.py",
-            "src/qtrm_mm/config.py",
+            "src/wgram_lm/core.py",
+            "src/wgram_lm/config.py",
             "scripts/diag_iga_gated_workspace_evidence.py",
         ),
         note=(
@@ -148,8 +148,8 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="core_memory_tiers_alrmc",
         status=ComponentStatus.SCAFFOLD,
         locations=(
-            "src/qtrm_mm/core.py",
-            "src/qtrm_mm/config.py",
+            "src/wgram_lm/core.py",
+            "src/wgram_lm/config.py",
         ),
         note=(
             "Mega C: Learned slow-tier policy controller added + gold structural bias. "
@@ -160,9 +160,9 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="adaptive_rehearsal_556",
         status=ComponentStatus.SCAFFOLD,
         locations=(
-            "src/qtrm_mm/rehearsal/adaptive_rehearsal.py",
-            "src/qtrm_mm/core.py",
-            "src/qtrm_mm/config.py",
+            "src/wgram_lm/rehearsal/adaptive_rehearsal.py",
+            "src/wgram_lm/core.py",
+            "src/wgram_lm/config.py",
             "scripts/train_556_full_curriculum_minimal.py",
             "scripts/run_556_ablation_matrix.py",
         ),
@@ -175,9 +175,9 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="explicit_multi_trajectory_scorer",
         status=ComponentStatus.SCAFFOLD,
         locations=(
-            "src/qtrm_mm/reasoning/multi_trajectory_scorer.py",
-            "src/qtrm_mm/core.py",
-            "src/qtrm_mm/config.py",
+            "src/wgram_lm/reasoning/multi_trajectory_scorer.py",
+            "src/wgram_lm/core.py",
+            "src/wgram_lm/config.py",
         ),
         note=(
             "Mega C: Module + wiring into forward. Structural multi-trajectory now present. Needs deeper usage + evidence."
@@ -187,8 +187,8 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="depthwise_monotonic_answer_attractor",
         status=ComponentStatus.PROMOTED,
         locations=(
-            "src/qtrm_mm/core.py",
-            "src/qtrm_mm/config.py",
+            "src/wgram_lm/core.py",
+            "src/wgram_lm/config.py",
             "recovered_experiments/attractor_stage101/570_train_solution_aligned_answer_attractor.py",
         ),
         note=(
@@ -209,9 +209,9 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="adaptive_rehearsal_556_gold_recipe",
         status=ComponentStatus.SCAFFOLD,
         locations=(
-            "src/qtrm_mm/rehearsal/adaptive_rehearsal.py",
-            "src/qtrm_mm/core.py",
-            "src/qtrm_mm/config.py",
+            "src/wgram_lm/rehearsal/adaptive_rehearsal.py",
+            "src/wgram_lm/core.py",
+            "src/wgram_lm/config.py",
             "scripts/train_556_full_curriculum_minimal.py",
             "scripts/launch_556_local_smoke.sh",
             "scripts/run_556_ablation_matrix.py",
@@ -248,8 +248,8 @@ COMPONENT_REGISTRY: dict[str, ComponentRecord] = {
         name="elastic_variable_depth",
         status=ComponentStatus.SCAFFOLD,
         locations=(
-            "src/qtrm_mm/core.py",
-            "src/qtrm_mm/config.py",
+            "src/wgram_lm/core.py",
+            "src/wgram_lm/config.py",
         ),
         note=(
             "Mega full push: Variable unroll + random training depth + ablation support. Now has real behavior in recurrence loop."

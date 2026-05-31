@@ -27,7 +27,7 @@ class BLTDepthResidualProbeTests(unittest.TestCase):
     def test_probe_imports_blt_model_from_src_ssot(self) -> None:
         source = SCRIPT.read_text(encoding="utf-8")
 
-        self.assertIn("from qtrm_mm.models.blt_prefixlm import BLTDByteLatentPrefixLM", source)
+        self.assertIn("from wgram_lm.models.blt_prefixlm import BLTDByteLatentPrefixLM", source)
         self.assertNotIn("trainer.BLTDByteLatentPrefixLM", source)
 
     def test_summarize_depth_rows_uses_token_weighted_loss_and_residual(self) -> None:

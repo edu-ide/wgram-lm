@@ -3,7 +3,7 @@ import unittest
 
 class FactVerificationProbeCaseTests(unittest.TestCase):
     def test_probe_cases_cover_all_core_verdicts_and_metadata(self):
-        from qtrm_mm.eval.fact_verification import VALID_VERDICTS, load_fact_cases
+        from wgram_lm.eval.fact_verification import VALID_VERDICTS, load_fact_cases
 
         cases = load_fact_cases("data/eval/fact_verification_probe.jsonl")
         verdicts = {case["expected_verdict"] for case in cases}

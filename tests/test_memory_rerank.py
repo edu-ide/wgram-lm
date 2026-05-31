@@ -3,7 +3,7 @@ import unittest
 
 class MemoryRerankTests(unittest.TestCase):
     def test_none_reranker_preserves_retrieval_order_and_metadata(self):
-        from qtrm_mm.memoryos.rerank import rerank_results
+        from wgram_lm.memoryos.rerank import rerank_results
 
         results = [
             (0.9, {"source": "a.md", "text": "alpha"}),
@@ -20,7 +20,7 @@ class MemoryRerankTests(unittest.TestCase):
         self.assertEqual(rec["rerank_backend"], "none")
 
     def test_lexical_reranker_can_promote_lower_retrieval_candidate(self):
-        from qtrm_mm.memoryos.rerank import rerank_results
+        from wgram_lm.memoryos.rerank import rerank_results
 
         results = [
             (0.95, {"source": "distractor.md", "text": "The west vault passphrase is jade-circuit."}),
@@ -35,7 +35,7 @@ class MemoryRerankTests(unittest.TestCase):
         self.assertEqual(rec["rerank_backend"], "lexical")
 
     def test_cross_encoder_reranker_uses_rank_method_when_available(self):
-        from qtrm_mm.memoryos.rerank import rerank_results
+        from wgram_lm.memoryos.rerank import rerank_results
 
         class FakeCrossEncoder:
             def rank(self, query, documents, top_k=None):

@@ -19,11 +19,11 @@ import torch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-GATE_PATH = REPO_ROOT / "scripts" / "362_train_qwen_backbone_qtrm_core_gate.py"
+GATE_PATH = REPO_ROOT / "scripts" / "362_train_qwen_backbone_wgram_core_gate.py"
 
 
 def _load_gate_module():
-    spec = importlib.util.spec_from_file_location("qwen_backbone_qtrm_core_gate", GATE_PATH)
+    spec = importlib.util.spec_from_file_location("qwen_backbone_wgram_core_gate", GATE_PATH)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"failed to load gate module from {GATE_PATH}")
     module = importlib.util.module_from_spec(spec)
@@ -128,7 +128,7 @@ def _build_eval_args(args: argparse.Namespace) -> argparse.Namespace:
 
 def _build_model(eval_args: argparse.Namespace, checkpoint_path: str):
     from transformers import AutoTokenizer
-    from qtrm_mm.qwen_backbone_qtrm import QwenBackboneQTRM
+    from wgram_lm.qwen_backbone_wgram import QwenBackboneQTRM
 
     device = torch.device(str(eval_args.device))
     dtype = gate._dtype(str(eval_args.dtype))

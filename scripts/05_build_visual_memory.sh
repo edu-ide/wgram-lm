@@ -17,4 +17,4 @@ if not p.exists():
     d.text((55,100),'QTRM', fill=(0,0,0))
     im.save(p)
 PY
-python -m qtrm_mm.memoryos.visual_index "$INPUT_DIR" "$OUT_DIR" --model-id "$MODEL_ID"
+python -m wgram_lm.memoryos.visual_index "$INPUT_DIR" "$OUT_DIR" --model-id "$MODEL_ID"

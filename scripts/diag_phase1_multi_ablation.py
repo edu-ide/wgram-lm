@@ -13,8 +13,8 @@ Usage (GPU):
 import argparse
 import torch
 import torch.nn as nn
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 def run_single_trial(cfg: QTRMConfig, seed: int, batch: int, seq: int, d: int, device: str):
     torch.manual_seed(seed)

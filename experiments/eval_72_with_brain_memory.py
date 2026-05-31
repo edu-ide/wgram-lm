@@ -12,9 +12,9 @@ import json
 import torch
 from pathlib import Path
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
-from src.qtrm_mm.memory.brain_triple_memory import (
+from wgram_lm.config import QTRMConfig
+from wgram_lm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.memory.brain_triple_memory import (
     BrainMimeticTripleMemory,
     integrate_brain_mimetic_stochastic_into_triple_memory,
 )
@@ -46,7 +46,7 @@ def load_brain_model_and_memory(ckpt_path: Path, device="cuda"):
     # For speed, we load into the hybrid blocks if present.
 
     # Simplified: create the hybrid block(s) the same way the trainer does
-    from src.qtrm_mm.blocks import build_parallel_hybrid_block
+    from wgram_lm.blocks import build_parallel_hybrid_block
 
     # Rough reconstruction (adjust if your training used different numbers)
     hybrid_block = build_parallel_hybrid_block(cfg, recurrence_head_count=3, attention_head_count=1)

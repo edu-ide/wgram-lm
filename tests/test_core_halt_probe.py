@@ -4,7 +4,7 @@ import unittest
 
 class CoreHaltProbeTests(unittest.TestCase):
     def test_probe_config_trains_auto_halt_targets(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_core_halt_probe.yaml")
 
@@ -51,7 +51,7 @@ class CoreHaltProbeTests(unittest.TestCase):
         self.assertIn("memory_reasoning_heldout_probe.jsonl", text)
 
     def test_donor_anneal_config_reduces_donor_logits_dependency(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_donor_anneal_probe.yaml")
 

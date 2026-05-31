@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     normalize_answer_text,
     normalized_alias_set,
@@ -151,7 +151,7 @@ def collate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def train_epoch(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     verifier: ChoiceVerifier,
     rows: list[dict[str, Any]],
@@ -161,10 +161,10 @@ def train_epoch(
     device: torch.device,
 ) -> dict[str, float]:
     if args.train_qtrm_core:
-        qtrm_model.train()
-        qtrm_model.qwen.eval()
+        wgram_model.train()
+        wgram_model.qwen.eval()
     else:
-        qtrm_model.eval()
+        wgram_model.eval()
     verifier.train()
     loader = DataLoader(rows, batch_size=int(args.batch_size), shuffle=True, collate_fn=collate_rows)
     total_loss = 0.0
@@ -172,7 +172,7 @@ def train_epoch(
     started = time.time()
     for batch in loader:
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -193,7 +193,7 @@ def train_epoch(
         loss.backward()
         params = list(verifier.parameters())
         if args.train_qtrm_core:
-            params.extend(parameter for parameter in qtrm_model.parameters() if parameter.requires_grad)
+            params.extend(parameter for parameter in wgram_model.parameters() if parameter.requires_grad)
         torch.nn.utils.clip_grad_norm_(params, float(args.grad_clip))
         optimizer.step()
         total_loss += float(loss.detach().cpu()) * len(batch)
@@ -204,7 +204,7 @@ def train_epoch(
 @torch.no_grad()
 def evaluate(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     verifier: ChoiceVerifier,
     rows: list[dict[str, Any]],
@@ -212,13 +212,13 @@ def evaluate(
     args: argparse.Namespace,
     device: torch.device,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    qtrm_model.eval()
+    wgram_model.eval()
     verifier.eval()
     loader = DataLoader(rows, batch_size=int(args.eval_batch_size), shuffle=False, collate_fn=collate_rows)
     records: list[dict[str, Any]] = []
     for batch in loader:
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -316,15 +316,15 @@ def main() -> None:
     train_rows = stage523.load_jsonl(args.train_jsonl, limit=int(args.train_limit))
     eval_rows = stage523.load_jsonl(args.eval_jsonl, limit=int(args.eval_limit))
     allowed_chars = build_choice_char_vocab([*train_rows, *eval_rows])
-    qtrm_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
+    wgram_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
     verifier = ChoiceVerifier(
-        d_state=int(qtrm_model.d_state),
+        d_state=int(wgram_model.d_state),
         vocab_size=len(allowed_chars),
         max_choice_chars=int(args.max_choice_chars),
     ).to(device)
     trainable = list(verifier.parameters())
     if args.train_qtrm_core:
-        trainable.extend(parameter for parameter in qtrm_model.parameters() if parameter.requires_grad)
+        trainable.extend(parameter for parameter in wgram_model.parameters() if parameter.requires_grad)
     optimizer = torch.optim.AdamW(trainable, lr=float(args.lr), weight_decay=float(args.weight_decay))
 
     out_dir = Path(args.out_dir)
@@ -333,7 +333,7 @@ def main() -> None:
     best_accuracy = -1.0
     for epoch in range(1, int(args.epochs) + 1):
         train = train_epoch(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             verifier=verifier,
             rows=train_rows,
@@ -343,7 +343,7 @@ def main() -> None:
             device=device,
         )
         eval_summary, eval_records = evaluate(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             verifier=verifier,
             rows=eval_rows,
@@ -352,7 +352,7 @@ def main() -> None:
             device=device,
         )
         train_summary, _ = evaluate(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             verifier=verifier,
             rows=train_rows,

@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a reproducible code, test, script, or documentation bug.
+title: "[bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What failed, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Include exact commands, config paths, and minimal inputs when possible.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python version, OS, accelerator/backend, and relevant dependency versions.
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or output
+      description: Paste the smallest useful excerpt. Do not include secrets or private data.
+      render: text
+    validations:
+      required: false

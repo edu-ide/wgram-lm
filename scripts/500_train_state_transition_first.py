@@ -35,12 +35,12 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.state_transition_core import (
+from wgram_lm.config import QTRMConfig
+from wgram_lm.state_transition_core import (
     StateTransitionCore,
     StateTransitionOutput,
 )
-from qtrm_mm.losses import (
+from wgram_lm.losses import (
     state_transition_loss,
     state_transition_causality_loss,
     state_monotonic_improvement_loss,
@@ -83,71 +83,71 @@ def build_synthetic_cases(
 ) -> list[SyntheticCase]:
     """Build synthetic cases with explicit state targets."""
     rng = random.Random(seed)
-    
+
     if case_mode == "hard_v1":
         families = ("checksum4", "chain5", "select_pair")
     elif case_mode == "hard_v1_balanced":
         families = ("select_pair", "checksum4", "chain5")
     else:
         families = ("checksum4", "chain5", "select_pair")
-    
+
     cases = []
     for idx in range(count):
         family = families[idx % len(families)]
-        
+
         if family == "chain5":
             start = rng.randrange(10)
             add_a = rng.randrange(10)
             mul = rng.choice((1, 3, 7, 9))
             sub = rng.randrange(10)
             add_b = rng.randrange(10)
-            
+
             after_add = (start + add_a) % 10
             after_mul = (after_add * mul) % 10
             after_sub = (after_mul - sub) % 10
             final = (after_sub + add_b) % 10
-            
+
             state_targets = [after_add, after_mul, after_sub, final]
             operation_ids = [OP_ADD, OP_MUL, OP_SUB, OP_ADD]
-            
+
             prompt = (
                 "Follow the five-step digit chain mod 10. "
                 f"Start {start}; add {add_a}; multiply by {mul}; "
                 f"subtract {sub}; add {add_b}. "
                 "Answer with one digit. Answer: "
             )
-            
+
         elif family == "checksum4":
             a, b, c, d = (rng.randrange(10) for _ in range(4))
-            
+
             partial_1 = a % 10
             partial_2 = (a + 2 * b) % 10
             partial_3 = (a + 2 * b + 3 * c) % 10
             final = (a + 2 * b + 3 * c + 4 * d) % 10
-            
+
             state_targets = [partial_1, partial_2, partial_3, final]
             operation_ids = [OP_ADD, OP_ADD, OP_ADD, OP_ADD]
-            
+
             prompt = (
                 "Compute the extended checksum mod 10. "
                 "Rule: (a + 2*b + 3*c + 4*d) mod 10. "
                 f"a={a}, b={b}, c={c}, d={d}. "
                 "Answer with one digit. Answer: "
             )
-            
+
         elif family == "select_pair":
             digits = [rng.randrange(10) for _ in range(7)]
             first = rng.randrange(len(digits))
             second = rng.randrange(len(digits))
-            
+
             sel_1 = digits[first]
             sel_2 = (sel_1 + digits[second]) % 10
             add_idx = (sel_2 + first) % 10
             final = (add_idx + second) % 10
-            
+
             state_targets = [sel_1, sel_2, add_idx, final]
             operation_ids = [OP_ADD, OP_ADD, OP_ADD, OP_ADD]
-            
+
             prompt = (
                 "Read the digit list and answer mod 10. "
                 f"Digits: {digits}. Take indices {first} and {second}; "
@@ -156,7 +156,7 @@ def build_synthetic_cases(
             )
         else:
             raise ValueError(f"unknown family: {family}")
-        
+
         cases.append(SyntheticCase(
             prompt=prompt,
             label=str(final),
@@ -164,13 +164,13 @@ def build_synthetic_cases(
             state_targets=state_targets,
             operation_ids=operation_ids,
         ))
-    
+
     return cases
 
 
 class SyntheticDataset(Dataset):
     """Dataset for state-transition training."""
-    
+
     def __init__(
         self,
         cases: list[SyntheticCase],
@@ -182,13 +182,13 @@ class SyntheticDataset(Dataset):
         self.tokenizer = tokenizer
         self.max_seq_len = max_seq_len
         self.max_steps = max_steps
-    
+
     def __len__(self):
         return len(self.cases)
-    
+
     def __getitem__(self, idx):
         case = self.cases[idx]
-        
+
         # Tokenize prompt
         if self.tokenizer is not None:
             tokens = self.tokenizer(
@@ -208,25 +208,25 @@ class SyntheticDataset(Dataset):
             padding = torch.zeros(self.max_seq_len - len(input_ids), dtype=torch.long)
             input_ids = torch.cat([input_ids, padding])
             attention_mask = torch.ones(self.max_seq_len, dtype=torch.long)
-        
-        
+
+
         # State targets: pad to max_steps
         state_targets = torch.full(
             (self.max_steps + 1,), -100, dtype=torch.long
         )
         for t, s in enumerate(case.state_targets[:self.max_steps]):
             state_targets[t + 1] = s  # offset by 1 for initial state
-        
+
         # Operation IDs: pad to max_steps
         op_ids = torch.full(
             (self.max_steps,), -100, dtype=torch.long
         )
         for t, o in enumerate(case.operation_ids[:self.max_steps]):
             op_ids[t] = o
-        
+
         # Answer target
         answer_target = torch.tensor(int(case.label), dtype=torch.long)
-        
+
         return {
             "input_ids": input_ids,
             "attention_mask": attention_mask,
@@ -255,12 +255,12 @@ def collate_fn(batch):
 class StateTransitionModel(torch.nn.Module):
     """
     Complete state-transition-first model with Qwen backbone.
-    
+
     Uses the Qwen backbone as a prompt compressor (frozen or partially
     trainable), then feeds the compressed representation into the
     state transition core.
     """
-    
+
     def __init__(
         self,
         qwen_model,
@@ -271,7 +271,7 @@ class StateTransitionModel(torch.nn.Module):
         trainable_layers: Optional[list[int]] = None,
     ):
         super().__init__()
-        
+
         # Qwen backbone as prompt compressor
         self.qwen = qwen_model
         if freeze_qwen:
@@ -285,12 +285,12 @@ class StateTransitionModel(torch.nn.Module):
                     for idx in trainable_layers:
                         for param in layers[idx].parameters():
                             param.requires_grad = True
-        
+
         # Get model dimensions
         config = self._find_config()
         self.d_qwen = config.hidden_size if hasattr(config, 'hidden_size') else 768
         self.vocab_size = config.vocab_size if hasattr(config, 'vocab_size') else 152064
-        
+
         # Compressor: Qwen hidden -> state space
         self.compressor = torch.nn.Sequential(
             torch.nn.LayerNorm(self.d_qwen),
@@ -298,7 +298,7 @@ class StateTransitionModel(torch.nn.Module):
             torch.nn.GELU(),
             torch.nn.Linear(d_state, d_state),
         )
-        
+
         # State transition core
         qtrm_cfg = QTRMConfig(
             d_model=d_state,
@@ -311,11 +311,11 @@ class StateTransitionModel(torch.nn.Module):
             n_operations=n_operations,
             n_steps=n_steps,
         )
-        
+
         # Store for label token IDs
         self.label_token_ids = None
         self._setup_label_tokens(tokenizer=None)
-    
+
     def _find_text_model(self):
         for path in ("model.language_model", "language_model", "model", ""):
             candidate = self.qwen
@@ -327,7 +327,7 @@ class StateTransitionModel(torch.nn.Module):
             if candidate is not None and hasattr(candidate, "layers"):
                 return candidate
         return self.qwen
-    
+
     def _find_config(self):
         for attr in ("config", "model.config", "model.language_model.config"):
             candidate = self.qwen
@@ -342,7 +342,7 @@ class StateTransitionModel(torch.nn.Module):
             'hidden_size': self.d_qwen,
             'vocab_size': self.vocab_size,
         })()
-    
+
     def _setup_label_tokens(self, tokenizer):
         """Setup digit token IDs for the label choices."""
         if tokenizer is not None:
@@ -354,11 +354,11 @@ class StateTransitionModel(torch.nn.Module):
         else:
             # Will be set later
             self.label_token_ids = None
-    
+
     def set_label_token_ids(self, token_ids):
         """Set label token IDs after tokenizer is available."""
         self.label_token_ids = torch.tensor(token_ids, dtype=torch.long)
-    
+
     def forward(
         self,
         input_ids: torch.Tensor,
@@ -370,7 +370,7 @@ class StateTransitionModel(torch.nn.Module):
     ):
         """
         Forward pass.
-        
+
         Returns:
             dict with logits, core outputs, and telemetry
         """
@@ -384,7 +384,7 @@ class StateTransitionModel(torch.nn.Module):
                 output_hidden_states=True,
                 use_cache=False,
             )
-        
+
         # Get last hidden state
         if hasattr(qwen_outputs, 'hidden_states') and qwen_outputs.hidden_states:
             hidden = qwen_outputs.hidden_states[-1]
@@ -392,7 +392,7 @@ class StateTransitionModel(torch.nn.Module):
             hidden = qwen_outputs.last_hidden_state
         else:
             hidden = qwen_outputs[0] if isinstance(qwen_outputs, tuple) else qwen_outputs
-        
+
         # Compress to workspace
         # Use mean-pooling over attended tokens for initial workspace
         if attention_mask is not None:
@@ -401,9 +401,9 @@ class StateTransitionModel(torch.nn.Module):
             workspace = workspace.unsqueeze(1)  # (B, 1, d_state)
         else:
             workspace = hidden.mean(dim=1, keepdim=True)
-        
+
         workspace = self.compressor(workspace)
-        
+
         if force_core_off:
             # For core-off baseline: use Qwen logits directly
             return {
@@ -413,14 +413,14 @@ class StateTransitionModel(torch.nn.Module):
                 "answer_logits": None,
                 "operation_logits": None,
             }
-        
+
         # State transition core
         core_output = self.core(
             workspace=workspace,
             operation_ids=operation_ids,
             n_steps=n_steps,
         )
-        
+
         return {
             "logits": qwen_outputs.logits if hasattr(qwen_outputs, 'logits') else None,
             "qtrm_core_step_states": core_output.state_trajectory,
@@ -454,14 +454,14 @@ def train(
     state_acc_sum = 0.0
     answer_acc_sum = 0.0
     n_batches = 0
-    
+
     for batch_idx, batch in enumerate(train_loader):
         input_ids = batch["input_ids"].to(device)
         attention_mask = batch["attention_mask"].to(device)
         state_targets = batch["state_targets"].to(device)
         operation_ids = batch["operation_ids"].to(device)
         answer_target = batch["answer_target"].to(device)
-        
+
         # Forward
         outputs = model(
             input_ids=input_ids,
@@ -469,7 +469,7 @@ def train(
             operation_ids=operation_ids,
             n_steps=args.n_steps,
         )
-        
+
         # Compute loss
         loss_dict = state_transition_loss(
             state_digit_logits=outputs["state_digit_logits"],
@@ -484,7 +484,7 @@ def train(
             operation_weight=args.operation_weight,
         )
         loss, metrics = loss_dict
-        
+
         # Monotonic improvement
         if args.monotonic_weight > 0.0:
             mono_loss, mono_metrics = state_monotonic_improvement_loss(
@@ -494,20 +494,20 @@ def train(
                 weight=args.monotonic_weight,
             )
             loss = loss + mono_loss
-        
+
         # Backward
         optimizer.zero_grad()
         loss.backward()
-        
+
         # Gradient clipping
         if args.max_grad_norm > 0:
             torch.nn.utils.clip_grad_norm_(
                 model.parameters(),
                 args.max_grad_norm,
             )
-        
+
         optimizer.step()
-        
+
         # Accumulate metrics
         total_loss += loss.item()
         state_loss_sum += metrics["state_loss"].item()
@@ -516,7 +516,7 @@ def train(
         state_acc_sum += metrics["state_accuracy"].item()
         answer_acc_sum += metrics["answer_accuracy"].item()
         n_batches += 1
-    
+
     return {
         "loss": total_loss / n_batches,
         "state_loss": state_loss_sum / n_batches,
@@ -537,7 +537,7 @@ def evaluate(
 ) -> dict:
     """Evaluate with full metrics."""
     model.eval()
-    
+
     all_metrics = {
         "state_accuracy": [],
         "answer_accuracy": [],
@@ -546,7 +546,7 @@ def evaluate(
         "core_on_answer_accuracy": [],
         "core_off_answer_accuracy": [],
     }
-    
+
     for batch in loader:
         input_ids = batch["input_ids"].to(device)
         attention_mask = batch["attention_mask"].to(device)
@@ -554,7 +554,7 @@ def evaluate(
         operation_ids = batch["operation_ids"].to(device)
         answer_target = batch["answer_target"].to(device)
         families = batch["families"]
-        
+
         # Core ON
         outputs = model(
             input_ids=input_ids,
@@ -562,19 +562,19 @@ def evaluate(
             operation_ids=operation_ids,
             n_steps=args.n_steps,
         )
-        
+
         # State accuracy
         state_preds = outputs["state_digit_logits"].argmax(dim=-1)
         valid_mask = state_targets != -100
         if valid_mask.any():
             state_acc = (state_preds == state_targets).float()[valid_mask].mean().item()
             all_metrics["state_accuracy"].append(state_acc)
-        
+
         # Answer accuracy
         answer_preds = outputs["answer_logits"].argmax(dim=-1)
         answer_acc = (answer_preds == answer_target).float().mean().item()
         all_metrics["answer_accuracy"].append(answer_acc)
-        
+
         # Per-family accuracy
         for family in set(families):
             fam_mask = [f == family for f in families]
@@ -583,20 +583,20 @@ def evaluate(
                     valid_mask[fam_mask]
                 ].mean().item() if valid_mask[fam_mask].any() else 0.0
                 fam_answer_acc = (answer_preds[fam_mask] == answer_target[fam_mask]).float().mean().item()
-                
+
                 if family not in all_metrics["family_state_accuracy"]:
                     all_metrics["family_state_accuracy"][family] = []
                     all_metrics["family_answer_accuracy"][family] = []
                 all_metrics["family_state_accuracy"][family].append(fam_state_acc)
                 all_metrics["family_answer_accuracy"][family].append(fam_answer_acc)
-        
+
         # Core OFF baseline
         outputs_off = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             force_core_off=True,
         )
-        
+
         if outputs_off["logits"] is not None and label_token_ids is not None:
             # Extract answer from Qwen logits
             qwen_logits = outputs_off["logits"][:, -1, :]  # last token
@@ -607,11 +607,11 @@ def evaluate(
             core_off_preds = core_choice.argmax(dim=-1)
             core_off_acc = (core_off_preds == answer_target).float().mean().item()
             all_metrics["core_off_answer_accuracy"].append(core_off_acc)
-        
+
         # Core ON vs OFF comparison
         core_on_acc = (answer_preds == answer_target).float().mean().item()
         all_metrics["core_on_answer_accuracy"].append(core_on_acc)
-    
+
     # Aggregate
     result = {}
     result["state_accuracy"] = (
@@ -631,7 +631,7 @@ def evaluate(
         if all_metrics["core_off_answer_accuracy"] else 0.0
     )
     result["core_gain"] = result["core_on_answer_accuracy"] - result["core_off_answer_accuracy"]
-    
+
     # Per-family
     result["family_state_accuracy"] = {}
     result["family_answer_accuracy"] = {}
@@ -641,7 +641,7 @@ def evaluate(
             sum(all_metrics["family_answer_accuracy"].get(family, [0.0])) /
             len(all_metrics["family_answer_accuracy"].get(family, [1.0]))
         )
-    
+
     return result
 
 
@@ -651,7 +651,7 @@ def evaluate(
 
 def main():
     parser = argparse.ArgumentParser(description="State-Transition-First Training")
-    
+
     # Model
     parser.add_argument("--qwen-model-id", type=str, default=None,
                        help="Qwen model ID for backbone (default: random init)")
@@ -661,7 +661,7 @@ def main():
                        help="Freeze Qwen backbone")
     parser.add_argument("--trainable-qwen-layers", type=str, default=None,
                        help="Comma-separated Qwen layer indices to unfreeze")
-    
+
     # Data
     parser.add_argument("--train-cases", type=int, default=4096)
     parser.add_argument("--eval-cases", type=int, default=192)
@@ -669,7 +669,7 @@ def main():
     parser.add_argument("--eval-seed", type=int, default=9337)
     parser.add_argument("--case-mode", type=str, default="hard_v1")
     parser.add_argument("--max-seq-len", type=int, default=128)
-    
+
     # Training
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=32)
@@ -677,7 +677,7 @@ def main():
     parser.add_argument("--weight-decay", type=float, default=0.01)
     parser.add_argument("--max-grad-norm", type=float, default=1.0)
     parser.add_argument("--eval-every", type=int, default=2)
-    
+
     # Loss weights
     parser.add_argument("--state-weight", type=float, default=1.0)
     parser.add_argument("--answer-weight", type=float, default=0.5)
@@ -685,28 +685,28 @@ def main():
     parser.add_argument("--operation-weight", type=float, default=0.0)
     parser.add_argument("--monotonic-weight", type=float, default=0.05)
     parser.add_argument("--monotonic-margin", type=float, default=0.0)
-    
+
     # Output
     parser.add_argument("--out-dir", type=str, required=True)
     parser.add_argument("--dtype", type=str, default="bfloat16")
-    
+
     args = parser.parse_args()
-    
+
     # Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
-    
+
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    
+
     print(f"Device: {device}, Dtype: {dtype}")
     print(f"Output: {out_dir}")
-    
+
     # Load Qwen model or use random init
     qwen_model = None
     tokenizer = None
     label_token_ids = None
-    
+
     if args.qwen_model_id:
         print(f"Loading Qwen model: {args.qwen_model_id}")
         try:
@@ -728,7 +728,7 @@ def main():
             print("Falling back to random initialization...")
             qwen_model = None
             tokenizer = None
-    
+
     if qwen_model is None:
         # Simple random init model for smoke testing
         print("Using random initialization for smoke test")
@@ -750,7 +750,7 @@ def main():
                     'hidden_size': args.d_state,
                     'vocab_size': 1000,
                 })()
-            
+
             def forward(self, input_ids, attention_mask=None, **kwargs):
                 x = self.embed(input_ids)
                 for layer in self.layers:
@@ -762,10 +762,10 @@ def main():
                         self.hidden_states = (last,)
                 logits = x  # simplified
                 return Outputs(x, logits)
-            
+
             def parameters(self):
                 return super(SimpleBackbone, self).parameters()
-        
+
         qwen_model = SimpleBackbone().to(device)
         # For simple backbone, use digit indices directly as labels
         label_token_ids = list(range(10))
@@ -785,12 +785,12 @@ def main():
             def encode(self, text, add_special_tokens=False):
                 return [ord(c) % 1000 for c in text]
         tokenizer = SimpleTokenizer()
-    
+
     # Build model
     trainable_layers = None
     if args.trainable_qwen_layers:
         trainable_layers = [int(x.strip()) for x in args.trainable_qwen_layers.split(",")]
-    
+
     model = StateTransitionModel(
         qwen_model=qwen_model,
         d_state=args.d_state,
@@ -799,16 +799,16 @@ def main():
         freeze_qwen=args.freeze_qwen,
         trainable_layers=trainable_layers,
     ).to(device).to(dtype)
-    
+
     if label_token_ids:
         model.set_label_token_ids(label_token_ids)
-    
+
     # Count parameters
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total params: {total_params:,}")
     print(f"Trainable params: {trainable_params:,}")
-    
+
     # Build datasets
     print("Building datasets...")
     train_cases = build_synthetic_cases(
@@ -821,14 +821,14 @@ def main():
         seed=args.eval_seed,
         case_mode=args.case_mode,
     )
-    
+
     train_dataset = SyntheticDataset(
         train_cases, tokenizer, args.max_seq_len, args.n_steps
     )
     eval_dataset = SyntheticDataset(
         eval_cases, tokenizer, args.max_seq_len, args.n_steps
     )
-    
+
     train_loader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
         collate_fn=collate_fn,
@@ -837,7 +837,7 @@ def main():
         eval_dataset, batch_size=args.batch_size, shuffle=False,
         collate_fn=collate_fn,
     )
-    
+
     # Optimizer
     optimizer = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
@@ -847,25 +847,25 @@ def main():
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=args.epochs * len(train_loader)
     )
-    
+
     # Training loop
     print("Starting training...")
     best_state_acc = 0.0
     best_answer_acc = 0.0
     history = []
-    
+
     for epoch in range(1, args.epochs + 1):
         epoch_start = time.time()
-        
+
         # Train
         train_metrics = train(model, train_loader, optimizer, args, device, epoch)
-        
+
         # Step scheduler
         for _ in range(len(train_loader)):
             scheduler.step()
-        
+
         epoch_time = time.time() - epoch_start
-        
+
         # Evaluate
         eval_metrics = {}
         if epoch % args.eval_every == 0 or epoch == args.epochs:
@@ -875,15 +875,15 @@ def main():
             eval_metrics = evaluate(
                 model, eval_loader, args, device, label_ids
             )
-            
+
             if eval_metrics.get("state_accuracy", 0) > best_state_acc:
                 best_state_acc = eval_metrics["state_accuracy"]
                 torch.save(model.state_dict(), out_dir / "best_state.pt")
-            
+
             if eval_metrics.get("answer_accuracy", 0) > best_answer_acc:
                 best_answer_acc = eval_metrics["answer_accuracy"]
                 torch.save(model.state_dict(), out_dir / "best_answer.pt")
-        
+
         # Log
         log_entry = {
             "epoch": epoch,
@@ -895,7 +895,7 @@ def main():
             "lr": scheduler.get_last_lr()[0] if hasattr(scheduler, 'get_last_lr') else args.lr,
         }
         history.append(log_entry)
-        
+
         # Print
         eval_str = ""
         if eval_metrics:
@@ -912,7 +912,7 @@ def main():
                 )
             if fam_strs:
                 eval_str += f" | families={','.join(fam_strs)}"
-        
+
         print(
             f"Epoch {epoch:3d} | loss={train_metrics['loss']:.4f} "
             f"state_loss={train_metrics['state_loss']:.4f} "
@@ -921,14 +921,14 @@ def main():
             f"answer_acc={train_metrics['answer_accuracy']:.4f}"
             f"{eval_str}"
         )
-        
+
         # Save checkpoint
         torch.save(model.state_dict(), out_dir / "last.pt")
-        
+
         # Save history
         with open(out_dir / "history.json", "w") as f:
             json.dump(history, f, indent=2, default=str)
-        
+
         # Save final report
         final_report = {
             "config": vars(args),
@@ -939,7 +939,7 @@ def main():
         }
         with open(out_dir / "report.json", "w") as f:
             json.dump(final_report, f, indent=2, default=str)
-    
+
     print(f"\nTraining complete!")
     print(f"Best state accuracy: {best_state_acc:.4f}")
     print(f"Best answer accuracy: {best_answer_acc:.4f}")

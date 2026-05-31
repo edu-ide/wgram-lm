@@ -42,9 +42,9 @@ eval mode: qtrm_core_steps_N_answer_hidden_bridge_off_no_evidence
 Files:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 scripts/192_eval_raw_intelligence.py
 tests/test_core_halting.py
 tests/test_training_checkpoint_init.py

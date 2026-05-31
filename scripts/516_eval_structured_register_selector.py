@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from qtrm_mm.qwen_backbone_state_transition import build_qwen_state_transition_model
+from wgram_lm.qwen_backbone_state_transition import build_qwen_state_transition_model
 
 
 def _load_train511() -> Any:

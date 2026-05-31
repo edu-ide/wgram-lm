@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.agentic.cognitive_loop import Action
+from wgram_lm.agentic.cognitive_loop import Action
 
 
 def split_memory_prompt_for_workspace(prompt: str) -> tuple[str, str]:

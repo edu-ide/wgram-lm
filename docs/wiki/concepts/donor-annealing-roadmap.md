@@ -120,9 +120,9 @@ Probe config:
 
 Code paths:
 
-- `src/qtrm_mm/training/train.py`: donor-logit schedule and train-loop wiring.
-- `src/qtrm_mm/qtrm_model.py`: returns `qtrm_logits` before donor fusion.
-- `src/qtrm_mm/losses.py`: student-only LM loss and generalized donor-logit
+- `src/wgram_lm/training/train.py`: donor-logit schedule and train-loop wiring.
+- `src/wgram_lm/wgram_model.py`: returns `qtrm_logits` before donor fusion.
+- `src/wgram_lm/losses.py`: student-only LM loss and generalized donor-logit
   distillation loss.
 
 ## Probe Result: Fused-Loss Failure Mode

@@ -10,7 +10,7 @@ from typing import Any, NamedTuple
 import torch
 from torch.nn import functional as F
 
-from qtrm_mm.agentic.solver_state_machine import (
+from wgram_lm.agentic.solver_state_machine import (
     OperationVocab,
     StructuredOperationPolicy,
     execute_solver_transition,

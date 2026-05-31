@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from qtrm_mm.training.memory_trace_data import write_memory_trace_jsonl
+from wgram_lm.training.memory_trace_data import write_memory_trace_jsonl
 
 
 def main() -> None:

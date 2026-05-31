@@ -21,7 +21,7 @@ from typing import Any
 
 import torch
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     answer_kind,
     extract_answer_candidate_text,
@@ -296,20 +296,20 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
     else:
         device = torch.device(args.device)
     rows = stage523.load_jsonl(args.eval_jsonl, limit=int(args.eval_limit))
-    qtrm_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
+    wgram_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
     payload = torch.load(str(args.verifier_checkpoint), map_location=device)
     allowed_chars = list(payload["allowed_chars"])
     verifier_args = payload.get("args") or {}
     max_choice_chars = int(verifier_args.get("max_choice_chars", args.max_choice_chars))
     verifier = stage524.ChoiceVerifier(
-        d_state=int(qtrm_model.d_state),
+        d_state=int(wgram_model.d_state),
         vocab_size=len(allowed_chars),
         max_choice_chars=max_choice_chars,
     ).to(device)
     verifier.load_state_dict(payload["verifier"], strict=True)
     verifier.eval()
-    qtrm_model.eval()
-    qtrm_model.qwen.eval()
+    wgram_model.eval()
+    wgram_model.qwen.eval()
 
     records: list[dict[str, Any]] = []
     generated_cache: dict[str, list[str]] = {}
@@ -322,7 +322,7 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
             else:
                 prompt = candidate_prompt_for_row(row, mode=str(args.candidate_prompt_mode))
                 raw_candidates = generate_candidates_for_row(
-                    qwen_model=qtrm_model.qwen,
+                    qwen_model=wgram_model.qwen,
                     tokenizer=tokenizer,
                     prompt=prompt,
                     num_candidates=int(args.num_candidates),
@@ -338,7 +338,7 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
             batch_candidates.append(candidates)
 
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,

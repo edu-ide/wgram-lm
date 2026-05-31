@@ -8,7 +8,7 @@ import torch
 class TokenizerAndDonorTests(unittest.TestCase):
     def test_hash_tokenizer_is_stable_across_processes(self):
         code = (
-            "from qtrm_mm.data.jsonl_dataset import HashTokenizer;"
+            "from wgram_lm.data.jsonl_dataset import HashTokenizer;"
             "print(HashTokenizer(1024).encode('same text <image>', 8).tolist())"
         )
         first = subprocess.check_output([sys.executable, "-c", code], text=True).strip()
@@ -16,7 +16,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertEqual(first, second)
 
     def test_hf_style_tokenizer_can_be_injected(self):
-        from qtrm_mm.data.jsonl_dataset import build_text_tokenizer
+        from wgram_lm.data.jsonl_dataset import build_text_tokenizer
 
         class FakeTokenizer:
             pad_token_id = 7
@@ -37,7 +37,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertEqual(fake.last_kwargs["max_length"], 6)
 
     def test_jsonl_dataset_preserves_hf_padding_attention_mask(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         class FakeTokenizer:
             pad_token_id = 7
@@ -63,7 +63,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertEqual(batch["attention_mask"].tolist(), [[1, 1, 0, 0, 0]])
 
     def test_training_parser_accepts_donor_flag(self):
-        from qtrm_mm.training.train import build_arg_parser
+        from wgram_lm.training.train import build_arg_parser
 
         args = build_arg_parser().parse_args(
             [
@@ -80,7 +80,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertEqual(args.tokenizer_model_id, "Qwen/Qwen3.5-2B-Base")
 
     def test_training_parser_accepts_diagnostic_flags(self):
-        from qtrm_mm.training.train import build_arg_parser
+        from wgram_lm.training.train import build_arg_parser
 
         args = build_arg_parser().parse_args(
             [
@@ -102,7 +102,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertEqual(args.diag_prompt, ["hello", "안녕"])
 
     def test_prepare_donor_batch_adds_frozen_hidden_states(self):
-        from qtrm_mm.training.train import prepare_donor_batch
+        from wgram_lm.training.train import prepare_donor_batch
 
         class DummyDonor:
             def encode_inputs(self, input_ids, attention_mask=None, return_logits=False):
@@ -128,7 +128,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertFalse(kwargs["text_states"].requires_grad)
 
     def test_prepare_donor_batch_can_add_frozen_logits(self):
-        from qtrm_mm.training.train import prepare_donor_batch
+        from wgram_lm.training.train import prepare_donor_batch
 
         class DummyDonor:
             def encode_inputs(self, input_ids, attention_mask=None, return_logits=False):
@@ -153,7 +153,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertFalse(kwargs["donor_logits"].requires_grad)
 
     def test_prepare_donor_batch_can_keep_trainable_hidden_states(self):
-        from qtrm_mm.training.train import prepare_donor_batch
+        from wgram_lm.training.train import prepare_donor_batch
 
         class DummyDonor:
             def encode_inputs(
@@ -204,7 +204,7 @@ class TokenizerAndDonorTests(unittest.TestCase):
         self.assertTrue(kwargs["donor_trainable_logits"].requires_grad)
 
     def test_donor_config_accepts_healing_tune_fields(self):
-        from qtrm_mm.config import DonorConfig
+        from wgram_lm.config import DonorConfig
 
         cfg = DonorConfig(
             model_id="Qwen/Qwen3.5-2B-Base",

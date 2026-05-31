@@ -189,10 +189,10 @@ def run_eval(args: argparse.Namespace) -> tuple[list[dict[str, Any]], dict[str, 
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
-    from qtrm_mm.training.train import build_core_world_model_actions
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.training.train import build_core_world_model_actions
 
     cfg = load_config(args.config)
     if not bool(cfg.model.core_world_model_enabled):

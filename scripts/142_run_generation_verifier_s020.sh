@@ -10,7 +10,7 @@ echo "Config: ${CONFIG}"
 echo "Data: ${DATA}"
 echo "Init checkpoint: ${INIT_CHECKPOINT}"
 
-uv run python -m qtrm_mm.training.train \
+uv run python -m wgram_lm.training.train \
   --config "${CONFIG}" \
   --use-donor \
   --data-jsonl "${DATA}" \

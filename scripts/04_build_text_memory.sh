@@ -14,8 +14,8 @@ if [ ! -f "$INPUT_DIR/example.md" ]; then
 QTRM uses recursive latent states, MemoryOS, LLM Wiki, embeddings, and verifier-grounded retrieval.
 DOC
 fi
-python -m qtrm_mm.memoryos.wiki_compile "$INPUT_DIR" memory/wiki
-python -m qtrm_mm.memoryos.text_index "$INPUT_DIR" "$OUT_DIR" \
+python -m wgram_lm.memoryos.wiki_compile "$INPUT_DIR" memory/wiki
+python -m wgram_lm.memoryos.text_index "$INPUT_DIR" "$OUT_DIR" \
   --model-id "$MODEL_ID" \
   --backend "$BACKEND" \
   --hnsw-m "$HNSW_M" \

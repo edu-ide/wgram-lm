@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from qtrm_mm.distill.hf_dataset_convert import convert_hf_row
+from wgram_lm.distill.hf_dataset_convert import convert_hf_row
 
 
 def parse_args() -> argparse.Namespace:

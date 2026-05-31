@@ -1,6 +1,6 @@
 # Phase 0: Parallel Hybrid Head 초기 방향성 (One-Body Strict)
 
-**작성일**: 2026-05-30  
+**작성일**: 2026-05-30
 **현재 위치**: Gating v2 기반 인프라 완료 후 다음 항목
 
 ## 배경
@@ -33,7 +33,7 @@ Gating v2 (vector gating + refined delta rule) 작업이 기반 인프라 수준
 ```
 Layer N:
   - GDN2 block
-  - GDN2 block  
+  - GDN2 block
   - GDN2 block
   - Attention block
 ```
@@ -168,28 +168,28 @@ class OneBodyGatingV2ParallelHybridLayer(nn.Module):
     Gating v2 (vector gating + refined delta) + Parallel Hybrid Head
     모든 연산은 하나의 hidden state 흐름 안에서만 발생.
     """
-    def __init__(self, d_model, n_heads, 
+    def __init__(self, d_model, n_heads,
                  recurrence_heads=12, attention_heads=4):
         super().__init__()
         self.d_model = d_model
-        
+
         # Recurrence branch with Gating v2
         self.recurrence = TorchGatedDeltaNet2MixerV2(
-            d_model=d_model, 
+            d_model=d_model,
             n_heads=recurrence_heads
         )
-        
+
         # Attention branch (local + limited global)
         self.attention = Attention(
-            d_model=d_model, 
+            d_model=d_model,
             n_heads=attention_heads,
             sliding_window=True,
             global_attention_indices=[0, -1]  # 예시
         )
-        
+
         # One-Body safe gated fusion
         self.fusion_gate = nn.Linear(d_model * 2, d_model)
-        
+
         self.out_proj = nn.Linear(d_model, d_model)
         self.norm = RMSNorm(d_model)
 
@@ -197,13 +197,13 @@ class OneBodyGatingV2ParallelHybridLayer(nn.Module):
         # Parallel branches (동일 입력)
         rec_out = self.recurrence(hidden_states, attention_mask=attention_mask)
         attn_out = self.attention(hidden_states, attention_mask=attention_mask)
-        
+
         # Gated fusion (추가 state 없이 hidden state 내부에서만 처리)
         concat = torch.cat([rec_out, attn_out], dim=-1)
         gate = torch.sigmoid(self.fusion_gate(concat))
-        
+
         fused = gate * rec_out + (1 - gate) * attn_out
-        
+
         # 반드시 residual + norm
         output = self.norm(hidden_states + self.out_proj(fused))
         return output
@@ -240,47 +240,47 @@ class OneBodyGatingV2ParallelHybridLayer(nn.Module):
     최종 목표 구조: Gating v2 + Parallel Hybrid Head + One-Body
     Stochastic Breadth 등 5.56 메커니즘도 이 흐름 안에서 동작해야 함.
     """
-    def __init__(self, d_model, n_heads, 
+    def __init__(self, d_model, n_heads,
                  recurrence_heads=12, attention_heads=4):
         super().__init__()
         self.d_model = d_model
-        
+
         # Recurrence branch with Gating v2
         self.recurrence = TorchGatedDeltaNet2MixerV2(
             d_model=d_model, n_heads=recurrence_heads
         )
-        
+
         # Attention branch
         self.attention = Attention(
             d_model=d_model, n_heads=attention_heads,
             sliding_window=True
         )
-        
+
         # Gated fusion (One-Body safe)
         self.fusion_gate = nn.Linear(d_model * 2, d_model)
-        
+
         self.out_proj = nn.Linear(d_model, d_model)
         self.norm = RMSNorm(d_model)
 
-    def forward(self, hidden_states, attention_mask=None, 
+    def forward(self, hidden_states, attention_mask=None,
                 stochastic_breadth_noise=None,   # 5.56 Stochastic Breadth
                 **kwargs):
-        
+
         # === Recurrence branch ===
         rec_out = self.recurrence(hidden_states, attention_mask=attention_mask)
-        
+
         # Stochastic Breadth 적용 지점 (One-Body 내부)
         if stochastic_breadth_noise is not None:
             rec_out = rec_out + stochastic_breadth_noise   # 또는 더 정교한 injection
-        
+
         # === Attention branch ===
         attn_out = self.attention(hidden_states, attention_mask=attention_mask)
-        
+
         # === Gated Fusion (One-Body 내부) ===
         concat = torch.cat([rec_out, attn_out], dim=-1)
         gate = torch.sigmoid(self.fusion_gate(concat))
         fused = gate * rec_out + (1 - gate) * attn_out
-        
+
         # === One-Body 마무리 ===
         output = self.norm(hidden_states + self.out_proj(fused))
         return output
@@ -377,8 +377,8 @@ class OneBodyGatingV2ParallelHybridLayer(nn.Module):
 - 각 GDN2는 현재 GatedDeltaNet-2 로직 사용
 
 목표 (Parallel Hybrid + Gating v2):
-- Layer 내부: 
-  - Parallel: 
+- Layer 내부:
+  - Parallel:
     - Recurrence heads (Gating v2 적용, 다수)
     - Attention heads (소수)
   - Gated fusion
@@ -411,7 +411,7 @@ class OneBodyGatingV2ParallelHybridLayer(nn.Module):
 **두 개의 별도 구현이 존재한다** (혼동 금지).
 
 #### A. Canonical 현대 하이브리드 블록 (장기 backbone roadmap이 타겟해야 하는 구조)
-**파일**: `src/qtrm_mm/blocks.py:16-77` (QTRMBlock + QTRMBlockStack)
+**파일**: `src/wgram_lm/blocks.py:16-77` (QTRMBlock + QTRMBlockStack)
 
 ```python
 CANONICAL_LT2_ATTN_EVERY = 4
@@ -434,7 +434,7 @@ class QTRMBlockStack(nn.Module):
 - delta_backend = "torch_gated_delta2_v2" (Gating v2) 로 즉시 교체 가능 (build_delta_mixer 경유)
 
 #### B. Legacy HybridStateTransitionCore (합성 추론 전용, primary One-Body Qwen backbone 아님)
-**파일**: `src/qtrm_mm/state_transition_core.py:1645-1815` (HybridStateTransitionCore)
+**파일**: `src/wgram_lm/state_transition_core.py:1645-1815` (HybridStateTransitionCore)
 
 ```python
 # n_steps recurrent thinking loop 내부에서:
@@ -517,8 +517,8 @@ else:
 
 ## 11. Prior-To-Implementation Contract (Mandatory per research-driven-architecture-debugging skill)
 
-**Date**: 2026-05-30  
-**Context**: After Reverse I→G→A (5.56 stochastic breadth), Humanistic Preflight, and actual 3:1 codebase audit.  
+**Date**: 2026-05-30
+**Context**: After Reverse I→G→A (5.56 stochastic breadth), Humanistic Preflight, and actual 3:1 codebase audit.
 **Proposal under contract**: Evolve the canonical LT2 hybrid (blocks.py QTRMBlockStack + attn_every=4) toward intra-layer Parallel Hybrid Head (Gating v2 on recurrence heads + limited attention heads + gated fusion), while preserving the universal token → core → LM-logit One-Body path and all existing 5.56 inductive bias hooks.
 
 ### 11.1 Prior Principle
@@ -610,7 +610,7 @@ The idea is killed (archived as diagnostic, do not tune) if:
 
 **스킬 준수 선언**: 이 Prior-To-Implementation Contract는 research-driven-architecture-debugging 스킬의 "Prior-To-Implementation Contract" 섹션 요구사항을 정확히 따랐다. Reverse I→G→A, Humanistic Preflight, 실제 코드 감사 모두 선행 완료. 이제야 상세 스펙 작성(사용자 옵션 1)을 검토할 자격이 생겼다.
 
-사용자 지시 "순서대로"에 따라, 이 계약 통과 후에만 다음 단계로 이동한다. 
+사용자 지시 "순서대로"에 따라, 이 계약 통과 후에만 다음 단계로 이동한다.
 
 진행하시겠습니까? (Y = Prior Contract 하에서 Gating v2 recurrence branch 상세 주입 스펙 작성 시작 / 다른 지정)
 
@@ -618,9 +618,9 @@ The idea is killed (archived as diagnostic, do not tune) if:
 
 ## 12. Gating v2 + Parallel Hybrid Head — Recurrence Branch Detailed Injection Spec (Prior Contract 하에서)
 
-**작성일**: 2026-05-30  
-**승인 게이트**: Prior-To-Implementation Contract (section 11) 통과 후 순서대로 작성  
-**범위**: Recurrence branch (Gating v2 적용) 중심 상세 스펙. Attention branch와 fusion은 최소한으로만 정의 (후속 단계에서 확장).  
+**작성일**: 2026-05-30
+**승인 게이트**: Prior-To-Implementation Contract (section 11) 통과 후 순서대로 작성
+**범위**: Recurrence branch (Gating v2 적용) 중심 상세 스펙. Attention branch와 fusion은 최소한으로만 정의 (후속 단계에서 확장).
 **목표**: 현재 `QTRMBlock` (blocks.py) + `build_delta_mixer` 계약을 존중하면서, intra-layer parallel recurrence heads로 안전하게 진화하는 구체적 주입 계획.
 
 ### 12.1 현재 Recurrence Primitive 계약 (변경 최소화 원칙)
@@ -658,7 +658,7 @@ class OneBodyParallelHybridBlock(nn.Module):
     - Stochastic breadth hook는 fusion 이후 또는 recurrence branch 출력 후에 유지
     """
 
-    def __init__(self, cfg: QTRMConfig, 
+    def __init__(self, cfg: QTRMConfig,
                  recurrence_heads: int = 12,   # 총 head 수 중 다수
                  attention_heads: int = 4,
                  attn_every: int = 4):         # 기존 layer-wise 3:1 호환을 위한 메타
@@ -670,7 +670,7 @@ class OneBodyParallelHybridBlock(nn.Module):
         # 각 head는 독립적인 state를 가지며, 병렬로 업데이트
         self.rec_heads = nn.ModuleList([
             TorchGatedDeltaNet2MixerV2(
-                d_model=d, 
+                d_model=d,
                 n_heads=cfg.n_heads // recurrence_heads if recurrence_heads > 0 else 1,
                 dropout=cfg.dropout
             )
@@ -696,10 +696,10 @@ class OneBodyParallelHybridBlock(nn.Module):
         # === Stochastic Breadth Injection Point (Reverse I→G→A 계약 유지) ===
         self._stochastic_breadth_enabled = getattr(cfg, "core_stochastic_breadth_enabled", False)
 
-    def forward(self, x: torch.Tensor, 
+    def forward(self, x: torch.Tensor,
                 attention_mask: Optional[torch.Tensor] = None,
                 stochastic_breadth_noise: Optional[torch.Tensor] = None) -> torch.Tensor:
-        
+
         residual = x
         x_norm = self.norm1(x)
 
@@ -783,7 +783,7 @@ A로 진행할까요? (Y / B / C / 다른 micro-step)
 **순서**: Prior Contract (11) → Recurrence injection spec (12) → **A 실행** (skeleton code)
 
 **수행 내용**:
-- `src/qtrm_mm/blocks.py`에 다음 추가:
+- `src/wgram_lm/blocks.py`에 다음 추가:
   - Import: `TorchGatedDeltaNet2MixerV2` from `.mixers`
   - Class: `OneBodyParallelHybridBlock` (v0.1 완전 스켈레톤, section 12 pseudocode 정확히 구현)
   - Factory: `build_parallel_hybrid_block(...)` (build_delta_mixer 스타일)
@@ -813,7 +813,7 @@ A로 진행할까요? (Y / B / C / 다른 micro-step)
 (스켈레톤 코드 자체는 이미 작성되었으므로, Y = 2번으로 진행)
 
 **2번 실행 완료 (2026-05-30)**:
-- `src/qtrm_mm/config.py`에 최소 실험용 플래그 4개 추가:
+- `src/wgram_lm/config.py`에 최소 실험용 플래그 4개 추가:
   - `use_parallel_hybrid_block: bool = False`
   - `parallel_recurrence_head_count: int = 3`
   - `parallel_attention_head_count: int = 1`
@@ -828,11 +828,11 @@ A로 진행할까요? (Y / B / C / 다른 micro-step)
 
 ### 13.1 Smoke Test 결과 (2026-05-30, 즉시 실행)
 
-**사용한 Python**: `/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python` (torch 2.7.1+cu126)
+**사용한 Python**: `/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/bin/python` (torch 2.7.1+cu126)
 
 **명령**:
 ```bash
-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python -c '
+/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/bin/python -c '
 ... (minimal QTRMConfig + OneBodyParallelHybridBlock + 4 test cases) ...
 '
 ```
@@ -883,7 +883,7 @@ All tensors finite. No crashes.
 
 **실행 결과** (즉시 검증):
 ```
-$ /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python \
+$ /home/tripleyoung/qtrm-workspace/wgram-lm/.venv/bin/python \
     scripts/test_parallel_hybrid_skeleton.py
 
 === Permanent Smoke Test: OneBodyParallelHybridBlock v0.1 ===
@@ -948,7 +948,7 @@ PASS: ...
 
 ## 16. Phase 0 Full Synthesis (종합 단계 - 모든 레벨 완료)
 
-**작성일**: 2026-05-30  
+**작성일**: 2026-05-30
 **사용자 지시**: "종합단계 모든 레벨 다 진행해"
 
 이 문서는 feat/architecture-integration-2026-05 브랜치에서 진행된 **Parallel Hybrid Head + Gating v2** 방향에 대한 Phase 0 전체 종합 보고서이다. 연구-driven-architecture-debugging 스킬의 모든 필수 게이트와 사용자가 요구한 "순서대로 모든 레벨"을 철저히 준수하며 작성되었다.
@@ -1040,7 +1040,7 @@ Phase 0는 **성공적으로 완료**되었다.
 
 우리는 "새로운 hybrid 아이디어"를 던지는 데 그치지 않고, 역사적 고신호를 지키면서 실제 코드 + 최소 실행까지 도달했다. 이는 프로젝트가 과거에 반복적으로 실패했던 지점(신호 증발 + 실행 없는 스펙 누적)을 이번에는 피했다는 의미가 크다.
 
-**Phase 0 상태**: Closed (완료)  
+**Phase 0 상태**: Closed (완료)
 **Phase 1 준비도**: 높음 (진입 기준 5개 중 3개 이미 충족, 2개는 구현만 남음)
 
 이제 Phase 1 착수를 위한 구체적인 계획을 세울 준비가 되었다.
@@ -1150,8 +1150,8 @@ Phase 0 Synthesis에서 제시한 Phase 1 진입 기준 중 **1번 (Attention br
 
 ## 14. B 실행: Gated Fusion 상세화 (v0.2) — Prior Contract 하에서
 
-**작성일**: 2026-05-30  
-**선행**: D (영구 smoke test) 완료 후 순서대로 진행  
+**작성일**: 2026-05-30
+**선행**: D (영구 smoke test) 완료 후 순서대로 진행
 **목표**: 현재 v0.1 스켈레톤의 단순 scalar gate (`Linear(d*2, 1)`)를 강화하여 Gating v2 + Stochastic Breadth와 더 잘 상호작용하는 robust fusion 메커니즘 정의.
 
 ### 14.1 현재 v0.1 Fusion의 한계 (진단)
@@ -1248,5 +1248,5 @@ B를 더 구체화하려면:
 - **B (v0.2 fusion spec)**: 지금 완료
 - C (Phase 0 종합): 아직
 
-사용자 "순서대로" 지시 대기 중.  
+사용자 "순서대로" 지시 대기 중.
 다음은 B.1 (실제 코드 반영) / C / 다른 지정?

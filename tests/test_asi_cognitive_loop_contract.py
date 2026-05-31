@@ -4,7 +4,7 @@ import unittest
 
 class AsiCognitiveLoopContractTests(unittest.TestCase):
     def test_memory_write_requires_all_validation_gates(self):
-        from qtrm_mm.agentic.cognitive_loop import CandidateMemoryWrite
+        from wgram_lm.agentic.cognitive_loop import CandidateMemoryWrite
 
         write = CandidateMemoryWrite(
             content="The archive code is VX-913.",
@@ -21,7 +21,7 @@ class AsiCognitiveLoopContractTests(unittest.TestCase):
         self.assertEqual(write.failure_reasons, ("contradiction_failed",))
 
     def test_trace_transition_is_json_serializable_training_source(self):
-        from qtrm_mm.agentic.cognitive_loop import (
+        from wgram_lm.agentic.cognitive_loop import (
             Action,
             TraceTransition,
             VerifierResult,
@@ -55,7 +55,7 @@ class AsiCognitiveLoopContractTests(unittest.TestCase):
         self.assertEqual(payload["policy_role"], "residual_controller")
 
     def test_asi_contract_rejects_claims_without_causal_gates(self):
-        from qtrm_mm.agentic.cognitive_loop import asi_cognitive_loop_contract
+        from wgram_lm.agentic.cognitive_loop import asi_cognitive_loop_contract
 
         contract = asi_cognitive_loop_contract()
         report = contract.validate_gate_report(
@@ -75,7 +75,7 @@ class AsiCognitiveLoopContractTests(unittest.TestCase):
         self.assertIn("self_improvement", contract.required_causal_gates)
 
     def test_scripted_harness_records_retrieve_verify_answer_trace(self):
-        from qtrm_mm.agentic.harness import ScriptedCognitiveHarness
+        from wgram_lm.agentic.harness import ScriptedCognitiveHarness
 
         harness = ScriptedCognitiveHarness()
         run = harness.run_memory_qa(
@@ -117,7 +117,7 @@ class AsiCognitiveLoopContractTests(unittest.TestCase):
         )
 
     def test_typed_context_tape_renders_prompt_workspace_verifier_from_one_source(self):
-        from qtrm_mm.agentic.context_tape import ContextItem, ContextItemType, TypedContextTape
+        from wgram_lm.agentic.context_tape import ContextItem, ContextItemType, TypedContextTape
 
         tape = TypedContextTape(
             task_id="archive-code",
@@ -152,7 +152,7 @@ class AsiCognitiveLoopContractTests(unittest.TestCase):
         self.assertEqual(training["context_hash"], tape.context_hash)
 
     def test_causal_loop_gate_requires_baseline_gain_and_component_drops(self):
-        from qtrm_mm.agentic.causal_gate import evaluate_causal_loop_gate
+        from wgram_lm.agentic.causal_gate import evaluate_causal_loop_gate
 
         rejected = evaluate_causal_loop_gate(
             {
@@ -188,8 +188,8 @@ class AsiCognitiveLoopContractTests(unittest.TestCase):
         self.assertGreater(accepted["gain_over_donor_harness"], 0.02)
 
     def test_trace_replay_records_expose_action_targets_and_rewards(self):
-        from qtrm_mm.agentic.harness import ScriptedCognitiveHarness
-        from qtrm_mm.agentic.trace_replay import TraceReplayDataset
+        from wgram_lm.agentic.harness import ScriptedCognitiveHarness
+        from wgram_lm.agentic.trace_replay import TraceReplayDataset
 
         run = ScriptedCognitiveHarness().run_memory_qa(
             task_id="archive-code",

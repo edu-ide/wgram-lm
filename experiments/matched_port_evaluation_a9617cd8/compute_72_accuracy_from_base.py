@@ -16,8 +16,8 @@ import json
 import torch
 from pathlib import Path
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 # Always-on principle gate (user requirement: "추론 테스트에서 내가 말했던 원칙들이 지켜지는지 항상 테스트")
 try:

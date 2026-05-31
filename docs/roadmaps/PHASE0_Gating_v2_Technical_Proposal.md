@@ -31,16 +31,16 @@ class TorchGatedDeltaNet2MixerV2(nn.Module):
 
         # 확장된 projection (u, v, decay, in_context_lr)
         self.in_proj = nn.Linear(d_model, 4 * d_model, bias=False)
-        
+
         # Vector-valued gate (per head or per channel)
         self.gate_proj = nn.Linear(d_model, d_model, bias=True)
-        
+
         # (선택) 추가적인 forget / update 분리 게이트
         self.forget_proj = nn.Linear(d_model, d_model, bias=True)   # optional
-        
+
         self.out_proj = nn.Linear(d_model, d_model, bias=False)
         self.dropout = nn.Dropout(dropout)
-        
+
         # LayerNorm for stability (ReGLA 스타일)
         self.norm = nn.LayerNorm(d_model)
 ```
@@ -50,38 +50,38 @@ class TorchGatedDeltaNet2MixerV2(nn.Module):
 ```python
 def forward(self, x, attention_mask=None):
     b, t, d = x.shape
-    
+
     # u, v, decay, in_context_lr
     proj = self.in_proj(x)
     u, v, decay, in_context_lr = proj.chunk(4, dim=-1)
-    
+
     u = torch.tanh(u)
     v = torch.tanh(v)
     decay = torch.sigmoid(decay)
     in_context_lr = torch.sigmoid(in_context_lr)
-    
+
     # Vector gate (per dimension)
     gate = torch.sigmoid(self.gate_proj(x))
-    
+
     # Optional forget gate (RWKV-7 스타일 강화)
     forget = torch.sigmoid(self.forget_proj(x)) if hasattr(self, 'forget_proj') else None
-    
+
     state = torch.zeros(b, d, device=x.device, dtype=x.dtype)
     outs = []
-    
+
     for i in range(t):
         m = attention_mask[:, i:i+1] if attention_mask is not None else 1.0
-        
+
         # Refined delta update with in-context learning rate
         update = in_context_lr[:, i] * u[:, i] * m
         if forget is not None:
             state = forget[:, i] * state + (1 - forget[:, i]) * update
         else:
             state = decay[:, i] * state + (1 - decay[:, i]) * update
-        
+
         y = gate[:, i] * v[:, i] + (1 - gate[:, i]) * state
         outs.append(y)
-    
+
     y = torch.stack(outs, dim=1)
     y = self.norm(y)                    # ReGLA 스타일 추가 정규화
     return self.out_proj(self.dropout(y))
@@ -141,11 +141,11 @@ def forward(self, x, attention_mask=None):
 1. Gating v2 상세 기술 제안 (ReGLA + RWKV-7 + Gated DeltaNet 기반) — 완료
 2. Torch reference 구현 (`TorchGatedDeltaNet2MixerV2`) — 완료
 3. backends/__init__.py에 신규 타입 등록 (`torch_gated_delta2_v2`, `gated_delta2_v2`, `gdn2_v2`) — 완료
-4. qwen_backbone_qtrm.py에서 신규 이름 수용 및 전달 지원 — 완료
+4. qwen_backbone_wgram.py에서 신규 이름 수용 및 전달 지원 — 완료
 5. config.py 및 backends 문서에 옵션 노출 — 완료
 6. 기본 smoke test (import + instantiation + forward) — **완료** (모두 정상 동작 확인)
 
-**현재 Phase 0 Gating v2 상태**: 
+**현재 Phase 0 Gating v2 상태**:
 모든 기반 인프라(코드 + 등록 + config 노출 + 기본 동작 검증)가 순서대로 완료되었습니다.
 
 **다음 미세 단계 (사용자 확인 필요)**:

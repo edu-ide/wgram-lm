@@ -10,12 +10,12 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader
 
-from qtrm_mm.config import load_config
-from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
-from qtrm_mm.losses import sequence_average_logprob
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
-from qtrm_mm.training.train import (
+from wgram_lm.config import load_config
+from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+from wgram_lm.losses import sequence_average_logprob
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
+from wgram_lm.training.train import (
     build_core_world_model_actions,
     load_initial_checkpoint,
     prepare_donor_batch,

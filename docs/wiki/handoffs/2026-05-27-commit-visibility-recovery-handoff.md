@@ -24,7 +24,7 @@
 ## 앞으로 복구/확인 표준 (반드시 이렇게 수행)
 ```bash
 # 1) 현재 위치 확인
-cd /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos
+cd /home/tripleyoung/qtrm-workspace/wgram-lm
 
 git branch --show-current
 

@@ -6,7 +6,7 @@ from torch import nn
 
 class LossTests(unittest.TestCase):
     def test_next_token_loss_ignores_padding_targets(self):
-        from qtrm_mm.losses import next_token_lm_loss
+        from wgram_lm.losses import next_token_lm_loss
 
         logits = torch.zeros(1, 4, 5)
         logits[0, 0, 2] = 10.0
@@ -22,7 +22,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(unmasked), 3.0)
 
     def test_next_token_loss_can_train_only_unmasked_label_positions(self):
-        from qtrm_mm.losses import next_token_lm_loss
+        from wgram_lm.losses import next_token_lm_loss
 
         logits = torch.zeros(1, 4, 5)
         logits[0, 0, 2] = -10.0
@@ -38,7 +38,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(unmasked), 3.0)
 
     def test_repetition_unlikelihood_loss_penalizes_confident_wrong_adjacent_repeats(self):
-        from qtrm_mm.losses import repetition_unlikelihood_loss
+        from wgram_lm.losses import repetition_unlikelihood_loss
 
         logits = torch.zeros(1, 5, 6)
         logits[0, 1, 2] = 10.0
@@ -55,7 +55,7 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(safe_loss), 0.01)
 
     def test_repetition_unlikelihood_loss_does_not_penalize_gold_repeats(self):
-        from qtrm_mm.losses import repetition_unlikelihood_loss
+        from wgram_lm.losses import repetition_unlikelihood_loss
 
         logits = torch.zeros(1, 3, 5)
         logits[0, 1, 2] = 10.0
@@ -67,7 +67,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(loss), 0.0)
 
     def test_simpo_margin_loss_prefers_chosen_sequence(self):
-        from qtrm_mm.losses import simpo_margin_loss
+        from wgram_lm.losses import simpo_margin_loss
 
         good = simpo_margin_loss(
             chosen_logps=torch.tensor([-0.5]),
@@ -86,7 +86,7 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(good), 0.1)
 
     def test_sequence_average_logprob_masks_prompt_labels(self):
-        from qtrm_mm.losses import sequence_average_logprob
+        from wgram_lm.losses import sequence_average_logprob
 
         logits = torch.zeros(1, 4, 5)
         logits[0, 1, 3] = 8.0
@@ -99,7 +99,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(logp[0]), -0.01)
 
     def test_simpo_margin_loss_accepts_confidence_weights(self):
-        from qtrm_mm.losses import simpo_margin_loss
+        from wgram_lm.losses import simpo_margin_loss
 
         weighted = simpo_margin_loss(
             chosen_logps=torch.tensor([-3.0, -0.5]),
@@ -112,7 +112,7 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(weighted), 0.1)
 
     def test_action_policy_loss_prefers_target_controller_action(self):
-        from qtrm_mm.losses import action_policy_loss
+        from wgram_lm.losses import action_policy_loss
 
         good_outputs = {
             "action_logits": torch.tensor([[0.0, 0.0, 8.0, 0.0]], dtype=torch.float32),
@@ -132,7 +132,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(good_metrics["action_acc"]), 1.0)
 
     def test_controller_signal_prediction_loss_trains_binary_signal(self):
-        from qtrm_mm.losses import controller_signal_prediction_loss
+        from wgram_lm.losses import controller_signal_prediction_loss
 
         good_outputs = {
             "controller_signal_logits": torch.tensor([[8.0, -8.0]], dtype=torch.float32),
@@ -153,7 +153,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(bad_metrics["controller_signal_acc"]), 0.0)
 
     def test_controller_signal_prediction_loss_trains_route_softmax(self):
-        from qtrm_mm.losses import controller_signal_prediction_loss
+        from wgram_lm.losses import controller_signal_prediction_loss
 
         good_outputs = {
             "controller_signal_logits": torch.tensor([[0.0, 0.0, 8.0]], dtype=torch.float32),
@@ -182,7 +182,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(bad_metrics["controller_signal_acc"]), 0.0)
 
     def test_core_trajectory_shortcut_consistency_prefers_early_states_matching_final(self):
-        from qtrm_mm.losses import core_trajectory_shortcut_consistency_loss
+        from wgram_lm.losses import core_trajectory_shortcut_consistency_loss
 
         good_outputs = {
             "logits": torch.zeros(1, 1, 4),
@@ -212,7 +212,7 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(bad_metrics["core_trajectory_shortcut_cosine"]), 0.1)
 
     def test_core_depth_text_ce_loss_trains_each_requested_depth(self):
-        from qtrm_mm.losses import core_depth_text_ce_loss
+        from wgram_lm.losses import core_depth_text_ce_loss
 
         input_ids = torch.tensor([[1, 2, 3]])
         depth_logits = torch.zeros(1, 2, 3, 5)
@@ -238,7 +238,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(second_metrics["core_depth_text_ce_steps"]), 1.0)
 
     def test_answer_decision_loss_trains_block_signal(self):
-        from qtrm_mm.losses import answer_decision_loss
+        from wgram_lm.losses import answer_decision_loss
 
         good_outputs = {
             "answer_decision_logits": torch.tensor([[8.0], [-8.0]], dtype=torch.float32),
@@ -259,7 +259,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(bad_metrics["answer_decision_acc"]), 0.0)
 
     def test_answer_residual_governor_loss_targets_donor_errors(self):
-        from qtrm_mm.losses import answer_residual_governor_loss
+        from wgram_lm.losses import answer_residual_governor_loss
 
         input_ids = torch.tensor([[1, 2, 3, 4]])
         labels = torch.tensor([[-100, 2, 3, 4]])
@@ -301,8 +301,8 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(good_metrics["answer_residual_governor_target_open_rate"]), 1.0 / 3.0)
 
     def test_qtrm_smoke_loss_includes_answer_decision_component(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.losses import qtrm_smoke_loss
 
         torch.manual_seed(0)
         model = QTRMMultimodalModel(
@@ -354,8 +354,8 @@ class LossTests(unittest.TestCase):
         self.assertEqual(outputs["answer_decision_logits"].shape, (2,))
 
     def test_qtrm_smoke_loss_includes_answer_residual_governor_component(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.losses import qtrm_smoke_loss
 
         torch.manual_seed(0)
         model = QTRMMultimodalModel(
@@ -411,8 +411,8 @@ class LossTests(unittest.TestCase):
         self.assertEqual(outputs["answer_residual_governor_logits"].shape, (2, 8))
 
     def test_answer_residual_governor_loss_backward_has_no_inplace_version_error(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.losses import qtrm_smoke_loss
 
         torch.manual_seed(0)
         model = QTRMMultimodalModel(
@@ -457,8 +457,8 @@ class LossTests(unittest.TestCase):
         self.assertIsNotNone(model.answer_residual_governor.weight.grad)
 
     def test_qtrm_smoke_loss_includes_action_policy_component(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.losses import qtrm_smoke_loss
 
         torch.manual_seed(0)
         model = QTRMMultimodalModel(
@@ -509,8 +509,8 @@ class LossTests(unittest.TestCase):
         self.assertIn("action_acc", metrics)
 
     def test_qtrm_smoke_loss_includes_learned_controller_signal_component(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm.losses import qtrm_smoke_loss
 
         torch.manual_seed(0)
         model = QTRMMultimodalModel(
@@ -558,7 +558,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(outputs["controller_signal_logits"].shape, (2, 2))
 
     def test_donor_logit_distillation_loss_prefers_matching_teacher_distribution(self):
-        from qtrm_mm.losses import donor_logit_distillation_loss
+        from wgram_lm.losses import donor_logit_distillation_loss
 
         donor_logits = torch.zeros(1, 3, 5)
         donor_logits[0, 0, 2] = 8.0
@@ -584,7 +584,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(mismatched), 7.0)
 
     def test_greedy_token_margin_loss_forces_target_above_top_competitor(self):
-        from qtrm_mm.losses import greedy_token_margin_loss
+        from wgram_lm.losses import greedy_token_margin_loss
 
         input_ids = torch.tensor([[1, 2, 3]])
         labels = torch.tensor([[-100, -100, 3]])
@@ -612,7 +612,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(bad_metrics["greedy_token_win_rate"]), 0.0)
 
     def test_greedy_token_margin_loss_can_focus_on_donor_errors(self):
-        from qtrm_mm.losses import greedy_token_margin_loss
+        from wgram_lm.losses import greedy_token_margin_loss
 
         input_ids = torch.tensor([[1, 2, 3, 4]])
         labels = torch.tensor([[-100, 2, 3, 4]])
@@ -639,7 +639,7 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(metrics["greedy_token_active_rate"]), 1.0 / 3.0, places=5)
 
     def test_donor_correct_margin_loss_preserves_donor_correct_tokens(self):
-        from qtrm_mm.losses import donor_correct_margin_loss
+        from wgram_lm.losses import donor_correct_margin_loss
 
         input_ids = torch.tensor([[1, 2, 3, 4]])
         labels = torch.tensor([[-100, 2, 3, 4]])
@@ -682,7 +682,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(bad_metrics["donor_correct_margin_win_rate"]), 0.0)
 
     def test_qtrm_smoke_loss_adds_donor_correct_margin_component(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -738,7 +738,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(metrics["donor_correct_margin_win_rate"]), 0.0)
 
     def test_qtrm_smoke_loss_adds_donor_logit_distillation_metric(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -787,7 +787,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(weighted), float(lm_only))
 
     def test_qtrm_smoke_loss_adds_greedy_token_margin_component(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -838,7 +838,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(metrics["greedy_token_win_rate"]), 0.0)
 
     def test_qtrm_smoke_loss_can_supervise_student_only_logits(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -886,7 +886,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(with_student), float(fused_only) + 7.0)
 
     def test_qtrm_smoke_loss_adds_canonical_causal_ablation_contrast(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -933,7 +933,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(metrics["canonical_causal_margin"]), 7.0)
 
     def test_qtrm_smoke_loss_can_contrast_transition_state_off_ablation(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -978,7 +978,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(metrics["canonical_causal_margin"]), 7.0)
 
     def test_canonical_causal_loss_uses_qtrm_residual_not_donor_fused_logits(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1021,7 +1021,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(metrics["canonical_causal_margin"]), 7.0)
 
     def test_qtrm_smoke_loss_can_disable_base_lm_term_for_head_only_probes(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1064,7 +1064,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(disabled), 0.0)
 
     def test_evidence_span_reader_loss_prefers_correct_span(self):
-        from qtrm_mm.losses import evidence_span_reader_loss
+        from wgram_lm.losses import evidence_span_reader_loss
 
         good_outputs = {
             "logits": torch.zeros(1, 1, 4),
@@ -1094,7 +1094,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(float(metrics["end_acc"]), 1.0)
 
     def test_evidence_span_reader_loss_suppresses_spans_on_no_answer(self):
-        from qtrm_mm.losses import evidence_span_reader_loss
+        from wgram_lm.losses import evidence_span_reader_loss
 
         confident_decoy_outputs = {
             "logits": torch.zeros(1, 1, 4),
@@ -1116,7 +1116,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(metrics["no_answer_span_score"]), 8.0)
 
     def test_qtrm_smoke_loss_adds_repetition_unlikelihood_metric(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1160,7 +1160,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(weighted), float(lm_only))
 
     def test_generation_verifier_loss_trains_repeat_stop_and_quality_heads(self):
-        from qtrm_mm.losses import generation_verifier_loss
+        from wgram_lm.losses import generation_verifier_loss
 
         outputs = {
             "logits": torch.zeros(2, 3, 5),
@@ -1189,7 +1189,7 @@ class LossTests(unittest.TestCase):
         self.assertIn("quality_prob", probs)
 
     def test_qtrm_smoke_loss_adds_generation_verifier_metric(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1241,7 +1241,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(weighted), float(unweighted) + 3.0)
 
     def test_qtrm_smoke_loss_adds_pairwise_preference_metric(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1298,7 +1298,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(weighted), float(base))
 
     def test_qtrm_smoke_loss_adds_workspace_counterfactual_contrastive_metric(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1362,7 +1362,7 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(reversed_metrics["workspace_margin_logp"]), -4.0)
 
     def test_qtrm_smoke_loss_respects_component_weights(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1402,7 +1402,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(weighted), float(lm_only))
 
     def test_qtrm_smoke_loss_adds_core_trajectory_shortcut_component(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1449,7 +1449,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(enabled), float(disabled) + 0.9)
 
     def test_qtrm_smoke_loss_adds_core_variable_trajectory_component(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1516,7 +1516,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(enabled), float(disabled) + 2.0)
 
     def test_qtrm_smoke_loss_adds_core_depth_text_ce_component(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1571,7 +1571,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(enabled), float(disabled) + 3.0)
 
     def test_core_depth_text_ce_is_not_requested_on_preference_rejected_forward(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1615,7 +1615,7 @@ class LossTests(unittest.TestCase):
         self.assertEqual(model.depth_text_requests[:2], [True, None])
 
     def test_core_halt_loss_trains_q_halt_logits_against_targets(self):
-        from qtrm_mm.losses import core_halt_loss
+        from wgram_lm.losses import core_halt_loss
 
         good = {
             "core_q_halt_logits": torch.tensor([[3.0, 3.0], [-3.0, -3.0]]),
@@ -1631,7 +1631,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(core_halt_loss(bad, targets)), 2.0)
 
     def test_core_halt_loss_can_train_q_value_halt_continue_targets(self):
-        from qtrm_mm.losses import core_halt_loss
+        from wgram_lm.losses import core_halt_loss
 
         good = {
             "core_q_halt_logits": torch.tensor([[0.0, 1.0, 1.0]]),
@@ -1663,7 +1663,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(bad_loss), 0.1)
 
     def test_qtrm_smoke_loss_adds_core_halt_loss_without_forwarding_targets(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1712,7 +1712,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(weighted), float(lm_only))
 
     def test_infer_core_halt_targets_requires_exact_correctness_and_verifier_pass(self):
-        from qtrm_mm.losses import infer_core_halt_targets
+        from wgram_lm.losses import infer_core_halt_targets
 
         logits = torch.zeros(2, 3, 5)
         logits[0, 0, 2] = 8.0
@@ -1741,7 +1741,7 @@ class LossTests(unittest.TestCase):
         self.assertTrue(torch.equal(targets, torch.tensor([0.0, 0.0])))
 
     def test_infer_core_halt_targets_applies_donor_kl_stability_gate(self):
-        from qtrm_mm.losses import infer_core_halt_targets
+        from wgram_lm.losses import infer_core_halt_targets
 
         logits = torch.zeros(2, 3, 5)
         logits[:, 0, 2] = 8.0
@@ -1765,7 +1765,7 @@ class LossTests(unittest.TestCase):
         self.assertTrue(torch.equal(targets, torch.tensor([1.0, 0.0])))
 
     def test_infer_core_halt_targets_can_report_availability_diagnostics(self):
-        from qtrm_mm.losses import infer_core_halt_targets
+        from wgram_lm.losses import infer_core_halt_targets
 
         logits = torch.zeros(3, 3, 5)
         logits[:, 0, 2] = 8.0
@@ -1796,7 +1796,7 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(diag["halt_target_neg_rate"]), 2.0 / 3.0, places=5)
 
     def test_qtrm_smoke_loss_can_infer_core_halt_targets_from_batch(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1840,7 +1840,7 @@ class LossTests(unittest.TestCase):
         self.assertGreater(float(loss), 0.0)
 
     def test_qtrm_smoke_loss_reports_auto_core_halt_target_rates(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -1885,7 +1885,7 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(metrics["verifier_pass_rate"]), 0.5, places=5)
 
     def test_teacher_depth_halt_targets_use_earliest_stable_core_state(self):
-        from qtrm_mm.losses import infer_core_halt_targets_from_teacher_depth
+        from wgram_lm.losses import infer_core_halt_targets_from_teacher_depth
 
         states = torch.tensor(
             [
@@ -1920,7 +1920,7 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(diag["teacher_depth_earliest_step_mean"]), 2.0, places=5)
 
     def test_teacher_depth_halt_targets_prefer_output_logit_stability(self):
-        from qtrm_mm.losses import infer_core_halt_targets_from_teacher_depth
+        from wgram_lm.losses import infer_core_halt_targets_from_teacher_depth
 
         logits = torch.zeros(2, 3, 5)
         logits[0, :, 2] = 8.0
@@ -1954,7 +1954,7 @@ class LossTests(unittest.TestCase):
         self.assertAlmostEqual(float(diag["teacher_depth_earliest_step_mean"]), 1.5, places=5)
 
     def test_qtrm_smoke_loss_can_use_teacher_depth_core_halt_targets(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -2014,7 +2014,7 @@ class LossTests(unittest.TestCase):
         self.assertIs(model.saw_return_core_depth_logits, True)
 
     def test_qtrm_smoke_loss_can_use_q_value_core_halt_mode(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -2059,7 +2059,7 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(metrics["core_halt"]), 1e-6)
 
     def test_qtrm_smoke_loss_supervises_logical_evidence_and_causal_gate(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):
@@ -2128,7 +2128,7 @@ class LossTests(unittest.TestCase):
         self.assertLess(float(metrics["counterfactual_gate_mean"]), 0.1)
 
     def test_qtrm_smoke_loss_adds_core_world_model_metric(self):
-        from qtrm_mm.losses import qtrm_smoke_loss
+        from wgram_lm.losses import qtrm_smoke_loss
 
         class FakeModel(nn.Module):
             def __init__(self):

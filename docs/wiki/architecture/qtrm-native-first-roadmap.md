@@ -1371,11 +1371,11 @@ Current local implementation:
 scripts/335_train_qtrm_native_etd_probe.py
   NativeQTRMETDLM(backbone="qtrm_hybrid_3to1")
 
-src/qtrm_mm/blocks.py
+src/wgram_lm/blocks.py
   QTRMBlockStack
   attn_every=4 gives 3 delta/recurrent blocks then 1 attention block
 
-src/qtrm_mm/mixers.py
+src/wgram_lm/mixers.py
   torch_gated_delta is a local reference/debug fallback
 ```
 
@@ -2922,7 +2922,7 @@ PYTHONPATH=local_deps/mamba3_runtime:src .venv/bin/python -m py_compile \
   scripts/336_train_qtrm_native_text_probe.py \
   scripts/337_train_qtrm_native_mixed_text_reasoning_probe.py \
   scripts/342_qtrm_native_l5d_backbone_compare.py \
-  src/qtrm_mm/mixers.py
+  src/wgram_lm/mixers.py
 
 PYTHONPATH=local_deps/mamba3_runtime:src .venv/bin/python -m unittest \
   tests.test_qtrm_native_etd_probe \
@@ -10903,11 +10903,11 @@ donor-logit scale can be annealed downward without repeated-token collapse.
 Implementation added:
 
 ```text
-src/qtrm_mm/qwen_donor.py
+src/wgram_lm/qwen_donor.py
   donor.train_lora now enables PEFT LoRA instead of being ignored
   donor.train_last_n_layers supports partial full-precision unfreeze
 
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
   trainable donor parameters are added to the optimizer
   donor hidden states can keep gradient into donor LoRA/partial layers
   donor logits stay detached for teacher/baseline use by default
@@ -14084,7 +14084,7 @@ TST reference:
   references/papers/2605.06546-efficient-pre-training-with-token-superposition.pdf
 
 local primitive:
-  src/qtrm_mm/tst.py
+  src/wgram_lm/tst.py
 
 ordering:
   1. Train non-TST larger-corpus baseline.
@@ -14268,7 +14268,7 @@ why:
   this repo because galore-torch + bitsandbytes are available now.
 
 implementation:
-  src/qtrm_mm/training_optimizers.py
+  src/wgram_lm/training_optimizers.py
 
 supported flags:
   --optimizer auto|adamw|adamw8bit|paged_adamw8bit|galore_adamw|galore_adamw8bit
@@ -14556,12 +14556,12 @@ important boundary:
   `force_core_off` and `core_gate_override=0` remain diagnostic ablations only.
 
 implemented:
-  src/qtrm_mm/qwen_backbone_qtrm.py
-  scripts/361_qwen_backbone_qtrm_smoke.py
-  tests/test_qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
+  scripts/361_qwen_backbone_wgram_smoke.py
+  tests/test_qwen_backbone_wgram.py
 
 smoke:
-  local_eval/qwen_backbone_qtrm_gate_smoke_20260515/report.json
+  local_eval/qwen_backbone_wgram_gate_smoke_20260515/report.json
 
 acceptance:
   max_abs_delta_base_vs_hidden_path_gate0: 0.0
@@ -14602,17 +14602,17 @@ correction:
     -> autoregressive text
 
 implementation update:
-  src/qtrm_mm/qwen_backbone_qtrm.py:
+  src/wgram_lm/qwen_backbone_wgram.py:
     QwenBackboneQTRM now supports `mandatory_core=True`.
     In that mode, the normal forward path uses core gate 1.0 and the gate logit
     is not trainable. `force_core_off` and `core_gate_override=0` are retained
     only for ablation and equivalence diagnostics.
 
-  scripts/361_qwen_backbone_qtrm_smoke.py:
+  scripts/361_qwen_backbone_wgram_smoke.py:
     default `core_impl` is now `qwen_layer_wrapped`, with Qwen layer 3 as the
     default transition prior.
 
-  scripts/362_train_qwen_backbone_qtrm_core_gate.py:
+  scripts/362_train_qwen_backbone_wgram_core_gate.py:
     adds `--mandatory-core` and `--train-qwen`.
     reports `qtrm_native_integrated=true`, `standalone_graph=true`, and
     `runtime_donor=false`.
@@ -14817,10 +14817,10 @@ date:
   2026-05-16
 
 implementation:
-  src/qtrm_mm/qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
     set_qwen_partial_trainable(...)
 
-  scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  scripts/362_train_qwen_backbone_wgram_core_gate.py
     --unfreeze-qwen-layer-indices
     --qwen-lr
     --qwen-weight-decay
@@ -15225,7 +15225,7 @@ implementation:
     slow_stack = QTRMBlockStack(... causal=cfg.core_causal)
 
 latest smoke:
-  local_eval/qwen_backbone_qtrm_causal_gate_smoke_20260515/report.json
+  local_eval/qwen_backbone_wgram_causal_gate_smoke_20260515/report.json
 
 latest metrics:
   core_config.core_causal: true
@@ -15286,19 +15286,19 @@ implemented core_impl values:
     fast/slow updates share the same wrapped Qwen transition stack
 
 implemented files:
-  src/qtrm_mm/qwen_backbone_qtrm.py
-  scripts/361_qwen_backbone_qtrm_smoke.py
-  tests/test_qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
+  scripts/361_qwen_backbone_wgram_smoke.py
+  tests/test_qwen_backbone_wgram.py
 
 unit tests:
-  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_qtrm
+  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_wgram
   OK, 5 tests
 
 smoke A:
   name:
     Qwen-layer-wrapped causal dual-nested core
   report:
-    local_eval/qwen_backbone_qtrm_qwen_layer_wrapped_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_layer_wrapped_smoke_20260515/report.json
   core_impl:
     qwen_layer_wrapped
   selected Qwen layer:
@@ -15320,7 +15320,7 @@ smoke B:
   name:
     Ouro-style shared Qwen-layer loop
   report:
-    local_eval/qwen_backbone_qtrm_ouro_shared_qwen_layer_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_shared_qwen_layer_smoke_20260515/report.json
   core_impl:
     ouro_shared_qwen_layer
   shared_stack:
@@ -15380,27 +15380,27 @@ source:
     https://arxiv.org/abs/2510.25741
 
 implemented files:
-  src/qtrm_mm/qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
     OuroLayerWrappedStack
     OuroWeightWrappedRecursiveCore
     core_impl=ouro_weight_wrapped
-  scripts/361_qwen_backbone_qtrm_smoke.py
+  scripts/361_qwen_backbone_wgram_smoke.py
     --core-impl ouro_weight_wrapped
     --ouro-model-id /mnt/sdc1/models/ByteDance-Ouro-2.6B-Thinking
     --ouro-core-layer-indices 24
-  scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  scripts/362_train_qwen_backbone_wgram_core_gate.py
     same true-Ouro option for short train gates
   scripts/363_run_qwen_backbone_ouro_weight_gate.sh
     one-command actual Ouro smoke + short train gate
 
 verification before real-weight run:
   PYTHONPATH=src .venv/bin/python -m py_compile \
-    src/qtrm_mm/qwen_backbone_qtrm.py \
-    scripts/361_qwen_backbone_qtrm_smoke.py \
-    scripts/362_train_qwen_backbone_qtrm_core_gate.py
+    src/wgram_lm/qwen_backbone_wgram.py \
+    scripts/361_qwen_backbone_wgram_smoke.py \
+    scripts/362_train_qwen_backbone_wgram_core_gate.py
   PYTHONPATH=src .venv/bin/python -m unittest \
-    tests.test_qwen_backbone_qtrm \
-    tests.test_qwen_backbone_qtrm_core_gate_trainer
+    tests.test_qwen_backbone_wgram \
+    tests.test_qwen_backbone_wgram_core_gate_trainer
   result:
     OK, 9 tests
 
@@ -15439,7 +15439,7 @@ download method:
 
 partial true-Ouro smoke:
   report:
-    local_eval/qwen_backbone_qtrm_ouro_weight_partial_l18_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_partial_l18_smoke_20260515/report.json
   core_impl:
     ouro_weight_wrapped
   ouro_core_layer_indices:
@@ -15453,7 +15453,7 @@ partial true-Ouro smoke:
 
 partial true-Ouro train gate:
   report:
-    local_eval/qwen_backbone_qtrm_ouro_weight_partial_l18_train_gate_s80_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_partial_l18_train_gate_s80_20260515/report.json
   accepted:
     true
   base/core_off accuracy:
@@ -15467,7 +15467,7 @@ partial true-Ouro train gate:
 
 full true-Ouro smoke:
   report:
-    local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_full_l24_smoke_20260515/report.json
   core_impl:
     ouro_weight_wrapped
   ouro_core_layer_indices:
@@ -15481,7 +15481,7 @@ full true-Ouro smoke:
 
 full true-Ouro train gate:
   report:
-    local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_train_gate_s80_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_full_l24_train_gate_s80_20260515/report.json
   accepted:
     true
   base/core_off accuracy:
@@ -15510,7 +15510,7 @@ interpretation:
 layer sweep:
   layer 12:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l12_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l12_train_gate_s80_20260515/report.json
     decision:
       rejected
     gain:
@@ -15519,7 +15519,7 @@ layer sweep:
       1.0
   layer 24:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l24_train_gate_s80_20260515/report.json
     decision:
       accepted
     gain:
@@ -15528,7 +15528,7 @@ layer sweep:
       1.0
   layer 36:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l36_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l36_train_gate_s80_20260515/report.json
     decision:
       rejected
     gain:
@@ -15537,7 +15537,7 @@ layer sweep:
       0.75
   layers 18,24:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l18_24_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l18_24_train_gate_s80_20260515/report.json
     decision:
       rejected
     gain:
@@ -15614,7 +15614,7 @@ candidate A:
   name:
     QTRM core with Qwen transition prior
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_20260515/report.json
   accepted:
     true
   base/core_off accuracy:
@@ -15630,7 +15630,7 @@ candidate B:
   name:
     QTRM core with Ouro layer 24 transition prior
   report:
-    local_eval/qwen_backbone_qtrm_ouro_transition_l24_eval512_s200_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_transition_l24_eval512_s200_20260515/report.json
   accepted:
     true
   base/core_off accuracy:
@@ -15660,13 +15660,13 @@ candidate:
   QTRM core with Qwen layer 3 transition prior
 
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_20260515/last_core.pt
 
 script:
   scripts/367_eval_qwen_backbone_language_gate.py
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_bilingual_generation_gate_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_bilingual_generation_gate_20260515/report.json
 
 prompt coverage:
   12 prompts:
@@ -15710,13 +15710,13 @@ candidate:
   QTRM core with Qwen layer 3 transition prior
 
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_20260515/last_core.pt
 
 script:
   scripts/367_eval_qwen_backbone_language_gate.py
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_longgen64_gate_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_longgen64_gate_20260515/report.json
 
 generation setting:
   max_new_tokens:
@@ -15769,10 +15769,10 @@ change:
     0.5
 
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/report.json
 
 gate:
   case_mode:
@@ -15838,13 +15838,13 @@ date:
   2026-05-15
 
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
 
 script:
   scripts/367_eval_qwen_backbone_language_gate.py
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_longgen64_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_longgen64_20260515/report.json
 
 generation setting:
   max_new_tokens:
@@ -15912,7 +15912,7 @@ separate concept:
 
 smoke result:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_smoke_s30_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_nested_h3_l6_smoke_s30_20260515/report.json
   accepted:
     true
   base/core_off accuracy:
@@ -15973,7 +15973,7 @@ shared settings:
 
 non-nested result:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_gateopen_nonnested_compare_seed20260515_s210_t420_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_gateopen_nonnested_compare_seed20260515_s210_t420_20260515/report.json
   accepted:
     false
   gain:
@@ -15987,7 +15987,7 @@ non-nested result:
 
 nested H3/L6 result, residual_scale=0.5:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_gateopen_nested_h3_l6_compare_seed20260515_s20_t420_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_gateopen_nested_h3_l6_compare_seed20260515_s20_t420_20260515/report.json
   accepted:
     false
   gain:
@@ -16003,7 +16003,7 @@ nested H3/L6 result, residual_scale=0.5:
 
 nested H3/L6 result, residual_scale=0.1:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_r01_compare_seed20260515_s20_t420_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_nested_h3_l6_r01_compare_seed20260515_s20_t420_20260515/report.json
   accepted:
     false
   gain:
@@ -16039,9 +16039,9 @@ motivation:
 
 implementation:
   files:
-    src/qtrm_mm/config.py
-    src/qtrm_mm/qwen_backbone_qtrm.py
-    scripts/362_train_qwen_backbone_qtrm_core_gate.py
+    src/wgram_lm/config.py
+    src/wgram_lm/qwen_backbone_wgram.py
+    scripts/362_train_qwen_backbone_wgram_core_gate.py
 
   config fields:
     core_convergence_halt_enabled
@@ -16062,7 +16062,7 @@ implementation:
 
 smoke:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_convergence_halt_telemetry_smoke_s5_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_nested_h3_l6_convergence_halt_telemetry_smoke_s5_20260515/report.json
   schedule:
     h_cycles=3
     l_cycles=6
@@ -16092,7 +16092,7 @@ script:
   scripts/370_sweep_nested_convergence_halt_threshold.py
 
 report:
-  local_eval/qwen_backbone_qtrm_nested_h3_l6_convergence_threshold_sweep_20260515/report.json
+  local_eval/qwen_backbone_wgram_nested_h3_l6_convergence_threshold_sweep_20260515/report.json
 
 setting:
   Qwen-wrapper nested H3/L6
@@ -17335,7 +17335,7 @@ consequence:
 Checksum counterfactual follow-up:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --checksum-counterfactual-weight
   --checksum-counterfactual-variants
 

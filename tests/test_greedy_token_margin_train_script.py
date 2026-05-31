@@ -4,7 +4,7 @@ import unittest
 
 class GreedyTokenMarginTrainScriptTests(unittest.TestCase):
     def test_config_and_runner_wire_greedy_margin_to_canonical_gate(self) -> None:
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         cfg = load_config("configs/qwen35_2b_4090_canonical_greedy_margin_s120.yaml")
         script = Path("scripts/172_run_canonical_greedy_margin_train.sh").read_text(

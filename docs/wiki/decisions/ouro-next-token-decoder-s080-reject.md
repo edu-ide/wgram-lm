@@ -26,9 +26,9 @@ No MemoryOS, retrieval, answer side channel, or candidate solver was used.
 Code and config:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 scripts/192_eval_raw_intelligence.py
 scripts/247_probe_qtrm_gold_token_ranks.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_next_token_decoder_s080.yaml
@@ -163,4 +163,3 @@ require: generation_smoke8 > 0/8
 require: forced-choice does not regress below the accepted halt-head baseline
 require: decoder/core/halt ablation loses the gain
 ```
-

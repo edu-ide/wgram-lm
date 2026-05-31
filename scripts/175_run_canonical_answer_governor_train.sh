@@ -42,7 +42,7 @@ echo "init=$INIT_CHECKPOINT"
 echo "out_dir=$OUT_DIR"
 echo "============================================================"
 
-python -m qtrm_mm.training.train \
+python -m wgram_lm.training.train \
   --config "$CONFIG" \
   --use-donor \
   --data-jsonl "$DATA" \

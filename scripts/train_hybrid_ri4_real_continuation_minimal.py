@@ -69,17 +69,17 @@ import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock, InferenceState
+from wgram_lm.config import QTRMConfig
+from wgram_lm.blocks import OneBodyParallelHybridBlock, InferenceState
 
 # Level-3 pivot safety: importing this will fire loud warnings if critical
 # historical inductive biases (e.g. real training-time stochastic breadth) are
 # known to be unreachable from the current primary path.
-from src.qtrm_mm.architecture.component_registry import warn_on_missing_primary_path_biases
+from wgram_lm.architecture.component_registry import warn_on_missing_primary_path_biases
 warn_on_missing_primary_path_biases()
-from src.qtrm_mm.memory.sparse_slot_router import SparseSlotRouter
-from src.qtrm_mm.memory.decoupled_latent_memory_bank import DecoupledLatentMemoryBank, make_decoupled_latent_memory_bank
-from src.qtrm_mm.memory.latent_episode_memory import LatentEpisodeMemory, make_latent_episode_memory
+from wgram_lm.memory.sparse_slot_router import SparseSlotRouter
+from wgram_lm.memory.decoupled_latent_memory_bank import DecoupledLatentMemoryBank, make_decoupled_latent_memory_bank
+from wgram_lm.memory.latent_episode_memory import LatentEpisodeMemory, make_latent_episode_memory
 
 
 def _unpack_hybrid_output(out, prev_slots=None, prev_fast_state=None):
@@ -101,17 +101,17 @@ from scripts.train_556_on_parallel_hybrid_minimal import (
     apply_556_rehearsal_update,
 )
 # Direct reference to previous successful 5.56 full curriculum tracks
-from src.qtrm_mm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
+from wgram_lm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
 
 # === June 2026 Section 7 Light Trainer Integration (living spec from diag_explicit_attractor_solver_20step.py) ===
 # Conditional import — graceful fallback if attractor module not present during early integration.
 try:
-    from src.qtrm_mm.attractor.attractor_solver import (
+    from wgram_lm.attractor.attractor_solver import (
         AttractorSolverModule,
         SOTSegmentedSolverTrainer,
         SOTConfig,
     )
-    from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
+    from wgram_lm.memory.brain_triple_memory import BrainMimeticTripleMemory
     _ATTRACTOR_AVAILABLE = True
 except Exception:
     AttractorSolverModule = None
@@ -309,7 +309,7 @@ def parse_continuation_args() -> ContinuationConfig:
         print("           int=0.28, dcons=0.03, K=1")
         print("  Long trajectory first → pressure re-introduced later.\n")
         try:
-            from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
+            from wgram_lm.memory.brain_triple_memory import BrainMimeticTripleMemory
             if BrainMimeticTripleMemory is not None:
                 BrainMimeticTripleMemory._force_long_horizon_light = True
         except Exception:
@@ -901,7 +901,7 @@ def main():
     # The 3 components (ActiveWorkingMemory + StabilizingAttractor + ProvenanceEpisodic)
     # become first-class primary recurrent participants that actively influence thinking every step.
     if getattr(cfg, 'brain_triple_memory_enabled', False):
-        from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
+        from wgram_lm.memory.brain_triple_memory import BrainMimeticTripleMemory
         triple_mem = BrainMimeticTripleMemory(
             d_model=cfg.d_model,
             n_workspace_streams=getattr(cfg, 'brain_triple_memory_workspace_streams', 4),
@@ -969,7 +969,7 @@ def main():
                 print(f"[Resume] Brain triple / long-term restore skipped (non-fatal): {e}")
 
         if getattr(cfg, 'brain_mimetic_stochastic_enabled', False) and not getattr(model, '_brain_triple_memory_ablation_zero', False):
-            from src.qtrm_mm.memory.brain_triple_memory import integrate_brain_mimetic_stochastic_into_triple_memory
+            from wgram_lm.memory.brain_triple_memory import integrate_brain_mimetic_stochastic_into_triple_memory
             k = int(getattr(cfg, 'brain_mimetic_stochastic_k', 4))
             sampler_ablation = bool(getattr(cfg, 'brain_mimetic_stochastic_sampler_ablation_zero', False)) or \
                                bool(getattr(cfg, 'brain_mimetic_stochastic_ablation_zero', False))

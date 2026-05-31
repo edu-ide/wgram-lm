@@ -1,11 +1,11 @@
 # Phase 0: Backbone Audit & Literature Synthesis (One-Body Strict)
 
-**Date**: 2026-05-30  
+**Date**: 2026-05-30
 **Status**: In Progress
 
 ## 1. Current Backbone Characterization (Initial Audit)
 
-From code inspection (`src/qtrm_mm/mixers.py`, `core.py`, `qwen_backbone_qtrm.py`):
+From code inspection (`src/wgram_lm/mixers.py`, `core.py`, `qwen_backbone_wgram.py`):
 
 - The backbone is a **Qwen3.6-inspired decoder** with a custom hybrid recurrence layer.
 - Core recurrence primitive: **Gated DeltaNet-2** (via `OfficialGatedDeltaNet2Mixer` + FLA backends) + Attention.
@@ -101,7 +101,7 @@ The project already has a sophisticated gated recurrence system:
 
 This means the current "GDN2" is already one of the stronger modern gated linear recurrence primitives (Gated DeltaNet family is frequently ranked very high in 2025-2026 hybrid ablations, often beating or matching Mamba-2 in expressiveness when combined with attention).
 
-The "3:1 gdn2:atten" structure the user mentioned likely refers to how these GDN2 mixers are alternated with standard Attention layers inside the Qwen-based stacks (in `qwen_backbone_qtrm.py` or custom layer definitions), using a 3 recurrence : 1 attention ratio per block or per stage.
+The "3:1 gdn2:atten" structure the user mentioned likely refers to how these GDN2 mixers are alternated with standard Attention layers inside the Qwen-based stacks (in `qwen_backbone_wgram.py` or custom layer definitions), using a 3 recurrence : 1 attention ratio per block or per stage.
 
 **Current Strengths**:
 - Already using a top-tier gated recurrence (GatedDeltaNet-2).

@@ -35,7 +35,7 @@ try:
 except ImportError:
     load_dataset = None
 
-from qtrm_mm.qwen_backbone_state_transition import build_qwen_state_transition_model
+from wgram_lm.qwen_backbone_state_transition import build_qwen_state_transition_model
 
 
 IGNORE_INDEX = -100
@@ -795,40 +795,40 @@ def compute_latent_shortcut_consistency_loss(
     min_step: int = 1,
 ) -> torch.Tensor:
     """Align short-depth recurrent states to long-depth states using Elastic-LSCR.
-    
+
     This maps states at the same normalized time tau = k / T_short to the nearest matching
     normalized time in the long trajectory: t_long = round(tau * T_long).
     """
     if short_state_trajectory.ndim != 3 or long_state_trajectory.ndim != 3:
         raise ValueError("state trajectories must have shape (batch, steps, dim)")
-    
+
     T_short = short_state_trajectory.size(1) - 1
     T_long = long_state_trajectory.size(1) - 1
-    
+
     if T_short < 1 or T_long < 1:
         return torch.tensor(0.0, device=short_state_trajectory.device)
-        
+
     loss_sum = 0.0
     count = 0
-    
+
     for k in range(1, T_short + 1):
         tau = k / T_short
         long_idx = int(round(tau * T_long))
         # Ensure index boundary safety
         long_idx = max(0, min(long_idx, T_long))
-        
+
         # Extract states
         short_state = F.normalize(short_state_trajectory[:, k, :].float(), dim=-1)
         long_state = F.normalize(long_state_trajectory[:, long_idx, :].detach().float(), dim=-1)
-        
+
         # Cosine similarity loss: 1.0 - CosSim
         step_loss = 1.0 - (short_state * long_state).sum(dim=-1).mean()
         loss_sum = loss_sum + step_loss
         count += 1
-        
+
     if count == 0:
         return torch.tensor(0.0, device=short_state_trajectory.device)
-        
+
     return loss_sum / count
 
 

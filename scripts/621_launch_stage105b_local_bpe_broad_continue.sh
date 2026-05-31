@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos}"
+ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/wgram-lm}"
 PYTHON="${PYTHON:-${ROOT}/.venv/bin/python}"
 DATA_ROOT="${DATA_ROOT:-${ROOT}/local_eval/20260526_STAGE105A_LOCAL_BPE_BROAD_HRM_TEXT_SPLIT}"
 RESUME="${RESUME:-${ROOT}/local_eval/20260526_STAGE105A_LOCAL_BPE_BROAD_HRM_TEXT_120/last.pt}"

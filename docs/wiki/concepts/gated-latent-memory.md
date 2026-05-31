@@ -34,8 +34,8 @@ Move the claim-bearing path to gated memory causality and sparse external memory
 
 Code:
 
-- `src/qtrm_mm/workspace.py`
-- `src/qtrm_mm/qtrm_model.py`
+- `src/wgram_lm/workspace.py`
+- `src/wgram_lm/wgram_model.py`
 - `configs/qwen35_2b_4090_current_arch_pretrain_probe.yaml`
 
 Config:

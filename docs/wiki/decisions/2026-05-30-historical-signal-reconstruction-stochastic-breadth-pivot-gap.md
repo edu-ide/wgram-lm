@@ -1,8 +1,8 @@
 # Historical Signal Reconstruction Gate: Stochastic Recurrent Breadth (GRAM/PTRM Inductive Bias)
 
-**Date**: 2026-05-30  
-**Branch/Context**: feat/architecture-integration-2026-05 (post new-thought-structure pivot + Phase 0-3 mega restoration)  
-**Trigger**: Updated research-driven-architecture-debugging skill (Pivot Safety + Reverse I→G→A section) + explicit user request to follow the skill after diagnosing the gap.  
+**Date**: 2026-05-30
+**Branch/Context**: feat/architecture-integration-2026-05 (post new-thought-structure pivot + Phase 0-3 mega restoration)
+**Trigger**: Updated research-driven-architecture-debugging skill (Pivot Safety + Reverse I→G→A section) + explicit user request to follow the skill after diagnosing the gap.
 **Status**: Gate executed. Reverse I→G→A initiated (Improvement stage pending).
 
 ---
@@ -29,9 +29,9 @@ This reconstruction focuses on bias #4, which was the one most completely lost a
 ## 2. What the Bias Actually Was (Precise Mechanism)
 
 **Location in Legacy Code** (the version that produced the signal):
-- `src/qtrm_mm/state_transition_core.py`
+- `src/wgram_lm/state_transition_core.py`
   - `stochastic_transition_mode = "true_gram"` or `"delta"`
-  - `_apply_true_gram_transition(...)` (primary path for strong signals): 
+  - `_apply_true_gram_transition(...)` (primary path for strong signals):
     - Computes learned prior (and optional posterior) Gaussian over high-level state.
     - During training: `z_h = mu + std * eps` (direct replacement, not additive delta).
     - Posterior guidance using answer labels.
@@ -52,7 +52,7 @@ This reconstruction focuses on bias #4, which was the one most completely lost a
 
 ## 3. Current Status After the Pivot (2026-05-26 new thought structure + subsequent work)
 
-**Primary Architecture Today**: `QTRMRecursiveCore` in `src/qtrm_mm/core.py` (fast_stack + slow_stack BlockStack, gated workspaces, monotonic attractor, provenance register, adaptive rehearsal scaffolding, learned slow tier, gold structural bias, equation binding, etc.).
+**Primary Architecture Today**: `QTRMRecursiveCore` in `src/wgram_lm/core.py` (fast_stack + slow_stack BlockStack, gated workspaces, monotonic attractor, provenance register, adaptive rehearsal scaffolding, learned slow tier, gold structural bias, equation binding, etc.).
 
 **Stochastic Breadth Status**: Completely absent from the recurrent forward path.
 - No Gaussian prior/posterior networks on z_h.

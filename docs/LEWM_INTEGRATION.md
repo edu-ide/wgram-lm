@@ -45,19 +45,19 @@ loss = mse(pred_emb, emb[1:T]) + lambda * SIGReg(emb)
 
 Implemented files:
 
-- `src/qtrm_mm/world_model.py`
+- `src/wgram_lm/world_model.py`
   - `JepaWorldModelHead`
   - `ActionConditionedFuturePredictor`
   - `AdaLNZeroBlock`
   - `SIGReg`
-- `src/qtrm_mm/qtrm_model.py`
+- `src/wgram_lm/wgram_model.py`
   - adds a causal JEPA latent encoder
   - adds optional core-trajectory LeWM prediction over recursive `z_H` states
   - exposes `jepa_pred`, `jepa_target`, `jepa_latents`, `jepa_latent_mask`, and `jepa_mask`
   - exposes `core_world_model_pred`, `core_world_model_target`,
     `core_world_model_latents`, `core_world_model_latent_mask`, and
     `core_world_model_mask` when enabled
-- `src/qtrm_mm/losses.py`
+- `src/wgram_lm/losses.py`
   - `jepa_world_model_loss` now uses MSE plus optional SIGReg
   - `core_world_model_weight` applies the same LeWM loss to recursive core
     trajectories

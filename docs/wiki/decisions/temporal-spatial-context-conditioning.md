@@ -173,10 +173,10 @@ the model.
 ## Files
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
-src/qtrm_mm/eval/raw_intelligence_gate.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
+src/wgram_lm/eval/raw_intelligence_gate.py
 scripts/196_train_pure_recursive_depth_supervised.py
 scripts/192_eval_raw_intelligence.py
 scripts/207_build_temporal_spatial_context_cases.py

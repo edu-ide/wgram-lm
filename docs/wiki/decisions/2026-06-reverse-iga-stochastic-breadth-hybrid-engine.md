@@ -58,8 +58,8 @@ This was the single largest identified cause of the persistent "no selectivity l
 - Historical reconstruction: `docs/wiki/decisions/2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md`
 - SSOT that was being violated: `docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md`
 - New process followed: `docs/wiki/process/pivot-safety-and-inductive-bias-preservation.md`
-- Code change: `src/qtrm_mm/blocks.py` (prior network + self-generation logic in forward)
-- Registry update (to be done in same commit): `src/qtrm_mm/architecture/component_registry.py`
+- Code change: `src/wgram_lm/blocks.py` (prior network + self-generation logic in forward)
+- Registry update (to be done in same commit): `src/wgram_lm/architecture/component_registry.py`
 
 ---
 

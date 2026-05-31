@@ -6,7 +6,7 @@ import torch
 
 class PrevTokenLatentReadoutTests(unittest.TestCase):
     def _cfg(self):
-        from qtrm_mm import QTRMConfig
+        from wgram_lm import QTRMConfig
 
         return QTRMConfig(
             vocab_size=64,
@@ -31,7 +31,7 @@ class PrevTokenLatentReadoutTests(unittest.TestCase):
         )
 
     def test_prev_token_fuse_starts_as_identity(self):
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         torch.manual_seed(0)
         model = QTRMMultimodalModel(self._cfg())
@@ -46,7 +46,7 @@ class PrevTokenLatentReadoutTests(unittest.TestCase):
         self.assertTrue(torch.allclose(out, hidden, atol=1e-6))
 
     def test_prev_token_fuse_can_change_hidden_by_token_id(self):
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         torch.manual_seed(0)
         model = QTRMMultimodalModel(self._cfg())
@@ -73,7 +73,7 @@ class PrevTokenLatentReadoutTests(unittest.TestCase):
         self.assertFalse(torch.allclose(out_a, out_b))
 
     def test_forward_passes_selected_input_tokens_as_prev_token_ids(self):
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         model = QTRMMultimodalModel(self._cfg())
         input_ids = torch.tensor([[10, 11, 12, 13, 14]])

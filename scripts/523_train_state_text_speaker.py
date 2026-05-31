@@ -18,8 +18,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from qtrm_mm.eval.general_answer_interface import answer_kind, select_candidate, summarize_records
-from qtrm_mm.eval.state_text_speaker import (
+from wgram_lm.eval.general_answer_interface import answer_kind, select_candidate, summarize_records
+from wgram_lm.eval.state_text_speaker import (
     IGNORE_INDEX,
     DirectVocabLogitHead,
     LowRankVocabLogitAdapter,
@@ -37,7 +37,7 @@ from qtrm_mm.eval.state_text_speaker import (
     first_answer_alias,
     restricted_indices_to_token_ids,
 )
-from qtrm_mm.qwen_backbone_state_transition import build_qwen_state_transition_model
+from wgram_lm.qwen_backbone_state_transition import build_qwen_state_transition_model
 
 
 def _load_train511() -> Any:
@@ -393,7 +393,7 @@ def build_qtrm(args: argparse.Namespace, device: torch.device):
 
 
 def thought_context_for_batch(
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     rows: list[dict[str, Any]],
     *,
@@ -435,7 +435,7 @@ def thought_context_for_batch(
             value_scale=float(source_number_value_scale),
             device=device,
         )
-    out = qtrm_model(
+    out = wgram_model(
         encoded["input_ids"],
         attention_mask=encoded.get("attention_mask"),
         n_steps=int(n_steps),
@@ -447,7 +447,7 @@ def thought_context_for_batch(
     )
     readout = out.get("qtrm_readout_state")
     if readout is None:
-        raise RuntimeError("qtrm_model did not return qtrm_readout_state")
+        raise RuntimeError("wgram_model did not return qtrm_readout_state")
     workspace = out.get("qtrm_workspace")
     workspace_attention_mask = out.get("qtrm_workspace_attention_mask")
     if workspace is not None and encoded.get("attention_mask") is not None:
@@ -490,7 +490,7 @@ def thought_context_for_batch(
 
 
 def state_speaker_logits(
-    qtrm_model: Any,
+    wgram_model: Any,
     speaker: StateTextSpeaker | TrajectoryAwareTextSpeaker | PooledContextTextSpeaker,
     thought_context: dict[str, torch.Tensor | None],
     *,
@@ -531,7 +531,7 @@ def state_speaker_logits(
             raise ValueError("char_vocab_head requires restricted_head")
         return restricted_head(answer_states)
 
-    _, qwen_logits = qtrm_model._lm_head_logits_from_state(answer_states)
+    _, qwen_logits = wgram_model._lm_head_logits_from_state(answer_states)
     if logit_mode == "qwen_lm_head":
         return qwen_logits
     if logit_mode == "qwen_plus_low_rank":
@@ -543,7 +543,7 @@ def state_speaker_logits(
 
 def train_epoch(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     speaker: StateTextSpeaker,
     adapter: LowRankVocabLogitAdapter | None,
@@ -557,10 +557,10 @@ def train_epoch(
     device: torch.device,
 ) -> dict[str, float]:
     if bool(args.train_qtrm_core):
-        qtrm_model.train()
-        qtrm_model.qwen.eval()
+        wgram_model.train()
+        wgram_model.qwen.eval()
     else:
-        qtrm_model.eval()
+        wgram_model.eval()
     speaker.train()
     if adapter is not None:
         adapter.train()
@@ -574,7 +574,7 @@ def train_epoch(
     started = time.time()
     for batch in loader:
         thought_context = thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -615,7 +615,7 @@ def train_epoch(
                 device=device,
             )
         logits = state_speaker_logits(
-            qtrm_model,
+            wgram_model,
             speaker,
             thought_context,
             logit_mode=args.speaker_logit_mode,
@@ -674,7 +674,7 @@ def train_epoch(
                             device=device,
                         )
                     trace_logits = state_speaker_logits(
-                        qtrm_model,
+                        wgram_model,
                         speaker,
                         trace_context,
                         logit_mode=args.speaker_logit_mode,
@@ -699,7 +699,7 @@ def train_epoch(
         if restricted_head is not None:
             clip_parameters.extend(restricted_head.parameters())
         if bool(args.train_qtrm_core):
-            clip_parameters.extend(parameter for parameter in qtrm_model.parameters() if parameter.requires_grad)
+            clip_parameters.extend(parameter for parameter in wgram_model.parameters() if parameter.requires_grad)
         torch.nn.utils.clip_grad_norm_(clip_parameters, float(args.grad_clip))
         optimizer.step()
         valid_tokens = int(targets.ne(IGNORE_INDEX).sum().item())
@@ -711,7 +711,7 @@ def train_epoch(
 @torch.no_grad()
 def evaluate(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     speaker: StateTextSpeaker,
     adapter: LowRankVocabLogitAdapter | None,
@@ -734,7 +734,7 @@ def evaluate(
     records: list[dict[str, Any]] = []
     for batch in loader:
         thought_context = thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=args.max_length,
@@ -747,7 +747,7 @@ def evaluate(
             source_number_value_scale=float(getattr(args, "source_number_value_scale", 10000.0)),
         )
         logits = state_speaker_logits(
-            qtrm_model,
+            wgram_model,
             speaker,
             thought_context,
             logit_mode=args.speaker_logit_mode,
@@ -895,20 +895,20 @@ def main() -> None:
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return
 
-    qtrm_model, tokenizer, load_stats = build_qtrm(args, device)
+    wgram_model, tokenizer, load_stats = build_qtrm(args, device)
     if args.speaker_context_mode == "final_readout":
         speaker: StateTextSpeaker | TrajectoryAwareTextSpeaker | PooledContextTextSpeaker = StateTextSpeaker(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             max_answer_tokens=int(args.max_answer_tokens),
         ).to(device)
     elif args.speaker_context_mode == "pooled_context":
         speaker = PooledContextTextSpeaker(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             max_answer_tokens=int(args.max_answer_tokens),
         ).to(device)
     else:
         speaker = TrajectoryAwareTextSpeaker(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             max_answer_tokens=int(args.max_answer_tokens),
             n_heads=int(args.speaker_attn_heads),
         ).to(device)
@@ -919,21 +919,21 @@ def main() -> None:
     allowed_chars = None
     trainable = list(speaker.parameters())
     if args.speaker_logit_mode == "qwen_plus_low_rank":
-        lm_head = getattr(qtrm_model.qwen, "lm_head", None)
+        lm_head = getattr(wgram_model.qwen, "lm_head", None)
         if lm_head is None:
-            raise RuntimeError("qwen_plus_low_rank requires qtrm_model.qwen.lm_head")
+            raise RuntimeError("qwen_plus_low_rank requires wgram_model.qwen.lm_head")
         adapter = LowRankVocabLogitAdapter(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             vocab_size=int(lm_head.weight.size(0)),
             rank=int(args.speaker_rank),
         ).to(device)
         trainable.extend(adapter.parameters())
     elif args.speaker_logit_mode == "direct_vocab_head":
-        lm_head = getattr(qtrm_model.qwen, "lm_head", None)
+        lm_head = getattr(wgram_model.qwen, "lm_head", None)
         if lm_head is None:
-            raise RuntimeError("direct_vocab_head requires qtrm_model.qwen.lm_head for vocab size")
+            raise RuntimeError("direct_vocab_head requires wgram_model.qwen.lm_head for vocab size")
         direct_head = DirectVocabLogitHead(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             vocab_size=int(lm_head.weight.size(0)),
         ).to(device)
         trainable.extend(direct_head.parameters())
@@ -946,19 +946,19 @@ def main() -> None:
         if not allowed_token_ids:
             raise RuntimeError("restricted answer vocab is empty")
         restricted_head = RestrictedVocabLogitHead(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             restricted_vocab_size=len(allowed_token_ids),
         ).to(device)
         trainable.extend(restricted_head.parameters())
     elif args.speaker_logit_mode == "char_vocab_head":
         allowed_chars = build_answer_char_vocab([*train_rows, *eval_rows])
         restricted_head = RestrictedVocabLogitHead(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             restricted_vocab_size=len(allowed_chars),
         ).to(device)
         trainable.extend(restricted_head.parameters())
     if args.train_qtrm_core:
-        trainable.extend(parameter for parameter in qtrm_model.parameters() if parameter.requires_grad)
+        trainable.extend(parameter for parameter in wgram_model.parameters() if parameter.requires_grad)
     optimizer = torch.optim.AdamW(trainable, lr=float(args.lr), weight_decay=float(args.weight_decay))
     history: list[dict[str, Any]] = []
     best_acc = -1.0
@@ -966,7 +966,7 @@ def main() -> None:
 
     for epoch in range(1, int(args.epochs) + 1):
         train_metrics = train_epoch(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             speaker=speaker,
             adapter=adapter,
@@ -980,7 +980,7 @@ def main() -> None:
             device=device,
         )
         eval_summary, eval_records = evaluate(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
                 speaker=speaker,
                 adapter=adapter,
@@ -995,7 +995,7 @@ def main() -> None:
         train_eval_summary = None
         if args.report_train_accuracy:
             train_eval_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 speaker=speaker,
                 adapter=adapter,

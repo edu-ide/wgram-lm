@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Sequence
 
-from qtrm_mm.qwen_scope import compare_qwen_scope_feature_groups
+from wgram_lm.qwen_scope import compare_qwen_scope_feature_groups
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

@@ -72,9 +72,9 @@ FileNotFoundError: [Errno 2] No such file or directory: 'runs/eval'
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 206, in <module>
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 206, in <module>
     main()
-  File "/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 189, in main
+  File "/home/tripleyoung/qtrm-workspace/wgram-lm/scripts/smoke_ri4_a_mode_hybrid_recurrent_engine.py", line 189, in main
     out_path.parent.mkdir(parents=True, exist_ok=True)
   File "/usr/lib/python3.12/pathlib.py", line 1317, in mkdir
     self.parent.mkdir(parents=True, exist_ok=True)

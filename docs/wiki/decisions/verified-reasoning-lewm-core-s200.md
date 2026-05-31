@@ -56,10 +56,10 @@ scripts/196_train_pure_recursive_depth_supervised.py
   passes core_world_model_actions into QTRMMultimodalModel
   adds jepa_world_model_loss over core_world_model_pred/target
 
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
   trainable_param_policy=core_and_answer_state_loop_and_world_model
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   core_world_model predictor max length now covers dynamic depth schedules up
   to core_step_conditioning_max_steps
 ```

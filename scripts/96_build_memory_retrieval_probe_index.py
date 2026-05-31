@@ -7,9 +7,9 @@ from pathlib import Path
 
 import numpy as np
 
-from qtrm_mm.eval.memory_retrieval import case_index_records, load_cases
-from qtrm_mm.memoryos.text_index import DEFAULT_TEXT_EMBED_MODEL, load_embedder
-from qtrm_mm.memoryos.vector_backends import DEFAULT_VECTOR_BACKEND, build_vector_index
+from wgram_lm.eval.memory_retrieval import case_index_records, load_cases
+from wgram_lm.memoryos.text_index import DEFAULT_TEXT_EMBED_MODEL, load_embedder
+from wgram_lm.memoryos.vector_backends import DEFAULT_VECTOR_BACKEND, build_vector_index
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

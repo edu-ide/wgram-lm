@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from qtrm_mm.algorithmic_value_state import (
+from wgram_lm.algorithmic_value_state import (
     algorithmic_targets_from_row as _algorithmic_targets_from_row,
     apply_role_value_list_class_mode,
     numeric_source_feature_matrix,
@@ -524,10 +524,10 @@ def evaluate_rows(
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
-    from qtrm_mm.training.train import load_initial_checkpoint
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.training.train import load_initial_checkpoint
 
     cfg = load_config(config)
     if bool(token_numeric_value_features):

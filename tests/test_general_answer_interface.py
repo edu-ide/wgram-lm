@@ -1,4 +1,4 @@
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_kind,
     extract_answer_candidate_text,
     normalize_answer_text,

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from qtrm_mm.training.critical_synthesis_data import write_critical_synthesis_trace_jsonl
+from wgram_lm.training.critical_synthesis_data import write_critical_synthesis_trace_jsonl
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

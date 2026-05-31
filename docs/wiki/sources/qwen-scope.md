@@ -47,7 +47,7 @@ non-scientific capability interference.
 
 Code:
 
-- `src/qtrm_mm/qwen_scope.py`
+- `src/wgram_lm/qwen_scope.py`
 - `scripts/136_qwen_scope_probe.py`
 - `scripts/137_compare_qwen_scope_groups.py`
 - `scripts/138_score_qwen_scope_repeat_candidates.py`

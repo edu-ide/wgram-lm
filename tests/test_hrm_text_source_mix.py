@@ -6,7 +6,7 @@ import unittest
 
 class HRMTextSourceMixTests(unittest.TestCase):
     def test_verified_row_converts_to_hrm_text_instruction_response(self) -> None:
-        from qtrm_mm.data.hrm_text_source_mix import verified_to_hrm_text_row
+        from wgram_lm.data.hrm_text_source_mix import verified_to_hrm_text_row
 
         row = verified_to_hrm_text_row(
             {
@@ -23,7 +23,7 @@ class HRMTextSourceMixTests(unittest.TestCase):
         self.assertFalse(row["instruction"].endswith("Answer:"))
 
     def test_build_mix_from_local_verified_source(self) -> None:
-        from qtrm_mm.data.hrm_text_source_mix import SourceSpec, build_hrm_text_source_mix
+        from wgram_lm.data.hrm_text_source_mix import SourceSpec, build_hrm_text_source_mix
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -58,7 +58,7 @@ class HRMTextSourceMixTests(unittest.TestCase):
             self.assertTrue((root / "mix" / "manifest.json").exists())
 
     def test_build_mix_respects_verified_offset_for_eval_splits(self) -> None:
-        from qtrm_mm.data.hrm_text_source_mix import SourceSpec, build_hrm_text_source_mix
+        from wgram_lm.data.hrm_text_source_mix import SourceSpec, build_hrm_text_source_mix
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

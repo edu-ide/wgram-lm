@@ -418,7 +418,7 @@ def build_model_from_checkpoint(
         global_seq_len = int(math.ceil(int(args.seq_len) / float(max(1, int(args.dynamic_min_patch_size)))))
     global_args = trainer.build_global_args(args, prefix, global_seq_len=global_seq_len)
     global_core = prefix.build_model(global_args, vocab_size=byte_vocab)
-    from qtrm_mm.models.blt_prefixlm import BLTDByteLatentPrefixLM
+    from wgram_lm.models.blt_prefixlm import BLTDByteLatentPrefixLM
 
     model = BLTDByteLatentPrefixLM(
         global_core=global_core,

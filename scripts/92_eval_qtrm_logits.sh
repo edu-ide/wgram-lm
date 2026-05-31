@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd ~/qtrm-workspace/qtrm_multimodal_memoryos
+cd ~/qtrm-workspace/wgram-lm
 if [[ -f .venv/bin/activate ]]; then
   source .venv/bin/activate
 fi

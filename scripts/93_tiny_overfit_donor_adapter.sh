@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd ~/qtrm-workspace/qtrm_multimodal_memoryos
+cd ~/qtrm-workspace/wgram-lm
 if [[ -f .venv/bin/activate ]]; then
   source .venv/bin/activate
 fi
@@ -13,4 +13,4 @@ if [[ $# -gt 0 ]]; then
   shift
 fi
 
-python -m qtrm_mm.training.tiny_overfit --config "$CONFIG" "$@"
+python -m wgram_lm.training.tiny_overfit --config "$CONFIG" "$@"

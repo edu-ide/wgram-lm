@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from qtrm_mm.eval.memory_retrieval import (
+from wgram_lm.eval.memory_retrieval import (
     audit_records,
     expected_unknown_case,
     score_answer,

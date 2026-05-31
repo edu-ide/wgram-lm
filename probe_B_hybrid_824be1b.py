@@ -34,8 +34,8 @@ import torch.nn.functional as F
 # We will import the hybrid block from the commit's code when running in worktree,
 # or fall back to a minimal simulation for the main workspace run.
 try:
-    from qtrm_mm.blocks import OneBodyParallelHybridBlock
-    from qtrm_mm.config import QTRMConfig
+    from wgram_lm.blocks import OneBodyParallelHybridBlock
+    from wgram_lm.config import QTRMConfig
     HYBRID_AVAILABLE = True
 except Exception:
     HYBRID_AVAILABLE = False
@@ -81,8 +81,8 @@ def run_hybrid_b_probe(limit: int = 0) -> Dict[str, Any]:
         print("[hybrid B probe] OneBodyParallelHybridBlock not importable in this env.")
         print("Falling back to core-only simulation using the same signals as the universal 44% probe.")
         # Fallback re-uses the logic that gave us 44% on the peaks.
-        from qtrm_mm.state_transition_core import StateTransitionCore, N_OPERATIONS
-        from qtrm_mm.config import QTRMConfig
+        from wgram_lm.state_transition_core import StateTransitionCore, N_OPERATIONS
+        from wgram_lm.config import QTRMConfig
         cfg = QTRMConfig(d_model=d_model, num_actions=N_OPERATIONS, outer_steps=n_steps)
         core = StateTransitionCore(cfg=cfg, d_state=d_model, n_operations=N_OPERATIONS, n_steps=n_steps)
         sd = torch.load(CKPT, map_location="cpu")

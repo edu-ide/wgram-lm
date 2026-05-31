@@ -47,10 +47,10 @@ import sys
 import torch
 import torch.nn as nn
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
-from src.qtrm_mm.eval.raw_intelligence_gate import build_ri4_sparse_memory_gate, DEFAULT_HYBRID_SLOTS_ON_MODE, DEFAULT_HYBRID_SLOTS_OFF_MODE, DEFAULT_HYBRID_PERSISTENCE_ABLATION_MODE
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.config import QTRMConfig
+from wgram_lm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.eval.raw_intelligence_gate import build_ri4_sparse_memory_gate, DEFAULT_HYBRID_SLOTS_ON_MODE, DEFAULT_HYBRID_SLOTS_OFF_MODE, DEFAULT_HYBRID_PERSISTENCE_ABLATION_MODE
+from wgram_lm.blocks import OneBodyParallelHybridBlock
 
 
 @dataclass
@@ -92,7 +92,6 @@ def parse_args() -> Hybrid556Config:
     p.add_argument("--ri4_persistence_off", action="store_true", help="RI-4: disable selective persistence on slots")
     p.add_argument("--eval_ri4_heldout", action="store_true", help="Run RI-4 ablation on the real pure_recursive_reasoning heldout and print gate")
     p.add_argument("--run_ri3_ri4_matrix", action="store_true", help="A-Mode: run small orthogonal 5.56 x RI-4 ablation matrix (highest-value RI-3 + RI-4 evidence)")
-    args = p.parse_args()  # ensure it's parsed before use below
     p.add_argument("--attention_type", type=str, default="mla", choices=["mla", "gqa"])
     p.add_argument("--delta_backend", type=str, default="torch_gated_delta2_v2")
     p.add_argument("--log_every", type=int, default=10)
@@ -590,6 +589,13 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
     ]
 
     results = {}
+
+    def unpack_hybrid_output(out, current_slots=None):
+        if not isinstance(out, tuple):
+            return out, current_slots
+        next_hidden = out[0]
+        next_slots = out[1] if len(out) > 1 else current_slots
+        return next_hidden, next_slots
     print("\n" + "=" * 72)
     print("RI-3 + RI-4 ORTHOGONAL MATRIX (A-Mode Highest-Value Run)")
     print(f"  Horizon per cell: {steps} steps | 5.56 dims x RI-4 dims")
@@ -607,6 +613,8 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
             n_layers=cfg_base.n_layers,
             recurrence_heads=cfg_base.recurrence_heads,
             attention_heads=cfg_base.attention_heads,
+            attention_type=cfg_base.attention_type,
+            delta_backend=cfg_base.delta_backend,
             device=cfg_base.device,
             dtype=cfg_base.dtype,
             enable_stochastic_breadth=not f56_flags["stochastic_ablation_zero"],
@@ -645,10 +653,7 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
             current_slots = getattr(model, '_ri4_current_slots', None) if hasattr(model, '_ri4_current_slots') else None
             for layer in model:
                 out = layer(h, stochastic_breadth_noise=noise, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
-                if isinstance(out, tuple):
-                    h, current_slots = out
-                else:
-                    h = out
+                h, current_slots = unpack_hybrid_output(out, current_slots)
             if hasattr(model, '_ri4_current_slots'):
                 model._ri4_current_slots = current_slots
 
@@ -670,18 +675,12 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
                     h_with = x_in
                     for layer in model:
                         out = layer(h_with, stochastic_breadth_noise=noise, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
-                        if isinstance(out, tuple):
-                            h_with, _ = out
-                        else:
-                            h_with = out
+                        h_with, _ = unpack_hybrid_output(out, current_slots)
 
                     h_without = x_in
                     for layer in model:
                         out = layer(h_without, stochastic_breadth_noise=None, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
-                        if isinstance(out, tuple):
-                            h_without, _ = out
-                        else:
-                            h_without = out
+                        h_without, _ = unpack_hybrid_output(out, current_slots)
 
                     pure_stoch = (h_with - h_without).norm(dim=-1).mean().item()
 
@@ -689,10 +688,7 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
                     h_clean = x
                     for layer in model:
                         out = layer(h_clean, stochastic_breadth_noise=None, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
-                        if isinstance(out, tuple):
-                            h_clean, _ = out
-                        else:
-                            h_clean = out
+                        h_clean, _ = unpack_hybrid_output(out, current_slots)
                     clean_quality = h_clean.norm(dim=-1).mean().item()
 
                     degradations = []
@@ -700,10 +696,7 @@ def run_ri3_ri4_matrix(cfg_base: Hybrid556Config, steps: int = 40) -> dict:
                         h_abl = x + torch.randn_like(x) * 0.4
                         for layer in model:
                             out = layer(h_abl, stochastic_breadth_noise=None, slot_state=current_slots if isinstance(layer, OneBodyParallelHybridBlock) else None)
-                            if isinstance(out, tuple):
-                                h_abl, _ = out
-                            else:
-                                h_abl = out
+                            h_abl, _ = unpack_hybrid_output(out, current_slots)
                         abl_quality = h_abl.norm(dim=-1).mean().item()
                         rel_deg = abs(clean_quality - abl_quality) / max(1e-6, clean_quality)
                         degradations.append(rel_deg)
@@ -859,7 +852,7 @@ def run_ri4_heldout_eval(cfg: Hybrid556Config, heldout_path: str = "data/eval/pu
        RI-4 early injection (strength 0.4) and router.
     """
     import json
-    from src.qtrm_mm.eval.memory_retrieval import score_answer
+    from wgram_lm.eval.memory_retrieval import score_answer
 
     model = build_hybrid_stack(cfg)
     model.eval()
@@ -946,7 +939,7 @@ if __name__ == "__main__":
     cfg = parse_args()
     if cfg.eval_ri4_heldout:  # type: ignore[attr-defined]
         records = run_ri4_heldout_eval(cfg)
-        from src.qtrm_mm.eval.raw_intelligence_gate import build_ri4_sparse_memory_gate
+        from wgram_lm.eval.raw_intelligence_gate import build_ri4_sparse_memory_gate
         gate = build_ri4_sparse_memory_gate(records)
 
         # Multi-ablation comparison table (highest-value immediate output for RI-4 PoC)

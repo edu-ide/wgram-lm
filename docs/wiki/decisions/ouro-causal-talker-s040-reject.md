@@ -22,8 +22,8 @@ reasoner needs a causal text renderer, not only a side auxiliary head.
 ## Implementation
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 tests/test_core_halting.py
 tests/test_training_checkpoint_init.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_causal_talker_s040.yaml

@@ -22,8 +22,8 @@ canonical prompt tokens
 Implementation:
 
 ```text
-src/qtrm_mm/config.py::QTRMConfig.answer_bottleneck_requires_core
-src/qtrm_mm/qtrm_model.py strict answer-bottleneck residual gate
+src/wgram_lm/config.py::QTRMConfig.answer_bottleneck_requires_core
+src/wgram_lm/wgram_model.py strict answer-bottleneck residual gate
 configs/qwen35_2b_4090_mandatory_core_intervention_preference_s080.yaml
 scripts/187_run_mandatory_core_intervention_preference_train.sh
 ```

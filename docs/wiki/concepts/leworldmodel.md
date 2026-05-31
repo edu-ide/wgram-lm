@@ -15,7 +15,7 @@ Core contract:
 
 QTRM implication:
 
-- `src/qtrm_mm/world_model.py` should keep LeWM-style next-latent prediction.
+- `src/wgram_lm/world_model.py` should keep LeWM-style next-latent prediction.
 - TRM-style recursive `z_H` trajectories can also be trained with the same
   LeWM objective: predict the next core state from earlier core states plus an
   action trace.
@@ -54,10 +54,10 @@ OBSERVE or RETRIEVE -> VERIFY -> ANSWER
 
 Files:
 
-- `src/qtrm_mm/qtrm_model.py`
-- `src/qtrm_mm/world_model.py`
-- `src/qtrm_mm/losses.py`
-- `src/qtrm_mm/training/train.py`
+- `src/wgram_lm/wgram_model.py`
+- `src/wgram_lm/world_model.py`
+- `src/wgram_lm/losses.py`
+- `src/wgram_lm/training/train.py`
 - `configs/qwen35_2b_4090_lewm_core_world_model_probe_s050.yaml`
 - `scripts/128_run_lewm_core_world_model_probe.sh`
 
@@ -67,6 +67,39 @@ LeWorldModel is not the whole answer to human-like intuition. It is useful for
 next-state prediction, surprise, compact planning priors, and future multimodal
 sequences, but the current QTRM result shows that self-latent prediction alone
 can be non-semantic.
+
+## 2026-05-31 Own-Latent Prediction Update
+
+arXiv:2605.27734 strengthens the methodology case for learning from a model's
+own latents rather than only from visible tokens. It does not reverse the local
+LeWM demotion by itself.
+
+Read the two facts together:
+
+```text
+2605.27734:
+  own-latent prediction can be much more sample-efficient than token-level
+  objectives for discovering hierarchical latent structure.
+
+local LeWM probes:
+  a next-latent objective can still learn non-semantic state motion unless its
+  target is on the answer-causal path and passes semantic gates.
+```
+
+Updated rule:
+
+```text
+Keep LeWM/world-model modules probe-only for canonical answer-path claims.
+Adopt same-body own-latent prediction as a required methodology candidate for
+the next BLT/IMTA revision.
+Promote it only if latent-predictor-off ablation hurts same-LM-head answers,
+not merely because latent MSE improves.
+```
+
+See:
+
+- [Own-Latent Prediction Sample Complexity](../sources/own-latent-prediction-sample-complexity.md)
+- [2026-05-31 Own-Latent Prediction Methodology SSOT](../decisions/2026-05-31-own-latent-prediction-methodology-ssot.md)
 
 Current decision:
 

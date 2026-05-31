@@ -6,7 +6,7 @@ import unittest
 
 class CriticalSynthesisDataTests(unittest.TestCase):
     def test_build_trace_rows_preserves_positive_synthesis_shape(self):
-        from qtrm_mm.training.critical_synthesis_data import build_critical_synthesis_trace_rows
+        from wgram_lm.training.critical_synthesis_data import build_critical_synthesis_trace_rows
 
         case = {
             "id": "bon-gakgyo-frame",
@@ -43,7 +43,7 @@ class CriticalSynthesisDataTests(unittest.TestCase):
         self.assertIn("자유와 자비", row["answer"])
 
     def test_write_trace_jsonl_from_probe_cases(self):
-        from qtrm_mm.training.critical_synthesis_data import write_critical_synthesis_trace_jsonl
+        from wgram_lm.training.critical_synthesis_data import write_critical_synthesis_trace_jsonl
 
         with tempfile.TemporaryDirectory() as td:
             out = Path(td) / "critical_synthesis_traces.jsonl"

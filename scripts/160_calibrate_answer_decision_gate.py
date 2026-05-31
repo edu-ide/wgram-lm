@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.eval.memory_retrieval import canonical_answer_text, score_answer
+from wgram_lm.eval.memory_retrieval import canonical_answer_text, score_answer
 
 
 UNKNOWN_COMPLETION = "Answer: UNKNOWN"

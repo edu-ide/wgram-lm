@@ -47,7 +47,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
 
     def test_default_l4_config_enables_trainable_vocab_renderer_gate(self):
         config_text = Path(self.runner.DEFAULT_CONFIG).read_text(encoding="utf-8")
-        train_text = Path("src/qtrm_mm/training/train.py").read_text(encoding="utf-8")
+        train_text = Path("src/wgram_lm/training/train.py").read_text(encoding="utf-8")
         args = self.runner.build_arg_parser().parse_args([])
         command = self.runner.train_command(args, Path("out/train"))
 
@@ -552,7 +552,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertTrue(binder_runtime["disable_core_source_position_binder"])
 
     def test_qtrm_forward_can_compute_l4_target_position_logits_only(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -596,7 +596,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertTrue(torch.equal(out["logit_token_indices"].cpu(), indices))
 
     def test_l4_vocab_renderer_can_read_direct_source_state_tokens(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(7)
         cfg = QTRMConfig(
@@ -666,7 +666,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         )
 
     def test_l4_vocab_renderer_can_use_lm_head_for_lexicalization(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=24,
@@ -711,7 +711,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         )
 
     def test_l4_vocab_renderer_can_replace_generic_qtrm_residual(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=28,
@@ -769,7 +769,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         )
 
     def test_l4_vocab_renderer_can_limit_residual_to_candidate_tokens(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=30,
@@ -814,7 +814,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual(float(logits[..., non_candidate].detach().abs().max()), 0.0)
 
     def test_l4_vocab_renderer_can_scatter_source_copy_logits_to_prompt_tokens(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=40,
@@ -871,7 +871,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         )
 
     def test_l4_source_copy_uses_slot_token_ids_not_source_class_ids(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,
@@ -925,7 +925,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual(float(logits[[15, 32]].detach().abs().max()), 0.0)
 
     def test_l4_source_copy_position_classes_are_one_based_with_zero_null(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(7)
         cfg = QTRMConfig(
@@ -973,7 +973,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertLess(float(logits[202].detach().abs()), 1e-6)
 
     def test_l4_source_copy_renderer_uses_final_recurrent_position_state(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1021,7 +1021,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual(int(selected[0, 0, 1].argmax().item()), 5)
 
     def test_l4_source_copy_selector_can_use_accepted_primitive_state(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1059,7 +1059,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertTrue(torch.equal(selected, primitive_logits[:, -1:, :, :]))
 
     def test_l4_source_copy_masks_non_answer_roles_to_null(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1102,7 +1102,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
             self.assertEqual(int(masked[0, 0, role].argmax().item()), 0)
 
     def test_l4_source_copy_cursor_bias_tracks_visible_answer_prefix(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,
@@ -1166,7 +1166,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual(float(bias[0, 0, 0].abs().item()), 0.0)
 
     def test_l4_source_copy_cursor_does_not_bias_immediately_after_copy_token(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,
@@ -1206,7 +1206,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual(float(bias.abs().sum().item()), 0.0)
 
     def test_l4_source_copy_span_cursor_continues_multi_token_source_slot(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,
@@ -1249,7 +1249,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertTrue(bool(valid[0, 0, 1]))
 
     def test_l4_source_copy_span_cursor_stops_after_complete_source_span(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,
@@ -1292,7 +1292,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertFalse(bool(valid[0, 0, 1]))
 
     def test_l4_source_copy_answer_role_cursor_starts_at_first_answer_role(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,
@@ -1337,7 +1337,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual(float(bias[0, 0, 1:].abs().sum().item()), 0.0)
 
     def test_l4_source_copy_answer_role_cursor_advances_after_separator(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,
@@ -1383,7 +1383,7 @@ class SourcePointerL4LMPathGateTest(unittest.TestCase):
         self.assertEqual(float(bias[0, 0, 0].abs().item()), 0.0)
 
     def test_l4_source_copy_answer_role_cursor_does_not_force_separator_step(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=512,

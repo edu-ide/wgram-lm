@@ -42,8 +42,8 @@ Local manifest:
 
 Implementation:
 
-- `src/qtrm_mm/distill/hf_dataset_convert.py`;
-- `src/qtrm_mm/distill/training_mix.py`;
+- `src/wgram_lm/distill/hf_dataset_convert.py`;
+- `src/wgram_lm/distill/training_mix.py`;
 - `scripts/131_convert_hf_distill_dataset.py`;
 - `scripts/132_convert_first_wave_hf_distill_smoke.sh`;
 - `scripts/133_build_hf_distill_training_mix.py`;
@@ -54,7 +54,7 @@ Implementation:
 - `tests/test_hf_distill_training_mix.py`.
 
 All converted rows use:
-`src/qtrm_mm/distill/teacher_schema.py`.
+`src/wgram_lm/distill/teacher_schema.py`.
 
 Example local smoke:
 

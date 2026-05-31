@@ -82,6 +82,7 @@ These parts are not novel by themselves:
 | Dynamic pretraining data selection | OPUS-style per-iteration data selection | Do not claim data-curriculum novelty without optimizer-aware data-selection ablations. |
 | Architecture/optimizer/memory as nested learning | Nested Learning / Hope | Do not claim self-modifying or continuum-memory learning unless implemented and ablated. |
 | End-to-end sparse long memory | MSA / Memory Sparse Attention | Do not claim long-memory reasoning unless memory routing is causally used and ablated. |
+| Own-latent prediction | data2vec / JEPA-style learn-from-your-own-latents theory | Do not claim token CE alone is the most sample-efficient way to learn the hidden grammar; also do not drop same-LM-head token speaking. |
 
 Useful sources:
 
@@ -97,8 +98,9 @@ Useful sources:
 - OPUS data selection: <https://arxiv.org/abs/2602.05400>
 - Nested Learning: <https://arxiv.org/abs/2512.24695>
 - MSA / Memory Sparse Attention: <https://arxiv.org/abs/2603.23516>
+- Learn from your own latents: <https://arxiv.org/abs/2605.27734>
 
-## How These Three Papers Are Used
+## How These Reference Threads Are Used
 
 These papers and reference systems are not all used in the same way.
 
@@ -132,6 +134,12 @@ MSA:
   the long-memory shelf.
   It gives the reader a trainable sparse route into very large memory, instead
   of stuffing everything into the prompt or relying on detached RAG.
+
+Own-latent prediction:
+  the hidden-grammar tutor.
+  It says the model should predict its own internal latent states, not only raw
+  tokens, when the goal is sample-efficient discovery of compositional
+  structure.
 ```
 
 Current IMTA usage status:
@@ -143,6 +151,7 @@ Current IMTA usage status:
 | OPUS | `scripts/614_score_opus_projected_utility.py` implements the first real scorer: proxy gradient, candidate gradient, AdamW-state preconditioning when available, CountSketch projection, redundancy-adjusted utility, and Stage95 utility-window binding. Stage95 uses static partial reading to create `last.pt`, then uses that optimizer-bearing checkpoint to select the full window when `FULL_SELECTION_MODE=utility`. | Full every-iteration online buffer selection inside the trainer. |
 | Nested Learning | Used as the architectural lens for IMTA: reader, recurrent thought, checker, curiosity brake, and memory should behave like nested learning processes with different update roles. | Hope-style self-modifying modules, continuum memory, or deep optimizer replacement. |
 | MSA | Used as the long-memory scaling reference: a future IMTA reader may receive evidence through MSA-style sparse memory routing. | Full-MSA donor healing, Memory Parallel runtime, memory-off/router-off/chunk-shuffle ablations in the IMTA path. |
+| Own-latent prediction | Adopted as the representation-learning objective that should teach BLT/IMTA hidden grammar beyond token CE. | Same-body latent predictor in the active BLT runtime; latent-predictor-off ablation; proof that latent improvement improves same-LM-head answers. |
 
 Required interpretation:
 
@@ -150,12 +159,15 @@ Required interpretation:
 We are not claiming that IMTA already implements full every-iteration OPUS or
 Hope.
 We are not claiming that current Stage101 results prove MSA.
+We are not claiming that current BLT checkpoints already implement the
+2605.27734 own-latent methodology.
 We are claiming that IMTA should be tested and extended through this stack:
   Generalization Dynamics for monitoring,
   HRM-Text DataIO for the one-body language training contract,
   OPUS-like selection for data windows,
   Nested Learning for future memory/update-frequency design,
-  MSA for future sparse long-memory routing into the reader.
+  MSA for future sparse long-memory routing into the reader,
+  own-latent prediction for sample-efficient latent grammar learning.
 ```
 
 The practical consequence:
@@ -291,7 +303,8 @@ MSA memory router:
 ```
 
 Do not describe the checker as an external oracle unless the experiment is
-explicitly diagnostic.
+explicitly historical diagnostic. Do not use forced-choice, oracle coverage,
+or candidate-rerank scores as promotion evidence.
 
 ## Required Metrics
 
@@ -302,16 +315,16 @@ K=1, K=3, K=8 trajectory scaling
 depth=1/2/4/8/16 scaling
 per-trajectory answer margin
 per-trajectory fixed-point residual or convergence residual
-selected-vs-best-oracle split
-same LM-head forced-choice accuracy
-free generation samples
-first-response-token top1/accuracy
+free-generation exact/normalized answer accuracy
+free-generation samples
 EOS/special-token rate
 repetition rate
-teacher-forced target rank/top-k
 parrot-vs-intelligence answer margin
 anchor preservation after each data window
 ```
+
+Teacher-forced first-token/rank, forced-choice, selected-vs-oracle, and pass@K
+may appear only in historical audit notes. They are not promotion metrics.
 
 For HRM-Text/DataIO-style language runs, also log:
 
@@ -497,8 +510,8 @@ This section is the guard against saying "solved" too early.
 | Prior-work overlap | partially closed | This SSOT forbids novelty claims based only on top-k, GRAM, PTRM, selector, attractor, HRM-Text DataIO, mode-hopping monitors, OPUS-like data selection, or Nested Learning names. | Paper must compare against Self-Consistency/ToT, GRAM-only, PTRM-only, HRM-Text-style one-body, single-trajectory attractor baselines, and must cite HRM-Text DataIO / Generalization Dynamics / OPUS / Nested Learning as influences rather than local inventions. |
 | Wrong-answer attractor | partly solved | Stage101B answer-attractor anchor remains accepted after W3: depth16 accuracy 1.0, mean_margin 0.8721. W3 improves evidence-brake heldout to 0.7111. | Evidence/curiosity still forms wrong basins. W4-W7 show that labels, repair words, twin prompts, and siamese scoring are not enough. W8 shows that answer permission becomes learnable before detail/conflict features are independently stable. |
 | Detached checker risk | architecturally closed, empirically open | External answer tables and oracle-only selected metrics are banned as promoted paths. | Implement checker-off and one-body-state-off ablations in IMTA-K smoke. |
-| K-scaling missing | open | Required metric is specified: K=1/3/8. | Run IMTA-K smoke and require K>1 to beat K=1 without oracle-only scoring. |
-| Free generation gap | open | Required generation telemetry is specified. | Add free generation, first-token, EOS/special-token, repetition, and target-rank logs to every promoted run. |
+| K-scaling missing | open | Required free-generation sweep is specified: K=1/3/8. | Run IMTA-K smoke and require K>1 to beat K=1 in decoded free generation. |
+| Free generation gap | open | Required generation telemetry is specified. | Add decoded free-generation samples, exact/normalized answer checks, EOS/special-token, and repetition logs to every promoted run. |
 | Toy/probe scope | open | Stage101 probes are explicitly marked local evidence, not paper-grade general LM evidence. | Extend to general language, factual evidence, multilingual, and agentic heldout suites after local gates pass. |
 | Curiosity brake instability | open | W2 fixed label skew. W3 teaches source/relevance/detail/conflict cause cards and improves heldout accuracy to 0.7111 while preserving Stage101B. W4-W7 falsified four shallow variants. W8 added latent feature heads and found the remaining weak axes: detail sufficiency and conflict decomposition. | Next fix must train paired contrastive feature differences, not independent row labels: same claim/source with only detail or conflict changed, all-depth supervision, and feature-to-permission dependency. |
 | Generalization mode-hopping | open | Required GD-style parrot-vs-intelligence margin logging is now part of the metric contract. | Run checkpoint/data-window sweeps; do not treat a single checkpoint as stable generalization proof. |
@@ -709,7 +722,7 @@ Code:
 ```text
 scripts/605_train_stage102b_provenance_graph_reasoner.py
 tests/test_stage102b_provenance_graph_reasoner_train.py
-src/qtrm_mm/models/blt_prefixlm.py external_register path
+src/wgram_lm/models/blt_prefixlm.py external_register path
 ```
 
 Plain-language read:
@@ -1438,7 +1451,7 @@ less toy-like:
 
   harder natural evidence
   learned text-to-provenance reader inside the same path
-  free generation samples and repetition/EOS/first-token telemetry
+  free generation samples and repetition/EOS telemetry
   same world_off/register_off/core_off ablations
 ```
 
@@ -1461,7 +1474,7 @@ IMTA-K smoke
 
 ## Hard Rejects
 
-**2026-05-29 Note (Ablation Discipline)**: 
+**2026-05-29 Note (Ablation Discipline)**:
 All claims related to "answer-attractor", "정답 정렬", multi-trajectory selection, or One-Body causal contribution must survive the Master Ablation Milestone Plan documented in:
 `docs/wiki/decisions/2026-05-28-ablation-study-plan-literature-extensions.md` (Ablation Milestone Plan section).
 In particular, independent "answer-attractor loss/off" and "one-body state off" ablations are mandatory before any promotion or paper claim. See Phase 2 and Phase 4 of the plan.

@@ -11,8 +11,8 @@ from typing import Any, Iterable, Sequence
 
 import torch
 
-from qtrm_mm.config import load_config
-from qtrm_mm.eval.memory_retrieval import (
+from wgram_lm.config import load_config
+from wgram_lm.eval.memory_retrieval import (
     audit_records,
     build_case_prompt_and_workspace_memory,
     case_task_family,
@@ -28,15 +28,15 @@ from qtrm_mm.eval.memory_retrieval import (
     target_retrieval_stats,
     target_retrieved,
 )
-from qtrm_mm.eval.ssot_contract import (
+from wgram_lm.eval.ssot_contract import (
     CANONICAL_ANSWER_CHANNEL,
     CANONICAL_EVIDENCE_INJECTION,
     validate_canonical_model_config as validate_canonical_model_contract,
     validate_canonical_ssot_args as validate_canonical_ssot_contract,
 )
-from qtrm_mm.history import append_jsonl, eval_record_to_history_row, resolve_history_path
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
+from wgram_lm.history import append_jsonl, eval_record_to_history_row, resolve_history_path
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
 
 
 DEFAULT_MODES = [
@@ -1750,7 +1750,7 @@ def evaluate_case(
         if evidence_mode == "memoryos":
             if not memory_index:
                 raise ValueError("--memory-index is required when --evidence-mode memoryos")
-            from qtrm_mm.memoryos.retrieve import retrieve
+            from wgram_lm.memoryos.retrieve import retrieve
 
             raw_results = retrieve(
                 memory_index,

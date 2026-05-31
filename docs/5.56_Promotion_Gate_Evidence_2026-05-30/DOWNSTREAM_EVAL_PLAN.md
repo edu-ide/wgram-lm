@@ -1,6 +1,6 @@
 # Downstream Evaluation Plan for 5.56 Curriculum Checkpoints
 
-**Date**: 2026-05-30  
+**Date**: 2026-05-30
 **Purpose**: Move from training dynamics proxies to the actual historical target metrics (state_ablation_median ~5.5x range on hard-family cases).
 
 ## The Original Target (What 5.53~5.56 Actually Meant)
@@ -48,8 +48,8 @@ This is a proxy for the historical state_ablation_median idea.
 """
 
 import torch
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 def probe_checkpoint(ckpt_path, steps=50, ablation_strength=0.5, num_trials=8):
     """
@@ -76,5 +76,5 @@ if __name__ == "__main__":
    - Full vs protection-off, etc.
 4. If any variant shows clearly superior state robustness, that becomes the candidate for Phase 2 (real hard-family eval).
 
-**Bottom line**: The training dynamics side of G-stage is now very strong.  
+**Bottom line**: The training dynamics side of G-stage is now very strong.
 The remaining gap to the original 5.5x is almost entirely in the **evaluation** layer, not the curriculum itself.

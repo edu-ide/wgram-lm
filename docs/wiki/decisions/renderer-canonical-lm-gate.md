@@ -106,7 +106,7 @@ used.
 Code/test repair:
 
 ```text
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   _mask_source_copy_position_logits_to_answer_roles now preserves roles 0..3
   for the 10-role source-copy scaffold and masks roles 4..9 to NULL.
 
@@ -319,7 +319,7 @@ configs/qwen35_2b_4090_source_copy_pointer_renderer_scaffold.yaml
 configs/qwen35_2b_4090_source_pointer_l4_lm_bridge_roles12_s080.yaml
   Preserve L3 typed core modules and enable primitive-state source-copy.
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   Adds primitive-state source-copy selection and keeps one-based NULL alignment.
 ```
 
@@ -1167,7 +1167,7 @@ Root-cause check:
 ```text
 The previous future-decoder config had
 core_role_value_state_vocab_renderer_replace_residual_enabled=true.
-In qtrm_model.py this zeroes qtrm_residual_logits immediately before adding
+In wgram_model.py this zeroes qtrm_residual_logits immediately before adding
 core_role_value_vocab_renderer_logits, so the answer_state_loop_logits computed
 earlier are overwritten in the final residual path.
 ```
@@ -2523,7 +2523,7 @@ runner/config mismatch:
 Repair:
 
 ```text
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   forward(logit_token_indices=...) computes LM logits only for supervised
   target positions during training. Autoregressive eval/generation remains on
   the normal full path.
@@ -2542,7 +2542,7 @@ configs/qwen35_2b_4090_source_pointer_l4_lm_bridge_roles12_s080.yaml
   enables core_role_value_state_vocab_renderer_*.
   default trainable policy is role_value_answer_bridge_loop_vocab_renderer_only.
 
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
   adds role_value_answer_bridge_loop_vocab_renderer_only.
 ```
 
@@ -2621,10 +2621,10 @@ Example under Qwen tokenization:
 Implementation:
 
 ```text
-src/qtrm_mm/algorithmic_value_state.py
+src/wgram_lm/algorithmic_value_state.py
   token_numeric_source_slot_token_spans(...)
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   forward(... token_numeric_source_slot_token_span_ids, mask ...)
   _compute_source_copy_span_next_token_ids(...)
   span-aware source-copy logits inside
@@ -2725,8 +2725,8 @@ QTRM state and must drop under source/primitive/renderer ablations.
 Implementation:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 configs/qwen35_2b_4090_source_copy_pointer_renderer_scaffold.yaml
 tests/test_source_pointer_l4_lm_path_gate.py
 ```
@@ -2947,7 +2947,7 @@ Implemented support:
 scripts/329_run_source_copy_rolecursor_l4_eval.py
   chunked/resumable L4 generation runner
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   source-copy answer-role cursor bias
   source-token span copy bias
 ```

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import argparse
 
-from qtrm_mm.eval.memory_retrieval import load_cases
-from qtrm_mm.training.synthetic_memory_cases import write_synthetic_memory_cases_jsonl
+from wgram_lm.eval.memory_retrieval import load_cases
+from wgram_lm.training.synthetic_memory_cases import write_synthetic_memory_cases_jsonl
 
 
 def main() -> None:

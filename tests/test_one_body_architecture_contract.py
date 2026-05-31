@@ -9,7 +9,7 @@ from pathlib import Path
 
 class OneBodyArchitectureContractTests(unittest.TestCase):
     def test_default_contract_allows_clean_one_body_run(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         args = argparse.Namespace(
             answer_readback_mode="none",
@@ -22,7 +22,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
         validate_one_body_architecture_contract(args)
 
     def test_bridge_experiment_requires_explicit_diagnostic_opt_in(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         args = argparse.Namespace(
             answer_readback_mode="anchor_embedding",
@@ -36,7 +36,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
             validate_one_body_architecture_contract(args)
 
     def test_contract_reports_enabled_bridge_fields(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import collect_bridge_contract_fields
+        from wgram_lm.architecture.one_body_contract import collect_bridge_contract_fields
 
         args = argparse.Namespace(
             answer_readback_mode="none",
@@ -50,7 +50,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
         self.assertEqual(fields.enabled_field_names(), ("cot_anchor_loss_weight", "workspace_selector_final_ce_critic_weight"))
 
     def test_short_one_body_gate_does_not_require_past_success_report(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         args = argparse.Namespace(
             answer_readback_mode="none",
@@ -69,7 +69,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
         validate_one_body_architecture_contract(args)
 
     def test_long_one_body_run_requires_past_success_report(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         args = argparse.Namespace(
             answer_readback_mode="none",
@@ -89,7 +89,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
             validate_one_body_architecture_contract(args)
 
     def test_report_that_blocks_long_run_requires_explicit_acknowledgement(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         with tempfile.TemporaryDirectory() as tmp:
             report_path = Path(tmp) / "report.json"
@@ -130,7 +130,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
             validate_one_body_architecture_contract(args)
 
     def test_restoration_gate_satisfies_report_gap_without_override(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -180,7 +180,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
             validate_one_body_architecture_contract(args)
 
     def test_invalid_restoration_gate_does_not_satisfy_report_gap(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -231,7 +231,7 @@ class OneBodyArchitectureContractTests(unittest.TestCase):
                 validate_one_body_architecture_contract(args)
 
     def test_observable_but_rejected_restoration_gate_does_not_satisfy_report_gap(self) -> None:
-        from qtrm_mm.architecture.one_body_contract import validate_one_body_architecture_contract
+        from wgram_lm.architecture.one_body_contract import validate_one_body_architecture_contract
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

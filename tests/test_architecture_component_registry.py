@@ -5,7 +5,7 @@ import unittest
 
 class ArchitectureComponentRegistryTests(unittest.TestCase):
     def test_promoted_components_are_distinct_from_diagnostic_paths(self) -> None:
-        from qtrm_mm.architecture.component_registry import (
+        from wgram_lm.architecture.component_registry import (
             ComponentStatus,
             assert_promoted_component,
             get_component_record,
@@ -21,7 +21,7 @@ class ArchitectureComponentRegistryTests(unittest.TestCase):
             assert_promoted_component("stage99_bridge_readback_selector")
 
     def test_blt_full_model_is_src_scaffold_not_best_module(self) -> None:
-        from qtrm_mm.architecture.component_registry import (
+        from wgram_lm.architecture.component_registry import (
             ComponentStatus,
             assert_promoted_component,
             get_component_record,
@@ -30,13 +30,13 @@ class ArchitectureComponentRegistryTests(unittest.TestCase):
         record = get_component_record("bltd_byte_latent_prefixlm")
 
         self.assertEqual(record.status, ComponentStatus.SCAFFOLD)
-        self.assertIn("src/qtrm_mm/models/blt_prefixlm.py", record.locations)
+        self.assertIn("src/wgram_lm/models/blt_prefixlm.py", record.locations)
         self.assertIn("remains scaffold", record.note)
         with self.assertRaisesRegex(ValueError, "not promoted"):
             assert_promoted_component("bltd_byte_latent_prefixlm")
 
     def test_stage102_promotes_only_full_answer_path(self) -> None:
-        from qtrm_mm.architecture.component_registry import (
+        from wgram_lm.architecture.component_registry import (
             ComponentStatus,
             assert_promoted_final_answer_path,
             assert_promoted_component,

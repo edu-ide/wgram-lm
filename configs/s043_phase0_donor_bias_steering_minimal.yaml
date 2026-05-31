@@ -1,0 +1,48 @@
+# S043 Phase 0 Minimal Training Config
+# Purpose: Train ONLY the tiny residual steering bias on top of a donor-preserving checkpoint,
+# while applying strong donor-correct preservation.
+#
+# WARNING (strict S043 precaution):
+# - This is for early signal only. Do NOT scale this up without strong evidence
+#   that fluency (donor-correct quality + low repetition) is preserved.
+# - Always run full donor-only baseline before/after.
+# - Use very small learning rate and short steps for Phase 0.
+
+model:
+  vocab_size: 248320
+  donor_residual_steering_bias_enabled: true
+  donor_residual_steering_bias_init_scale: 0.01
+
+  # Keep the adaptive gate from S042
+  donor_qtrm_conflict_gate_enabled: true
+  donor_qtrm_conflict_gate_mode: "adaptive_margin"
+  donor_qtrm_conflict_qtrm_scale: 0.25
+  donor_qtrm_conflict_qtrm_boost_scale: 1.0
+  donor_qtrm_conflict_margin_threshold: 0.0
+
+train:
+  steps: 60                     # Very short for first Phase 0 smoke
+  lr: 0.0001                    # Small LR for the tiny bias (decimal to avoid parsing issues)
+  batch_size: 2
+  seq_len: 512
+  out_dir: runs/s043_phase0_first_real_smoke   # explicit for this run
+
+  # S043 Phase 0 explicit preservation (strongly recommended when bias is on)
+  loss_donor_correct_preservation_weight: 0.8   # primary preservation knob
+  loss_donor_correct_margin_weight: 0.3
+  donor_correct_margin: 0.15
+
+  loss_first_token_margin_weight: 0.4   # Phase 0 first-token focus
+
+  trainable_param_policy: "all"   # With the Phase 0 logic, only the bias will actually be new
+
+  # Standard LM loss still on (but preservation will protect donor-correct cases)
+  loss_lm_weight: 1.0
+
+donor:
+  model_id: "Qwen/Qwen3.5-2B-Base"
+  load_in_4bit: true
+  freeze_donor: true
+  train_lora: false   # Start with zero donor adapter for purest Phase 0 test
+
+# You would load from a previous S040/S042-style checkpoint via the training script's --checkpoint or init logic.

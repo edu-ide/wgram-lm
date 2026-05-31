@@ -22,7 +22,7 @@ from typing import Any, Iterable
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.qwen_backbone_qtrm import QwenBackboneQTRM
+from wgram_lm.qwen_backbone_wgram import QwenBackboneQTRM
 
 
 OPTION_LETTERS = "ABCDEFGHIJ"

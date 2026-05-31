@@ -36,7 +36,7 @@ run_gate() {
   echo "=== ${name} ==="
   echo "steps=${steps} h=${h_cycles} l=${l_cycles} approx_core_transitions=${approx_core_transitions}"
   set +e
-  .venv/bin/python scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+  .venv/bin/python scripts/362_train_qwen_backbone_wgram_core_gate.py \
     --model-id "$MODEL_ID" \
     --out-dir "$out_dir" \
     --device "$DEVICE" \
@@ -70,7 +70,7 @@ run_gate() {
 # h=3,l=6 -> 21 Qwen-layer transition calls per optimizer step.
 # 210*2 and 20*21 both equal 420 approximate core transition calls.
 run_gate \
-  "qwen_backbone_qtrm_qwen_transition_gateopen_nonnested_compare" \
+  "qwen_backbone_wgram_qwen_transition_gateopen_nonnested_compare" \
   "${NONNESTED_STEPS:-210}" \
   1 \
   1 \
@@ -79,7 +79,7 @@ run_gate \
   "${MIN_FAMILY_ACC:-0.0}"
 
 run_gate \
-  "qwen_backbone_qtrm_qwen_transition_gateopen_nested_h3_l6_compare" \
+  "qwen_backbone_wgram_qwen_transition_gateopen_nested_h3_l6_compare" \
   "${NESTED_STEPS:-20}" \
   3 \
   6 \
@@ -91,7 +91,7 @@ run_gate \
 import json
 from pathlib import Path
 
-paths = sorted(Path("local_eval").glob("qwen_backbone_qtrm_qwen_transition_gateopen_*_compare_seed*_s*_t*_20260515/report.json"))
+paths = sorted(Path("local_eval").glob("qwen_backbone_wgram_qwen_transition_gateopen_*_compare_seed*_s*_t*_20260515/report.json"))
 rows = []
 for path in paths:
     report = json.loads(path.read_text())

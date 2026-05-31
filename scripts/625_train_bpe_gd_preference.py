@@ -540,7 +540,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                 task_str = str(batch.get("tasks", [""])[0]) if isinstance(batch.get("tasks"), (list, tuple)) else ""
                 if "algebra" in task_str.lower():
                     try:
-                        from src.qtrm_mm.losses.equation_state_binding import (
+                        from wgram_lm.losses.equation_state_binding import (
                             compute_equation_state_binding_loss,
                             EquationStateBindingConfig,
                             extract_equation_fields_from_algebra_row,

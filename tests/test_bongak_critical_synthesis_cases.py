@@ -6,7 +6,7 @@ import unittest
 
 class BongakCriticalSynthesisCaseTests(unittest.TestCase):
     def test_build_bongak_cases_from_local_docs_preserves_positive_synthesis(self):
-        from qtrm_mm.training.bongak_critical_synthesis_cases import (
+        from wgram_lm.training.bongak_critical_synthesis_cases import (
             build_bongak_critical_synthesis_cases,
         )
 
@@ -47,7 +47,7 @@ class BongakCriticalSynthesisCaseTests(unittest.TestCase):
             self.assertNotIn("모두 가짜", case["positive_conclusion"])
 
     def test_write_bongak_cases_jsonl_and_optional_traces(self):
-        from qtrm_mm.training.bongak_critical_synthesis_cases import write_bongak_cases_jsonl
+        from wgram_lm.training.bongak_critical_synthesis_cases import write_bongak_cases_jsonl
 
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -78,7 +78,7 @@ class BongakCriticalSynthesisCaseTests(unittest.TestCase):
         self.assertTrue(all("Positive conclusion:" in row["answer"] for row in traces))
 
     def test_build_cases_filters_scraped_chat_noise_from_evidence(self):
-        from qtrm_mm.training.bongak_critical_synthesis_cases import (
+        from wgram_lm.training.bongak_critical_synthesis_cases import (
             build_bongak_critical_synthesis_cases,
         )
 

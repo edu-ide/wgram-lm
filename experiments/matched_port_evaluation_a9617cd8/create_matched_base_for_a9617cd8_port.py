@@ -4,7 +4,7 @@ Minimal Base Checkpoint Creator for Matched Condition Experiments
 
 Purpose:
 Create a very short, controlled "base" checkpoint using the current
-ported QTRMRecursiveCore (a9617cd8 FULL PORT: stochastic breadth + 
+ported QTRMRecursiveCore (a9617cd8 FULL PORT: stochastic breadth +
 gated equation_binding readback).
 
 This base can later be used for true conditions-matched continuation
@@ -24,8 +24,8 @@ from pathlib import Path
 
 import torch
 
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 
 def main():

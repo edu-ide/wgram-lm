@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from qtrm_mm.qwen35_full_msa_healing import run_tiny_healing_smoke
+from wgram_lm.qwen35_full_msa_healing import run_tiny_healing_smoke
 
 
 def parse_args() -> argparse.Namespace:

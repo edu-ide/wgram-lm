@@ -4,7 +4,7 @@ train_556_rehearsal_smoke_real.py
 
 Minimal but realistic trainer-style loop demonstrating the full integration:
 
-QTRMRecursiveCore + AdaptiveRehearsal.full_curriculum_rehearsal_step 
+QTRMRecursiveCore + AdaptiveRehearsal.full_curriculum_rehearsal_step
 + Stochastic Breadth (Reverse I→G→A)
 
 This is the direct next step after:
@@ -24,9 +24,9 @@ import torch
 from dataclasses import dataclass
 
 # Real imports
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
-from src.qtrm_mm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
+from wgram_lm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
 
 
 @dataclass

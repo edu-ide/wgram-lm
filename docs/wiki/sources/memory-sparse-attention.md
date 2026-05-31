@@ -56,7 +56,7 @@ Decision page:
 
 Implemented scaffold:
 
-- `src/qtrm_mm/msa_qwen35.py`
+- `src/wgram_lm/msa_qwen35.py`
 - `scripts/129_prepare_qwen35_full_msa_fork.py`
 - `tests/test_qwen35_full_msa_fork.py`
 

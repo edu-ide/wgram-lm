@@ -21,7 +21,7 @@ uv run python scripts/162_build_answer_decision_training_mix.py \
   --record-mode qtrm_residual_with_evidence
 
 echo "=== Training QTRM in-model answer-decision head ==="
-uv run python -m qtrm_mm.training.train \
+uv run python -m wgram_lm.training.train \
   --config "$CONFIG" \
   --use-donor \
   --data-jsonl "$TRAIN_MIX" \

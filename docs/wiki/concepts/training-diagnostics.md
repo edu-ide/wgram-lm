@@ -597,7 +597,7 @@ DGX Stage92 913M continuation:
   HRM-Text-like optimizer rhythm, batch8, and `train_think_steps=2`.
 - Start:
   resumed from
-  `/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE91_DGX913M_BS8_GALORE_NOAIM_500K/last.pt`
+  `/mnt/data4tb/wgram-lm/local_eval/20260523_STAGE91_DGX913M_BS8_GALORE_NOAIM_500K/last.pt`
   at `step=8000`, `target_tokens_seen=601806`.
 - Observed continuation:
   step9000 `eval_loss=0.7973`,
@@ -633,7 +633,7 @@ DGX Stage92 913M continuation:
   with all nonfinite/fallback/unresolved counters still `0`.
 - Direct-answer generation gate at step12000:
   report
-  `/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/gates/direct_generation_gate_step12000_512_64.json`.
+  `/mnt/data4tb/wgram-lm/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/gates/direct_generation_gate_step12000_512_64.json`.
   The gate filters `epoch_1` to `condition=direct`, keeping `13664` of
   `14981` valid rows. It reached first-response-token accuracy `95.3%` on
   512 rows, first-token gold probability `0.933`, and greedy free-generation
@@ -646,7 +646,7 @@ DGX Stage92 913M continuation:
   올라왔다.
 - Direct-answer generation gate at step14000:
   report
-  `/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/gates/direct_generation_gate_next_model_512_512.json`.
+  `/mnt/data4tb/wgram-lm/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/gates/direct_generation_gate_next_model_512_512.json`.
   The gate uses the same `epoch_1`, `condition=direct` slice and expands free
   generation from 64 rows to 512 rows. It reached first-response-token accuracy
   `95.3%` on 512 rows, first-token gold probability `0.932`, greedy
@@ -1168,7 +1168,7 @@ risk_1150m   1.150B  floor=10.17GB  yellow_requires_small_microbatch
 - Current DGX Stage92 is not data-rich pretraining yet. The sampled PrefixLM
   shard actually fed to the run is:
   - path:
-    `/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/stage67_local_sampled_prefixlm/sampled`
+    `/mnt/data4tb/wgram-lm/local_eval/stage67_local_sampled_prefixlm/sampled`
   - disk size: about `15MB`
   - `tokens.npy`: `3,495,331` tokens
   - per epoch: `22,461` instruction/response rows, about `1,711,795`
@@ -1214,7 +1214,7 @@ risk_1150m   1.150B  floor=10.17GB  yellow_requires_small_microbatch
 - Stage93 is continued learning, not a reset. The larger dataset changes the
   textbook, not the student.
 - Default resume checkpoint:
-  `/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/last_model.pt`
+  `/mnt/data4tb/wgram-lm/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/last_model.pt`
 - Why model-only by default:
   Stage92 trained on a tiny `15MB / 3.5M token` shard. Stage93 moves to a much
   larger HRM-Text Data-IO shard. Keeping the model weights preserves learned

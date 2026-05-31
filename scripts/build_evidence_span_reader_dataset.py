@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.data.jsonl_dataset import split_memory_prompt_for_workspace
+from wgram_lm.data.jsonl_dataset import split_memory_prompt_for_workspace
 
 
 def clean_answer_text(text: str) -> str:

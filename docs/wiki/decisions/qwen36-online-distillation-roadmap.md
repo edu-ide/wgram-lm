@@ -193,13 +193,13 @@ path does not reliably use it.
 - [x] SimPO-style preference loss exists.
 - [x] Workspace/counterfactual evidence losses exist.
 - [x] Create Qwen3.6 teacher record schema:
-  `src/qtrm_mm/distill/teacher_schema.py`.
+  `src/wgram_lm/distill/teacher_schema.py`.
 - [x] Add OpenAI-compatible teacher prompt/response parser:
-  `src/qtrm_mm/distill/qwen36_teacher_client.py`.
+  `src/wgram_lm/distill/qwen36_teacher_client.py`.
 - [x] Add HF public dataset intake manifest:
   `configs/hf_distill_datasets.yaml`.
 - [x] Add HF dataset converters:
-  `src/qtrm_mm/distill/hf_dataset_convert.py` and
+  `src/wgram_lm/distill/hf_dataset_convert.py` and
   `scripts/131_convert_hf_distill_dataset.py`.
 - [ ] Build verifier-gated offline/online teacher data generator CLI.
 - [ ] Generate a 100-case verified smoke dataset:
@@ -289,9 +289,9 @@ MSA donor + QTRM
 1. Stabilize custom MSA checkpoint save/load. **Done for tiny custom
    checkpoint roundtrip.**
 2. Define Qwen3.6 teacher data schema. **Done in
-   `src/qtrm_mm/distill/teacher_schema.py`.**
+   `src/wgram_lm/distill/teacher_schema.py`.**
 3. Add teacher prompt/response parser. **Done in
-   `src/qtrm_mm/distill/qwen36_teacher_client.py`.**
+   `src/wgram_lm/distill/qwen36_teacher_client.py`.**
 4. Convert first-wave HF datasets into teacher-record smoke files.
 5. Configure DGX teacher environment under `/mnt/data4tb`.
 6. Generate small GPT-5.5 xhigh gold fills only for missing domains.

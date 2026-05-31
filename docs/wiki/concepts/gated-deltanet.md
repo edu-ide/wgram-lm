@@ -15,7 +15,7 @@ Core contract:
 
 QTRM implication:
 
-- `src/qtrm_mm/mixers.py::TorchGatedDeltaMixer` is not official Gated DeltaNet.
+- `src/wgram_lm/mixers.py::TorchGatedDeltaMixer` is not official Gated DeltaNet.
 - Production path should prefer FLA `GatedDeltaNet` or a faithful adapter to the
   NVLabs/FLA interface.
 - `official_gated_delta2` must not fall back to `TorchGatedDeltaMixer`.

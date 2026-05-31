@@ -20,8 +20,8 @@ from torch.optim import AdamW
 sys.path.insert(0, os.path.abspath('.'))
 
 from scripts.train_hybrid_ri4_real_continuation_minimal import build_hybrid_stack, ContinuationConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
-from src.qtrm_mm.attractor.attractor_solver import AttractorSolverModule
+from wgram_lm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.attractor.attractor_solver import AttractorSolverModule
 
 
 def load_real_reasoning_cases(jsonl_path="data/filtered/verified_reasoning_train256.jsonl"):
@@ -154,7 +154,7 @@ def main():
             for layer_idx, layer in enumerate(model[:eff_depth]):
                 if isinstance(layer, OneBodyParallelHybridBlock):
                     layer.set_long_horizon_light_recurrence(True)
-                
+
                 out = layer(x)
                 x = out[0] if isinstance(out, tuple) else out
                 layer_outputs.append(x)

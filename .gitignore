@@ -19,6 +19,11 @@ wandb/
 runs/
 local_eval/
 checkpoints/
+logs/
+nohup.out
+*.log
+evaluation_report_*.jsonl
+reports/**/*.jsonl
 *.pt
 *.pth
 *.ckpt
@@ -48,6 +53,7 @@ Thumbs.db
 
 # Personal scratch space and temporary notes
 scratch/
+bfg.jar
 
 # Local tool / CLI state (Gemini, antigravity, etc.)
 .antigravitycli/

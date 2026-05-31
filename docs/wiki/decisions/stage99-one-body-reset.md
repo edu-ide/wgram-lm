@@ -60,7 +60,7 @@ Allowed uses:
 
 Implementation guard:
 
-`src/qtrm_mm/architecture/one_body_contract.py` is the code SSOT for blocking
+`src/wgram_lm/architecture/one_body_contract.py` is the code SSOT for blocking
 Stage99-style answer-readback/anchor/selector losses by default. Trainer
 scripts should import this guard rather than reimplementing bridge checks.
 `scripts/557_train_blt_d_prefixlm_dataio.py` now delegates

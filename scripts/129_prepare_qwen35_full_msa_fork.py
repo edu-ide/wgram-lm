@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from qtrm_mm.msa_qwen35 import (
+from wgram_lm.msa_qwen35 import (
     build_qwen35_full_msa_fork,
     load_json,
     write_fork_artifacts,

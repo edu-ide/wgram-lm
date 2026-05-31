@@ -23,13 +23,13 @@ Usage (RTX 4090 recommended):
 import argparse
 import torch
 from pathlib import Path
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.core import QTRMRecursiveCore
+from wgram_lm.config import QTRMConfig
+from wgram_lm.core import QTRMRecursiveCore
 
 # Binding loss
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-LOSS_FILE = ROOT / "src" / "qtrm_mm" / "losses" / "equation_state_binding.py"
+LOSS_FILE = ROOT / "src" / "wgram_lm" / "losses" / "equation_state_binding.py"
 _loss_globals = {"__name__": "equation_state_binding"}
 with open(LOSS_FILE, "r", encoding="utf-8") as f:
     exec(compile(f.read(), str(LOSS_FILE), "exec"), _loss_globals)

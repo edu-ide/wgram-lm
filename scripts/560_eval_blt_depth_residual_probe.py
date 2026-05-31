@@ -22,7 +22,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from qtrm_mm.models.blt_prefixlm import BLTDByteLatentPrefixLM
+from wgram_lm.models.blt_prefixlm import BLTDByteLatentPrefixLM
 
 IGNORE_LABEL_ID = -100
 
@@ -209,9 +209,15 @@ def is_allowed_missing_checkpoint_key(key: str) -> bool:
         "hierarchical_chunk_gate.",
         "answer_anchor_head.",
         "answer_workspace_selector.",
+        "hnet_latent_bridge.",
+        "hnet_causal_speaker.",
+        "imta_",
+        "own_latent_predictor.",
     )
     allowed_missing_exact = {
         "answer_readback_gate_logit",
+        "hnet_byte_residual_gate_logit",
+        "hnet_latent_residual_gate_logit",
     }
     return str(key) in allowed_missing_exact or any(
         str(key).startswith(prefix) for prefix in allowed_missing_prefixes
@@ -262,8 +268,22 @@ def load_checkpoint_model(
         hbf_boundary_threshold=float(args.hbf_boundary_threshold),
         nitp_enabled=float(args.nitp_loss_weight) > 0.0,
         nitp_hidden_dim=int(args.nitp_hidden_dim),
+        answer_readback_mode=str(args.answer_readback_mode),
+        answer_readback_gate_init=float(args.answer_readback_gate_init),
+        answer_readback_temperature=float(args.answer_readback_temperature),
+        hnet_one_body_byte_gate_init=float(args.hnet_one_body_byte_gate_init),
+        hnet_one_body_latent_gate_init=float(args.hnet_one_body_latent_gate_init),
+        imta_trajectories=int(args.imta_trajectories),
+        imta_noise_std=float(args.imta_noise_std),
+        imta_selector_temperature=float(args.imta_selector_temperature),
+        imta_adapter_gate_init=float(args.imta_adapter_gate_init),
+        own_latent_prediction_enabled=bool(args.own_latent_prediction_enabled),
     ).to(device)
-    incompatible = model.load_state_dict(payload["model_state_dict"], strict=False)
+    adapted_state_dict, key_adaptations = trainer.adapt_resume_state_dict_for_current_model(
+        payload["model_state_dict"],
+        model.state_dict(),
+    )
+    incompatible = model.load_state_dict(adapted_state_dict, strict=False)
     missing = list(getattr(incompatible, "missing_keys", []))
     unexpected = list(getattr(incompatible, "unexpected_keys", []))
     disallowed_missing = [key for key in missing if not is_allowed_missing_checkpoint_key(str(key))]
@@ -273,7 +293,12 @@ def load_checkpoint_model(
             f"missing={disallowed_missing} unexpected={unexpected}"
         )
     model.eval()
-    return trainer, prefix, args, {"model": model, "model_summary": model_summary, "dataset_summary": dataset_summary}
+    return trainer, prefix, args, {
+        "model": model,
+        "model_summary": model_summary,
+        "dataset_summary": dataset_summary,
+        "checkpoint_key_adaptations": key_adaptations,
+    }
 
 
 def run_probe(args: argparse.Namespace) -> dict[str, Any]:
@@ -349,6 +374,7 @@ def run_probe(args: argparse.Namespace) -> dict[str, Any]:
     report["rows"] = rows
     report["sampled_data"] = str(args.sampled_data)
     report["depths"] = [int(value) for value in args.depths]
+    report["checkpoint_key_adaptations"] = loaded.get("checkpoint_key_adaptations", {})
     if str(args.out):
         out_path = Path(args.out)
         out_path.parent.mkdir(parents=True, exist_ok=True)

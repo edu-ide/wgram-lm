@@ -1,6 +1,6 @@
 import torch
 
-from qtrm_mm.eval.state_text_speaker import (
+from wgram_lm.eval.state_text_speaker import (
     IGNORE_INDEX,
     DirectVocabLogitHead,
     LowRankVocabLogitAdapter,

@@ -5,7 +5,7 @@ import torch
 
 class JepaWorldModelTests(unittest.TestCase):
     def test_world_model_builds_next_latent_targets_and_transition_mask(self):
-        from qtrm_mm.world_model import JepaWorldModelHead
+        from wgram_lm.world_model import JepaWorldModelHead
 
         head = JepaWorldModelHead(
             d_model=16,
@@ -41,8 +41,8 @@ class JepaWorldModelTests(unittest.TestCase):
         )
 
     def test_world_model_loss_backprops_through_future_target_for_end_to_end_lewm(self):
-        from qtrm_mm.losses import jepa_world_model_loss
-        from qtrm_mm.world_model import JepaWorldModelHead
+        from wgram_lm.losses import jepa_world_model_loss
+        from wgram_lm.world_model import JepaWorldModelHead
 
         torch.manual_seed(0)
         head = JepaWorldModelHead(
@@ -63,8 +63,8 @@ class JepaWorldModelTests(unittest.TestCase):
         self.assertGreater(float(latents.grad[:, -1].abs().sum()), 0.0)
 
     def test_world_model_loss_accepts_sigreg_regularizer(self):
-        from qtrm_mm.losses import jepa_world_model_loss
-        from qtrm_mm.world_model import SIGReg
+        from wgram_lm.losses import jepa_world_model_loss
+        from wgram_lm.world_model import SIGReg
 
         pred = torch.randn(2, 3, 8, requires_grad=True)
         target = torch.randn(2, 3, 8, requires_grad=True)
@@ -89,7 +89,7 @@ class JepaWorldModelTests(unittest.TestCase):
         self.assertGreater(float(latents.grad.abs().sum()), 0.0)
 
     def test_qtrm_forward_exposes_sequence_jepa_world_model_outputs(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=128,
@@ -137,7 +137,7 @@ class JepaWorldModelTests(unittest.TestCase):
         )
 
     def test_qtrm_forward_exposes_core_world_model_outputs_when_enabled(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=128,
@@ -175,7 +175,7 @@ class JepaWorldModelTests(unittest.TestCase):
         self.assertTrue(out["core_world_model_target"].requires_grad)
 
     def test_core_world_model_supports_dynamic_outer_steps_up_to_conditioning_limit(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=128,

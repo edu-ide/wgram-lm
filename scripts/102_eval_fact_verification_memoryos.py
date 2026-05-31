@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from qtrm_mm.eval.fact_verification import evaluate_fact_case, load_fact_cases, summarize_fact_records
+from wgram_lm.eval.fact_verification import evaluate_fact_case, load_fact_cases, summarize_fact_records
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

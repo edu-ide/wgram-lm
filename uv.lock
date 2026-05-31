@@ -3,6 +3,6 @@ revision = 3
 requires-python = ">=3.10"
 
 [[package]]
-name = "qtrm-multimodal-memoryos"
+name = "wgram-lm"
 version = "0.1.0"
 source = { virtual = "." }

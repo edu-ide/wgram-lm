@@ -36,7 +36,7 @@ echo "Config: $CONFIG"
 if [[ ${#DATA_ARGS[@]} -gt 0 ]]; then
   echo "Data: ${DATA_FILES[*]}"
 fi
-python -m qtrm_mm.training.train \
+python -m wgram_lm.training.train \
   --config "$CONFIG" \
   "${MULTIMODAL_ARGS[@]}" \
   --use-donor \

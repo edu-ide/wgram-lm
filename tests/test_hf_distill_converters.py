@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from qtrm_mm.distill.hf_dataset_convert import convert_hf_row
+from wgram_lm.distill.hf_dataset_convert import convert_hf_row
 
 
 def test_yana_reasoning_dpo_converter_extracts_chosen_rejected() -> None:

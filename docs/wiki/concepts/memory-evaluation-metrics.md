@@ -21,7 +21,7 @@ but it can hide important failures:
 
 Code:
 
-- `src/qtrm_mm/eval/memory_retrieval.py`
+- `src/wgram_lm/eval/memory_retrieval.py`
 - `scripts/95_eval_memory_retrieval.py`
 - `scripts/116_rescore_memory_eval.py`
 

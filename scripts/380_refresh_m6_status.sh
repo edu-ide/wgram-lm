@@ -9,8 +9,8 @@ STATUS_JSON="${STATUS_JSON:-local_eval/qtrm_native_27b_milestone_status/report.j
 STATUS_MD="${STATUS_MD:-local_eval/qtrm_native_27b_milestone_status/report.md}"
 PYTHON_BIN="${PYTHON_BIN:-.venv/bin/python}"
 
-BRIDGE_REPORT="${BRIDGE_REPORT:-local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_adapteronly_stepcond_ad128_s400_checksum_repair_from_select_20260515/report.json}"
-BRIDGE_STABILITY_REPORT="${BRIDGE_STABILITY_REPORT:-local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_adapteronly_stepcond_ad128_checksum_repair_stability_20260515/report.json}"
+BRIDGE_REPORT="${BRIDGE_REPORT:-local_eval/qwen_backbone_wgram_qwen_transition_hardv1_adapteronly_stepcond_ad128_s400_checksum_repair_from_select_20260515/report.json}"
+BRIDGE_STABILITY_REPORT="${BRIDGE_STABILITY_REPORT:-local_eval/qwen_backbone_wgram_qwen_transition_hardv1_adapteronly_stepcond_ad128_checksum_repair_stability_20260515/report.json}"
 NATIVE_REPORT="${NATIVE_REPORT:-local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_repairv3_s4000_20260515/report.json}"
 NATIVE_CORE_REPORT="${NATIVE_CORE_REPORT:-local_eval/qtrm_native_language_bootstrap_bilingual_bpe16k_d192_repairv3_core_ablation_20260515/report.json}"
 EVAL_MANIFEST="${EVAL_MANIFEST:-local_eval/qwen36_public_target_manifest/report.json}"

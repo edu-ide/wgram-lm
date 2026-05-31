@@ -47,7 +47,7 @@ Manual verification:
 
 ```text
 .venv/bin/python -m py_compile scripts/511_train_qwen_state_transition_hrmtext.py
-.venv/bin/python -m py_compile src/qtrm_mm/qwen_backbone_state_transition.py
+.venv/bin/python -m py_compile src/wgram_lm/qwen_backbone_state_transition.py
 manual test function calls: pass
 ```
 
@@ -1143,10 +1143,10 @@ Added a selectable core path:
 Implementation path:
 
 ```text
-src/qtrm_mm/state_transition_core.py
+src/wgram_lm/state_transition_core.py
   HybridStateTransitionCore
 
-src/qtrm_mm/mixers.py
+src/wgram_lm/mixers.py
   FLADeltaMixer
   TorchGatedDeltaMixer fallback
 ```
@@ -3006,7 +3006,7 @@ monitor_experiment=hrm_text_dataset_monitor
 DGX training blocker:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos/.venv has no torch.
+/mnt/data4tb/wgram-lm/.venv has no torch.
 /mnt/data4tb/ws_llm/.venv has torch 2.9.1+cu130 and CUDA is visible, but
 NVIDIA GB10 reports compute capability 12.1 while this PyTorch build warns that
 it supports up to 12.0. Previous QTRM training failed around Triton/FLA ptxas
@@ -3736,7 +3736,7 @@ Implementation:
 
 ```text
 files:
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/qwen_backbone_state_transition.py
   scripts/511_train_qwen_state_transition_hrmtext.py
   scripts/512_eval_qwen_state_transition_generalization.py
   tests/test_qwen_state_transition_workspace_pooling.py
@@ -3758,7 +3758,7 @@ Verification:
 
 ```text
 local:
-  PYTHONPATH=src .venv/bin/python -m py_compile src/qtrm_mm/qwen_backbone_state_transition.py scripts/511_train_qwen_state_transition_hrmtext.py scripts/512_eval_qwen_state_transition_generalization.py
+  PYTHONPATH=src .venv/bin/python -m py_compile src/wgram_lm/qwen_backbone_state_transition.py scripts/511_train_qwen_state_transition_hrmtext.py scripts/512_eval_qwen_state_transition_generalization.py
   PYTHONPATH=src .venv/bin/python tests/test_qwen_state_transition_workspace_pooling.py
   PYTHONPATH=src .venv/bin/python tests/test_hrm_text_aligned_training_data.py
 
@@ -3948,7 +3948,7 @@ Verification:
 
 ```text
 local:
-  PYTHONPATH=src .venv/bin/python -m py_compile scripts/511_train_qwen_state_transition_hrmtext.py src/qtrm_mm/qwen_backbone_state_transition.py scripts/512_eval_qwen_state_transition_generalization.py
+  PYTHONPATH=src .venv/bin/python -m py_compile scripts/511_train_qwen_state_transition_hrmtext.py src/wgram_lm/qwen_backbone_state_transition.py scripts/512_eval_qwen_state_transition_generalization.py
   PYTHONPATH=src .venv/bin/python tests/test_hrm_text_aligned_training_data.py
   PYTHONPATH=src .venv/bin/python tests/test_qwen_state_transition_workspace_pooling.py
 
@@ -4217,8 +4217,8 @@ Implementation:
 
 ```text
 files:
-  src/qtrm_mm/state_transition_core.py
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/state_transition_core.py
+  src/wgram_lm/qwen_backbone_state_transition.py
   scripts/511_train_qwen_state_transition_hrmtext.py
   scripts/512_eval_qwen_state_transition_generalization.py
   tests/test_qwen_state_transition_workspace_pooling.py
@@ -4252,8 +4252,8 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/state_transition_core.py \
-  src/qtrm_mm/qwen_backbone_state_transition.py \
+  src/wgram_lm/state_transition_core.py \
+  src/wgram_lm/qwen_backbone_state_transition.py \
   scripts/511_train_qwen_state_transition_hrmtext.py \
   scripts/512_eval_qwen_state_transition_generalization.py
 
@@ -4291,8 +4291,8 @@ Implementation:
 
 ```text
 files:
-  src/qtrm_mm/state_transition_core.py
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/state_transition_core.py
+  src/wgram_lm/qwen_backbone_state_transition.py
   scripts/511_train_qwen_state_transition_hrmtext.py
   scripts/512_eval_qwen_state_transition_generalization.py
   tests/test_qwen_state_transition_workspace_pooling.py
@@ -4326,8 +4326,8 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/state_transition_core.py \
-  src/qtrm_mm/qwen_backbone_state_transition.py \
+  src/wgram_lm/state_transition_core.py \
+  src/wgram_lm/qwen_backbone_state_transition.py \
   scripts/511_train_qwen_state_transition_hrmtext.py \
   scripts/512_eval_qwen_state_transition_generalization.py
 
@@ -4363,7 +4363,7 @@ Implementation:
 
 ```text
 files:
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/qwen_backbone_state_transition.py
   scripts/511_train_qwen_state_transition_hrmtext.py
   scripts/512_eval_qwen_state_transition_generalization.py
   tests/test_qwen_state_transition_workspace_pooling.py
@@ -4402,8 +4402,8 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/state_transition_core.py \
-  src/qtrm_mm/qwen_backbone_state_transition.py \
+  src/wgram_lm/state_transition_core.py \
+  src/wgram_lm/qwen_backbone_state_transition.py \
   scripts/511_train_qwen_state_transition_hrmtext.py \
   scripts/512_eval_qwen_state_transition_generalization.py
 
@@ -4458,7 +4458,7 @@ Implemented source builder:
 
 ```text
 files:
-  src/qtrm_mm/data/hrm_text_source_mix.py
+  src/wgram_lm/data/hrm_text_source_mix.py
   scripts/521_build_hrmtext_source_mix.py
   tests/test_hrm_text_source_mix.py
 
@@ -4853,8 +4853,8 @@ literature motivation:
   between recurrent passes, and train/inference solve-loop alignment.
 
 code change:
-  src/qtrm_mm/state_transition_core.py
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/state_transition_core.py
+  src/wgram_lm/qwen_backbone_state_transition.py
   scripts/511_train_qwen_state_transition_hrmtext.py
 
 Stage25A/B mechanism:
@@ -4996,8 +4996,8 @@ Stage27B DGX CS-CLS:
   decision=rejected; DGX scale did not rescue the CS-CLS-only direction.
 
 Stage28 code change:
-  src/qtrm_mm/qwen_backbone_state_transition.py
-  src/qtrm_mm/state_transition_core.py
+  src/wgram_lm/qwen_backbone_state_transition.py
+  src/wgram_lm/state_transition_core.py
   scripts/511_train_qwen_state_transition_hrmtext.py
   tests/test_qwen_state_transition_workspace_pooling.py
   tests/test_state_transition_core_stabilization.py
@@ -5216,7 +5216,7 @@ Verification:
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
   scripts/511_train_qwen_state_transition_hrmtext.py \
-  src/qtrm_mm/data/hrm_text_source_mix.py \
+  src/wgram_lm/data/hrm_text_source_mix.py \
   scripts/521_build_hrmtext_source_mix.py
 
 PYTHONPATH=src .venv/bin/python tests/test_hrm_text_source_mix.py
@@ -5224,7 +5224,7 @@ PYTHONPATH=src .venv/bin/python tests/test_hrm_text_aligned_training_data.py
 PYTHONPATH=src .venv/bin/python tests/test_verified_reasoning_datasets.py
 PYTHONPATH=src .venv/bin/python tests/test_qwen_state_transition_workspace_pooling.py
 git diff --check -- scripts/511_train_qwen_state_transition_hrmtext.py \
-  src/qtrm_mm/data/hrm_text_source_mix.py \
+  src/wgram_lm/data/hrm_text_source_mix.py \
   scripts/521_build_hrmtext_source_mix.py \
   tests/test_hrm_text_aligned_training_data.py \
   tests/test_hrm_text_source_mix.py
@@ -7892,7 +7892,7 @@ Verification:
 ```text
 local:
   .venv/bin/python -m py_compile scripts/511_train_qwen_state_transition_hrmtext.py \
-    src/qtrm_mm/qwen_backbone_state_transition.py src/qtrm_mm/state_transition_core.py
+    src/wgram_lm/qwen_backbone_state_transition.py src/wgram_lm/state_transition_core.py
 
 DGX:
   PYTHONPYCACHEPREFIX=/tmp/qtrm_pycache_stage40 \
@@ -8073,8 +8073,8 @@ Implementation:
 
 ```text
 Files:
-  src/qtrm_mm/state_transition_core.py
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/state_transition_core.py
+  src/wgram_lm/qwen_backbone_state_transition.py
   scripts/511_train_qwen_state_transition_hrmtext.py
   scripts/512_eval_qwen_state_transition_generalization.py
 
@@ -11540,7 +11540,7 @@ Implementation:
 
 ```text
 module:
-  src/qtrm_mm/eval/general_answer_interface.py
+  src/wgram_lm/eval/general_answer_interface.py
 
 candidate evaluator:
   scripts/521_eval_general_answer_candidates.py
@@ -11581,7 +11581,7 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/eval/general_answer_interface.py \
+  src/wgram_lm/eval/general_answer_interface.py \
   tests/test_general_answer_interface.py \
   scripts/521_eval_general_answer_candidates.py
 

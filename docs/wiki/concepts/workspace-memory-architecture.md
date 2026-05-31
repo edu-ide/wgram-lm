@@ -1,6 +1,6 @@
 # Workspace Memory Architecture (Historical View)
 
-> **Deprecated as primary reference (2026-06)**: This page reflects the pre-OneBodyParallelHybrid + pre-MSA-elevation framing.  
+> **Deprecated as primary reference (2026-06)**: This page reflects the pre-OneBodyParallelHybrid + pre-MSA-elevation framing.
 > **Current canonical SSOT**: [Memory Architecture (MSA First-Class)](memory-architecture-msa.md) — MSA as first-class pillar, 5.56 Adaptive Rehearsal realized as latent memory policy inside One-Body Hybrid, tied directly to 1B >> 27B necessary conditions and S2 PoC evidence (~5.5× real-gold gap).
 
 ---
@@ -38,26 +38,26 @@ Design correction:
 
 Implementation status:
 
-- `src/qtrm_mm/workspace.py` now supports Perceiver/OpenFlamingo-style repeated
+- `src/wgram_lm/workspace.py` now supports Perceiver/OpenFlamingo-style repeated
   latent layers through `workspace_layers`, `workspace_ff_mult`, and
   `workspace_include_latents_in_kv`.
-- `src/qtrm_mm/workspace.py` now also supports an optional gated latent memory
+- `src/wgram_lm/workspace.py` now also supports an optional gated latent memory
   update through `workspace_memory_gate_enabled` and
   `workspace_memory_gate_init_bias`. The gate is GRU-like: each latent slot can
   preserve the previous state, reset part of it, or overwrite with a candidate
   state computed from the cross-attended context.
-- `src/qtrm_mm/qtrm_model.py` exposes `workspace_update_gate_mean` telemetry and
+- `src/wgram_lm/wgram_model.py` exposes `workspace_update_gate_mean` telemetry and
   supports `disable_workspace_memory_gate=True` for causal ablation.
-- `src/qtrm_mm/qtrm_model.py` also accepts `workspace_text_states` and
+- `src/wgram_lm/wgram_model.py` also accepts `workspace_text_states` and
   `workspace_attention_mask` for workspace/dual ablation probes. This input is
   not the canonical model architecture and should not be drawn as MemoryOS
   inside the model.
-- `src/qtrm_mm/data/jsonl_dataset.py` and `src/qtrm_mm/training/train.py`
+- `src/wgram_lm/data/jsonl_dataset.py` and `src/wgram_lm/training/train.py`
   support `train.workspace_evidence_injection=true` for supervised rows built
   from `MemoryOS evidence ... User prompt:` prompts.
 - `configs/qwen35_2b_4090_current_arch_pretrain_probe.yaml` enables the gated
   workspace path for the next current-architecture training probe.
-- `src/qtrm_mm/qtrm_model.py` supports donor-logit residual generation through
+- `src/wgram_lm/wgram_model.py` supports donor-logit residual generation through
   `donor_logits_scale` and `qtrm_logits_scale`.
 - `configs/qwen35_2b_4090_donor_passthrough.yaml` verifies that direct donor
   logits preserve Qwen generation and remove the `world of the world` collapse.
@@ -71,7 +71,7 @@ Implementation status:
   vector index from probe cases using Harrier 270M embeddings. The paired eval
   mode `--evidence-mode memoryos` retrieves from that FAISS index and can
   case-filter synthetic probe records to avoid cross-case leakage.
-- `src/qtrm_mm/memoryos/rerank.py` adds a reranking stage. The current real
+- `src/wgram_lm/memoryos/rerank.py` adds a reranking stage. The current real
   reranker candidate is `Qwen/Qwen3-Reranker-0.6B` through
   SentenceTransformers `CrossEncoder`; lightweight `none` and `lexical` modes
   exist for tests and fast probes.
@@ -79,7 +79,7 @@ Implementation status:
   support temporal conflict, authority conflict, multi-hop evidence chaining,
   and missing-answer abstention. The first run shows retrieval succeeds but
   abstention fails in both donor-only and QTRM residual modes.
-- `src/qtrm_mm/memoryos/scale_plan.py` estimates large MemoryOS builds before
+- `src/wgram_lm/memoryos/scale_plan.py` estimates large MemoryOS builds before
   ingestion. With 100M tokens, 512-token chunks, 64-token overlap, and Harrier
   270M's 640-dimensional embeddings, the current estimate is 223,215 chunks and
   about 0.532 GiB of float32 embedding storage.

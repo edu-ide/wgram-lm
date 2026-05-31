@@ -175,7 +175,7 @@ class MemoryEvalScriptTests(unittest.TestCase):
             module.validate_canonical_ssot_contract(span_copy)
 
     def test_canonical_model_contract_rejects_lewm_config_in_memory_eval(self):
-        from qtrm_mm.config import load_config
+        from wgram_lm.config import load_config
 
         script = Path(__file__).resolve().parents[1] / "scripts" / "95_eval_memory_retrieval.py"
         spec = importlib.util.spec_from_file_location("eval_memory_retrieval_script", script)
@@ -436,7 +436,7 @@ class MemoryEvalScriptTests(unittest.TestCase):
         )
 
     def test_workspace_memory_text_uses_span_reader_training_format(self):
-        from qtrm_mm.eval.memory_retrieval import build_workspace_memory_text
+        from wgram_lm.eval.memory_retrieval import build_workspace_memory_text
 
         text = build_workspace_memory_text(
             [

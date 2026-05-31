@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from qtrm_mm.qwen_backbone_state_transition import QwenBackboneStateTransition
+from wgram_lm.qwen_backbone_state_transition import QwenBackboneStateTransition
 
 
 class FakeConfig:

@@ -540,9 +540,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> None:
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
 
     args = build_arg_parser().parse_args()
     random.seed(int(args.seed))

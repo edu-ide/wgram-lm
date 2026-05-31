@@ -1,8 +1,36 @@
 [project]
-name = "qtrm-multimodal-memoryos"
+name = "wgram-lm"
 version = "0.1.0"
-description = "Multimodal QTRM MemoryOS research scaffold"
+description = "World-guided recursive attractor language model research scaffold"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "AGPL-3.0-or-later" }
+authors = [{ name = "W-GRAM-LM contributors" }]
+keywords = [
+  "artificial-intelligence",
+  "multimodal",
+  "memory",
+  "world-model",
+  "recurrent-language-model",
+  "trajectory-reasoning",
+  "reasoning",
+  "pytorch",
+  "research",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/edu-ide/wgram-lm"
+Repository = "https://github.com/edu-ide/wgram-lm"
+Issues = "https://github.com/edu-ide/wgram-lm/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

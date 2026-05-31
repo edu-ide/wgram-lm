@@ -2,7 +2,7 @@
 
 Current code:
 
-- `src/qtrm_mm/qwen_donor.py`
+- `src/wgram_lm/qwen_donor.py`
 - `scripts/08_train_donor_adapter.sh`
 - `scripts/90_infer_with_donor.sh`
 

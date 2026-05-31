@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from qtrm_mm.agentic.causal_gate import evaluate_causal_loop_gate
+from wgram_lm.agentic.causal_gate import evaluate_causal_loop_gate
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

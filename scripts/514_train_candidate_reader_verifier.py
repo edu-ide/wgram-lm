@@ -23,8 +23,8 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
-from qtrm_mm.norm import RMSNorm
-from qtrm_mm.qwen_backbone_state_transition import build_qwen_state_transition_model
+from wgram_lm.norm import RMSNorm
+from wgram_lm.qwen_backbone_state_transition import build_qwen_state_transition_model
 
 
 def _load_train511() -> Any:

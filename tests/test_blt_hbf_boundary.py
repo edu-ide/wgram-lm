@@ -289,6 +289,43 @@ class BLTHBFBoundaryTests(unittest.TestCase):
         )
         self.assertGreater(scorer_grad, 0.0)
 
+    def test_hnetpp_flow_dechunk_diffusion_auxiliary_reconstructs_masked_bytes(self) -> None:
+        torch.manual_seed(29)
+        model = self.module.BLTDByteLatentPrefixLM(
+            global_core=DummyGlobalCore(),
+            vocab_size=512,
+            d_model=8,
+            patch_size=4,
+            local_layers=1,
+            local_heads=2,
+            patch_boundary_mode="hnetpp_flow_dechunk",
+            dynamic_min_patch_size=2,
+            hbf_boundary_threshold=0.5,
+        )
+        input_ids = torch.tensor([[ord(ch) + 2 for ch in "abcd efgh"]], dtype=torch.long)
+        attention_mask = torch.ones_like(input_ids)
+        labels = input_ids.clone()
+
+        loss, metrics = model.forward_losses(
+            input_ids,
+            labels,
+            attention_mask,
+            think_steps=1,
+            diffusion_weight=0.25,
+            diffusion_mask_prob=1.0,
+        )
+        loss.backward()
+
+        self.assertGreater(int(metrics["diffusion_targets"]), 0)
+        self.assertGreater(float(metrics["diffusion_loss"]), 0.0)
+        self.assertGreater(float(metrics["loss"]), float(metrics["clean_loss"]))
+        scorer_grad = sum(
+            float(parameter.grad.detach().abs().sum().item())
+            for parameter in model.semantic_boundary_scorer.parameters()
+            if parameter.grad is not None
+        )
+        self.assertGreater(scorer_grad, 0.0)
+
     def test_hnet_dechunk_qwen_boundary_prior_uses_external_boundary_labels(self) -> None:
         model = self.module.BLTDByteLatentPrefixLM(
             global_core=DummyGlobalCore(),

@@ -13,22 +13,22 @@ from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from qtrm_mm.agentic.cognitive_loop import Action
-from qtrm_mm.agentic.transition_controller import (
+from wgram_lm.agentic.cognitive_loop import Action
+from wgram_lm.agentic.transition_controller import (
     TransitionStatePredictor,
     TransitionStateController,
     transition_action_loss,
     transition_state_prediction_loss,
 )
-from qtrm_mm.config import load_config
-from qtrm_mm.data.jsonl_dataset import (
+from wgram_lm.config import load_config
+from wgram_lm.data.jsonl_dataset import (
     _render_trace_replay_action_input,
     _trace_action_id,
     build_text_tokenizer,
 )
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
-from qtrm_mm.training.train import prepare_donor_batch
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
+from wgram_lm.training.train import prepare_donor_batch
 
 
 TRANSITION_STATE_DIM = 9

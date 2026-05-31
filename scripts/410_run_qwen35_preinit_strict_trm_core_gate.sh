@@ -23,7 +23,7 @@ if [[ "${SELECTION_HARD_FAMILY_GATE:-0}" == "1" ]]; then
   EXTRA_ARGS+=(--selection-hard-family-gate)
 fi
 
-"${PYTHON}" scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+"${PYTHON}" scripts/362_train_qwen_backbone_wgram_core_gate.py \
   --model-id "${MODEL_ID}" \
   --out-dir "${OUT_DIR}" \
   --device "${DEVICE}" \

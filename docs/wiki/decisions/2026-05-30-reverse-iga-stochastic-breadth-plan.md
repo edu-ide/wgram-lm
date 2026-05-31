@@ -1,8 +1,8 @@
 # Reverse I→G→A Plan: One-Body Port of Stochastic Recurrent Breadth
 
-**Linked Reconstruction**: 2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md  
-**Inductive Bias Map Entry**: stochastic recurrent breadth  
-**Current Date**: 2026-05-30  
+**Linked Reconstruction**: 2026-05-30-historical-signal-reconstruction-stochastic-breadth-pivot-gap.md
+**Inductive Bias Map Entry**: stochastic recurrent breadth
+**Current Date**: 2026-05-30
 **Owner**: research-driven-architecture-debugging process
 
 ---
@@ -101,7 +101,7 @@ All of this must be easily zeroed by the ablation flag (early return of zeros or
 
 ## Immediate Next Work (after this plan is reviewed)
 
-1. Add the config flags to `src/qtrm_mm/config.py` (with clear comments referencing this reconstruction).
+1. Add the config flags to `src/wgram_lm/config.py` (with clear comments referencing this reconstruction).
 2. Implement the minimal heads + wiring + ablation_zero inside `core.py`.
 3. Write the small diagnostic runner or extend an existing Phase0/1 script to run the narrow gate.
 4. Produce the first ablation table and attach it to the Inductive Bias Map + this decision record.

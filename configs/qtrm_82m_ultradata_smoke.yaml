@@ -1,0 +1,42 @@
+model:
+  vocab_size: 32000
+  d_model: 512
+  n_heads: 8
+  n_kv_heads: 4
+  d_ff: 1536
+  max_seq_len: 1024
+  n_prelude_layers: 4
+  n_core_layers: 4
+  n_coda_layers: 3
+  attn_every: 4
+  coda_attn_every: 4
+  workspace_tokens: 32
+  workspace_layers: 1
+  h_cycles: 2
+  l_cycles: 2
+  outer_steps: 2
+  dropout: 0.0
+  rope_theta: 10000.0
+  delta_backend: torch_gated_delta
+  attention_backend: sdpa
+  strict_backends: false
+  visual_dim: 512
+  max_visual_tokens: 16
+  num_actions: 10
+  tie_embeddings: true
+  jepa_encoder_layers: 1
+  jepa_predictor_layers: 1
+
+train:
+  batch_size: 1
+  seq_len: 128
+  steps: 8
+  lr: 3.0e-4
+  loss_lm_weight: 1.0
+  loss_jepa_weight: 0.1
+  loss_aux_weight: 1.0
+  trainable_param_policy: all
+  device: auto
+  use_amp: true
+  log_every: 1
+  out_dir: runs/qtrm_82m_ultradata_smoke

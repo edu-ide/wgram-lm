@@ -40,7 +40,7 @@ must fail.
 
 Changed:
 
-- `src/qtrm_mm/agentic/transition_controller.py`
+- `src/wgram_lm/agentic/transition_controller.py`
   - accepts `transition_state_dim`;
   - concatenates normalized explicit state features with QTRM features and
     optional previous-action embeddings;

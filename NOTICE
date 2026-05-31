@@ -1,0 +1,11 @@
+W-GRAM-LM
+Copyright (C) 2026 W-GRAM-LM contributors
+
+Unless a file states otherwise, the source code in this repository is licensed
+under the GNU Affero General Public License v3.0 or later
+(SPDX-License-Identifier: AGPL-3.0-or-later).
+
+Third-party models, datasets, checkpoints, papers, downloaded corpora,
+generated experiment outputs, and external reference implementations may be
+governed by their own licenses. This notice does not relicense those external
+materials.

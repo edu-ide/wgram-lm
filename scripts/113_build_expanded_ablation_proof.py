@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from qtrm_mm.eval.architecture_ablation_proof import (
+from wgram_lm.eval.architecture_ablation_proof import (
     build_ablation_summary,
     write_ablation_summary,
 )

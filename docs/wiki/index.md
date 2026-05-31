@@ -39,6 +39,7 @@
 - [HRM-Text](sources/hrm-text.md): Sapient HRM-Text-1B text-LM prior, HRM/TRM dual-state correction, and QTRM-native shared-vs-separate recurrent-core comparison plan.
 - [Gated DeltaNet](sources/gated-deltanet.md): official gated delta rule mixer reference.
 - [LeWorldModel](sources/leworldmodel.md): newest end-to-end JEPA world-model reference.
+- [Own-Latent Prediction Sample Complexity](sources/own-latent-prediction-sample-complexity.md): arXiv:2605.27734 mapped to QTRM/BLT as same-body latent grammar learning, not a token-CE replacement.
 - [Tiny Recursive Models](sources/tiny-recursive-models.md): TRM recursive z_H/z_L and ACT reference.
 - [Workspace And Memory References](sources/workspace-memory.md): Perceiver, Q-Former, Flamingo, RMT, and ARMT references for QTRM workspace/memory.
 - [Harrier Memory Retrieval](sources/harrier-memory-retrieval.md): Harrier 270M embedding default and FAISS retrieval decision.
@@ -67,7 +68,7 @@
 - [Raw Intelligence / Actual Reasoning Necessary Conditions (2026-06 SSOT)](../wiki/decisions/raw-intelligence-necessary-conditions-2026-06.md) + [RI PoC Execution Plan](../roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md)
 - [S2 Interim Verdict Report](../roadmaps/S2_Interim_Verdict_Report.md) (current 1.496 vs 0.2714 real-gold direct comparison)
 - 5.56 Evidence Package: `docs/5.56_Promotion_Gate_Evidence_2026-05-30/`
-- Implementation: `src/qtrm_mm/blocks.py` (OneBodyParallelHybridBlock), `scripts/train_556_on_parallel_hybrid_minimal.py`, `scripts/run_s2_historical_baseline.py`
+- Implementation: `src/wgram_lm/blocks.py` (OneBodyParallelHybridBlock), `scripts/train_556_on_parallel_hybrid_minimal.py`, `scripts/run_s2_historical_baseline.py`
 
 ---
 
@@ -129,9 +130,9 @@
 
 ## Components
 
-- [QTRM Mixer](components/qtrm-mixer.md): status of `src/qtrm_mm/mixers.py` against Gated DeltaNet.
-- [QTRM World Model](components/qtrm-world-model.md): status of `src/qtrm_mm/world_model.py` against LeWM.
-- [QTRM Recursive Core](components/qtrm-recursive-core.md): status of `src/qtrm_mm/core.py` against TRM.
+- [QTRM Mixer](components/qtrm-mixer.md): status of `src/wgram_lm/mixers.py` against Gated DeltaNet.
+- [QTRM World Model](components/qtrm-world-model.md): status of `src/wgram_lm/world_model.py` against LeWM.
+- [QTRM Recursive Core](components/qtrm-recursive-core.md): status of `src/wgram_lm/core.py` against TRM.
 - [Qwen Donor Integration](components/qwen-donor-integration.md): status of donor loading/config/tokenizer alignment.
 - [QTRM Transfer And Healing](components/qtrm-transfer-healing.md): staged training/merge recovery plan.
 
@@ -139,7 +140,13 @@
 
 - [0000 Decision File Ordering](decisions/0000-decision-file-ordering.md): filename convention for keeping decision records sorted by date/stage so the project memory preserves what came first, what failed, and what replaced it.
 - [0001 Active Decision Index](decisions/0001-active-decision-index.md): first-read SSOT that marks which decision files are active policy versus archived context, preventing stale rejected decisions from steering current work.
+- [2026-05-31 Own-Latent Prediction Methodology SSOT](decisions/2026-05-31-own-latent-prediction-methodology-ssot.md): resolves the LeWM-vs-token-loss conflict by assigning token CE to speaking, own-latent prediction to hidden grammar learning, and same LM-head generation to promotion.
+- [2026-05-31 Free-Generation-Only Evaluation And Historical Track Audit](decisions/2026-05-31-free-generation-only-evaluation-and-historical-track-audit.md): disables forced-choice/candidate-rerank promotion and reinterprets Stage56/58, Stage53, Stage59, Stage104, and Ouro results through free generation.
+- [2026-05-31 BLT/IMTA Architecture Rationality Review](decisions/2026-05-31-blt-imta-architecture-rationality-review.md): code-level and plain-language review; current path is a reasonable research scaffold but must fix hnet chunk-summary information flow before more long runs.
+- [2026-05-31 RI-1~RI-7 Aggressive Architecture Plan](decisions/2026-05-31-ri1-ri7-aggressive-architecture-plan.md): attack plan for a language-capable reasoning model: fix BLT chunk summaries first, then IMTA, own-latent, depth, sparse memory, 5.56, and free-generation-only promotion gates.
+- [2026-05-31 W-GRAM Reasoning LM V2 SSOT](decisions/2026-05-31-wgram-reasoning-lm-v2-ssot.md): establishes `src/wgram_lm/v2/` as the clean canonical path: causal BLT chunks, same-body IMTA, own-latent auxiliary, one speaker/head, and free-generation-only promotion.
 - [0002 Two-Track Recurrent LoRA vs Byte-Latent Pretraining Split](decisions/0002-two-track-lora-blt-recurrent-pretrain-split.md): active policy establishing the dual-spine co-evolution split (Local 2B LoRA UltraData SFT vs DGX 1B BLT from-scratch pretraining) to bypass BPE multilingual fertility fragmentation.
+- [0003 82M Dynamic BLT (No LoRA) Milestone & RI Gates Validation](decisions/0003-82m-dynamic-blt-milestone-ri-gates.md): active milestone recording 82M dynamic BLT loop model evaluation results (RI-1, RI-3, RI-4 MET) and baseline runs configuration updates.
 - [QTRM-Native Hard Lock](decisions/qtrm-native-hard-lock.md): locks canonical progress to QTRM-native loop reasoning that satisfies TRM-style causal conditions; donor/residual/MemoryOS/Qwen-sidecar work is diagnostic only.
 - [Stage99 One-Body Reset](decisions/stage99-one-body-reset.md): closes the anchor/readback/selector bridge line as diagnostic-only and hard-locks the next general-LM architecture to HRM-Text-style one-body routing.
 - [DGX QTRM-Native Fastlane](decisions/dgx-qtrm-native-fastlane.md): fastest credible DGX path for QTRM-native core-depth scale-out repair.

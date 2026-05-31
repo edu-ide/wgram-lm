@@ -1,6 +1,6 @@
 import torch
 
-from qtrm_mm.qtrm_model import compute_donor_qtrm_conflict_gate
+from wgram_lm.wgram_model import compute_donor_qtrm_conflict_gate
 
 
 def assert_close(actual: torch.Tensor, expected: torch.Tensor) -> None:

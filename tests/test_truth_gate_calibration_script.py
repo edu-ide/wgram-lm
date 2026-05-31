@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 def test_truth_gate_calibration_config_trains_span_reader_and_truth_heads() -> None:
-    from qtrm_mm.config import load_config
+    from wgram_lm.config import load_config
 
     cfg = load_config("configs/qwen35_2b_4090_evidence_span_reader_truthcal_s300.yaml")
 

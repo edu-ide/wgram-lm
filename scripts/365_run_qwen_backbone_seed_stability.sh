@@ -22,10 +22,10 @@ run_gate() {
   local name="$1"
   local seed="$2"
   shift 2
-  local out_dir="local_eval/qwen_backbone_qtrm_${name}_seed${seed}_s${STEPS}_20260515"
+  local out_dir="local_eval/qwen_backbone_wgram_${name}_seed${seed}_s${STEPS}_20260515"
   echo "=== ${name} seed=${seed} ==="
   set +e
-  .venv/bin/python scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+  .venv/bin/python scripts/362_train_qwen_backbone_wgram_core_gate.py \
     --model-id "$QWEN_MODEL_ID" \
     --out-dir "$out_dir" \
     --device "$DEVICE" \
@@ -61,11 +61,11 @@ import json
 from pathlib import Path
 
 paths = [
-    Path("local_eval/qwen_backbone_qtrm_qwen_layer_wrapped_train_gate_s80_20260515/report.json"),
-    Path("local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_train_gate_s80_20260515/report.json"),
+    Path("local_eval/qwen_backbone_wgram_qwen_layer_wrapped_train_gate_s80_20260515/report.json"),
+    Path("local_eval/qwen_backbone_wgram_ouro_weight_full_l24_train_gate_s80_20260515/report.json"),
 ]
-paths.extend(sorted(Path("local_eval").glob("qwen_backbone_qtrm_qwen_layer_wrapped_seed*_s80_20260515/report.json")))
-paths.extend(sorted(Path("local_eval").glob("qwen_backbone_qtrm_ouro_weight_full_l24_seed*_s80_20260515/report.json")))
+paths.extend(sorted(Path("local_eval").glob("qwen_backbone_wgram_qwen_layer_wrapped_seed*_s80_20260515/report.json")))
+paths.extend(sorted(Path("local_eval").glob("qwen_backbone_wgram_ouro_weight_full_l24_seed*_s80_20260515/report.json")))
 
 rows = []
 for path in paths:

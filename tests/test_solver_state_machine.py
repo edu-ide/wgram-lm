@@ -5,7 +5,7 @@ import torch
 
 class SolverStateMachineTests(unittest.TestCase):
     def test_char_vocab_round_trips_known_text_and_uses_unk(self):
-        from qtrm_mm.agentic.solver_state_machine import CharVocab
+        from wgram_lm.agentic.solver_state_machine import CharVocab
 
         vocab = CharVocab.build(["abc", "123"])
 
@@ -15,7 +15,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(vocab.encode("z")[0], vocab.unk_id)
 
     def test_state_machine_input_text_uses_previous_state_and_operation(self):
-        from qtrm_mm.agentic.solver_state_machine import state_machine_input_text
+        from wgram_lm.agentic.solver_state_machine import state_machine_input_text
 
         row = {
             "prompt": "Question: Compute ((7 + 3) * 2) - 3.\nAnswer:",
@@ -32,7 +32,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertIn("Depth: 2", text)
 
     def test_state_machine_input_text_prefers_question_over_full_instruction(self):
-        from qtrm_mm.agentic.solver_state_machine import state_machine_input_text
+        from wgram_lm.agentic.solver_state_machine import state_machine_input_text
 
         row = {
             "prompt": "Answer with only the final answer. Do not write reasoning.\nQuestion: Compute 1 + 2.\nAnswer:",
@@ -48,7 +48,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertNotIn("Do not write reasoning", text)
 
     def test_operation_policy_input_excludes_target_operation(self):
-        from qtrm_mm.agentic.solver_state_machine import operation_policy_input_text
+        from wgram_lm.agentic.solver_state_machine import operation_policy_input_text
 
         row = {
             "question": "Compute ((7 + 3) * 2) - 3.",
@@ -67,14 +67,14 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertNotIn("multiply_sum", text)
 
     def test_operation_vocab_round_trips_labels(self):
-        from qtrm_mm.agentic.solver_state_machine import OperationVocab
+        from wgram_lm.agentic.solver_state_machine import OperationVocab
 
         vocab = OperationVocab.build(["add_operands", "hold_final"])
 
         self.assertEqual(vocab.decode(vocab.encode("hold_final")), "hold_final")
 
     def test_operation_policy_forward_shapes(self):
-        from qtrm_mm.agentic.solver_state_machine import OperationPolicy
+        from wgram_lm.agentic.solver_state_machine import OperationPolicy
 
         model = OperationPolicy(vocab_size=19, num_operations=5, d_model=8, hidden_dim=12)
         input_ids = torch.randint(0, 19, (2, 7))
@@ -85,7 +85,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(tuple(logits.shape), (2, 5))
 
     def test_structured_operation_policy_forward_shapes(self):
-        from qtrm_mm.agentic.solver_state_machine import StructuredOperationPolicy
+        from wgram_lm.agentic.solver_state_machine import StructuredOperationPolicy
 
         model = StructuredOperationPolicy(
             num_families=3,
@@ -105,7 +105,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(tuple(logits.shape), (2, 6))
 
     def test_solver_state_machine_forward_shapes(self):
-        from qtrm_mm.agentic.solver_state_machine import SolverStateMachine
+        from wgram_lm.agentic.solver_state_machine import SolverStateMachine
 
         model = SolverStateMachine(vocab_size=17, d_model=8, hidden_dim=12)
         input_ids = torch.randint(0, 17, (2, 5))
@@ -121,7 +121,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(tuple(logits.shape), (2, 4, 17))
 
     def test_target_tensors_shift_with_bos_and_eos(self):
-        from qtrm_mm.agentic.solver_state_machine import CharVocab, target_tensors
+        from wgram_lm.agentic.solver_state_machine import CharVocab, target_tensors
 
         vocab = CharVocab.build(["42"])
 
@@ -131,7 +131,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(labels.tolist(), [vocab.token_to_id["4"], vocab.token_to_id["2"], vocab.eos_id, vocab.pad_id])
 
     def test_rollout_case_uses_predicted_previous_state(self):
-        from qtrm_mm.agentic.solver_state_machine import rollout_trace_rows
+        from wgram_lm.agentic.solver_state_machine import rollout_trace_rows
 
         rows = [
             {
@@ -162,7 +162,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(records[-1]["predicted_state_text"], "XY")
 
     def test_execute_solver_transition_handles_arithmetic_trace(self):
-        from qtrm_mm.agentic.solver_state_machine import execute_solver_transition
+        from wgram_lm.agentic.solver_state_machine import execute_solver_transition
 
         row = {
             "question": "Compute ((207 + 3) * 2) - 3.",
@@ -179,7 +179,7 @@ class SolverStateMachineTests(unittest.TestCase):
         )
 
     def test_execute_solver_transition_handles_list_trace(self):
-        from qtrm_mm.agentic.solver_state_machine import execute_solver_transition
+        from wgram_lm.agentic.solver_state_machine import execute_solver_transition
 
         row = {
             "question": "From the list [2001, 2004, 2002, 2007, 2003], keep only even numbers, double each kept number, and return comma-separated values with no spaces. If none, return EMPTY.",
@@ -197,7 +197,7 @@ class SolverStateMachineTests(unittest.TestCase):
         )
 
     def test_execute_solver_transition_handles_symbolic_trace(self):
-        from qtrm_mm.agentic.solver_state_machine import execute_solver_transition
+        from wgram_lm.agentic.solver_state_machine import execute_solver_transition
 
         row = {
             "question": "If A maps to green, green maps to violet, and violet maps to D, what does A map to after two mappings?",
@@ -215,7 +215,7 @@ class SolverStateMachineTests(unittest.TestCase):
         )
 
     def test_execute_solver_transition_handles_boolean_trace(self):
-        from qtrm_mm.agentic.solver_state_machine import execute_solver_transition
+        from wgram_lm.agentic.solver_state_machine import execute_solver_transition
 
         row = {
             "question": "Let P=TRUE, Q=FALSE, R=FALSE. Evaluate (P AND NOT Q) OR R. Answer TRUE or FALSE.",
@@ -233,7 +233,7 @@ class SolverStateMachineTests(unittest.TestCase):
         )
 
     def test_rollout_solver_trace_from_operations_scores_state_and_final_answer(self):
-        from qtrm_mm.agentic.solver_state_machine import rollout_solver_trace_from_operations
+        from wgram_lm.agentic.solver_state_machine import rollout_solver_trace_from_operations
 
         row = {
             "question": "Compute ((207 + 3) * 2) - 3.",
@@ -264,7 +264,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertFalse(bad["final_exact_match"])
 
     def test_answer_from_primitive_operations_does_not_require_solver_trace(self):
-        from qtrm_mm.agentic.solver_state_machine import answer_from_primitive_operations
+        from wgram_lm.agentic.solver_state_machine import answer_from_primitive_operations
 
         result = answer_from_primitive_operations(
             {
@@ -282,7 +282,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(result["states"], ["210", "420", "417"])
 
     def test_answer_from_primitive_operations_stops_after_hold_final(self):
-        from qtrm_mm.agentic.solver_state_machine import answer_from_primitive_operations
+        from wgram_lm.agentic.solver_state_machine import answer_from_primitive_operations
 
         result = answer_from_primitive_operations(
             {
@@ -299,7 +299,7 @@ class SolverStateMachineTests(unittest.TestCase):
         self.assertEqual(result["executed_operations"], ["filter_even", "double_filtered"])
 
     def test_operation_names_from_logits_can_use_state_constraints(self):
-        from qtrm_mm.agentic.solver_state_machine import operation_names_from_logits
+        from wgram_lm.agentic.solver_state_machine import operation_names_from_logits
 
         id_to_operation = {
             0: "filter_even",
@@ -337,7 +337,7 @@ class SolverStateMachineTests(unittest.TestCase):
         )
 
     def test_state_constraints_do_not_invent_first_operation(self):
-        from qtrm_mm.agentic.solver_state_machine import operation_names_from_logits
+        from wgram_lm.agentic.solver_state_machine import operation_names_from_logits
 
         id_to_operation = {
             0: "add_operands",

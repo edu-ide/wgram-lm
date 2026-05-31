@@ -16,14 +16,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from qtrm_mm.qwen_backbone_qtrm import QwenBackboneQTRM
+from wgram_lm.qwen_backbone_wgram import QwenBackboneQTRM
 
 
 _CHECKSUM4_RE = re.compile(r"a=(\d+), b=(\d+), c=(\d+), d=(\d+)")
 
 
 def _load_gate_module() -> ModuleType:
-    path = Path(__file__).with_name("362_train_qwen_backbone_qtrm_core_gate.py")
+    path = Path(__file__).with_name("362_train_qwen_backbone_wgram_core_gate.py")
     spec = importlib.util.spec_from_file_location("qtrm_gate_362", path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"could not import {path}")

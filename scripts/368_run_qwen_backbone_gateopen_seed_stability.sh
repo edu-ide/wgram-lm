@@ -19,7 +19,7 @@ SEEDS="${SEEDS:-20260515 20260516 20260517}"
 FORCE="${FORCE:-0}"
 
 for seed in $SEEDS; do
-  out_dir="local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_seed${seed}_s${STEPS}_20260515"
+  out_dir="local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_seed${seed}_s${STEPS}_20260515"
   report="${out_dir}/report.json"
   if [[ "$FORCE" != "1" && -f "$report" ]]; then
     echo "skip existing ${report}"
@@ -27,7 +27,7 @@ for seed in $SEEDS; do
   fi
   echo "=== seed ${seed} -> ${out_dir} ==="
   set +e
-  .venv/bin/python scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+  .venv/bin/python scripts/362_train_qwen_backbone_wgram_core_gate.py \
     --model-id "$MODEL_ID" \
     --out-dir "$out_dir" \
     --device "$DEVICE" \
@@ -59,8 +59,8 @@ import json
 from pathlib import Path
 
 root = Path("local_eval")
-paths = sorted(root.glob("qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_seed*_s*_20260515/report.json"))
-legacy = root / "qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/report.json"
+paths = sorted(root.glob("qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_seed*_s*_20260515/report.json"))
+legacy = root / "qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/report.json"
 if legacy.exists():
     paths.append(legacy)
 

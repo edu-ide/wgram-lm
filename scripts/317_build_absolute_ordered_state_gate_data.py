@@ -25,7 +25,7 @@ class AbsoluteOrderedStateBundle(NamedTuple):
 
 
 def load_algorithmic_value_state_module():
-    return importlib.import_module("qtrm_mm.algorithmic_value_state")
+    return importlib.import_module("wgram_lm.algorithmic_value_state")
 
 
 def _csv(values: list[int]) -> str:

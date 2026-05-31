@@ -21,7 +21,7 @@ controller must act through the predicted transition state.
 
 Changed:
 
-- `src/qtrm_mm/agentic/transition_controller.py`
+- `src/wgram_lm/agentic/transition_controller.py`
   - adds `TransitionStatePredictor`;
   - adds `transition_state_prediction_loss`;
   - reports state prediction loss, MAE, and binary accuracy.

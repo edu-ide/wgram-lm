@@ -125,7 +125,7 @@ def test_builder_balances_positive_answer_decision_weights() -> None:
 
 
 def test_answer_decision_head_config_and_runner_are_wired() -> None:
-    from qtrm_mm.config import load_config
+    from wgram_lm.config import load_config
 
     cfg = load_config("configs/qwen35_2b_4090_answer_decision_head_truthcal_s200.yaml")
     runner = Path("scripts/163_run_answer_decision_head_train.sh").read_text(

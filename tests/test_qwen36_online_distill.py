@@ -16,21 +16,21 @@ def _load_script():
 
 class Qwen36OnlineDistillTests(unittest.TestCase):
     def test_clean_teacher_answer_accepts_json_answer(self) -> None:
-        from qtrm_mm.distill.online_qwen36 import clean_teacher_answer
+        from wgram_lm.distill.online_qwen36 import clean_teacher_answer
 
         answer = clean_teacher_answer('{"answer": "17", "trace_summary": "computed"}')
 
         self.assertEqual(answer, "17")
 
     def test_clean_teacher_answer_strips_labels_and_extra_lines(self) -> None:
-        from qtrm_mm.distill.online_qwen36 import clean_teacher_answer
+        from wgram_lm.distill.online_qwen36 import clean_teacher_answer
 
         answer = clean_teacher_answer("Answer: violet\nExplanation: mapping chain")
 
         self.assertEqual(answer, "violet")
 
     def test_build_online_teacher_prompt_keeps_prompt_as_single_source(self) -> None:
-        from qtrm_mm.distill.online_qwen36 import build_online_teacher_prompt
+        from wgram_lm.distill.online_qwen36 import build_online_teacher_prompt
 
         prompt = build_online_teacher_prompt("Question: 1+1?\nAnswer:")
 
@@ -38,7 +38,7 @@ class Qwen36OnlineDistillTests(unittest.TestCase):
         self.assertIn("Return only the final answer", prompt)
 
     def test_teacher_answer_record_round_trips_schema(self) -> None:
-        from qtrm_mm.distill.online_qwen36 import teacher_answer_record
+        from wgram_lm.distill.online_qwen36 import teacher_answer_record
 
         record = teacher_answer_record(
             prompt="Question: 1+1?\nAnswer:",

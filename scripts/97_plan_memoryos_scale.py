@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from qtrm_mm.memoryos.scale_plan import build_memory_scale_plan, format_plan_summary
+from wgram_lm.memoryos.scale_plan import build_memory_scale_plan, format_plan_summary
 
 
 def main() -> None:

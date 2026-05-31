@@ -5,7 +5,7 @@
 You are taking over the local QTRM / PrefixLM generalization-dynamics work in:
 
 ```text
-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos
+/home/tripleyoung/qtrm-workspace/wgram-lm
 ```
 
 Continue from the evidence, not from new speculation.
@@ -103,7 +103,7 @@ heldout parrot values.
 First evaluate Stage118. Do not start a new architecture run before this.
 
 ```bash
-cd /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos
+cd /home/tripleyoung/qtrm-workspace/wgram-lm
 
 ROOT_OUT=/mnt/sdc1/tripleyoung/qtrm_eval/20260526_STAGE118_LOCAL_FIXED_PARROT_ALGEBRA_DIAG_60STEP
 PROBE=local_eval/20260526_STAGE107L_LOCAL_ONLINE_OPUS_EFFECT_GDSUITE_SMOKE/official_gdsuite_choice_probe_2pertask.jsonl
@@ -165,7 +165,7 @@ no new non-algebra failures
 then run language and generation preservation before claiming progress:
 
 ```bash
-cd /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos
+cd /home/tripleyoung/qtrm-workspace/wgram-lm
 
 ROOT_OUT=/mnt/sdc1/tripleyoung/qtrm_eval/20260526_STAGE118_LOCAL_FIXED_PARROT_ALGEBRA_DIAG_60STEP
 

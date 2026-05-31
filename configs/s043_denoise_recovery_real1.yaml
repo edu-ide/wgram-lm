@@ -141,7 +141,7 @@ train:
   # (recovery itself is now implicit via dataset supervised labels on correct_continuation)
 
 # Notes for execution (autonomous):
-# 1. python -m qtrm_mm.training.train --config configs/s043_denoise_recovery_real1.yaml \
+# 1. python -m wgram_lm.training.train --config configs/s043_denoise_recovery_real1.yaml \
 #      --use-donor --data-jsonl data/tmp/denoise_bad_prefixes_v3_160.jsonl \
 #      --init-checkpoint runs/s043_phase0_tiny_safe/last.pt
 # 2. After train: run donor-only baseline + steered eval via 263-style or direct 192 on 20+ cases.

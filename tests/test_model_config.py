@@ -3,7 +3,7 @@ import unittest
 
 class ModelConfigTests(unittest.TestCase):
     def test_tie_embeddings_reuses_lm_head_weight(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=128,
@@ -28,7 +28,7 @@ class ModelConfigTests(unittest.TestCase):
         self.assertIs(model.lm_head.weight, model.text_embed.weight)
 
     def test_untied_embeddings_keep_separate_weight(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=128,
@@ -54,7 +54,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_fresh_tied_lm_logits_are_small_enough_for_stable_smoke_training(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -81,7 +81,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_recursive_core_runs_on_fixed_workspace_prefix(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=128,
@@ -111,7 +111,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_core_enabled_false_makes_core_off_the_canonical_forward(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -146,7 +146,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_identity_safe_core_runs_but_starts_near_core_off_output(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -183,7 +183,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_answer_bottleneck_can_require_a_running_core(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -226,7 +226,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_core_loop_readout_can_require_a_running_core_with_donor_fallback(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -268,7 +268,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_typed_algorithmic_value_state_bridge_exposes_answer_loop_tokens(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -314,7 +314,7 @@ class ModelConfigTests(unittest.TestCase):
         self.assertTrue(torch.allclose(off_tokens, torch.zeros_like(off_tokens)))
 
     def test_coda_can_use_a_separate_attention_schedule_from_core(self):
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=128,
@@ -343,7 +343,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_donor_logits_can_be_used_as_final_token_distribution(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -375,7 +375,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_model_returns_student_logits_before_donor_fusion(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -409,7 +409,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_generation_verifier_heads_return_prompt_level_logits(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -441,7 +441,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_controller_pool_uses_final_text_state_not_workspace_slot(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -469,7 +469,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_controller_signal_injects_into_controller_pool_only_when_enabled(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -509,7 +509,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_temporal_spatial_context_is_causal_prefix_and_ablatable(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -551,7 +551,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_temporal_spatial_context_accepts_single_vector_as_one_token(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -583,7 +583,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_temporal_spatial_context_rejects_wrong_feature_dim(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -613,7 +613,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_learned_controller_signal_comes_from_core_latent_not_external_input(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -653,7 +653,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_learned_readout_controller_signal_uses_generation_readout(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -693,7 +693,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_learned_controller_signal_can_use_hidden_mlp_head(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -726,7 +726,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_learned_controller_signal_can_use_core_trajectory_source(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -766,7 +766,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_return_features_only_skips_vocab_logits_but_keeps_controller_features(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -796,7 +796,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_bounded_residual_clamps_qtrm_contribution_before_donor_fusion(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -833,7 +833,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_donor_qtrm_conflict_gate_suppresses_residual_before_fusion(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         class FixedHead(nn.Module):
             def __init__(self, vocab_size: int, winning_token: int):
@@ -882,7 +882,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_donor_qtrm_conflict_gate_keeps_residual_when_top_tokens_agree(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         class FixedHead(nn.Module):
             def __init__(self, vocab_size: int, winning_token: int):
@@ -936,7 +936,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_bounded_residual_gate_uses_stable_initial_gate(self):
         import math
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -975,7 +975,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_residual_gate_can_be_disabled_for_causal_ablation(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         class FixedHead(nn.Module):
             def __init__(self, vocab_size: int):
@@ -1033,7 +1033,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_residual_gate_normalizes_large_latents_before_linear(self):
         import math
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -1067,7 +1067,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_residual_gate_minimum_floor_prevents_total_closure(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -1098,7 +1098,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_workspace_can_use_perceiver_style_depth(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1127,7 +1127,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_workspace_ablation_removes_latent_prefix_from_logits(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1157,7 +1157,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_core_ablation_keeps_workspace_prefix_without_recursive_steps(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1186,7 +1186,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_zero_core_trajectory_preserves_depth_count_but_removes_state_content(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -1214,7 +1214,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_core_to_text_injection_directly_conditions_text_logits_without_coda_attention(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1253,7 +1253,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_residual_head_ablation_zeros_qtrm_contribution_before_donor_fusion(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -1286,7 +1286,7 @@ class ModelConfigTests(unittest.TestCase):
     def test_coda_ablation_skips_coda_module(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         class FailingCoda(nn.Module):
             def forward(self, *args, **kwargs):
@@ -1317,7 +1317,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_donor_context_ablation_removes_projected_donor_prefix(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -1352,7 +1352,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_workspace_only_context_removes_direct_donor_prefix_from_coda(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -1382,7 +1382,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_workspace_text_states_are_not_exposed_as_direct_coda_tokens(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=32,
@@ -1427,7 +1427,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_core_context_injection_is_gated_and_ablatable(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1472,7 +1472,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_evidence_bottleneck_suppresses_residual_without_workspace_memory(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1525,7 +1525,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_evidence_bottleneck_can_be_verifier_only_without_suppressing_general_qtrm(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1565,7 +1565,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_answer_bottleneck_replaces_residual_with_workspace_conditioned_logits(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1617,7 +1617,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_answer_bottleneck_does_not_drive_residual_without_workspace_memory(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1655,7 +1655,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_answer_residual_governor_can_close_answer_bottleneck_residual(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1702,7 +1702,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_evidence_span_reader_scores_workspace_tokens_with_prompt_query(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1760,7 +1760,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_evidence_span_reader_can_score_ssot_input_tokens_without_workspace_memory(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1793,7 +1793,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_evidence_span_no_answer_logit_is_conditioned_on_workspace_memory(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1841,7 +1841,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_answer_decision_head_is_ablatable_model_output(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(
@@ -1873,7 +1873,7 @@ class ModelConfigTests(unittest.TestCase):
 
     def test_answer_decision_head_can_condition_on_telemetry_features(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(0)
         cfg = QTRMConfig(

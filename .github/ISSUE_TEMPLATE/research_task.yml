@@ -1,0 +1,26 @@
+name: Research task
+description: Propose an experiment, architecture change, evaluation, or documentation task.
+title: "[research]: "
+labels: ["research", "needs-triage"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: What should this task clarify or improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Proposed change
+      description: Describe the code, config, docs, or evaluation path involved.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: What tests, smoke runs, reports, or decision records should validate it?
+    validations:
+      required: false

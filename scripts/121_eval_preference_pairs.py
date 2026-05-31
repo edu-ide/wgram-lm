@@ -9,13 +9,13 @@ from typing import Iterable
 
 import torch
 
-from qtrm_mm.config import load_config
-from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
-from qtrm_mm.eval.preference import summarize_preference_records
-from qtrm_mm.losses import qtrm_smoke_loss
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
-from qtrm_mm.training.train import prepare_donor_batch, strip_training_only_batch_keys
+from wgram_lm.config import load_config
+from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+from wgram_lm.eval.preference import summarize_preference_records
+from wgram_lm.losses import qtrm_smoke_loss
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
+from wgram_lm.training.train import prepare_donor_batch, strip_training_only_batch_keys
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

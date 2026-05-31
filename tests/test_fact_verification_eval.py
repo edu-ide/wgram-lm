@@ -3,7 +3,7 @@ import unittest
 
 class FactVerificationEvalTests(unittest.TestCase):
     def test_build_fact_prompt_exposes_verdict_action_and_metadata(self):
-        from qtrm_mm.eval.fact_verification import build_fact_prompt
+        from wgram_lm.eval.fact_verification import build_fact_prompt
 
         case = {
             "id": "signed-current-code",
@@ -35,7 +35,7 @@ class FactVerificationEvalTests(unittest.TestCase):
         self.assertIn("AX-42", prompt)
 
     def test_infer_fact_verdict_handles_support_refute_conflict_temporal_and_authority(self):
-        from qtrm_mm.eval.fact_verification import infer_fact_verdict
+        from wgram_lm.eval.fact_verification import infer_fact_verdict
 
         supported = {
             "id": "supported",
@@ -101,7 +101,7 @@ class FactVerificationEvalTests(unittest.TestCase):
         self.assertEqual(infer_fact_verdict(authority), "SUPPORTED")
 
     def test_evaluate_fact_case_scores_retrieval_verdict_and_action(self):
-        from qtrm_mm.eval.fact_verification import evaluate_fact_case
+        from wgram_lm.eval.fact_verification import evaluate_fact_case
 
         case = {
             "id": "missing-current",
@@ -135,7 +135,7 @@ class FactVerificationEvalTests(unittest.TestCase):
         self.assertTrue(record["all_targets_retrieved"])
 
     def test_summarize_fact_records_counts_accuracy_by_label(self):
-        from qtrm_mm.eval.fact_verification import summarize_fact_records
+        from wgram_lm.eval.fact_verification import summarize_fact_records
 
         summary = summarize_fact_records(
             [

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd ~/qtrm-workspace/qtrm_multimodal_memoryos
+cd ~/qtrm-workspace/wgram-lm
 if [[ -f .venv/bin/activate ]]; then
   source .venv/bin/activate
 fi
@@ -33,7 +33,7 @@ from __future__ import annotations
 import sys
 import torch
 
-from qtrm_mm.config import load_config
+from wgram_lm.config import load_config
 
 config_path, model_override, prompt = sys.argv[1], sys.argv[2], sys.argv[3]
 max_new_tokens = int(sys.argv[4])

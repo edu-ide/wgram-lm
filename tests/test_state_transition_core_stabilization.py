@@ -1,7 +1,7 @@
 import torch
 
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.state_transition_core import (
+from wgram_lm.config import QTRMConfig
+from wgram_lm.state_transition_core import (
     HybridStateTransitionCore,
     MiniGatedDeltaReasoningCore,
     SharedReasoningCore,

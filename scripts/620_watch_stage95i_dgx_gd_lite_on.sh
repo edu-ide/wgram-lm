@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${ROOT:-/mnt/data4tb/qtrm_multimodal_memoryos}"
+ROOT="${ROOT:-/mnt/data4tb/wgram-lm}"
 PYTHON="${PYTHON:-/mnt/data4tb/venv_sglang_pr23000/bin/python}"
 WORK_BASE="${WORK_BASE:-${ROOT}/local_eval}"
 RUN_NAME="${RUN_NAME:-20260525_STAGE95I_DGX_1B_OPUS_GD_OFFICIAL_GDN2_ONEBODY_FULL}"

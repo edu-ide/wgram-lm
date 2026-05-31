@@ -18,7 +18,7 @@ from typing import Any, Sequence
 
 import torch
 
-from qtrm_mm.qwen_backbone_qtrm import QwenBackboneQTRM
+from wgram_lm.qwen_backbone_wgram import QwenBackboneQTRM
 
 
 OPTION_LETTERS = "ABCDEFGHIJ"

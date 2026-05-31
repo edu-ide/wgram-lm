@@ -3,7 +3,7 @@ import unittest
 
 class CleanFilterTests(unittest.TestCase):
     def test_quality_filter_rejects_boilerplate_course_unit(self):
-        from qtrm_mm.data.clean_filter import quality_reason
+        from wgram_lm.data.clean_filter import quality_reason
 
         text = (
             "Course Unit: Themed Settings and Storytelling. "
@@ -14,7 +14,7 @@ class CleanFilterTests(unittest.TestCase):
         self.assertEqual(quality_reason({"type": "text", "text": text}), "boilerplate")
 
     def test_quality_filter_rejects_repeated_scienceqa_letter_prompt(self):
-        from qtrm_mm.data.clean_filter import quality_reason
+        from wgram_lm.data.clean_filter import quality_reason
 
         text = (
             "Lecture: Experiments can be designed to answer specific questions. "
@@ -26,7 +26,7 @@ class CleanFilterTests(unittest.TestCase):
         self.assertEqual(quality_reason({"type": "multimodal_sft", "text": text}), "boilerplate")
 
     def test_quality_filter_keeps_clean_math_solution(self):
-        from qtrm_mm.data.clean_filter import quality_reason
+        from wgram_lm.data.clean_filter import quality_reason
 
         text = (
             "Problem: If x + 3 = 7, solve for x. "
@@ -37,7 +37,7 @@ class CleanFilterTests(unittest.TestCase):
         self.assertIsNone(quality_reason({"type": "math", "text": text}, min_words=10, max_words=80))
 
     def test_normalize_row_drops_images_for_text_pilot(self):
-        from qtrm_mm.data.clean_filter import normalize_row
+        from wgram_lm.data.clean_filter import normalize_row
 
         row = {
             "type": "multimodal_sft",

@@ -43,7 +43,7 @@
 The "tight micro-step hybrid recurrence + current 3-track rehearsal + partial stochastic restoration" substrate is classified as the deeper local minimum for RI-1 reliable test-time compute scaling. Serial refinement inside this family is stopped. Escalate to substrate-level bigger causal change while preserving M1 variable-depth schedule, proper 3-track porting, Principle Gate, strict-B, Triple-Track, and Reverse I→G→A for historical GRAM/PTRM.
 
 **Intermediate brain-mimetic step (user "A" direction)**:
-Redefinition of memory as primary recurrent thinker (ActiveWorkingMemory + StabilizingAttractorMemory + ProvenanceEpisodicMemory) + BrainMimeticStochasticSampler (K=4 mental simulations evolved inside working memory, scored by attractor stability + provenance grounding + learned scorer, diversity-preserving injection). This is a deep, structured reinterpretation of historical GRAM/PTRM stochastic breadth (not blind noise; hypothesis generation modulated by the other two memory systems). See `src/qtrm_mm/memory/brain_triple_memory.py` (step(), evolve_trajectories, sample_trajectories, select_best_trajectory, integrate_brain_mimetic_stochastic_into_triple_memory, _ensure_same_device guards). 4-step diagnostic on this substrate still yielded non-monotonic strict-B (d=1 29.17%, d=4 43.75%, d=8 25.00%, d=16 37.50%, d=32 31.25% on 16-case subset due to timeout). This falsified "memory redefinition alone on current engine" as sufficient for robust RI-1.
+Redefinition of memory as primary recurrent thinker (ActiveWorkingMemory + StabilizingAttractorMemory + ProvenanceEpisodicMemory) + BrainMimeticStochasticSampler (K=4 mental simulations evolved inside working memory, scored by attractor stability + provenance grounding + learned scorer, diversity-preserving injection). This is a deep, structured reinterpretation of historical GRAM/PTRM stochastic breadth (not blind noise; hypothesis generation modulated by the other two memory systems). See `src/wgram_lm/memory/brain_triple_memory.py` (step(), evolve_trajectories, sample_trajectories, select_best_trajectory, integrate_brain_mimetic_stochastic_into_triple_memory, _ensure_same_device guards). 4-step diagnostic on this substrate still yielded non-monotonic strict-B (d=1 29.17%, d=4 43.75%, d=8 25.00%, d=16 37.50%, d=32 31.25% on 16-case subset due to timeout). This falsified "memory redefinition alone on current engine" as sufficient for robust RI-1.
 
 **Conclusion**: The recurrence *engine* (transition primitive + state topology + convergence dynamics) itself requires replacement with an attractor/equilibrium-oriented substrate explicitly designed for stable depth + breadth scaling, informed by the 2025-2026 literature. Historical GRAM/PTRM stochastic breadth is re-interpreted as first-class "structured mental simulation" inside the new memory system (not retrofitted noise).
 
@@ -72,7 +72,7 @@ Redefinition of memory as primary recurrent thinker (ActiveWorkingMemory + Stabi
 
 **Reverse I→G→A status**: In progress via the brain-mimetic attachment. The new architecture treats the modern realization of GRAM/PTRM stochastic breadth (**structured, data-aware K-trajectory mental simulation inside ActiveWorkingMemory, modulated by Attractor + Provenance + Predictive Data Intuition surprise**) as a required inductive bias. This form must be live, ablatable, and demonstrate causal contribution on RI gates (per strengthened RI-3 language in the 2026-06 SSOT). Legacy prior/posterior noise on z_h is superseded; the brain-mimetic version inside the triple memory is the canonical form going forward.
 
-See: `docs/wiki/architecture/inductive-bias-map.md` (Entry: Stochastic Recurrent Breadth), `src/qtrm_mm/memory/brain_triple_memory.py:301-473` (BrainMimeticStochasticSampler + integration), Principle Gate JSONs in matched_port_evaluation runs.
+See: `docs/wiki/architecture/inductive-bias-map.md` (Entry: Stochastic Recurrent Breadth), `src/wgram_lm/memory/brain_triple_memory.py:301-473` (BrainMimeticStochasticSampler + integration), Principle Gate JSONs in matched_port_evaluation runs.
 
 ---
 
@@ -199,7 +199,7 @@ The memory system is now explicitly **multi-scale**:
 
 - **GRAM/PTRM Stochastic Breadth**: Now operates across scales. K trajectories can include "queries" into the sparse long-term slots. Surprise modulation makes breadth data-aware and memory-aware.
 - **One-Body Causal Path**: All memory (fast + persistent slots) ultimately influences the final converged state that feeds the LM head. No sidecar.
-- **RI Contracts**: 
+- **RI Contracts**:
   - RI-4 (Sparse Selective Memory) is now natively satisfied by the Raven/LM²-style router + persistence.
   - RI-2 (Long-Horizon Stability) benefits from both attractor dynamics and interference-free persistent slots.
   - Ablations remain clean: router_off (dense update), gate_ablation, slot_persistence_off, data_intuition_ablation, etc.
@@ -233,7 +233,7 @@ The surprise-mediated loop (long-term read → K-trajectories + attractor stabil
 
 ## 6. 2026-05-28 RI-1 Depth Scaling Autopsy + ATLAS Omega / EqR Deep Integration (Fast-Slow Composition Fix)
 
-**Trigger (직관대로 + "최대한 깊게 파고" execution)**: 
+**Trigger (직관대로 + "최대한 깊게 파고" execution)**:
 After stabilizing the aggressive substrate + strong attractor training recipe (variable depth + internalization ramp + fast-h shortcut-consistency + basin shaping) and running the first clean 500-step continuation + native batched RI-1 depth sweep (depths 1/4/8/12 on step500 checkpoint), the result was:
 - Memory acc: completely flat 37.5% across all depths.
 - Reasoning: 25% (d=1) → 37.5% (d=4/8) → 25% (d=12) — non-monotonic, regression at highest depth.
@@ -276,7 +276,7 @@ This reproduced the exact "stubborn negative pattern" repeatedly diagnosed in th
 
 **Implementation of the Fix (concrete code changes executed "직관대로")**:
 - `brain_triple_memory.py:light_update` (ri1_relaxed branch): Replaced naive EMA with lightweight Omega-style directed update. Uses the existing PredictiveDataIntuition (JEPA-style) surprise vector as the gradient signal for the slow summary over the recent fast trajectory. Stronger injection + surprise-modulated momentum. (Direct approximation of the ATLAS windowed loss minimization.)
-- `blocks.py` (inside FastGated path): 
+- `blocks.py` (inside FastGated path):
   - Persistent cheap slow_summary injection on *every* internal tick (Huginn-style continuous voice, low strength in inference_mode).
   - Cheap 1-step attractor refinement: symmetric residual pull between new_fast_state and slow_summary each tick (EqR-style explicit alignment of fast trajectory with slow attractor).
 - **Loss Recipe Deep Upgrade (2026-05-28 "모든 논문 최대한 깊게" phase)**:
@@ -329,7 +329,7 @@ Faced with clear evidence from multiple high-aggression runs that simply scaling
 
 **Specific Technical Changes in C Direction**:
 
-1. **Data Intuition – Predictive Contrast Term** (implemented in `src/qtrm_mm/memory/brain_triple_memory.py:124-154` inside `PredictiveDataIntuition.compute_prediction_loss`):
+1. **Data Intuition – Predictive Contrast Term** (implemented in `src/wgram_lm/memory/brain_triple_memory.py:124-154` inside `PredictiveDataIntuition.compute_prediction_loss`):
    - Added explicit "with slow_summary vs without slow_summary" prediction error comparison.
    - `slow_value = (pred_loss_no_slow - pred_loss).clamp(min=0)`
    - A dedicated `predictive_value_loss = -0.3 * slow_value` term that rewards the model when including the slow summary actually improves next-state prediction.
@@ -481,7 +481,7 @@ While the current sketch is already well-aligned, the Densing Law literature (or
    - Current: Relies on external analysis of logs.
    - Improvement: Embed in `AttractorSolverModule` and `SOTSegmentedSolverTrainer` native methods to return "densing curves" (e.g., `get_densing_metrics()` returning quality_per_step, internalization_progress, effective_FLOPs_proxy). This should be first-class in the 20-step diagnostic and future RI-1 sweeps so that density improvement is measured as rigorously as raw accuracy.
 
-These points are not speculative slogans — each maps to a concrete, falsifiable extension of the current sketch that can be prototyped in the existing `src/qtrm_mm/attractor/` module and tested in the diagnostic harness. They directly address the gap between the current "promising alignment" with Densing Law and actually *driving* measurable Inference Densing gains on RI-1 tasks.
+These points are not speculative slogans — each maps to a concrete, falsifiable extension of the current sketch that can be prototyped in the existing `src/wgram_lm/attractor/` module and tested in the diagnostic harness. They directly address the gap between the current "promising alignment" with Densing Law and actually *driving* measurable Inference Densing gains on RI-1 tasks.
 
 ---
 
@@ -852,7 +852,7 @@ All prototype work, ablations, and RI measurements will be recorded with the sam
 - Previous phases (aggression + C) are now viewed as necessary but insufficient exploration that revealed the limits of the current base substrate.
 - We are entering a new phase of more radical substrate redesign, still grounded in the same SSOT MDs and RI principles, but willing to change the core recurrence + memory topology more substantially.
 - All prior wins (internal fast citizen, relaxed slow participation, predictive data intuition, etc.) are to be preserved where possible and re-integrated into the new structure.
-- **New (June 2026)**: Full paper-exact equations + concrete prototype in `src/qtrm_mm/attractor/attractor_solver.py` (now with `compute_internalization_progress` + `get_densing_metrics` hooks + `step_selective` placeholder + `step_with_noise_schedule` long-term stub) + dedicated 7.1 Risk section + first runnable wiring script + 20-step diagnostic harness + detailed long-term direction "Diffusion-Style Attractor Iteration (Proposal as Noisy Latent → Solver as Learned Denoiser)" in Section 7.
+- **New (June 2026)**: Full paper-exact equations + concrete prototype in `src/wgram_lm/attractor/attractor_solver.py` (now with `compute_internalization_progress` + `get_densing_metrics` hooks + `step_selective` placeholder + `step_with_noise_schedule` long-term stub) + dedicated 7.1 Risk section + first runnable wiring script + 20-step diagnostic harness + detailed long-term direction "Diffusion-Style Attractor Iteration (Proposal as Noisy Latent → Solver as Learned Denoiser)" in Section 7.
 
 This document will be updated continuously as the new substrate design is prototyped, ablated, and measured against the same strict-B pure_72 + Principle Gate standards.
 
@@ -870,7 +870,7 @@ This document will be updated continuously as the new substrate design is protot
 
 ### 4.5.2 Exact Data Intuition Change (Predictive Contrast)
 
-**File**: `src/qtrm_mm/memory/brain_triple_memory.py`
+**File**: `src/wgram_lm/memory/brain_triple_memory.py`
 
 **Method**: `PredictiveDataIntuition.compute_prediction_loss`
 
@@ -959,7 +959,7 @@ python scripts/train_hybrid_ri4_real_continuation_minimal.py \
 - ByteDance Seed et al. (2025, updates 2026). "Scaling Latent Reasoning via Looped Language Models" (Ouro / LoopLM). arXiv:2510.25741. https://ouro-llm.github.io/
 - Huang, Geng, Kolter (2026). "Equilibrium Reasoners: Learning Attractors Enables Scalable Reasoning" (EqR). arXiv:2605.21488. https://arxiv.org/abs/2605.21488 ; https://github.com/locuslab/EqR
 - Fein-Ashley, Rashidinejad (2026). "Solve the Loop: Attractor Models for Language and Reasoning". arXiv:2605.12466. https://attractor-models.github.io/ ; https://github.com/jacobfa/Attractor
-  - **Prototype implementation**: `src/qtrm_mm/attractor/attractor_solver.py` (AttractorSolverModule with mandatory persistent y0 injection + ParcaeNegativeDiagonalInjection + SOTSegmentedSolverTrainer + EquilibriumInternalizationLoss).
+  - **Prototype implementation**: `src/wgram_lm/attractor/attractor_solver.py` (AttractorSolverModule with mandatory persistent y0 injection + ParcaeNegativeDiagonalInjection + SOTSegmentedSolverTrainer + EquilibriumInternalizationLoss).
 - Prairie et al. (2026). "Parcae: Scaling Laws For Stable Looped Language Models". arXiv:2604.12946.
   - **Deep dive**: Section G.1 + exact dynamical system equations and negative-diagonal parameterization now in Section 7 pseudocode.
 - Schwethelm et al. (2026). "How Much Is One Recurrence Worth? Iso-Depth Scaling Laws for Looped Language Models". arXiv:2604.21106 (hyperconnections and recurrence-equivalence exponent φ).
@@ -987,8 +987,8 @@ python scripts/train_hybrid_ri4_real_continuation_minimal.py \
 - `experiments/ri1_m1_reports/Stubborn_Negative_Pattern_Diagnosis_20260528.md` (and Consolidated_RI1_M1_Analysis, Multi_Direction_Exploration_Table).
 - `docs/roadmaps/RI_Raw_Intelligence_PoC_Execution_Plan_2026-06.md` (P1.4 RI-1 section with early Huginn/LoopFormer citations).
 - `docs/wiki/architecture/inductive-bias-map.md` (Stochastic Recurrent Breadth / GRAM/PTRM entry + Reverse I→G→A).
-- `src/qtrm_mm/memory/brain_triple_memory.py` (BrainMimeticTripleMemory + BrainMimeticStochasticSampler full implementation; deep GRAM/PTRM reinterpretation).
-- `src/qtrm_mm/config.py` (brain_triple_memory_enabled, brain_mimetic_stochastic_enabled, k, ablation_zero flags).
+- `src/wgram_lm/memory/brain_triple_memory.py` (BrainMimeticTripleMemory + BrainMimeticStochasticSampler full implementation; deep GRAM/PTRM reinterpretation).
+- `src/wgram_lm/config.py` (brain_triple_memory_enabled, brain_mimetic_stochastic_enabled, k, ablation_zero flags).
 - `scripts/train_hybrid_ri4_real_continuation_minimal.py` (trainer wiring + attachment).
 - `docs/wiki/architecture/internal-multitrajectory-answer-attractor-ssot.md`, `one-body-architecture-ssot.md`, `FAIR_COMPARISON_PROTOCOL.md`.
 - Multiple Principle Gate JSONs under `experiments/matched_port_evaluation_a9617cd8/` (stochastic_breadth + 3-track + conditions-matched evidence).
@@ -1126,7 +1126,7 @@ The current engine is a fast hybrid mixer that occasionally "phones home" to a b
 - This is exactly what `set_native_eval_mode` / `set_light_eval_mode` tried to hack from outside; now it becomes first-class block flags (`inference_mode=True` on the fast recurrence + sparse slow path).
 
 **Implementation anchors (already partially present)**:
-- `src/qtrm_mm/blocks.py:421` — `set_brain_triple_memory(..., inference_mode)` + light_update sketch + comment "heavy Python boundary every step" — complete this migration.
+- `src/wgram_lm/blocks.py:421` — `set_brain_triple_memory(..., inference_mode)` + light_update sketch + comment "heavy Python boundary every step" — complete this migration.
 - `brain_triple_memory.py` — keep the high-level brain-mimetic *roles* (working/attractor/provenance + DI surprise) but re-implement the fast evolution as RG-LRU citizen and slow write as Omega module.
 - Trainer 72 loop + Option A split — after v2, the "eager brain step" path largely disappears for fast path; only sparse slow memory touches remain.
 
@@ -1216,7 +1216,7 @@ Combining everything:
 
 **3. Strong Architectural Training / Inference Divergence**
 - Training: richer participation (larger K inside fast recurrence if needed, more frequent or full Omega windows, full surprise loss).
-- Inference / Serving / Native Eval: 
+- Inference / Serving / Native Eval:
   - Fast path = internal RG-LRU style (always on, compiled).
   - Slow neural memory = large-chunk only, cached states, reduced precision if needed.
   - Clean `inference_mode=True` that switches both the block and the memory object to their serving-optimized implementations.
@@ -1471,12 +1471,12 @@ The substrate has been driven to the exact point the three MDs (brain_attractor 
 Next action per wiki: 72 heldout + continuation causal evidence (RI-1~RI-7) on the finalized aggressive substrate (with all git commits before measurement). Ablations must still be clean.
 
 **Final v2.5 Blueprint Summary (one-body, all RI contracts)**:
-Reader (Qwen/native) → initial proposal injection  
-**Fast internal path (per-micro, compiled, cheap, constant memory)**: OneBodyParallelHybridBlock + FastGatedLinearRecurrence (Griffin/Parcae-stable RG-LRU citizen) evolving working + attractor state every step. Structured K stochastic mental simulation inside or gated. Local SWA / selective rich sync on demand (Oryx spirit).  
-**Slow sparse path (chunked or high-surprise only)**: Titans/ATLAS Omega + LaCT large-chunk neural LTM + our SparseGatedLongTermMemory slots updated sparsely. Surprise (Predictive Data Intuition) + momentum feeds the objective. Read injected as brain_influence into fast recurrence.  
-**Attractor / convergence pressure**: EqR-style basin shaping or Solve-the-Loop fixed-point residual inside the fast state evolution + internalization curriculum (backbone proposal learns to land near equilibrium).  
-**Adaptive depth / early exit**: Huginn/Ouro/LoopFormer/Parcae mechanisms (KL delta, entropy gate, learned exit, budget conditioning, saturating exponential) replace our current collection of stride/K=1/write-disable hacks.  
-**Training vs Inference divergence (first-class)**: Training = richer K, more frequent or full Omega windows, full surprise loss, variable depth sampling. Inference / native 72 / serving = internal fast recurrence always-on, slow memory large-chunk or cached, reduced precision, clean inference_mode flag that swaps implementations. Fixed small InferenceState contract.  
+Reader (Qwen/native) → initial proposal injection
+**Fast internal path (per-micro, compiled, cheap, constant memory)**: OneBodyParallelHybridBlock + FastGatedLinearRecurrence (Griffin/Parcae-stable RG-LRU citizen) evolving working + attractor state every step. Structured K stochastic mental simulation inside or gated. Local SWA / selective rich sync on demand (Oryx spirit).
+**Slow sparse path (chunked or high-surprise only)**: Titans/ATLAS Omega + LaCT large-chunk neural LTM + our SparseGatedLongTermMemory slots updated sparsely. Surprise (Predictive Data Intuition) + momentum feeds the objective. Read injected as brain_influence into fast recurrence.
+**Attractor / convergence pressure**: EqR-style basin shaping or Solve-the-Loop fixed-point residual inside the fast state evolution + internalization curriculum (backbone proposal learns to land near equilibrium).
+**Adaptive depth / early exit**: Huginn/Ouro/LoopFormer/Parcae mechanisms (KL delta, entropy gate, learned exit, budget conditioning, saturating exponential) replace our current collection of stride/K=1/write-disable hacks.
+**Training vs Inference divergence (first-class)**: Training = richer K, more frequent or full Omega windows, full surprise loss, variable depth sampling. Inference / native 72 / serving = internal fast recurrence always-on, slow memory large-chunk or cached, reduced precision, clean inference_mode flag that swaps implementations. Fixed small InferenceState contract.
 **One-body + full ablation**: Everything ultimately affects the final state fed to normal LM head. Destructive ablations (rg_lru_off, omega_chunk_off, slow_memory_zero, surprise_zero, stochastic_breadth_K1, proposal_injection_off, any memory tier zero) must produce clear drop on strict-B pure_72 under Principle Gate.
 
 This is the complete, literature-exhausted, code-grounded direction after "2번" + all native optimization failures + "더 팔게 없을때까지". Implementation (not more reading) is now the only remaining step.

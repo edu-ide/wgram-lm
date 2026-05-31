@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from qtrm_mm.eval.root_architecture_gate import (
+from wgram_lm.eval.root_architecture_gate import (
     DEFAULT_BASELINE_MODE,
     DEFAULT_COMPARISON_MODES,
     DEFAULT_CRITICAL_MODES,

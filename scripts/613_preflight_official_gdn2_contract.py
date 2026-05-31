@@ -104,7 +104,7 @@ def _run_official_gdn2_smoke(mode: str) -> dict[str, Any]:
 
     try:
         import torch
-        from qtrm_mm.mixers import OfficialGatedDeltaNet2Mixer
+        from wgram_lm.mixers import OfficialGatedDeltaNet2Mixer
 
         mixer = OfficialGatedDeltaNet2Mixer(
             d_model=64,

@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def test_resolve_history_path_uses_daily_generation_file(tmp_path):
-    from qtrm_mm.history import resolve_history_path
+    from wgram_lm.history import resolve_history_path
 
     path = resolve_history_path(
         "auto",
@@ -16,7 +16,7 @@ def test_resolve_history_path_uses_daily_generation_file(tmp_path):
 
 
 def test_append_generation_history_writes_jsonl_row(tmp_path):
-    from qtrm_mm.history import append_generation_history
+    from wgram_lm.history import append_generation_history
 
     out = tmp_path / "history.jsonl"
     row = append_generation_history(
@@ -43,7 +43,7 @@ def test_append_generation_history_writes_jsonl_row(tmp_path):
 
 
 def test_eval_record_to_history_row_preserves_failure_fields():
-    from qtrm_mm.history import eval_record_to_history_row
+    from wgram_lm.history import eval_record_to_history_row
 
     row = eval_record_to_history_row(
         {

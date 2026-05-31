@@ -10,7 +10,7 @@ set -euo pipefail
 #   trace consistency is auxiliary evidence rather than a detached shortcut.
 
 ACTION="${1:-plan}"
-ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos}"
+ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/wgram-lm}"
 TS="${TS:-$(date +%Y%m%d_%H%M%S)}"
 OUT_DIR="${OUT_DIR:-/tmp/stage66_hrmtext_pvgram_pretrain_${TS}}"
 LOG="${LOG:-/tmp/stage66_hrmtext_pvgram_pretrain_${TS}.log}"

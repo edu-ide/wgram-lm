@@ -88,7 +88,7 @@ mkdir -p "$SAVE_DIR"
 
 # The actual command
 # Use project's venv python + correct PYTHONPATH for this workspace
-VENV_PYTHON="/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python"
+VENV_PYTHON="/home/tripleyoung/qtrm-workspace/wgram-lm/.venv/bin/python"
 if [ ! -x "$VENV_PYTHON" ]; then
     VENV_PYTHON="python"
 fi

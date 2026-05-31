@@ -14,7 +14,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from qtrm_mm.eval.depth_breadth_probe import build_depth_breadth_report, load_jsonl  # noqa: E402
+from wgram_lm.eval.depth_breadth_probe import build_depth_breadth_report, load_jsonl  # noqa: E402
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

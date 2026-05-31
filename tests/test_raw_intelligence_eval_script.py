@@ -16,7 +16,7 @@ class RawIntelligenceEvalScriptTest(unittest.TestCase):
     def test_uses_recursive_checkpoint_loader(self) -> None:
         script = Path("scripts/192_eval_raw_intelligence.py").read_text(encoding="utf-8")
 
-        self.assertIn("from qtrm_mm.training.train import load_initial_checkpoint", script)
+        self.assertIn("from wgram_lm.training.train import load_initial_checkpoint", script)
         self.assertIn("load_initial_checkpoint(model, args.checkpoint", script)
         self.assertNotIn("model.load_state_dict(state.get(\"model\", state), strict=False)", script)
 

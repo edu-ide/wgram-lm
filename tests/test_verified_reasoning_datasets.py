@@ -18,7 +18,7 @@ def _load_script():
 
 class VerifiedReasoningDatasetTests(unittest.TestCase):
     def test_gsm8k_converter_uses_final_gold_answer_only(self) -> None:
-        from qtrm_mm.data.verified_reasoning import convert_verified_row
+        from wgram_lm.data.verified_reasoning import convert_verified_row
 
         row = {
             "question": "Natalia sold 48 clips in April and half as many in May. Total?",
@@ -37,7 +37,7 @@ class VerifiedReasoningDatasetTests(unittest.TestCase):
         self.assertNotIn("Natalia sold 48/2", converted.get("trace_summary", ""))
 
     def test_numina_converter_rejects_invalid_verification_flags(self) -> None:
-        from qtrm_mm.data.verified_reasoning import convert_verified_row
+        from wgram_lm.data.verified_reasoning import convert_verified_row
 
         with self.assertRaises(ValueError):
             convert_verified_row(
@@ -53,7 +53,7 @@ class VerifiedReasoningDatasetTests(unittest.TestCase):
             )
 
     def test_math_answer_converter_adds_generic_distractors_for_latex_answers(self) -> None:
-        from qtrm_mm.data.verified_reasoning import convert_verified_row
+        from wgram_lm.data.verified_reasoning import convert_verified_row
 
         converted = convert_verified_row(
             {
@@ -71,7 +71,7 @@ class VerifiedReasoningDatasetTests(unittest.TestCase):
         self.assertGreaterEqual(len(converted["choices"]), 2)
 
     def test_proofwriter_converter_maps_options_to_canonical_labels(self) -> None:
-        from qtrm_mm.data.verified_reasoning import convert_verified_row
+        from wgram_lm.data.verified_reasoning import convert_verified_row
 
         row = {
             "context": "Bob is cold. If something is cold then it is blue.",
@@ -87,7 +87,7 @@ class VerifiedReasoningDatasetTests(unittest.TestCase):
         self.assertIn("Bob is cold", converted["prompt"])
 
     def test_clutrr_converter_keeps_relation_target(self) -> None:
-        from qtrm_mm.data.verified_reasoning import convert_verified_row
+        from wgram_lm.data.verified_reasoning import convert_verified_row
 
         row = {
             "story": "[Ashley]'s daughter, [Lillian], helped [Nicholas].",
@@ -190,7 +190,7 @@ class VerifiedReasoningDatasetTests(unittest.TestCase):
             )
 
     def test_default_sources_include_verified_raw_reasoning_sets(self) -> None:
-        from qtrm_mm.data.verified_reasoning import DEFAULT_VERIFIED_SOURCES
+        from wgram_lm.data.verified_reasoning import DEFAULT_VERIFIED_SOURCES
 
         self.assertIn("gsm8k_train", DEFAULT_VERIFIED_SOURCES)
         self.assertIn("math500_test", DEFAULT_VERIFIED_SOURCES)

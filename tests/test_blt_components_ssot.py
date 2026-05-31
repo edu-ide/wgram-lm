@@ -7,7 +7,7 @@ import torch
 
 class BLTComponentsSSOTTests(unittest.TestCase):
     def test_blt_local_decoder_components_are_importable_from_src(self) -> None:
-        from qtrm_mm.models.blt_components import BLTDLocalDecoder, NextImplicitByteProjector
+        from wgram_lm.models.blt_components import BLTDLocalDecoder, NextImplicitByteProjector
 
         projector = NextImplicitByteProjector(d_model=4, hidden_dim=8)
         hidden = torch.randn(2, 3, 4)

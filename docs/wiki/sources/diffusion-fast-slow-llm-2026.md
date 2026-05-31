@@ -137,7 +137,7 @@ pdf:
   references/papers/2605.06546-efficient-pre-training-with-token-superposition.pdf
 
 primitive:
-  src/qtrm_mm/tst.py
+  src/wgram_lm/tst.py
 
 tests:
   tests/test_tst.py

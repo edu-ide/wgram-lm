@@ -79,7 +79,7 @@ Implemented fields:
 scripts/190_build_pure_recursive_reasoning_cases.py
 scripts/192_eval_raw_intelligence.py
 scripts/194_build_pure_recursive_reasoning_preferences.py
-src/qtrm_mm/eval/raw_intelligence_gate.py
+src/wgram_lm/eval/raw_intelligence_gate.py
 data/eval/pure_recursive_reasoning_heldout_72.jsonl
 data/filtered/pure_recursive_reasoning_train256_cases.jsonl
 data/filtered/pure_recursive_reasoning_preferences_train.jsonl
@@ -110,7 +110,7 @@ no-retrieval depth and memory ablations.
 ## Implemented Artifacts
 
 ```text
-src/qtrm_mm/eval/raw_intelligence_gate.py
+src/wgram_lm/eval/raw_intelligence_gate.py
 scripts/190_build_pure_recursive_reasoning_cases.py
 scripts/191_build_raw_intelligence_gate.py
 scripts/192_eval_raw_intelligence.py
@@ -290,9 +290,9 @@ state-machine core.
 Artifacts:
 
 ```text
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/config.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/config.py
+src/wgram_lm/training/train.py
 configs/qwen35_2b_4090_pure_recursive_depth_fullseq_kiss_s160.yaml
 tests/test_core_halting.py
 tests/test_training_checkpoint_init.py

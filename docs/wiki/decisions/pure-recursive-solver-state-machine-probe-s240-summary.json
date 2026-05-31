@@ -2,7 +2,7 @@
   "date": "2026-05-04",
   "status": "architecture_rejected_direct_state_string_generation",
   "artifacts": {
-    "module": "src/qtrm_mm/agentic/solver_state_machine.py",
+    "module": "src/wgram_lm/agentic/solver_state_machine.py",
     "train_script": "scripts/216_train_pure_recursive_solver_state_machine.py",
     "small_checkpoint": "local_eval/pure_recursive_solver_state_machine_s240_compact_input/last.pt",
     "large_checkpoint": "local_eval/pure_recursive_solver_state_machine_large_s240/last.pt"
@@ -109,7 +109,7 @@
   },
   "qtrm_primitive_transition_runtime_answer_path": {
     "script": "scripts/222_infer_qtrm_primitive_transition_answer.py",
-    "runtime_function": "qtrm_mm.agentic.solver_state_machine.answer_from_primitive_operations",
+    "runtime_function": "wgram_lm.agentic.solver_state_machine.answer_from_primitive_operations",
     "checkpoint": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/last.pt",
     "arithmetic_smoke": {
       "artifact": "local_eval/qwen35_2b_pure_recursive_primitive_transition_promptattn_s480_from_s720/runtime_answer_arith_7000.json",

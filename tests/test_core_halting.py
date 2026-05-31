@@ -3,7 +3,7 @@ import unittest
 
 class CoreHaltingTests(unittest.TestCase):
     def _cfg(self):
-        from qtrm_mm import QTRMConfig
+        from wgram_lm import QTRMConfig
 
         return QTRMConfig(
             vocab_size=64,
@@ -27,7 +27,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_halt_head_can_stop_latent_loop_early_when_enabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         model = QTRMMultimodalModel(cfg)
@@ -48,7 +48,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_accepts_token_numeric_value_ids_when_enabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.token_numeric_value_embedding_enabled = True
@@ -71,7 +71,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_accepts_token_numeric_source_slots_when_enabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.token_numeric_source_slot_embedding_enabled = True
@@ -108,7 +108,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_source_position_binder_initializes_prompt_state_from_tokens(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -191,7 +191,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_source_position_binder_can_be_forced_to_source_slots(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.token_numeric_source_slot_embedding_enabled = True
@@ -240,7 +240,7 @@ class CoreHaltingTests(unittest.TestCase):
     def test_core_source_position_binder_can_read_raw_source_slots_before_prelude(self):
         import torch
         from torch import nn
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         class AddLargeConstant(nn.Module):
             def forward(self, seq, attention_mask=None):
@@ -284,7 +284,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_accepts_core_primitive_prompt_context_ablation(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.primitive_transition_enabled = True
@@ -307,7 +307,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_halt_head_is_telemetry_only_when_halt_is_disabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         model = QTRMMultimodalModel(cfg)
@@ -326,7 +326,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_halt_head_uses_trm_conservative_initialization(self):
         import torch
-        from qtrm_mm.core import QTRMRecursiveCore
+        from wgram_lm.core import QTRMRecursiveCore
 
         cfg = self._cfg()
         model = QTRMRecursiveCore(cfg)
@@ -341,7 +341,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_transition_feedback_returns_step_logits(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -380,7 +380,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_transition_order_bottleneck_adds_prompt_token_before_core(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -416,8 +416,8 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_transition_order_step_conditioning_changes_core_state(self):
         import torch
-        from qtrm_mm import QTRMConfig
-        from qtrm_mm.core import QTRMRecursiveCore
+        from wgram_lm import QTRMConfig
+        from wgram_lm.core import QTRMRecursiveCore
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -455,8 +455,8 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_trm_no_grad_inner_cycles_only_backpropagates_last_h_cycle(self):
         import torch
-        from qtrm_mm import QTRMConfig
-        from qtrm_mm.core import QTRMRecursiveCore
+        from wgram_lm import QTRMConfig
+        from wgram_lm.core import QTRMRecursiveCore
 
         class RecordingStack(torch.nn.Module):
             def __init__(self):
@@ -499,8 +499,8 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_respects_outer_torch_no_grad_context(self):
         import torch
-        from qtrm_mm import QTRMConfig
-        from qtrm_mm.core import QTRMRecursiveCore
+        from wgram_lm import QTRMConfig
+        from wgram_lm.core import QTRMRecursiveCore
 
         class RecordingStack(torch.nn.Module):
             def __init__(self):
@@ -540,8 +540,8 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_trm_act_freezes_halted_samples_until_batch_finishes(self):
         import torch
-        from qtrm_mm import QTRMConfig
-        from qtrm_mm.core import QTRMRecursiveCore
+        from wgram_lm import QTRMConfig
+        from wgram_lm.core import QTRMRecursiveCore
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -590,8 +590,8 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_halt_exploration_delays_early_halt_during_training_only(self):
         import torch
-        from qtrm_mm import QTRMConfig
-        from qtrm_mm.core import QTRMRecursiveCore
+        from wgram_lm import QTRMConfig
+        from wgram_lm.core import QTRMRecursiveCore
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -638,8 +638,8 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_returns_detached_explicit_carry_for_continuation(self):
         import torch
-        from qtrm_mm import QTRMConfig
-        from qtrm_mm.core import QTRMRecursiveCore
+        from wgram_lm import QTRMConfig
+        from wgram_lm.core import QTRMRecursiveCore
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -674,14 +674,14 @@ class CoreHaltingTests(unittest.TestCase):
         self.assertIsNotNone(workspace.grad)
 
     def test_core_carry_is_public_package_api(self):
-        from qtrm_mm import QTRMCoreCarry
+        from wgram_lm import QTRMCoreCarry
 
         self.assertEqual(QTRMCoreCarry.__name__, "QTRMCoreCarry")
 
     def test_core_resets_halted_carry_rows_on_next_call(self):
         import torch
-        from qtrm_mm import QTRMConfig
-        from qtrm_mm.core import QTRMCoreCarry, QTRMRecursiveCore
+        from wgram_lm import QTRMConfig
+        from wgram_lm.core import QTRMCoreCarry, QTRMRecursiveCore
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -728,7 +728,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_forward_can_return_and_reuse_core_carry(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         cfg = QTRMConfig(
             vocab_size=64,
@@ -760,7 +760,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_per_outer_step_core_depth_states_for_teacher_targets(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         model = QTRMMultimodalModel(cfg)
@@ -771,7 +771,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_can_expose_per_outer_step_last_token_logits_for_teacher_targets(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         model = QTRMMultimodalModel(cfg)
@@ -785,7 +785,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_can_expose_per_outer_step_text_logits_for_full_answer_targets(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         model = QTRMMultimodalModel(cfg)
@@ -803,7 +803,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_transition_state_sequence_logits_from_core_depth_states(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.transition_state_sequence_enabled = True
@@ -822,7 +822,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_compact_transition_value_state_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.transition_value_state_enabled = True
@@ -842,7 +842,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_factorized_transition_value_state_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.factorized_value_state_enabled = True
@@ -866,7 +866,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_factorized_value_state_kind_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.factorized_value_state_enabled = True
@@ -887,7 +887,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_role_value_state_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.factorized_value_state_enabled = True
@@ -910,7 +910,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_typed_algorithmic_value_state_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.typed_algorithmic_value_state_enabled = True
@@ -1001,7 +1001,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_core_role_value_state_logits_from_core_tokens(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1022,7 +1022,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_core_role_value_transition_logits_between_core_steps(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1043,7 +1043,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_state_carry_updates_role_tokens_and_exposes_gate_telemetry(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1075,7 +1075,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_delta_adapter_exposes_gate_telemetry(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1108,7 +1108,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_value_delta_code_executor_exposes_discrete_code_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1147,7 +1147,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_typed_register_executor_exposes_persistent_register_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1205,7 +1205,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_typed_register_transition_readout_feeds_value_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1230,7 +1230,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_typed_register_value_feedback_is_initialized_when_enabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1260,7 +1260,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_template_codec_can_override_value_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1295,7 +1295,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_template_factorized_codec_composes_template_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1324,7 +1324,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_answer_bridge_feeds_answer_loop(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1361,7 +1361,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_answer_bridge_feeds_depth_answer_loop(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1407,7 +1407,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_vocab_renderer_feeds_residual_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.qtrm_logits_scale = 0.0
@@ -1449,7 +1449,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_answer_prompt_context_changes_bridge_tokens(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -1499,7 +1499,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_answer_final_binder_is_ablatable(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1535,7 +1535,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_recurrent_block_feeds_answer_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1569,7 +1569,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_selective_context_router_is_ablatable(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1595,7 +1595,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_selective_context_can_force_dense_teacher_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1621,7 +1621,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_core_state_only_keeps_text_out_of_cross_values(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1653,7 +1653,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_finality_selector_uses_transition_joint_state(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1694,7 +1694,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_finality_gate_is_ablatable(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1736,7 +1736,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_halt_head_is_trainable_and_ablatable(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1766,7 +1766,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_lm_adapter_is_zero_init_and_causal_logit_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1825,7 +1825,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_hidden_bridge_is_zero_init_and_ablatable(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1897,7 +1897,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_future_token_decoder_is_auxiliary_only(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1921,7 +1921,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_talker_is_zero_gated_and_causal_logit_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -1978,7 +1978,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_finality_selector_hard_first_uses_first_final_depth(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -2008,7 +2008,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_transition_joint_answer_bridge_is_ablatable(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -2037,7 +2037,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_transition_final_answer_binder_is_ablatable(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -2069,7 +2069,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_transition_final_answer_binder_reads_selected_core_state(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.answer_state_loop_enabled = True
@@ -2100,7 +2100,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_state_prompt_extract_path_is_initialized_when_enabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -2164,7 +2164,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_role_value_state_logits_are_empty_when_core_is_disabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -2181,7 +2181,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_model_exposes_primitive_transition_operation_logits_from_core_depth_states(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.primitive_transition_enabled = True
@@ -2200,7 +2200,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_primitive_transition_operation_logits_are_zero_when_core_is_disabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.primitive_transition_enabled = True
@@ -2223,7 +2223,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_prompt_context_can_condition_primitive_transition_operation_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.primitive_transition_enabled = True
@@ -2256,7 +2256,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_prompt_token_attention_can_distinguish_same_mean_prompt_contexts(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.primitive_transition_enabled = True
@@ -2297,7 +2297,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_primitive_role_value_executor_exposes_recurrent_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -2383,7 +2383,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_primitive_role_value_executor_is_empty_when_core_is_disabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_role_value_state_enabled = True
@@ -2408,7 +2408,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_primitive_residual_delta_preserves_state_when_delta_is_zero(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.outer_steps = 3
@@ -2453,7 +2453,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_depth_last_token_logits_do_not_include_depth_invariant_donor_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.donor_logits_scale = 1.0
@@ -2477,7 +2477,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_step_conditioning_can_make_depth_states_step_specific(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_halt_enabled = False
@@ -2506,7 +2506,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_bottleneck_residual_is_final_logit_path_without_donor(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_halt_enabled = False
@@ -2523,7 +2523,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_loop_readout_is_final_logit_path_without_donor(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_halt_enabled = False
@@ -2547,7 +2547,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_core_loop_readout_requires_core_when_core_is_disabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_halt_enabled = False
@@ -2564,7 +2564,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_is_final_logit_path_without_donor(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_halt_enabled = False
@@ -2592,7 +2592,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_answer_state_loop_requires_core_when_core_is_disabled(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         cfg = self._cfg()
         cfg.core_halt_enabled = False
@@ -2610,7 +2610,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_transition_state_core_exposes_state_and_feeds_answer_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         torch.manual_seed(7)
         cfg = self._cfg()
@@ -2664,7 +2664,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_transition_state_code_path_exposes_code_and_feeds_answer_path(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         torch.manual_seed(11)
         cfg = self._cfg()
@@ -2703,7 +2703,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_transition_state_finality_head_exposes_ablatable_logits(self):
         import torch
-        from qtrm_mm import QTRMMultimodalModel
+        from wgram_lm import QTRMMultimodalModel
 
         torch.manual_seed(17)
         cfg = self._cfg()
@@ -2727,7 +2727,7 @@ class CoreHaltingTests(unittest.TestCase):
 
     def test_transition_state_code_only_loop_uses_code_as_answer_state(self):
         import torch
-        from qtrm_mm import QTRMConfig, QTRMMultimodalModel
+        from wgram_lm import QTRMConfig, QTRMMultimodalModel
 
         torch.manual_seed(13)
         self.assertFalse(QTRMConfig().transition_state_code_only_answer_loop)

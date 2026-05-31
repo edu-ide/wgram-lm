@@ -1898,7 +1898,7 @@ Operational fix:
     .venv/bin/python -m py_compile
       scripts/322_run_source_pointer_l4_lm_path_gate.py
       scripts/328_probe_qtrm_source_position_logits.py
-      src/qtrm_mm/qtrm_model.py
+      src/wgram_lm/wgram_model.py
     .venv/bin/python -m unittest
       tests.test_source_position_logits_probe
       tests.test_source_pointer_l4_lm_path_gate -v

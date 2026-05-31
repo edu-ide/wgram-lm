@@ -8,7 +8,7 @@ import pytest
 torch = pytest.importorskip("torch")
 pytest.importorskip("transformers")
 
-from qtrm_mm.qwen35_full_msa_healing import (
+from wgram_lm.qwen35_full_msa_healing import (
     build_tiny_healing_models,
     freeze_for_stage1_healing,
     qwen35_full_msa_healing_loss,

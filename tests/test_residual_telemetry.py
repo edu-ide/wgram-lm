@@ -5,7 +5,7 @@ import torch
 
 class ResidualTelemetryTests(unittest.TestCase):
     def test_reports_argmax_shift_and_residual_norms(self):
-        from qtrm_mm.diagnostics import residual_logit_telemetry
+        from wgram_lm.diagnostics import residual_logit_telemetry
 
         donor = torch.tensor([4.0, 1.0, 0.0])
         fused = torch.tensor([3.0, 5.0, 0.0])
@@ -20,7 +20,7 @@ class ResidualTelemetryTests(unittest.TestCase):
         self.assertEqual(report["residual_top_id"], 1)
 
     def test_applies_donor_scale_before_residual_comparison(self):
-        from qtrm_mm.diagnostics import residual_logit_telemetry
+        from wgram_lm.diagnostics import residual_logit_telemetry
 
         donor = torch.tensor([2.0, 0.0])
         fused = torch.tensor([2.5, 1.0])

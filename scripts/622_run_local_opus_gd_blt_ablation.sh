@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos}"
+ROOT="${ROOT:-/home/tripleyoung/qtrm-workspace/wgram-lm}"
 PYTHON="${PYTHON:-${ROOT}/.venv/bin/python}"
 CLEANED_DATA_PATH="${CLEANED_DATA_PATH:-/mnt/sdc1/datasets/hrm-text-data-io-cleaned-20260515}"
 PTXAS="${PTXAS:-/usr/local/cuda-12.8/bin/ptxas}"

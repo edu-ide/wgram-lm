@@ -5,7 +5,7 @@ from pathlib import Path
 
 class ResidualAdapterProofTests(unittest.TestCase):
     def test_build_proof_summary_compares_donor_and_residual_modes(self):
-        from qtrm_mm.eval.residual_adapter_proof import build_proof_summary
+        from wgram_lm.eval.residual_adapter_proof import build_proof_summary
 
         records = [
             {
@@ -70,7 +70,7 @@ class ResidualAdapterProofTests(unittest.TestCase):
         self.assertEqual(proof["aggregate"]["residual"]["hits"], 2)
 
     def test_load_eval_records_ignores_summary_rows(self):
-        from qtrm_mm.eval.residual_adapter_proof import load_eval_records
+        from wgram_lm.eval.residual_adapter_proof import load_eval_records
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "eval.jsonl"
@@ -91,7 +91,7 @@ class ResidualAdapterProofTests(unittest.TestCase):
         self.assertEqual(records[0]["id"], "case-a")
 
     def test_render_markdown_includes_delta_table_and_limitations(self):
-        from qtrm_mm.eval.residual_adapter_proof import build_proof_summary, render_markdown
+        from wgram_lm.eval.residual_adapter_proof import build_proof_summary, render_markdown
 
         proof = build_proof_summary(
             [

@@ -1494,9 +1494,9 @@ primitive operation logits
 Code/config:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_typed_primitive_conditioned_field_state_s160.yaml
 ```
 
@@ -2570,8 +2570,8 @@ scalar affine fields and create nonzero exact-step accuracy.
 Implementation:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_typed_subregister_promptctx_scalar_regression_s160.yaml
 
 New config flags:
@@ -2629,9 +2629,9 @@ should recover more prompt-bound information than the first-token readout.
 Implementation:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dense_terminal_v2_depthreadout_promptctx_scalar_regression_s160.yaml
 
 New flag:
@@ -2689,9 +2689,9 @@ text_position_embed before the recursive core can bind prompt operands.
 Implementation:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 tests/test_training_checkpoint_init.py
 
 New flag:
@@ -2707,7 +2707,7 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/config.py src/qtrm_mm/qtrm_model.py src/qtrm_mm/training/train.py
+  src/wgram_lm/config.py src/wgram_lm/wgram_model.py src/wgram_lm/training/train.py
 
 PYTHONPATH=src .venv/bin/python -m unittest \
   tests.test_training_checkpoint_init.TrainingCheckpointInitTests.test_token_embed_core_and_typed_policy_opens_token_path \
@@ -2924,7 +2924,7 @@ binder mostly random-frozen.
 Fix:
 
 ```text
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
 tests/test_training_checkpoint_init.py
 
 The token_embed_core_and_typed_algorithmic_value_state policy now trains:
@@ -2935,7 +2935,7 @@ transition_state_joint, and typed_algorithmic_*.
 Verification:
 
 ```text
-PYTHONPATH=src .venv/bin/python -m py_compile src/qtrm_mm/training/train.py
+PYTHONPATH=src .venv/bin/python -m py_compile src/wgram_lm/training/train.py
 
 PYTHONPATH=src .venv/bin/python -m unittest \
   tests.test_training_checkpoint_init.TrainingCheckpointInitTests.test_token_embed_core_and_typed_policy_opens_token_path \
@@ -3632,7 +3632,7 @@ some training paths.
 Fix:
 
 ```text
-src/qtrm_mm/algorithmic_value_state.py
+src/wgram_lm/algorithmic_value_state.py
 
 absolute_list_value_classes(values, max_slots, slot_vocab_size)
 role_value_targets_from_row(...)
@@ -3848,7 +3848,7 @@ prompt/donor hidden
 Files changed:
 
 ```text
-src/qtrm_mm/algorithmic_value_state.py
+src/wgram_lm/algorithmic_value_state.py
   row_input_list(...)
   source_position_list_classes(...)
   base-less list targets now prefer source positions and only fall back to
@@ -3871,7 +3871,7 @@ PYTHONPATH=src .venv/bin/python -m unittest \
 result: 22 tests OK
 
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/algorithmic_value_state.py \
+  src/wgram_lm/algorithmic_value_state.py \
   scripts/238_eval_qtrm_algorithmic_value_state.py
 
 result: OK
@@ -4192,8 +4192,8 @@ back to the donor/token hidden stream before feeding answer_state_loop.
 Implementation:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 tests/test_core_halting.py
 
 added:
@@ -4219,8 +4219,8 @@ result:
   326 tests OK
 
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/config.py \
-  src/qtrm_mm/qtrm_model.py \
+  src/wgram_lm/config.py \
+  src/wgram_lm/wgram_model.py \
   scripts/196_train_pure_recursive_depth_supervised.py \
   scripts/192_eval_raw_intelligence.py
 
@@ -4312,8 +4312,8 @@ role/value bridge state into the answer loop before LM logits.
 Implementation:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 scripts/192_eval_raw_intelligence.py
 tests/test_core_halting.py
 
@@ -4342,8 +4342,8 @@ result:
   327 tests OK
 
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/config.py \
-  src/qtrm_mm/qtrm_model.py \
+  src/wgram_lm/config.py \
+  src/wgram_lm/wgram_model.py \
   scripts/192_eval_raw_intelligence.py \
   scripts/196_train_pure_recursive_depth_supervised.py
 

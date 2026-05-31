@@ -6,7 +6,7 @@ import torch
 
 
 def test_qwen_scope_sae_loads_layer_file_and_validates_shapes(tmp_path):
-    from qtrm_mm.qwen_scope import load_qwen_scope_sae_file
+    from wgram_lm.qwen_scope import load_qwen_scope_sae_file
 
     path = tmp_path / "layer3.sae.pt"
     torch.save(
@@ -27,7 +27,7 @@ def test_qwen_scope_sae_loads_layer_file_and_validates_shapes(tmp_path):
 
 
 def test_qwen_scope_topk_features_match_sparse_autoencoder_projection():
-    from qtrm_mm.qwen_scope import QwenScopeSAE, extract_topk_features
+    from wgram_lm.qwen_scope import QwenScopeSAE, extract_topk_features
 
     sae = QwenScopeSAE(
         layer=0,
@@ -53,7 +53,7 @@ def test_qwen_scope_topk_features_match_sparse_autoencoder_projection():
 
 
 def test_qwen_scope_records_last_token_features_as_json_ready_rows():
-    from qtrm_mm.qwen_scope import QwenScopeSAE, qwen_scope_feature_records
+    from wgram_lm.qwen_scope import QwenScopeSAE, qwen_scope_feature_records
 
     sae = QwenScopeSAE(
         layer=2,
@@ -105,7 +105,7 @@ def test_qwen_scope_records_last_token_features_as_json_ready_rows():
 
 
 def test_qwen_scope_records_last_nonpad_token_when_attention_mask_is_supplied():
-    from qtrm_mm.qwen_scope import QwenScopeSAE, qwen_scope_feature_records
+    from wgram_lm.qwen_scope import QwenScopeSAE, qwen_scope_feature_records
 
     sae = QwenScopeSAE(
         layer=1,
@@ -142,7 +142,7 @@ def test_qwen_scope_records_last_nonpad_token_when_attention_mask_is_supplied():
 
 
 def test_qwen_scope_compare_feature_groups_finds_repeat_enriched_features():
-    from qtrm_mm.qwen_scope import compare_qwen_scope_feature_groups
+    from wgram_lm.qwen_scope import compare_qwen_scope_feature_groups
 
     records = [
         {
@@ -192,7 +192,7 @@ def test_qwen_scope_compare_feature_groups_finds_repeat_enriched_features():
 
 
 def test_qwen_scope_candidate_scores_group_hits_by_prompt_and_layer():
-    from qtrm_mm.qwen_scope import score_qwen_scope_candidate_features
+    from wgram_lm.qwen_scope import score_qwen_scope_candidate_features
 
     records = [
         {
@@ -247,7 +247,7 @@ def test_qwen_scope_candidate_scores_group_hits_by_prompt_and_layer():
 
 
 def test_qwen_scope_candidate_scores_can_limit_top_features():
-    from qtrm_mm.qwen_scope import score_qwen_scope_candidate_features
+    from wgram_lm.qwen_scope import score_qwen_scope_candidate_features
 
     records = [
         {
@@ -269,7 +269,7 @@ def test_qwen_scope_candidate_scores_can_limit_top_features():
 
 
 def test_qwen_scope_repeat_score_threshold_summary_selects_best_f1():
-    from qtrm_mm.qwen_scope import summarize_qwen_scope_repeat_score_thresholds
+    from wgram_lm.qwen_scope import summarize_qwen_scope_repeat_score_thresholds
 
     scores = [
         {"prompt_index": 0, "total_value_sum": 0.4, "repeat_label": "normal"},
@@ -290,7 +290,7 @@ def test_qwen_scope_repeat_score_threshold_summary_selects_best_f1():
 
 
 def test_qwen_scope_repeat_score_threshold_summary_can_label_from_repeat_rate():
-    from qtrm_mm.qwen_scope import summarize_qwen_scope_repeat_score_thresholds
+    from wgram_lm.qwen_scope import summarize_qwen_scope_repeat_score_thresholds
 
     scores = [
         {"prompt_index": 0, "total_value_sum": 0.4, "repeated_2gram_rate": 0.05},

@@ -65,14 +65,14 @@ deprecated/rejected path:
   documented as rejected and not allowed in promoted runs
 ```
 
-Do not assume that every class in `src/qtrm_mm` is BEST. BEST requires an
+Do not assume that every class in `src/wgram_lm` is BEST. BEST requires an
 explicit SSOT page, a current promotion gate, and an ablation signal. Rejected
 paths should either be removed or guarded so they cannot become the default
 training path by accident.
 
 Code SSOT:
 
-- `src/qtrm_mm/architecture/component_registry.py`
+- `src/wgram_lm/architecture/component_registry.py`
 
 The registry is the executable version of this rule. It currently marks:
 
@@ -153,8 +153,8 @@ model architecture.
 | --- | --- | --- | --- |
 | SSOT context compilation | Runtime/eval | `scripts/95_eval_memory_retrieval.py --evidence-injection ssot` | Retrieved evidence is compiled into one canonical donor-visible token stream before model forward. |
 | Canonical autoregressive answer gate | Active eval | `scripts/166_run_canonical_ssot_answer_gate.sh`, `scripts/95_eval_memory_retrieval.py --require-canonical-ssot` | Uses `--evidence-injection ssot` and `--answer-channel greedy`; rejects workspace/dual hidden-evidence and span-copy answer paths. |
-| MemoryOS retrieval | Runtime/eval | `qtrm_mm/memoryos/retrieve.py`, `scripts/95_eval_memory_retrieval.py` | External search over memory records. Optional; the QTRM model must work without it. |
-| MemoryOS reranker | Runtime/eval | `qtrm_mm/memoryos/rerank.py` | External candidate ordering before context compilation. |
+| MemoryOS retrieval | Runtime/eval | `wgram_lm/memoryos/retrieve.py`, `scripts/95_eval_memory_retrieval.py` | External search over memory records. Optional; the QTRM model must work without it. |
+| MemoryOS reranker | Runtime/eval | `wgram_lm/memoryos/rerank.py` | External candidate ordering before context compilation. |
 | Learned evidence source selector | Runtime/eval accepted | `scripts/165_train_evidence_source_selector.py` | Runtime selector that creates token-aligned masks over the compiled context; not a model layer. |
 | Dual evidence injection | Probe-only | `--evidence-injection dual`, `workspace_evidence_injection_mode: dual` | Deterministic visible and workspace views of one evidence context for ablations. |
 | Workspace-only evidence injection | Probe-only | `--evidence-injection workspace`, `workspace_evidence_injection: true` | Hidden-evidence causality probe, not a user-facing architecture. |

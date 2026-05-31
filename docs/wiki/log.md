@@ -71,7 +71,7 @@ Details:
     - Local TensorBoard: `http://127.0.0.1:6007` (monitoring local LoRA training progress)
     - DGX TensorBoard: `http://192.168.219.113:6008` (monitoring DGX BLT spine pretraining loss and OPUS selection dynamics)
 - **Decision Records**:
-  - Authored and formally integrated [0002-two-track-lora-blt-recurrent-pretrain-split.md](file:///home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/docs/wiki/decisions/0002-two-track-lora-blt-recurrent-pretrain-split.md) into the active policies index.
+  - Authored and formally integrated [0002-two-track-lora-blt-recurrent-pretrain-split.md](file:///home/tripleyoung/qtrm-workspace/wgram-lm/docs/wiki/decisions/0002-two-track-lora-blt-recurrent-pretrain-split.md) into the active policies index.
 
 ## [2026-05-29] RI-1 Substrate | LoRA-Steered Loop LM Pipeline Completed & Validated (M1/M2)
 
@@ -88,7 +88,7 @@ Details:
 
 ## [2026-05-29] RI-1 Substrate | Upgraded Long-Horizon + Learnable Elastic Depth Wired and Tested
 
-Wired and activated the learnable elastic depth policy (`core_elastic_depth_learn_policy`) inside `OneBodyParallelHybridBlock.forward`. 
+Wired and activated the learnable elastic depth policy (`core_elastic_depth_learn_policy`) inside `OneBodyParallelHybridBlock.forward`.
 
 Details:
 - Called the policy head `self.elastic_depth_policy` on `x_norm` to output halting logits.
@@ -840,7 +840,7 @@ Local:
   Aim: http://localhost:43806
 
 DGX:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE80_DGX82M_LANGUAGE_CONT_BS64
+  /mnt/data4tb/wgram-lm/local_eval/20260523_STAGE80_DGX82M_LANGUAGE_CONT_BS64
   /tmp/20260523_STAGE80_DGX82M_LANGUAGE_CONT_BS64.log
   TensorBoard root: http://dgx:6008
 ```
@@ -1798,7 +1798,7 @@ Implementation:
 
 ```text
 module:
-  src/qtrm_mm/eval/general_answer_interface.py
+  src/wgram_lm/eval/general_answer_interface.py
 
 tests:
   tests/test_general_answer_interface.py
@@ -1831,7 +1831,7 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/eval/general_answer_interface.py \
+  src/wgram_lm/eval/general_answer_interface.py \
   tests/test_general_answer_interface.py \
   scripts/521_eval_general_answer_candidates.py
 
@@ -1930,7 +1930,7 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/eval/general_answer_interface.py \
+  src/wgram_lm/eval/general_answer_interface.py \
   tests/test_general_answer_interface.py \
   scripts/521_eval_general_answer_candidates.py \
   scripts/522_eval_openai_general_answer_candidates.py
@@ -2022,7 +2022,7 @@ Verification:
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
   scripts/92_eval_qtrm_logits.py \
-  src/qtrm_mm/eval/general_answer_interface.py \
+  src/wgram_lm/eval/general_answer_interface.py \
   tests/test_general_answer_interface.py \
   scripts/521_eval_general_answer_candidates.py \
   scripts/522_eval_openai_general_answer_candidates.py
@@ -2091,7 +2091,7 @@ speaker trained on:
 We resolved the long-standing synthetic out-of-distribution (OOD) generalization accuracy plateau of ~0.16–0.18 for the Qwen3.5-0.8B + QTRM recurrent reasoning core on the generalized digit checksum task. We implemented a continuous time embedding MLP projection and the Elastic-LSCR alignment objective.
 
 ### Proposed Changes & Implementation:
-- **Continuous Time Conditioning**: Replaced step-absolute embeddings with a Continuous Time MLP `time_mlp: [tau = t/T, delta = 1/T]` in `src/qtrm_mm/state_transition_core.py` to prevent representation boundary drift at evaluation depths >= 10.
+- **Continuous Time Conditioning**: Replaced step-absolute embeddings with a Continuous Time MLP `time_mlp: [tau = t/T, delta = 1/T]` in `src/wgram_lm/state_transition_core.py` to prevent representation boundary drift at evaluation depths >= 10.
 - **Elastic-LSCR Formulation**: Aligns shallower recurrent trajectories (student) at matched continuous times $\tau = k / T_{\text{short}}$ to the nearest rounded index in deeper trajectories (teacher: $t_{\text{long\_idx}} = \text{round}(\tau \times T_{\text{long}})$) in `scripts/511_train_qwen_state_transition_hrmtext.py`. Detaches the long-trajectory teacher to prevent representation collapse.
 - **High-Resolution Telemetry**: Added step-level and epoch-level logging for `Train/Step/TransitionNorm_Mean`, `Train/Step/StateNorm_Mean`, and `Train/Step/StateCosine_Mean` to both TensorBoard and Aim.
 - **Launch Script Integration**: Updated `scripts/launch_stage31a_after_stage30b.sh` and `scripts/launch_stage31b_dgx.sh` with the `--continuous-time` CLI flag.
@@ -3611,8 +3611,8 @@ states are not appended as answer-loop cross-attention values.
 Files:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 tests/test_core_halting.py
 tests/test_mixed_noncopy_lm_gate.py
 scripts/330_run_mixed_noncopy_lm_gate.py
@@ -5172,7 +5172,7 @@ scripts/192_eval_raw_intelligence.py
   now forwards case.temporal_spatial_context and supports
   qtrm_core_steps_N_temporal_spatial_off_no_evidence
 
-src/qtrm_mm/eval/raw_intelligence_gate.py
+src/wgram_lm/eval/raw_intelligence_gate.py
   gate_type=temporal_spatial_context
 
 scripts/208_run_temporal_spatial_context_gate.sh
@@ -5292,17 +5292,17 @@ run should compare whether this changes the previously near-zero delta.
 Added a small QTRM forward-path extension for time/space awareness:
 
 ```text
-src/qtrm_mm/config.py
+src/wgram_lm/config.py
   temporal_spatial_context_enabled
   temporal_spatial_context_dim
   temporal_spatial_context_max_tokens
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   temporal_spatial_context -> projected prefix tokens
   disable_temporal_spatial_context ablation flag
   temporal_spatial_context_token_count telemetry
 
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
   trainable_param_policy=core_and_temporal_spatial_context
 ```
 
@@ -5380,11 +5380,11 @@ Do not trust the partial full-sweep file under `runs/eval`.
 Implemented the next KISS fusion diagnostic instead:
 
 ```text
-src/qtrm_mm/config.py
+src/wgram_lm/config.py
   donor_qtrm_conflict_gate_enabled
   donor_qtrm_conflict_qtrm_scale
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   donor/QTRM top-token conflict gate before donor-logit fusion
 
 scripts/192_eval_raw_intelligence.py
@@ -5983,7 +5983,7 @@ ablation gates.
 Implemented:
 
 ```text
-src/qtrm_mm/eval/raw_intelligence_gate.py
+src/wgram_lm/eval/raw_intelligence_gate.py
 scripts/190_build_pure_recursive_reasoning_cases.py
 scripts/191_build_raw_intelligence_gate.py
 scripts/192_eval_raw_intelligence.py
@@ -6052,11 +6052,11 @@ answer-only SFT pass is not canonical progress.
 Implemented fixes for the raw recursive-depth path:
 
 ```text
-src/qtrm_mm/qtrm_model.py: final logits now use qtrm_residual_logits without donor logits
+src/wgram_lm/wgram_model.py: final logits now use qtrm_residual_logits without donor logits
 scripts/196_train_pure_recursive_depth_supervised.py: full answer-token CE
 scripts/196_train_pure_recursive_depth_supervised.py: Cartesian row/depth schedule
 scripts/197_run_pure_recursive_depth_supervised_train.sh: TARGET_MODE switch
-src/qtrm_mm/training/train.py: core_only trainable policy
+src/wgram_lm/training/train.py: core_only trainable policy
 configs/qwen35_2b_4090_pure_recursive_depth_fullseq_kiss_s160.yaml
 ```
 
@@ -6406,7 +6406,7 @@ Added a donor-preserving answer residual governor:
 - `QTRMConfig.answer_residual_governor_enabled`
 - `QTRMConfig.answer_residual_governor_init_bias`
 - `TrainConfig.loss_answer_residual_governor_weight`
-- `src/qtrm_mm/losses.py::answer_residual_governor_loss`
+- `src/wgram_lm/losses.py::answer_residual_governor_loss`
 - `qtrm_answer_residual_governor_off_with_evidence` ablation mode
 - `configs/qwen35_2b_4090_canonical_answer_governor_s120.yaml`
 - `scripts/175_run_canonical_answer_governor_train.sh`
@@ -6478,7 +6478,7 @@ is enough.
 
 Added greedy-token margin pressure to the training loss:
 
-- `src/qtrm_mm/losses.py::greedy_token_margin_loss`
+- `src/wgram_lm/losses.py::greedy_token_margin_loss`
 - `TrainConfig.loss_greedy_token_margin_weight`
 - `TrainConfig.greedy_token_margin`
 - `TrainConfig.greedy_token_margin_only_donor_errors`
@@ -6509,7 +6509,7 @@ train `Verify/Decision/Answer`, while the canonical gate expects a short greedy
 
 Added:
 
-- `src/qtrm_mm/eval/ssot_contract.py`
+- `src/wgram_lm/eval/ssot_contract.py`
 - `tests/test_ssot_contract.py`
 - `docs/wiki/architecture/kiss-yagni-dry-ssot-contract.md`
 
@@ -7027,7 +7027,7 @@ transition sequence.
 
 Added:
 
-- `src/qtrm_mm/agentic/transition_controller.py`;
+- `src/wgram_lm/agentic/transition_controller.py`;
 - `scripts/158_train_transition_state_controller.py`;
 - `tests/test_transition_state_controller.py`;
 - `return_features_only=True` in `QTRMMultimodalModel.forward`;
@@ -7158,11 +7158,11 @@ typed context tape -> MemoryOS/search -> shared evidence SSoT
 
 Added:
 
-- `src/qtrm_mm/agentic/cognitive_loop.py`;
-- `src/qtrm_mm/agentic/context_tape.py`;
-- `src/qtrm_mm/agentic/causal_gate.py`;
-- `src/qtrm_mm/agentic/harness.py`;
-- `src/qtrm_mm/agentic/trace_replay.py`;
+- `src/wgram_lm/agentic/cognitive_loop.py`;
+- `src/wgram_lm/agentic/context_tape.py`;
+- `src/wgram_lm/agentic/causal_gate.py`;
+- `src/wgram_lm/agentic/harness.py`;
+- `src/wgram_lm/agentic/trace_replay.py`;
 - `tests/test_asi_cognitive_loop_contract.py`;
 - `tests/test_asi_causal_loop_gate_script.py`;
 - `scripts/154_build_asi_causal_loop_gate.py`;
@@ -7464,7 +7464,7 @@ Verification:
 ```bash
 bash -n scripts/90_infer_with_donor.sh
 PYTHONPATH=src uv run python -m py_compile \
-  src/qtrm_mm/history.py scripts/95_eval_memory_retrieval.py
+  src/wgram_lm/history.py scripts/95_eval_memory_retrieval.py
 PYTHONPATH=src uv run --with pytest --with pyyaml pytest \
   tests/test_infer_with_donor_script.py \
   tests/test_generation_history.py \
@@ -7481,7 +7481,7 @@ terminal scrollback.
 
 Added:
 
-- `src/qtrm_mm/history.py`
+- `src/wgram_lm/history.py`
 - `tests/test_generation_history.py`
 - `HISTORY_JSONL=auto` support in `scripts/90_infer_with_donor.sh`
 - `--history-jsonl-out auto|none|PATH` support in
@@ -7699,7 +7699,7 @@ gate. Do not claim repetition is solved from this smoke.
 
 Added a Qwen-Scope repeat-candidate scoring path:
 
-- API: `score_qwen_scope_candidate_features` in `src/qtrm_mm/qwen_scope.py`;
+- API: `score_qwen_scope_candidate_features` in `src/wgram_lm/qwen_scope.py`;
 - CLI: `scripts/138_score_qwen_scope_repeat_candidates.py`;
 - tests:
   `tests/test_qwen_scope.py` and `tests/test_qwen_scope_score_script.py`;
@@ -7795,11 +7795,11 @@ ablation.
 Implemented the first two execution gates after documenting the plan:
 
 - custom full-MSA checkpoint save/load roundtrip in
-  `src/qtrm_mm/qwen35_full_msa.py`;
+  `src/wgram_lm/qwen35_full_msa.py`;
 - Qwen3.6 teacher record schema in
-  `src/qtrm_mm/distill/teacher_schema.py`;
+  `src/wgram_lm/distill/teacher_schema.py`;
 - OpenAI-compatible teacher message builder and JSON response parser in
-  `src/qtrm_mm/distill/qwen36_teacher_client.py`.
+  `src/wgram_lm/distill/qwen36_teacher_client.py`.
 
 The teacher schema now validates the shared QTRM/MSA distillation record:
 `prompt`, `answer`, optional evidence ids/spans, rejected answer, trace summary,
@@ -7810,7 +7810,7 @@ be generated from scratch:
 
 - manifest: `configs/hf_distill_datasets.yaml`;
 - source page: `sources/hf-distillation-datasets.md`;
-- converter: `src/qtrm_mm/distill/hf_dataset_convert.py`;
+- converter: `src/wgram_lm/distill/hf_dataset_convert.py`;
 - CLI: `scripts/131_convert_hf_distill_dataset.py`;
 - first-wave runner: `scripts/132_convert_first_wave_hf_distill_smoke.sh`.
 
@@ -7852,7 +7852,7 @@ Built the first mixed QTRM HF warmup JSONL:
   are converted to `chosen=NEEDS_SEARCH` and rejected unsupported answers,
   preventing hallucinated answers from becoming SFT targets.
 
-Also fixed mixed-batch collation in `src/qtrm_mm/data/jsonl_dataset.py` so a
+Also fixed mixed-batch collation in `src/wgram_lm/data/jsonl_dataset.py` so a
 single batch can contain SFT, preference, evidence, and non-evidence rows. The
 collator now fills missing optional preference/evidence targets with zero
 weights instead of depending on the first sample's key set.
@@ -7917,7 +7917,7 @@ Verification:
 Started the aggressive full-MSA donor fork path requested for Qwen3.5-2B.
 Added:
 
-- `src/qtrm_mm/msa_qwen35.py`;
+- `src/wgram_lm/msa_qwen35.py`;
 - `scripts/129_prepare_qwen35_full_msa_fork.py`;
 - `tests/test_qwen35_full_msa_fork.py`;
 - `decisions/qwen35-full-msa-fork.md`.
@@ -7932,7 +7932,7 @@ linear-attention layers must be replaced and healed because GatedDeltaNet
 conv/recurrent weights do not map cleanly to MSA q/k/v/o plus router weights.
 
 Added the first custom text-forward prototype in
-`src/qtrm_mm/qwen35_full_msa.py`. It implements Qwen3.5-native MSA attention
+`src/wgram_lm/qwen35_full_msa.py`. It implements Qwen3.5-native MSA attention
 with the gated q projection, q/k RMSNorm, partial/mRoPE position embeddings,
 chunk-pooled doc-id routing, and sparse selected-document attention. The new
 test `tests/test_qwen35_full_msa_model.py` verifies a tiny random
@@ -7942,7 +7942,7 @@ runtime, and donor-healing training remain next.
 
 Added the first safe-healing smoke path:
 
-- `src/qtrm_mm/qwen35_full_msa_healing.py`;
+- `src/wgram_lm/qwen35_full_msa_healing.py`;
 - `scripts/130_train_qwen35_full_msa_healing.py`;
 - `tests/test_qwen35_full_msa_healing.py`.
 
@@ -8260,7 +8260,7 @@ under `runs/qwen35_2b_4090_current_arch_pretrain_probe`.
 
 ## [2026-04-29] implementation | Bongakgyo critical synthesis case expansion
 
-Added `src/qtrm_mm/training/bongak_critical_synthesis_cases.py` and
+Added `src/wgram_lm/training/bongak_critical_synthesis_cases.py` and
 `scripts/104_build_bongak_critical_synthesis_cases.py`. Built 30
 `bongak_critical_synthesis` cases from the local
 `/mnt/nvme0n1p2/workspace/monorepo/services/sajug/saju_data/본각교_요약.md`
@@ -8278,7 +8278,7 @@ a positive constructive conclusion.
 
 ## [2026-04-29] implementation | critical synthesis trace builder
 
-Added `src/qtrm_mm/training/critical_synthesis_data.py` and
+Added `src/wgram_lm/training/critical_synthesis_data.py` and
 `scripts/103_build_critical_synthesis_traces.py`. Built
 `data/filtered/critical_synthesis_traces.jsonl` from
 `data/eval/critical_synthesis_probe.jsonl`. The generated rows preserve the
@@ -8288,15 +8288,15 @@ conclusion.
 ## [2026-04-29] implementation | fact verification and critical synthesis gates
 
 Added a deterministic fact-verification gate:
-`src/qtrm_mm/eval/fact_verification.py`,
-`src/qtrm_mm/training/fact_verification_data.py`,
+`src/wgram_lm/eval/fact_verification.py`,
+`src/wgram_lm/training/fact_verification_data.py`,
 `scripts/102_eval_fact_verification_memoryos.py`, and
 `data/eval/fact_verification_probe.jsonl`. The gate separates verdict accuracy,
 action accuracy, retrieval recall, temporal priority, authority priority, and
 conflict handling before generation.
 
 Added the critical-synthesis axis for religion/value questions:
-`src/qtrm_mm/eval/critical_synthesis.py` and
+`src/wgram_lm/eval/critical_synthesis.py` and
 `data/eval/critical_synthesis_probe.jsonl`. The target is not blind skepticism;
 it requires critique, preservation of value, risk checks, reframing, and a
 constructive positive conclusion. Added wiki pages for value/critical synthesis
@@ -8325,7 +8325,7 @@ label, not the final open-world MemoryOS answer. In agentic mode, insufficient
 evidence routes to `Action: NEEDS_SEARCH`, then retrieval/search expands the
 evidence set before answering or reporting bounded non-verification.
 
-Added `src/qtrm_mm/training/self_improvement_data.py` and
+Added `src/wgram_lm/training/self_improvement_data.py` and
 `scripts/101_build_self_improvement_preferences.py`. Built
 `data/filtered/memory_self_improvement_preferences_analysis.jsonl` from the
 held-out MemoryOS eval: 11 analysis-only rows, with 6 `needs_search` states and
@@ -8497,7 +8497,7 @@ Added `references/official/gated-delta-net` and
 
 ## [2026-04-29] implementation | Gated DeltaNet adapter
 
-Updated `src/qtrm_mm/mixers.py` to prefer the official FLA import path
+Updated `src/wgram_lm/mixers.py` to prefer the official FLA import path
 `from fla.layers import GatedDeltaNet`. Added adapter tests for strict mode,
 non-strict fallback, mask forwarding, and backend registry detection.
 Updated the 4B adapter config and production backend docs to prefer
@@ -8599,7 +8599,7 @@ Perceiver-style workspace depth enabled, and JEPA/aux disabled.
 ## [2026-04-29] eval | Memory retrieval probe
 
 Added `data/eval/memory_retrieval_probe.jsonl`,
-`src/qtrm_mm/eval/memory_retrieval.py`, and
+`src/wgram_lm/eval/memory_retrieval.py`, and
 `scripts/95_eval_memory_retrieval.py`. The script compares donor-only logits
 against QTRM residual logits with and without fixed MemoryOS-style evidence, and
 scores only generated completion text so answers present in the prompt are not
@@ -8632,7 +8632,7 @@ task where QTRM must improve over donor evidence copying.
 
 ## [2026-04-29] eval | Qwen3 reranked MemoryOS
 
-Added `src/qtrm_mm/memoryos/rerank.py` with `none`, `lexical`, and
+Added `src/wgram_lm/memoryos/rerank.py` with `none`, `lexical`, and
 `cross_encoder` reranking backends. `cross_encoder` supports
 `Qwen/Qwen3-Reranker-0.6B` through SentenceTransformers and caches the model
 within the process. Updated `retrieve.py` and
@@ -8666,7 +8666,7 @@ Cloned the MSA reference implementation to `references/official/msa` at
 `30405b2`. Added `docs/wiki/sources/memory-sparse-attention.md` and
 `docs/wiki/decisions/memoryos-100m-scale-plan.md`.
 
-Added `src/qtrm_mm/memoryos/scale_plan.py` and
+Added `src/wgram_lm/memoryos/scale_plan.py` and
 `scripts/97_plan_memoryos_scale.py` to estimate large MemoryOS builds before
 ingestion. The default 100M-token estimate with 512-token chunks, 64-token
 overlap, and Harrier 270M 640-dimensional embeddings is 223,215 chunks and
@@ -8678,12 +8678,12 @@ smaller retrieved/reranked/compressed working set.
 
 Expanded `data/eval/memory_reasoning_probe.jsonl` from 6 to 9 cases with more
 negative missing-answer, authority-conflict, and temporal missing-current-state
-checks. Updated `src/qtrm_mm/eval/memory_retrieval.py` and
+checks. Updated `src/wgram_lm/eval/memory_retrieval.py` and
 `scripts/95_eval_memory_retrieval.py` so records carry `category`,
 `task_family`, and `expected_unknown`, and summaries report accuracy/retrieval
 metrics by mode, category, and task family.
 
-Added `src/qtrm_mm/memoryos/scale_benchmark.py` and
+Added `src/wgram_lm/memoryos/scale_benchmark.py` and
 `scripts/98_benchmark_memoryos_scale.py` to write staged 1M/10M planning records
 before attempting larger MemoryOS ingestion. Default output is
 `runs/eval/memoryos_scale_plan_1m_10m.jsonl`. Current order: fix "retrieved but
@@ -8700,7 +8700,7 @@ when the correct response is `UNKNOWN`.
 
 ## [2026-04-29] train | Memory trace abstention fine-tune
 
-Added `src/qtrm_mm/training/memory_trace_data.py` and
+Added `src/wgram_lm/training/memory_trace_data.py` and
 `scripts/99_build_memory_trace_data.py` to convert hard MemoryOS reasoning cases
 into supervised traces. Wrote
 `data/filtered/memory_abstention_traces.jsonl` with 27 rows: `target`, `all`,
@@ -8708,7 +8708,7 @@ and `lexical` evidence variants for each of the 9 probe cases.
 
 Changed `JsonlTextVisionDataset` and `qtrm_smoke_loss` so rows with
 `prompt`/`answer` train only answer tokens via `labels=-100` on prompt tokens.
-Added `--init-checkpoint` to `qtrm_mm.training.train` so memory trace runs can
+Added `--init-checkpoint` to `wgram_lm.training.train` so memory trace runs can
 continue from the stable residual checkpoint.
 
 Strict prompting alone did not fix the issue: with the original residual
@@ -8936,7 +8936,7 @@ ablation gates.
 Added a fixed proof package for the current near-term claim:
 
 - Script: `scripts/109_build_residual_adapter_proof.py`
-- Module: `src/qtrm_mm/eval/residual_adapter_proof.py`
+- Module: `src/wgram_lm/eval/residual_adapter_proof.py`
 - Markdown: `docs/wiki/decisions/residual-adapter-proof.md`
 - JSON: `docs/wiki/decisions/residual-adapter-proof-summary.json`
 
@@ -8987,7 +8987,7 @@ Added and ran the expanded workspace/core ablation gate:
 
 - Runner: `scripts/112_run_expanded_workspace_core_ablation.sh`
 - Proof builder: `scripts/113_build_expanded_ablation_proof.py`
-- Module: `src/qtrm_mm/eval/architecture_ablation_proof.py`
+- Module: `src/wgram_lm/eval/architecture_ablation_proof.py`
 - Markdown: `docs/wiki/decisions/expanded-workspace-core-ablation.md`
 - JSON: `docs/wiki/decisions/expanded-workspace-core-ablation-summary.json`
 - Eval output:
@@ -9054,11 +9054,11 @@ Added the first LM2/G-MemLLM-inspired gated latent memory path inside
 
 Implementation:
 
-- `src/qtrm_mm/workspace.py` now supports `workspace_memory_gate_enabled` and a
+- `src/wgram_lm/workspace.py` now supports `workspace_memory_gate_enabled` and a
   conservative `workspace_memory_gate_init_bias`.
 - Each workspace layer can apply update/reset/candidate gates after context
   cross-attention, letting latent slots preserve, reset, or overwrite state.
-- `src/qtrm_mm/qtrm_model.py` returns `workspace_update_gate_mean` telemetry.
+- `src/wgram_lm/wgram_model.py` returns `workspace_update_gate_mean` telemetry.
 - `disable_workspace_memory_gate=True` supports runtime causal ablation.
 - `scripts/95_eval_memory_retrieval.py` and
   `scripts/114_run_expanded_strict_causality_ablation.sh` include
@@ -9093,7 +9093,7 @@ Added stricter MemoryOS answer scoring:
 
 Implementation:
 
-- `src/qtrm_mm/eval/memory_retrieval.py`
+- `src/wgram_lm/eval/memory_retrieval.py`
 - `scripts/95_eval_memory_retrieval.py`
 - `scripts/116_rescore_memory_eval.py`
 - `docs/wiki/concepts/memory-evaluation-metrics.md`
@@ -9143,11 +9143,11 @@ encodes retrieved evidence separately as workspace-side donor hidden states.
 
 Implementation:
 
-- `src/qtrm_mm/qtrm_model.py` accepts `workspace_text_states` and
+- `src/wgram_lm/wgram_model.py` accepts `workspace_text_states` and
   `workspace_attention_mask`.
 - `disable_workspace_memory_context=True` removes this separate evidence memory
   path for ablation.
-- `src/qtrm_mm/multimodal_projector.py` supports feature masks for evidence
+- `src/wgram_lm/multimodal_projector.py` supports feature masks for evidence
   memory tokens.
 - `scripts/95_eval_memory_retrieval.py` adds
   `--evidence-injection workspace`.
@@ -9155,9 +9155,9 @@ Implementation:
   evidence is actually flowing through workspace memory.
 - `scripts/117_run_workspace_evidence_path_probe.sh` runs the expanded 72-case
   MemoryOS gate in this stricter mode.
-- `src/qtrm_mm/data/jsonl_dataset.py` can split MemoryOS supervised rows into
+- `src/wgram_lm/data/jsonl_dataset.py` can split MemoryOS supervised rows into
   visible prompt tokens plus `workspace_input_ids`.
-- `src/qtrm_mm/training/train.py` encodes those workspace ids through the frozen
+- `src/wgram_lm/training/train.py` encodes those workspace ids through the frozen
   donor and forwards them as `workspace_text_states`.
 - `configs/qwen35_2b_4090_workspace_evidence_path_s050.yaml` and
   `scripts/118_run_workspace_evidence_path_train.sh` define the first training
@@ -9474,7 +9474,7 @@ Source:
 
 Implemented:
 
-- `src/qtrm_mm/qwen_scope.py`
+- `src/wgram_lm/qwen_scope.py`
   - loads official SAE tensor dicts;
   - validates `W_enc`, `W_dec`, `b_enc`, `b_dec`;
   - extracts top-k feature ids/values from donor residual states;
@@ -9532,7 +9532,7 @@ the v2 QTRM training process is occupying GPU memory.
 
 Standardized the one-off Qwen-Scope comparison into reusable tooling:
 
-- `compare_qwen_scope_feature_groups` in `src/qtrm_mm/qwen_scope.py`;
+- `compare_qwen_scope_feature_groups` in `src/wgram_lm/qwen_scope.py`;
 - `scripts/137_compare_qwen_scope_groups.py`;
 - `tests/test_qwen_scope_compare_script.py`.
 
@@ -9639,7 +9639,7 @@ activations before any architecture/steering changes are considered.
 
 Added an automated big-structure gate:
 
-- module: `src/qtrm_mm/eval/root_architecture_gate.py`;
+- module: `src/wgram_lm/eval/root_architecture_gate.py`;
 - runner: `scripts/148_build_root_architecture_gate.py`;
 - tests: `tests/test_root_architecture_gate.py`;
 - output: `docs/wiki/decisions/root-architecture-causality-gate.md`;
@@ -9993,12 +9993,12 @@ PYTHONPATH=src uv run --with pytest --with pyyaml pytest \
 PYTHONPATH=src uv run python -m py_compile \
   scripts/build_evidence_span_reader_dataset.py \
   scripts/95_eval_memory_retrieval.py \
-  src/qtrm_mm/config.py \
-  src/qtrm_mm/qtrm_model.py \
-  src/qtrm_mm/losses.py \
-  src/qtrm_mm/data/jsonl_dataset.py \
-  src/qtrm_mm/training/train.py \
-  src/qtrm_mm/eval/root_architecture_gate.py
+  src/wgram_lm/config.py \
+  src/wgram_lm/wgram_model.py \
+  src/wgram_lm/losses.py \
+  src/wgram_lm/data/jsonl_dataset.py \
+  src/wgram_lm/training/train.py \
+  src/wgram_lm/eval/root_architecture_gate.py
 
 bash -n scripts/150_run_evidence_span_reader_train.sh
 ```
@@ -10118,12 +10118,12 @@ PYTHONPATH=src uv run --with pytest --with pyyaml pytest \
 # 105 passed
 
 PYTHONPATH=src python3 -m py_compile \
-  src/qtrm_mm/agentic/cognitive_loop.py \
-  src/qtrm_mm/data/jsonl_dataset.py \
-  src/qtrm_mm/losses.py \
-  src/qtrm_mm/config.py \
-  src/qtrm_mm/qtrm_model.py \
-  src/qtrm_mm/training/train.py \
+  src/wgram_lm/agentic/cognitive_loop.py \
+  src/wgram_lm/data/jsonl_dataset.py \
+  src/wgram_lm/losses.py \
+  src/wgram_lm/config.py \
+  src/wgram_lm/wgram_model.py \
+  src/wgram_lm/training/train.py \
   scripts/155_build_controller_trace_replay.py \
   scripts/156_eval_controller_trace_policy.py \
   scripts/154_build_asi_causal_loop_gate.py
@@ -10201,7 +10201,7 @@ full canonical SSOT greedy path
 
 Artifacts:
 
-- loss: `src/qtrm_mm/losses.py::canonical_causal_ablation_loss`;
+- loss: `src/wgram_lm/losses.py::canonical_causal_ablation_loss`;
 - config: `configs/qwen35_2b_4090_canonical_ssot_greedy_causal_s050.yaml`;
 - script: `scripts/168_run_canonical_ssot_greedy_causal_train.sh`;
 - contract: `docs/wiki/architecture/kiss-yagni-dry-ssot-contract.md`.
@@ -10525,9 +10525,9 @@ prompt -> frozen embed/prelude/workspace -> recursive z_L/z_H loop
 Code:
 
 ```text
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/config.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/config.py
+src/wgram_lm/training/train.py
 ```
 
 Config updated:
@@ -10653,9 +10653,9 @@ final logits = LMHead(y_T)
 Code:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 ```
 
 Config:
@@ -10911,10 +10911,10 @@ scripts/196_train_pure_recursive_depth_supervised.py
   core_world_model_actions
   jepa_world_model_loss over recursive core states
 
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
   core_and_answer_state_loop_and_world_model trainable policy
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   core_world_model predictor max length handles dynamic depth schedules
 
 configs/qwen35_2b_4090_verified_reasoning_lewm_core_s200.yaml
@@ -11073,7 +11073,7 @@ answer-state loop, not the LeWM/core-world-model probe.
 Updated:
 
 ```text
-src/qtrm_mm/eval/ssot_contract.py
+src/wgram_lm/eval/ssot_contract.py
 scripts/95_eval_memory_retrieval.py
 tests/test_ssot_contract.py
 tests/test_memory_eval_script.py
@@ -11614,7 +11614,7 @@ scripts/192_eval_raw_intelligence.py
 scripts/193_run_pure_recursive_reasoning_depth_gate.sh
   CHOICE_SCORE_NORMALIZATION=mean
 
-src/qtrm_mm/eval/raw_intelligence_gate.py
+src/wgram_lm/eval/raw_intelligence_gate.py
   eval_contract in JSON/markdown reports
 ```
 
@@ -11887,7 +11887,7 @@ arith-chain-100:
 Added a donor-free, MemoryOS-free recurrent state-machine probe:
 
 ```text
-src/qtrm_mm/agentic/solver_state_machine.py
+src/wgram_lm/agentic/solver_state_machine.py
 scripts/216_train_pure_recursive_solver_state_machine.py
 tests/test_solver_state_machine.py
 tests/test_pure_recursive_solver_state_machine_train_script.py
@@ -12004,7 +12004,7 @@ Added the rollout causality evaluator:
 
 ```text
 scripts/221_eval_qtrm_primitive_transition_rollout.py
-qtrm_mm.agentic.solver_state_machine.rollout_solver_trace_from_operations
+wgram_lm.agentic.solver_state_machine.rollout_solver_trace_from_operations
 ```
 
 The evaluator executes QTRM-predicted primitive operations through the explicit
@@ -12038,7 +12038,7 @@ Added a label-free primitive answer runtime:
 
 ```text
 scripts/222_infer_qtrm_primitive_transition_answer.py
-qtrm_mm.agentic.solver_state_machine.answer_from_primitive_operations
+wgram_lm.agentic.solver_state_machine.answer_from_primitive_operations
 ```
 
 Runtime contract:
@@ -14060,8 +14060,8 @@ docs/wiki/decisions/ouro-answer-halt-head-s080.md
 Implemented the next renderer falsifier:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 scripts/196_train_pure_recursive_depth_supervised.py
 scripts/247_probe_qtrm_gold_token_ranks.py
 scripts/248_run_qtrm_ouro_future_token_lookahead_s040.sh
@@ -14951,7 +14951,7 @@ Code changes:
 ```text
 configs/qwen35_2b_4090_source_pointer_l4_forced_bridge_roles12_s080.yaml
 scripts/322_run_source_pointer_l4_lm_path_gate.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
 tests/test_training_checkpoint_init.py
 ```
 
@@ -14987,9 +14987,9 @@ canonical input tokens
 Code changes:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 scripts/196_train_pure_recursive_depth_supervised.py
 scripts/322_run_source_pointer_l4_lm_path_gate.py
 tests/test_core_halting.py
@@ -15075,7 +15075,7 @@ used.
 Changes:
 
 ```text
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
 tests/test_source_pointer_l4_lm_path_gate.py
 ```
 
@@ -15215,11 +15215,11 @@ piece for each source slot. Under Qwen tokenization, values such as `44`,
 Implemented the canonical-path span repair:
 
 ```text
-src/qtrm_mm/algorithmic_value_state.py
+src/wgram_lm/algorithmic_value_state.py
   token_numeric_source_slot_token_spans(...)
   preserves all tokenizer pieces per compact source slot.
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   token_numeric_source_slot_token_span_ids / mask forward inputs
   _compute_source_copy_span_next_token_ids(...)
   source-copy renderer can continue the next token piece of the selected
@@ -15277,12 +15277,12 @@ to decide which answer role should be read next.
 Code:
 
 ```text
-src/qtrm_mm/config.py
+src/wgram_lm/config.py
   core_role_value_state_vocab_renderer_source_copy_answer_role_cursor_enabled
   core_role_value_state_vocab_renderer_source_copy_answer_role_cursor_bias
   core_role_value_state_vocab_renderer_source_copy_answer_role_separator_token_ids
 
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/wgram_model.py
   _compute_source_copy_answer_role_cursor_bias(...)
 ```
 
@@ -16321,8 +16321,8 @@ output: normal LM logits only
 Files:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 scripts/196_train_pure_recursive_depth_supervised.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_core_state_only_kiss_free_transformer_latent_s040.yaml
 scripts/332_run_free_transformer_latent_smoke.sh
@@ -16580,8 +16580,8 @@ previous input/generated token embedding
 Files:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_core_state_only_kiss_prev_token_readout_s040.yaml
 scripts/334_run_prev_token_readout_smoke.sh
 tests/test_prev_token_latent_readout.py
@@ -16590,7 +16590,7 @@ tests/test_prev_token_latent_readout.py
 Verification:
 
 ```text
-.venv/bin/python -m py_compile src/qtrm_mm/qtrm_model.py src/qtrm_mm/config.py \
+.venv/bin/python -m py_compile src/wgram_lm/wgram_model.py src/wgram_lm/config.py \
   scripts/196_train_pure_recursive_depth_supervised.py \
   scripts/330_run_mixed_noncopy_lm_gate.py
 
@@ -21713,7 +21713,7 @@ External bilingual corpus expansion and TST intake, 2026-05-15:
     the final native token->recurrent-core->LM-logits inference path unchanged.
 
   local primitive:
-    src/qtrm_mm/tst.py
+    src/wgram_lm/tst.py
     tests/test_tst.py
 
   next experiment:
@@ -22019,7 +22019,7 @@ galore-torch installed cleanly and bitsandbytes was already present.
 Implemented:
 
 ```text
-src/qtrm_mm/training_optimizers.py
+src/wgram_lm/training_optimizers.py
 
 New optimizer flags are available in:
   scripts/336_train_qtrm_native_text_probe.py
@@ -22407,9 +22407,9 @@ reason:
   gated recurrent residual inside that causal path.
 
 implementation:
-  src/qtrm_mm/qwen_backbone_qtrm.py
-  scripts/361_qwen_backbone_qtrm_smoke.py
-  tests/test_qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
+  scripts/361_qwen_backbone_wgram_smoke.py
+  tests/test_qwen_backbone_wgram.py
 
 architecture:
   tokenizer: Qwen/Qwen3.5-2B-Base full tokenizer/vocab
@@ -22419,7 +22419,7 @@ architecture:
   runtime donor: false
 
 smoke report:
-  local_eval/qwen_backbone_qtrm_gate_smoke_20260515/report.json
+  local_eval/qwen_backbone_wgram_gate_smoke_20260515/report.json
 
 metrics:
   max_abs_delta_base_vs_hidden_path_gate0: 0.0
@@ -22452,11 +22452,11 @@ implementation:
   QTRMRecursiveCore now passes cfg.core_causal into fast_stack/slow_stack.
 
 test:
-  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_qtrm
+  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_wgram
   -> OK, 3 tests
 
 smoke:
-  local_eval/qwen_backbone_qtrm_causal_gate_smoke_20260515/report.json
+  local_eval/qwen_backbone_wgram_causal_gate_smoke_20260515/report.json
 
 metrics:
   core_config.core_causal: true
@@ -22491,19 +22491,19 @@ prior:
     looped transition behavior while keeping Qwen3.5 as the language backbone.
 
 implementation:
-  src/qtrm_mm/qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
     QwenLayerWrappedStack
     QwenLayerWrappedRecursiveCore
     core_impl=qwen_layer_wrapped
     core_impl=ouro_shared_qwen_layer
 
 tests:
-  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_qtrm
+  PYTHONPATH=src .venv/bin/python -m unittest tests.test_qwen_backbone_wgram
   -> OK, 5 tests
 
 Qwen-layer-wrapped smoke:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_layer_wrapped_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_layer_wrapped_smoke_20260515/report.json
   core_impl:
     qwen_layer_wrapped
   qwen_core_layer_indices:
@@ -22523,7 +22523,7 @@ Qwen-layer-wrapped smoke:
 
 Ouro-style shared Qwen-layer smoke:
   report:
-    local_eval/qwen_backbone_qtrm_ouro_shared_qwen_layer_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_shared_qwen_layer_smoke_20260515/report.json
   core_impl:
     ouro_shared_qwen_layer
   shared_stack:
@@ -22577,14 +22577,14 @@ download:
     root and /mnt/nvme1n1p2 are nearly full; /mnt/sdc1 has enough free space.
 
 implemented:
-  src/qtrm_mm/qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
     OuroLayerWrappedStack
     OuroWeightWrappedRecursiveCore
-  scripts/361_qwen_backbone_qtrm_smoke.py
+  scripts/361_qwen_backbone_wgram_smoke.py
     --core-impl ouro_weight_wrapped
     --ouro-model-id
     --ouro-core-layer-indices
-  scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  scripts/362_train_qwen_backbone_wgram_core_gate.py
     actual Ouro train-gate option
   scripts/363_run_qwen_backbone_ouro_weight_gate.sh
     one-command actual Ouro smoke + short train gate once model.safetensors is
@@ -22595,8 +22595,8 @@ verification:
     OK
   unit tests:
     PYTHONPATH=src .venv/bin/python -m unittest \
-      tests.test_qwen_backbone_qtrm \
-      tests.test_qwen_backbone_qtrm_core_gate_trainer
+      tests.test_qwen_backbone_wgram \
+      tests.test_qwen_backbone_wgram_core_gate_trainer
     OK, 9 tests
 
 next:
@@ -22623,12 +22623,12 @@ download:
 
 partial actual Ouro:
   smoke:
-    local_eval/qwen_backbone_qtrm_ouro_weight_partial_l18_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_partial_l18_smoke_20260515/report.json
     accepted=true
     gate0_delta=0.0
     core_on_delta=0.5
   train:
-    local_eval/qwen_backbone_qtrm_ouro_weight_partial_l18_train_gate_s80_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_partial_l18_train_gate_s80_20260515/report.json
     accepted=true
     base_accuracy=0.14583333333333334
     core_accuracy=0.20833333333333334
@@ -22637,12 +22637,12 @@ partial actual Ouro:
 
 full actual Ouro:
   smoke:
-    local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_smoke_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_full_l24_smoke_20260515/report.json
     accepted=true
     gate0_delta=0.0
     core_on_delta=0.5
   train:
-    local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_train_gate_s80_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_weight_full_l24_train_gate_s80_20260515/report.json
     accepted=true
     base_accuracy=0.14583333333333334
     core_accuracy=0.21875
@@ -22667,7 +22667,7 @@ goal:
 results:
   layer 12:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l12_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l12_train_gate_s80_20260515/report.json
     accepted:
       false
     gain:
@@ -22677,7 +22677,7 @@ results:
 
   layer 24:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l24_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l24_train_gate_s80_20260515/report.json
     accepted:
       true
     gain:
@@ -22687,7 +22687,7 @@ results:
 
   layer 36:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l36_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l36_train_gate_s80_20260515/report.json
     accepted:
       false
     gain:
@@ -22697,7 +22697,7 @@ results:
 
   layers 18,24:
     report:
-      local_eval/qwen_backbone_qtrm_ouro_weight_full_l18_24_train_gate_s80_20260515/report.json
+      local_eval/qwen_backbone_wgram_ouro_weight_full_l18_24_train_gate_s80_20260515/report.json
     accepted:
       false
     gain:
@@ -22750,7 +22750,7 @@ gate:
 
 QTRM core with Qwen transition prior:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_20260515/report.json
   accepted:
     true
   base_accuracy:
@@ -22764,7 +22764,7 @@ QTRM core with Qwen transition prior:
 
 QTRM core with Ouro layer 24 transition prior:
   report:
-    local_eval/qwen_backbone_qtrm_ouro_transition_l24_eval512_s200_20260515/report.json
+    local_eval/qwen_backbone_wgram_ouro_transition_l24_eval512_s200_20260515/report.json
   accepted:
     true
   base_accuracy:
@@ -22786,13 +22786,13 @@ Bilingual general-language gate for canonical Qwen-transition QTRM, 2026-05-15:
 
 ```text
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_20260515/last_core.pt
 
 script:
   scripts/367_eval_qwen_backbone_language_gate.py
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_bilingual_generation_gate_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_bilingual_generation_gate_20260515/report.json
 
 accepted:
   true
@@ -22826,13 +22826,13 @@ Long-generation language non-regression for canonical Qwen-transition QTRM,
 
 ```text
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_20260515/last_core.pt
 
 script:
   scripts/367_eval_qwen_backbone_language_gate.py
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_longgen64_gate_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_longgen64_gate_20260515/report.json
 
 generation:
   max_new_tokens:
@@ -22876,10 +22876,10 @@ change:
   residual_scale=0.5
 
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/report.json
 
 accepted:
   true
@@ -22925,10 +22925,10 @@ Gate-open long-generation non-regression, 2026-05-15:
 
 ```text
 checkpoint:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_familyfloor_20260515/last_core.pt
 
 report:
-  local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_gateopen_ad128_s300_longgen64_20260515/report.json
+  local_eval/qwen_backbone_wgram_qwen_transition_hardv1_gateopen_ad128_s300_longgen64_20260515/report.json
 
 accepted:
   true
@@ -22969,7 +22969,7 @@ why:
 
 nested smoke:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_smoke_s30_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_nested_h3_l6_smoke_s30_20260515/report.json
   core_impl:
     qwen_layer_wrapped
   h_cycles:
@@ -23009,7 +23009,7 @@ comparison:
     approx_core_transitions:
       420
     report:
-      local_eval/qwen_backbone_qtrm_qwen_transition_gateopen_nonnested_compare_seed20260515_s210_t420_20260515/report.json
+      local_eval/qwen_backbone_wgram_qwen_transition_gateopen_nonnested_compare_seed20260515_s210_t420_20260515/report.json
     accepted:
       false
     gain:
@@ -23023,7 +23023,7 @@ comparison:
     approx_core_transitions:
       420
     report:
-      local_eval/qwen_backbone_qtrm_qwen_transition_gateopen_nested_h3_l6_compare_seed20260515_s20_t420_20260515/report.json
+      local_eval/qwen_backbone_wgram_qwen_transition_gateopen_nested_h3_l6_compare_seed20260515_s20_t420_20260515/report.json
     accepted:
       false
     gain:
@@ -23035,7 +23035,7 @@ comparison:
 
   nested h=3,l=6,residual_scale=0.1:
     report:
-      local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_r01_compare_seed20260515_s20_t420_20260515/report.json
+      local_eval/qwen_backbone_wgram_qwen_transition_nested_h3_l6_r01_compare_seed20260515_s20_t420_20260515/report.json
     accepted:
       false
     gain:
@@ -23060,24 +23060,24 @@ motivation:
     https://arxiv.org/abs/2605.12466
 
 implemented:
-  src/qtrm_mm/config.py:
+  src/wgram_lm/config.py:
     core_convergence_halt_enabled
     core_convergence_halt_threshold
     core_convergence_halt_min_outer
 
-  src/qtrm_mm/qwen_backbone_qtrm.py:
+  src/wgram_lm/qwen_backbone_wgram.py:
     relative z_H delta after each outer block
     early break when every batch item converges
     output qtrm_core_outer_iterations / qtrm_core_converged /
       qtrm_core_convergence_delta
 
-  scripts/362_train_qwen_backbone_qtrm_core_gate.py:
+  scripts/362_train_qwen_backbone_wgram_core_gate.py:
     CLI flags for convergence halt
     eval report mean_core_outer_iterations and core_converged_fraction
 
 smoke:
   report:
-    local_eval/qwen_backbone_qtrm_qwen_transition_nested_h3_l6_convergence_halt_telemetry_smoke_s5_20260515/report.json
+    local_eval/qwen_backbone_wgram_qwen_transition_nested_h3_l6_convergence_halt_telemetry_smoke_s5_20260515/report.json
   h/l/outer:
     3 / 6 / 3
   threshold:
@@ -23101,7 +23101,7 @@ script:
   scripts/370_sweep_nested_convergence_halt_threshold.py
 
 report:
-  local_eval/qwen_backbone_qtrm_nested_h3_l6_convergence_threshold_sweep_20260515/report.json
+  local_eval/qwen_backbone_wgram_nested_h3_l6_convergence_threshold_sweep_20260515/report.json
 
 setting:
   Qwen-wrapper nested H3/L6
@@ -23551,15 +23551,15 @@ canonical path:
   -> autoregressive text
 
 code update:
-  src/qtrm_mm/qwen_backbone_qtrm.py
+  src/wgram_lm/qwen_backbone_wgram.py
     added mandatory_core mode.
     normal forward uses core gate 1.0 when mandatory_core=true.
     force_core_off and core_gate_override=0 remain ablation-only.
 
-  scripts/361_qwen_backbone_qtrm_smoke.py
+  scripts/361_qwen_backbone_wgram_smoke.py
     default core_impl is now qwen_layer_wrapped.
 
-  scripts/362_train_qwen_backbone_qtrm_core_gate.py
+  scripts/362_train_qwen_backbone_wgram_core_gate.py
     added --mandatory-core and --train-qwen.
     reports qtrm_native_integrated=true, standalone_graph=true, runtime_donor=false.
 
@@ -24525,7 +24525,7 @@ independent MMLU-Pro 1024 rerun.
 Implementation update:
 
 ```text
-src/qtrm_mm/qwen_backbone_qtrm.py
+src/wgram_lm/qwen_backbone_wgram.py
   added clone_qwen_core_layers support so the QTRM core can own trainable
   deep-copied Qwen layer modules instead of only reusing frozen/shared Qwen
   layers.
@@ -24815,7 +24815,7 @@ computation.
 Implementation:
 
 ```text
-src/qtrm_mm/qwen_backbone_qtrm.py
+src/wgram_lm/qwen_backbone_wgram.py
   added core_insertion_mode:
     final_residual
     mid_layer_suffix
@@ -24838,13 +24838,13 @@ Verification:
 
 ```text
 PYTHONPATH=src .venv/bin/python -m py_compile \
-  src/qtrm_mm/qwen_backbone_qtrm.py \
+  src/wgram_lm/qwen_backbone_wgram.py \
   scripts/394_train_qwen35_integrated_language_knowledge_healing.py
 
 bash -n scripts/394_run_qwen35_integrated_language_knowledge_healing.sh
 
 PYTHONPATH=src .venv/bin/python -m unittest \
-  tests.test_qwen_backbone_qtrm \
+  tests.test_qwen_backbone_wgram \
   tests.test_qwen35_integrated_language_knowledge_healing
 
 result:
@@ -26006,7 +26006,7 @@ DGX server script:
   /mnt/data4tb/qwen36-mtp-llama-server.sh
 
 DGX repo copy:
-  /mnt/data4tb/qtrm_multimodal_memoryos/scripts/407_qwen36_mtp_llama_server_dgx_local.sh
+  /mnt/data4tb/wgram-lm/scripts/407_qwen36_mtp_llama_server_dgx_local.sh
 
 local control script:
   scripts/407_dgx_qwen36_mtp_llama_server.sh
@@ -26802,7 +26802,7 @@ The gate remains the same:
 Run:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   dgx_single_order_router_len20_prefix_anchor_seed9338_20260518_090836/report.json
 ```
 
@@ -26958,7 +26958,7 @@ DGX run:
 
 ```text
 out_dir:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_len20_number_oprole_circular_curriculum_seed9338_20260518_193321
 
 log:
@@ -27104,7 +27104,7 @@ loss:
   --attractor-state-lookahead-relative-delta-weight 0.1
 
 report:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_number_oprole_circular_ladder_len8_seed9338_
     posnone_attractor_state_lookahead_len8_20260518_234005/report.json
 ```
@@ -27266,7 +27266,7 @@ Random-init op-order run:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_number_oprole_circular_ladder_len6_seed9338_
       oporder_learned_l6_20260518_212615
 
@@ -27357,7 +27357,7 @@ DGX preservation-first len8 attempt:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_number_oprole_circular_ladder_len8_seed9338_
       oporder_preserve_l8_20260518_215143
 
@@ -27948,7 +27948,7 @@ Randomized positional L6 result:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_number_oprole_circular_ladder_len6_seed9338_randompos_native_l6_20260518_204049
 
 decision:
@@ -28109,7 +28109,7 @@ DGX early-stop result:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     dgx_single_order_router_len20_state_trace_depth_credit_seed9338_20260518_182111
 
 log:
@@ -28186,7 +28186,7 @@ Sampled DGX early-stop result:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     dgx_single_order_router_len20_sampled_state_trace_depth_credit_seed9338_20260518_184233
 
 log:
@@ -28243,7 +28243,7 @@ Late-depth sampled follow-up:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     dgx_single_order_router_len20_late_state_trace_depth_credit_seed9338_20260518_190508
 
 log:
@@ -28375,7 +28375,7 @@ Promotion is unchanged:
 Run:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   dgx_single_order_router_len20_time_conditioned_seed9338_20260518_163145/report.json
 ```
 
@@ -28511,7 +28511,7 @@ result:
 Run:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   dgx_single_order_router_len20_state_stream_seed9338_20260518_175534
 ```
 
@@ -28564,7 +28564,7 @@ The next design must either:
 Run:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   dgx_single_order_router_len20_time_gate_seed9338_20260518_171439/report.json
 ```
 
@@ -28620,7 +28620,7 @@ Conclusion:
 Run:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   dgx_single_order_router_len20_time_gate_seed9338_20260518_171439
 ```
 
@@ -28744,7 +28744,7 @@ result:
 Run:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   dgx_single_order_router_len20_layerscale_seed9338_20260518_100529/report.json
 ```
 
@@ -28956,7 +28956,7 @@ Interpretation:
 Run:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   dgx_single_order_router_len20_chain_trace_anticollapse_seed9338_20260518_154718/report.json
 ```
 
@@ -29171,7 +29171,7 @@ scripts/424_dgx_len8_carrier_mode_probe.sh
 Canonical checkpoint:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+/mnt/data4tb/wgram-lm_gate/local_eval/
   qtrm_native_number_oprole_circular_ladder_len8_seed9338_
   posnone_finalonly_prefixanchor_len8_20260518_223748/best_periodic.pt
 ```
@@ -29345,7 +29345,7 @@ DGX run:
 
 ```text
 out_dir:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_number_oprole_circular_ladder_len8_seed9338_20260518_194634
 
 log:
@@ -29407,7 +29407,7 @@ Positionless len8 result:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_number_oprole_circular_ladder_len8_seed9338_posnone_len8_20260518_195431
 
 decision:
@@ -29520,7 +29520,7 @@ Native positionless L6 result:
 
 ```text
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos_gate/local_eval/
+  /mnt/data4tb/wgram-lm_gate/local_eval/
     qtrm_native_number_oprole_circular_ladder_len6_seed9338_posnone_native_l6_20260518_201107
 
 decision:
@@ -30166,7 +30166,7 @@ supervision directly.
 Implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --checksum-counterfactual-weight
   --checksum-counterfactual-variants
 
@@ -30541,7 +30541,7 @@ original 8 prompts?
 Implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --language-probe-set basic|extended
 
 scripts/410_run_qwen35_preinit_strict_trm_core_gate.sh
@@ -30604,7 +30604,7 @@ gain?
 Implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --language-healing-weight
   --language-healing-kl-weight
   --language-healing-batch-size
@@ -30681,7 +30681,7 @@ single-eval-seed success?
 Implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --eval-seed-offsets 10000,10001,10002
 
 scripts/414_run_qwen35_preinit_hrm_text_healing_multiseed.sh
@@ -30765,7 +30765,7 @@ training and evaluation use multiple deterministic seeds?
 Implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --train-seed-offsets 0,1,2
   --eval-seed-offsets 10000,10001,10002
 
@@ -30819,7 +30819,7 @@ on examples where the Qwen/core-off path is weak?
 Implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --trajectory-advantage-weight
   --trajectory-advantage-margin
   --trajectory-monotonic-weight
@@ -30966,7 +30966,7 @@ family gains:
 Preservation-loss implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --core-preservation-weight
   --core-preservation-margin
   --core-preservation-positive-margin-only
@@ -31046,7 +31046,7 @@ a negative family, especially bundle2 chain5 regression?
 Implementation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --selection-hard-family-gate
   --selection-hard-family-penalty
 
@@ -31401,7 +31401,7 @@ problem, not a literature-discovery problem.
 Implementation:
 ```text
 Added and tested the Stage59 state text speaker path:
-  src/qtrm_mm/eval/state_text_speaker.py
+  src/wgram_lm/eval/state_text_speaker.py
   tests/test_state_text_speaker.py
   scripts/523_train_state_text_speaker.py
 
@@ -32072,7 +32072,7 @@ by_family:
 Architectural smoking gun:
 
 ```text
-src/qtrm_mm/state_transition_core.py:
+src/wgram_lm/state_transition_core.py:
   StateReadoutHead(d_state, n_digits=10)
   state_digit_logits: (B, T+1, 10)
   answer_logits: (B, 10)
@@ -32301,8 +32301,8 @@ Verification:
 .venv/bin/python -m py_compile \
   scripts/523_train_state_text_speaker.py \
   scripts/530_train_final_typed_register_answerer.py \
-  src/qtrm_mm/state_transition_core.py \
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/state_transition_core.py \
+  src/wgram_lm/qwen_backbone_state_transition.py
 
 PYTHONPATH=src .venv/bin/python scripts/530_train_final_typed_register_answerer.py \
   --dry-run-contract --train-limit 8 --eval-limit 8 \
@@ -32540,8 +32540,8 @@ Verification:
 
 ```text
 py_compile passed:
-  src/qtrm_mm/state_transition_core.py
-  src/qtrm_mm/qwen_backbone_state_transition.py
+  src/wgram_lm/state_transition_core.py
+  src/wgram_lm/qwen_backbone_state_transition.py
   scripts/523_train_state_text_speaker.py
   scripts/530_train_final_typed_register_answerer.py
 
@@ -35906,7 +35906,7 @@ references/official/gated-deltanet-2
 references/official/flash-linear-attention-gdn2
   Cloned the FLA source requested by the official GDN2 requirements.
 
-src/qtrm_mm/mixers.py
+src/wgram_lm/mixers.py
   Added OfficialGatedDeltaNet2Mixer.
   Loads lit_gpt/gdn2.py directly to avoid pulling Lightning training deps.
   Prefers the GDN2-compatible FLA checkout.
@@ -37687,7 +37687,7 @@ Stage66 official-GDN2 synthetic result:
 
 ```text
 DGX report:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/stage66_hrmtext_pvgram_dgx_official_gdn2_20260523_122106/report.json
+  /mnt/data4tb/wgram-lm/local_eval/stage66_hrmtext_pvgram_dgx_official_gdn2_20260523_122106/report.json
 
 decision: rejected
 reject reason: family_exact_below_threshold
@@ -37920,7 +37920,7 @@ DGX setup notes:
 
 ```text
 DGX path:
-  /mnt/data4tb/qtrm_multimodal_memoryos
+  /mnt/data4tb/wgram-lm
 
 Synced:
   scripts/533_prepare_hrm_text_dataio_sample.sh
@@ -37964,7 +37964,7 @@ DGX run:
 
 ```text
 remote report:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+  /mnt/data4tb/wgram-lm/local_eval/
     stage67_dgx_prefixlm_gdn2_evalcurve/report.json
 
 local copy:
@@ -38160,7 +38160,7 @@ DGX official HRM-Text baseline curve:
 
 ```text
 report:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+  /mnt/data4tb/wgram-lm/local_eval/
     stage68_hrmtext_baseline_dgx_80/report.json
 
 settings:
@@ -38232,7 +38232,7 @@ DGX run:
 
 ```text
 report:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+  /mnt/data4tb/wgram-lm/local_eval/
     stage69_hrmtext_baseline_dgx_400/report.json
 
 settings:
@@ -38335,11 +38335,11 @@ DGX reports:
 
 ```text
 candidate:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+  /mnt/data4tb/wgram-lm/local_eval/
     stage70_candidate_rowfixed_dgx_80/report.json
 
 official HRM-Text baseline:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/
+  /mnt/data4tb/wgram-lm/local_eval/
     stage70_hrmtext_baseline_rowfixed_dgx_400/report.json
 
 strict comparison:
@@ -38548,7 +38548,7 @@ DGX:
   latest seen step = 5500
   latest seen eval_loss = 4.669890 at step 5500
   checkpoint =
-    /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE72_DGX_FROM_SCRATCH_82M/last.pt
+    /mnt/data4tb/wgram-lm/local_eval/20260523_STAGE72_DGX_FROM_SCRATCH_82M/last.pt
   TensorBoard = http://dgx:6007 or forwarded port 6007
   Aim = http://dgx:43802 or forwarded port 43802
 ```
@@ -39028,7 +39028,7 @@ active process:
   scripts/534_train_native_prefixlm_dataio_stage90.py
 
 run:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K
+  /mnt/data4tb/wgram-lm/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K
 
 latest observed:
   step18000 evaluated, run still training
@@ -39131,7 +39131,7 @@ This preserves learned weights while restarting optimizer moments for the new
 larger data distribution.
 
 Resume checkpoint:
-/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/last_model.pt
+/mnt/data4tb/wgram-lm/local_eval/20260523_STAGE92_DGX913M_BS8_CONTINUE_TO24K/last_model.pt
 
 Launcher:
 scripts/536_launch_stage93_dgx_continue_prefixlm.sh
@@ -39361,10 +39361,10 @@ full train log:
   /tmp/20260524_STAGE93B_DGX913M_FULL_FROM_BEST_TO60K.log
 
 partial run:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A_DGX913M_PARTIAL_TO30K
+  /mnt/data4tb/wgram-lm/local_eval/20260524_STAGE93A_DGX913M_PARTIAL_TO30K
 
 full run:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93B_DGX913M_FULL_FROM_BEST_TO60K
+  /mnt/data4tb/wgram-lm/local_eval/20260524_STAGE93B_DGX913M_FULL_FROM_BEST_TO60K
 
 current status:
   full tokenization active
@@ -39397,10 +39397,10 @@ Action:
 Stopped the slow partial/bootstrap sampling copy jobs only.
 Kept full Stage93 tokenization running.
 Created a hardlink micro sample:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/stage93_hrm_text_reasoning_nonflan_dataio/sampled_micro_hardlink
+  /mnt/data4tb/wgram-lm/local_eval/stage93_hrm_text_reasoning_nonflan_dataio/sampled_micro_hardlink
 
 Launched:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500
+  /mnt/data4tb/wgram-lm/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500
 
 Log:
   /tmp/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500.log
@@ -39475,7 +39475,7 @@ micro hardlink continuation:
   parent=systemd(1)
   tty=?
   resumed from:
-    /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/last_model.pt
+    /mnt/data4tb/wgram-lm/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/last_model.pt
   start_step=24500
   latest_seen_step=25500
   latest_seen_loss=0.3634183406829834
@@ -39558,7 +39558,7 @@ local:
   result: 8 tests OK
 
 DGX:
-  language gate scripts copied to /mnt/data4tb/qtrm_multimodal_memoryos
+  language gate scripts copied to /mnt/data4tb/wgram-lm
   syntax check passed without bytecode writes
   scripts/545_run_prefixlm_language_gates_dgx.sh returned rc=3 while training
   was active, correctly refusing to steal the GPU.
@@ -39660,7 +39660,7 @@ local:
 
 DGX:
   copied raw-intelligence probe and evaluator to
-    /mnt/data4tb/qtrm_multimodal_memoryos
+    /mnt/data4tb/wgram-lm
   syntax check passed without bytecode writes
   language gate wrapper now includes raw_intelligence_suite.json
   while training was active, the wrapper returned rc=3 and refused to steal
@@ -39733,7 +39733,7 @@ PYTHONPATH=src python -m unittest tests.test_raw_intelligence_eval_script
 PYTHONPATH=src python tests/test_depth_breadth_probe.py
   3 tests OK
 
-python -m py_compile scripts/192_eval_raw_intelligence.py tests/test_raw_intelligence_eval_script.py src/qtrm_mm/eval/depth_breadth_probe.py scripts/548_build_depth_breadth_probe_report.py
+python -m py_compile scripts/192_eval_raw_intelligence.py tests/test_raw_intelligence_eval_script.py src/wgram_lm/eval/depth_breadth_probe.py scripts/548_build_depth_breadth_probe_report.py
   OK
 ```
 
@@ -39742,7 +39742,7 @@ python -m py_compile scripts/192_eval_raw_intelligence.py tests/test_raw_intelli
 DGX checkpoint inspected:
 
 ```text
-/mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/copy_last.pt
+/mnt/data4tb/wgram-lm/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/copy_last.pt
 ```
 
 Verdict:
@@ -39770,10 +39770,10 @@ Ran safe CPU-only smoke gates on DGX without stealing the active training GPU:
 
 ```text
 checkpoint:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/copy_last.pt
+  /mnt/data4tb/wgram-lm/local_eval/20260524_STAGE93A00_DGX913M_MICRO_HARDLINK_TO24500/copy_last.pt
 
 output dir:
-  /mnt/data4tb/qtrm_multimodal_memoryos/local_eval/20260524_STAGE93A00_COPY_LAST_TEXT_NATIVE_CPU_SMOKE
+  /mnt/data4tb/wgram-lm/local_eval/20260524_STAGE93A00_COPY_LAST_TEXT_NATIVE_CPU_SMOKE
 
 device:
   CPU, with CUDA_VISIBLE_DEVICES=""
@@ -41713,7 +41713,7 @@ trained full 5.56 ablation drops, sparse router/chunk-shuffle/distractor tests,
 Verification:
 
 ```text
-compileall: exit 0 on src/qtrm_mm plus changed RI scripts/tests
+compileall: exit 0 on src/wgram_lm plus changed RI scripts/tests
 unit/regression: 71 tests, OK
 strict stochastic breadth gate: PASS, active replacement OneBodyParallelHybridBlock
 RI-4 A-mode smoke: 4/4 variants pass; pure delegation calls=5, slot_carries=9
@@ -41740,7 +41740,7 @@ Unlock active memory selectivity on the hybrid Qwen donor model by resolving the
 **Result**:
 After injecting real dynamic `update_slots` calls inside `OneBodyParallelHybridBlock.forward` (every recurrent micro-step), the 72-case heldout suite finally shows clean ablation margins for the first time in the RI-4 line.
 
-Step 50: Slots-On 34.72% vs Slots-Off 29.17% (+5.55 pp)  
+Step 50: Slots-On 34.72% vs Slots-Off 29.17% (+5.55 pp)
 Step 200 + Surprise(1.5): new ceiling 36.11%
 
 All architecture closure tests remain green.
@@ -41769,7 +41769,7 @@ During discussion of the RI-4 success, the following distinction was formalized 
 - `docs/wiki/architecture/one-body-architecture-ssot.md` (Banned Main-Path Pattern section)
 
 **Core point**:
-`OneBodyParallelHybridBlock`을 사용하면 **생각하는 엔진 내부**는 donor 모드에서도 진짜 한 몸으로 동작할 수 있다. 
+`OneBodyParallelHybridBlock`을 사용하면 **생각하는 엔진 내부**는 donor 모드에서도 진짜 한 몸으로 동작할 수 있다.
 그러나 강한 Qwen donor가 reader + base policy를 크게 담당하는 한, **전체 시스템**은 strict one-body (SSOT 기준)가 아니다.
 
 **실무적 결론**:
@@ -41813,8 +41813,8 @@ QTRM residuals on donor/QTRM conflicts when QTRM has the stronger top-token
 margin, and only downscales QTRM when the donor margin is stronger.
 
 **Code**:
-- `src/qtrm_mm/qtrm_model.py`
-- `src/qtrm_mm/config.py`
+- `src/wgram_lm/wgram_model.py`
+- `src/wgram_lm/config.py`
 - `scripts/192_eval_raw_intelligence.py`
 - `tests/test_donor_qtrm_conflict_gate.py`
 

@@ -196,7 +196,7 @@ Interpretation:
 
 Added reranking to the MemoryOS evidence path:
 
-- Reranker module: `src/qtrm_mm/memoryos/rerank.py`
+- Reranker module: `src/wgram_lm/memoryos/rerank.py`
 - Eval flags:
   `--retrieve-top-n 20 --retrieval-top-k 3 --rerank-backend cross_encoder --reranker-model-id Qwen/Qwen3-Reranker-0.6B`
 - Output:
@@ -351,7 +351,7 @@ Interpretation: the 9-case trace fine-tune overfit and did not generalize.
 
 Then added a broader synthetic MemoryOS trace set:
 
-- Case generator: `src/qtrm_mm/training/synthetic_memory_cases.py`
+- Case generator: `src/wgram_lm/training/synthetic_memory_cases.py`
 - Builder: `scripts/100_build_synthetic_memory_cases.py`
 - Training cases: `data/filtered/memory_reasoning_synth_train_cases.jsonl`
 - Training traces: `data/filtered/memory_reasoning_synth_traces.jsonl`

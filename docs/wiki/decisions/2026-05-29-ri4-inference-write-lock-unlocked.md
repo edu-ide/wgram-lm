@@ -1,6 +1,6 @@
 # 2026-05-29 RI-4: Inference-Time Dynamic Slot Write Lock Unlocked (Ablation Margin Restored)
 
-**Date**: 2026-05-29  
+**Date**: 2026-05-29
 **Status**: RESOLVED — Core integration gap closed. First reproducible positive ablation margin for persistent sparse memory inside the One-Body hybrid engine.
 
 ## Context & The Hidden Bottleneck
@@ -16,7 +16,7 @@ Root cause (found via systematic tracing):
 
 We closed the gap by adding **true dynamic write** inside the recurrent engine itself.
 
-### Change in `OneBodyParallelHybridBlock.forward` ([src/qtrm_mm/blocks.py](/src/qtrm_mm/blocks.py))
+### Change in `OneBodyParallelHybridBlock.forward` ([src/wgram_lm/blocks.py](/src/wgram_lm/blocks.py))
 
 After the router read, we now always compute and commit an updated slot state:
 
@@ -67,20 +67,20 @@ This experiment closes one of the longest-standing "why doesn't memory help?" my
 
 **A: Thinking 엔진 레벨에서는 yes. 전체 아키텍처 레벨에서는 no.**
 
-- **Engine-level One-Body** (우리가 최근 강화한 것): 
-  `OneBodyParallelHybridBlock` 내부에서 recurrence, attention, persistent slot memory가 하나의 residual stream 안에서 동작한다. Sidecar가 아니라 integrated thinking engine이라는 의미에서 "한몸"이다. 
+- **Engine-level One-Body** (우리가 최근 강화한 것):
+  `OneBodyParallelHybridBlock` 내부에서 recurrence, attention, persistent slot memory가 하나의 residual stream 안에서 동작한다. Sidecar가 아니라 integrated thinking engine이라는 의미에서 "한몸"이다.
   → Donor가 있든 없든 이 블록 자체는 한몸으로 생각할 수 있다. (현재 RI-4 작업이 정확히 이 부분을 성공시킨 것)
 
 - **System-level / Strict One-Body** (one-body-architecture-ssot.md가 요구하는 것):
   Reader(입력 해석) → Thinking(반복 추론) → Speaker(최종 출력)까지 **모든 causal ownership**이 하나의 몸 안에 있어야 한다.
-  강력한 pretrained donor(Qwen)가 reader 역할 + base policy를 크게 담당하면, 전체 시스템은 이미 "donor 몸통 + QTRM 생각 기관" 구조가 된다. 
+  강력한 pretrained donor(Qwen)가 reader 역할 + base policy를 크게 담당하면, 전체 시스템은 이미 "donor 몸통 + QTRM 생각 기관" 구조가 된다.
   → 이 경우 Thinking은 한몸이지만, **전체 모델은 strict one-body가 아니다**.
 
 **실제 의미 (2026-05-29 시점)**
 
-- 지금 방식을 유지하면서 `OneBodyParallelHybridBlock` + dynamic slot memory를 계속 강화하는 것은 **전혀 문제없고 오히려 추천**된다. 
+- 지금 방식을 유지하면서 `OneBodyParallelHybridBlock` + dynamic slot memory를 계속 강화하는 것은 **전혀 문제없고 오히려 추천**된다.
   Thinking 과정 자체를 더 강력하고 causal하게 만드는 데 큰 진전이 있기 때문이다.
-- 다만 "QTRM의 recurrent core가 reasoning을 한다"는 강한 아키텍처적 주장을 하려면, 언젠가 donor dependence를 줄이는 증거(annealing 또는 donorless)가 필요하다. 
+- 다만 "QTRM의 recurrent core가 reasoning을 한다"는 강한 아키텍처적 주장을 하려면, 언젠가 donor dependence를 줄이는 증거(annealing 또는 donorless)가 필요하다.
   현재 hybrid 성공은 "강한 donor 위에서 QTRM memory가 추가로 큰 기여를 한다"는 실용적 증거로는 충분하지만, "우리가 만든 한몸 recurrent substrate가 donor 없이도 우수하다"는 주장으로는 아직 부족하다.
 
 이 구분을 명확히 기록하지 않으면 프로젝트가 계속 "지금 donor 쓰면서 한몸이라고 할 수 있나?" 논쟁을 반복하게 된다.

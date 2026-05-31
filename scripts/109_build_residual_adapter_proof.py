@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from qtrm_mm.eval.residual_adapter_proof import build_proof_summary, render_markdown
+from wgram_lm.eval.residual_adapter_proof import build_proof_summary, render_markdown
 
 
 DEFAULT_EVALS = [

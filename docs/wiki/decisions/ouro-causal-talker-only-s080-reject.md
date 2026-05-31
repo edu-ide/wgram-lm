@@ -26,8 +26,8 @@ or side answer channel.
 ## Implementation
 
 ```text
-src/qtrm_mm/qtrm_model.py
-src/qtrm_mm/training/train.py
+src/wgram_lm/wgram_model.py
+src/wgram_lm/training/train.py
 scripts/192_eval_raw_intelligence.py
 scripts/196_train_pure_recursive_depth_supervised.py
 tests/test_core_halting.py

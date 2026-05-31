@@ -164,9 +164,9 @@ def run_eval(args: argparse.Namespace) -> tuple[list[dict[str, Any]], dict[str, 
     import torch
     from transformers import AutoTokenizer
 
-    from qtrm_mm.config import load_config
-    from qtrm_mm.qtrm_model import QTRMMultimodalModel
-    from qtrm_mm.qwen_donor import QwenDonorAdapter
+    from wgram_lm.config import load_config
+    from wgram_lm.wgram_model import QTRMMultimodalModel
+    from wgram_lm.qwen_donor import QwenDonorAdapter
 
     raw_eval = _load_raw_eval_module()
     cfg = load_config(args.config)

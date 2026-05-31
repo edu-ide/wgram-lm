@@ -47,7 +47,7 @@ trainable_param_policy: lm_head_only
 Files:
 
 ```text
-src/qtrm_mm/training/train.py
+src/wgram_lm/training/train.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_lm_head_decoder_s080.yaml
 tests/test_training_checkpoint_init.py
 ```

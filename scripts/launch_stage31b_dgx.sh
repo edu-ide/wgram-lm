@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/mnt/data4tb/qtrm_multimodal_memoryos"
+ROOT="/mnt/data4tb/wgram-lm"
 cd "${ROOT}"
 
 TS="$(date +%Y%m%d_%H%M%S)"

@@ -3,7 +3,7 @@ import unittest
 
 class JsonlDatasetSupervisedTests(unittest.TestCase):
     def test_prompt_answer_rows_mask_prompt_tokens_in_labels(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         ds = JsonlTextVisionDataset(
             files=[],
@@ -24,8 +24,26 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertTrue((labels[:first_answer_index] == -100).all())
         self.assertTrue((labels[first_answer_index:][labels[first_answer_index:] != 0] != -100).any())
 
+    def test_long_prompt_answer_rows_preserve_supervised_answer_tokens(self):
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
+
+        ds = JsonlTextVisionDataset(
+            files=[],
+            vocab_size=512,
+            seq_len=12,
+            visual_dim=8,
+            max_visual_tokens=1,
+            multimodal=False,
+        )
+
+        prompt = " ".join(f"prompt_token_{idx}" for idx in range(40))
+        sample = ds._make_sample({"prompt": prompt, "answer": "Answer: keep_me"})
+
+        self.assertIn("labels", sample)
+        self.assertGreater(int((sample["labels"] != -100).sum().item()), 0)
+
     def test_workspace_evidence_injection_splits_memoryos_prompt(self):
-        from qtrm_mm.data.jsonl_dataset import (
+        from wgram_lm.data.jsonl_dataset import (
             JsonlTextVisionDataset,
             split_memory_prompt_for_workspace,
         )
@@ -70,7 +88,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
     def test_dual_workspace_evidence_injection_keeps_evidence_visible_and_in_workspace(self):
         import torch
 
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         class SimpleTokenizer:
             pad_token_id = 0
@@ -133,7 +151,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertGreater(int(sample["workspace_attention_mask"].sum().item()), 0)
 
     def test_preference_rows_emit_rejected_sequence_and_confidence_weight(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         ds = JsonlTextVisionDataset(
             files=[],
@@ -170,7 +188,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertEqual(batch["preference_sample_weight"].shape, (1,))
 
     def test_rows_emit_answer_decision_targets(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         ds = JsonlTextVisionDataset(
             files=[],
@@ -202,7 +220,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertEqual(batch["answer_decision_target"].shape, (1,))
 
     def test_rows_emit_answer_decision_telemetry_features(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         ds = JsonlTextVisionDataset(
             files=[],
@@ -232,8 +250,8 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertEqual(batch["answer_decision_features"].shape, (1, 3))
 
     def test_trace_replay_rows_emit_action_policy_targets(self):
-        from qtrm_mm.agentic.cognitive_loop import Action
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.agentic.cognitive_loop import Action
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         ds = JsonlTextVisionDataset(
             files=[],
@@ -270,7 +288,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertGreater(int(batch["workspace_attention_mask"].sum().item()), 0)
 
     def test_regular_rows_emit_controller_signal_targets(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         ds = JsonlTextVisionDataset(
             files=[],
@@ -299,7 +317,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
     def test_controller_signal_only_rows_preserve_prompt_text_exactly(self):
         import torch
 
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         class CharTokenizer:
             pad_token_id = 0
@@ -336,7 +354,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
     def test_trace_replay_rows_encode_step_and_state_in_action_input(self):
         import torch
 
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         class SimpleTokenizer:
             pad_token_id = 0
@@ -403,7 +421,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
     def test_trace_replay_can_hide_step_text_for_signal_conditioning(self):
         import torch
 
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset
 
         class SimpleTokenizer:
             pad_token_id = 0
@@ -474,7 +492,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertIn("controller_signal", first)
 
     def test_workspace_counterfactual_rows_emit_separate_workspace_sequence(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         prompt = (
             "MemoryOS evidence\n"
@@ -531,7 +549,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         )
 
     def test_collate_jsonl_handles_mixed_optional_training_targets(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         evidence_prompt = (
             "MemoryOS evidence\n"
@@ -577,7 +595,7 @@ class JsonlDatasetSupervisedTests(unittest.TestCase):
         self.assertEqual(float(batch["logical_support_target"][1].item()), 1.0)
 
     def test_generation_verifier_rows_emit_targets(self):
-        from qtrm_mm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
+        from wgram_lm.data.jsonl_dataset import JsonlTextVisionDataset, collate_jsonl
 
         ds = JsonlTextVisionDataset(
             files=[],

@@ -5,7 +5,7 @@ from pathlib import Path
 
 class ArchitectureAblationProofTests(unittest.TestCase):
     def test_build_ablation_summary_measures_drop_from_residual(self):
-        from qtrm_mm.eval.architecture_ablation_proof import build_ablation_summary
+        from wgram_lm.eval.architecture_ablation_proof import build_ablation_summary
 
         records = [
             {
@@ -101,7 +101,7 @@ class ArchitectureAblationProofTests(unittest.TestCase):
         )
 
     def test_build_ablation_summary_loads_multiple_eval_files(self):
-        from qtrm_mm.eval.architecture_ablation_proof import build_ablation_summary
+        from wgram_lm.eval.architecture_ablation_proof import build_ablation_summary
 
         with tempfile.TemporaryDirectory() as tmp:
             first = Path(tmp) / "residual.jsonl"
@@ -127,7 +127,7 @@ class ArchitectureAblationProofTests(unittest.TestCase):
         self.assertEqual(proof["modes"]["qtrm_workspace_off_with_evidence"]["hits"], 0)
 
     def test_render_markdown_includes_ablation_tables(self):
-        from qtrm_mm.eval.architecture_ablation_proof import (
+        from wgram_lm.eval.architecture_ablation_proof import (
             DEFAULT_MODES,
             build_ablation_summary,
             render_markdown,

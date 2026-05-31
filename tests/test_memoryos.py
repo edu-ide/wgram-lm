@@ -5,14 +5,14 @@ import torch
 
 class MemoryOSTests(unittest.TestCase):
     def test_text_memory_defaults_to_harrier_270m(self):
-        from qtrm_mm.memoryos.retrieve import DEFAULT_TEXT_EMBED_MODEL as retrieve_default
-        from qtrm_mm.memoryos.text_index import DEFAULT_TEXT_EMBED_MODEL as index_default
+        from wgram_lm.memoryos.retrieve import DEFAULT_TEXT_EMBED_MODEL as retrieve_default
+        from wgram_lm.memoryos.text_index import DEFAULT_TEXT_EMBED_MODEL as index_default
 
         self.assertEqual(index_default, "microsoft/harrier-oss-v1-270m")
         self.assertEqual(retrieve_default, "microsoft/harrier-oss-v1-270m")
 
     def test_harrier_query_encoding_uses_official_prompt_name(self):
-        from qtrm_mm.memoryos.retrieve import encode_query
+        from wgram_lm.memoryos.retrieve import encode_query
 
         class FakeModel:
             def __init__(self):
@@ -31,7 +31,7 @@ class MemoryOSTests(unittest.TestCase):
         self.assertTrue(kwargs["normalize_embeddings"])
 
     def test_non_harrier_query_encoding_uses_explicit_instruction_text(self):
-        from qtrm_mm.memoryos.retrieve import encode_query
+        from wgram_lm.memoryos.retrieve import encode_query
 
         class FakeModel:
             def __init__(self):
@@ -49,7 +49,7 @@ class MemoryOSTests(unittest.TestCase):
         self.assertTrue(kwargs["normalize_embeddings"])
 
     def test_visual_embedding_output_object_is_coerced_to_tensor(self):
-        from qtrm_mm.memoryos.visual_index import coerce_embedding_tensor
+        from wgram_lm.memoryos.visual_index import coerce_embedding_tensor
 
         class Output:
             pooler_output = torch.ones(2, 4)

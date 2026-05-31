@@ -61,9 +61,9 @@ before it can be used as a reliable donor.
 
 Files:
 
-- `src/qtrm_mm/msa_qwen35.py`
-- `src/qtrm_mm/qwen35_full_msa.py`
-- `src/qtrm_mm/qwen35_full_msa_healing.py`
+- `src/wgram_lm/msa_qwen35.py`
+- `src/wgram_lm/qwen35_full_msa.py`
+- `src/wgram_lm/qwen35_full_msa_healing.py`
 - `scripts/129_prepare_qwen35_full_msa_fork.py`
 - `scripts/130_train_qwen35_full_msa_healing.py`
 - `tests/test_qwen35_full_msa_checkpoint.py`

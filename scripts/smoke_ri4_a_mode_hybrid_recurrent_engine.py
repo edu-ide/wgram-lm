@@ -25,9 +25,9 @@ import torch
 # Ensure src is on path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from qtrm_mm.config import QTRMConfig
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
+from wgram_lm.config import QTRMConfig
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.blocks import build_parallel_hybrid_block, OneBodyParallelHybridBlock
 
 
 def make_tiny_cfg() -> QTRMConfig:

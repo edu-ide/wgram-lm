@@ -103,7 +103,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> None:
     from transformers import AutoModelForImageTextToText, AutoTokenizer
 
-    from qtrm_mm.qwen_donor import _build_4bit_quantization_config
+    from wgram_lm.qwen_donor import _build_4bit_quantization_config
 
     args = build_arg_parser().parse_args()
     raw_eval = _load_raw_eval_module()

@@ -2,8 +2,8 @@
 
 Current code:
 
-- `src/qtrm_mm/core.py`
-- `src/qtrm_mm/heads.py`
+- `src/wgram_lm/core.py`
+- `src/wgram_lm/heads.py`
 
 Reference source:
 

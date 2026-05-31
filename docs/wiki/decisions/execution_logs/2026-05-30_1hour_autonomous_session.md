@@ -1,6 +1,6 @@
 # 2026-05-30 1-Hour Autonomous Execution Session Report
-**Date**: 2026-05-30  
-**Context**: User requested "순서대로 해 그리고 나 어디 갔다 올테니까 1시간동안 작업해" after the core 5.56 instrumentation + validation phase.  
+**Date**: 2026-05-30
+**Context**: User requested "순서대로 해 그리고 나 어디 갔다 올테니까 1시간동안 작업해" after the core 5.56 instrumentation + validation phase.
 **Goal**: Advance the Full 5.56 Adaptive Rehearsal Curriculum reconstruction as far as possible in ~60 minutes using the project's torch environment, following the research-driven-architecture-debugging skill strictly.
 
 ## Work Completed in Strict Sequential Order
@@ -23,7 +23,7 @@
 - At time of writing, the run is progressing (real 642 structural bias attempt + stochastic breadth + scheduled decay all active).
 
 ### 3. Documentation & Contract Updates
-- Updated `src/qtrm_mm/architecture/component_registry.py` (both `adaptive_rehearsal_556` and `adaptive_rehearsal_556_gold_recipe` entries) with:
+- Updated `src/wgram_lm/architecture/component_registry.py` (both `adaptive_rehearsal_556` and `adaptive_rehearsal_556_gold_recipe` entries) with:
   - Full list of new executable artifacts (trainer, launcher, matrix runner, analyzer).
   - First real execution evidence + ablation proof numbers.
   - Explicit `provides_executable_ablation` list.

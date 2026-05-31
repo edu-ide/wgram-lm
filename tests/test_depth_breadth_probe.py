@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from qtrm_mm.eval.depth_breadth_probe import (
+from wgram_lm.eval.depth_breadth_probe import (
     build_depth_breadth_report,
     extract_depth,
 )

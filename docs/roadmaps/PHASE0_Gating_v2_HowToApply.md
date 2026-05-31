@@ -44,7 +44,7 @@ delta_backend: str = "torch_gated_delta2_v2",   # Gating v2 (2026-05-30)
 ### 방법 3: Python 코드로 직접 생성할 때
 
 ```python
-from src.qtrm_mm.qwen_backbone_qtrm import build_small_qwen_qtrm_core
+from wgram_lm.qwen_backbone_wgram import build_small_qwen_qtrm_core
 
 core_cfg = build_small_qwen_qtrm_core(
     qwen_config=qwen_config,
@@ -84,4 +84,3 @@ python scripts/335_train_qtrm_native_etd_probe.py \
     --strict_backends false \
     ...기타 필요한 최소 인자...
 ```
-

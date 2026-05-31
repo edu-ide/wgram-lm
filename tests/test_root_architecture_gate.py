@@ -6,7 +6,7 @@ from pathlib import Path
 
 class RootArchitectureGateTests(unittest.TestCase):
     def test_rejects_when_ablations_match_successful_baseline(self):
-        from qtrm_mm.eval.root_architecture_gate import build_root_architecture_gate
+        from wgram_lm.eval.root_architecture_gate import build_root_architecture_gate
 
         records = [
             {
@@ -57,7 +57,7 @@ class RootArchitectureGateTests(unittest.TestCase):
         )
 
     def test_accepts_when_workspace_memory_ablation_drops(self):
-        from qtrm_mm.eval.root_architecture_gate import build_root_architecture_gate
+        from wgram_lm.eval.root_architecture_gate import build_root_architecture_gate
 
         records = [
             {
@@ -97,7 +97,7 @@ class RootArchitectureGateTests(unittest.TestCase):
         )
 
     def test_strict_promotion_rejects_when_donor_ties_baseline(self):
-        from qtrm_mm.eval.root_architecture_gate import build_root_architecture_gate
+        from wgram_lm.eval.root_architecture_gate import build_root_architecture_gate
 
         records = [
             {
@@ -132,7 +132,7 @@ class RootArchitectureGateTests(unittest.TestCase):
         self.assertIn("donor_only_with_evidence", gate["weak_comparison_modes"])
 
     def test_strict_promotion_rejects_when_critical_ablation_improves(self):
-        from qtrm_mm.eval.root_architecture_gate import build_root_architecture_gate
+        from wgram_lm.eval.root_architecture_gate import build_root_architecture_gate
 
         records = [
             {
@@ -197,7 +197,7 @@ class RootArchitectureGateTests(unittest.TestCase):
         self.assertIn("qtrm_core_off_with_evidence", gate["improving_critical_modes"])
 
     def test_strict_promotion_accepts_when_qtrm_beats_donor_and_ablations_drop(self):
-        from qtrm_mm.eval.root_architecture_gate import build_root_architecture_gate
+        from wgram_lm.eval.root_architecture_gate import build_root_architecture_gate
 
         records = [
             {
@@ -252,7 +252,7 @@ class RootArchitectureGateTests(unittest.TestCase):
         )
 
     def test_default_critical_modes_include_answer_residual_governor(self):
-        from qtrm_mm.eval.root_architecture_gate import DEFAULT_CRITICAL_MODES
+        from wgram_lm.eval.root_architecture_gate import DEFAULT_CRITICAL_MODES
 
         self.assertIn(
             "qtrm_answer_residual_governor_off_with_evidence",
@@ -260,7 +260,7 @@ class RootArchitectureGateTests(unittest.TestCase):
         )
 
     def test_rejects_when_baseline_has_no_successes(self):
-        from qtrm_mm.eval.root_architecture_gate import build_root_architecture_gate
+        from wgram_lm.eval.root_architecture_gate import build_root_architecture_gate
 
         gate = build_root_architecture_gate(
             [
@@ -283,7 +283,7 @@ class RootArchitectureGateTests(unittest.TestCase):
         self.assertIn("baseline_has_no_successes", gate["failed_checks"])
 
     def test_renders_markdown_and_script_writes_outputs(self):
-        from qtrm_mm.eval.root_architecture_gate import render_markdown
+        from wgram_lm.eval.root_architecture_gate import render_markdown
 
         script = Path(__file__).resolve().parents[1] / "scripts" / "148_build_root_architecture_gate.py"
         import importlib.util

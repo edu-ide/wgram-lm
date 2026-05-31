@@ -27,7 +27,7 @@ class ExpandedMemoryReasoningGateTests(unittest.TestCase):
         self.assertIn("--rerank-backend \"$RERANK_BACKEND\"", script)
 
     def test_expanded_heldout_file_is_balanced_and_disjoint(self):
-        from qtrm_mm.eval.memory_retrieval import case_task_family, load_cases
+        from wgram_lm.eval.memory_retrieval import case_task_family, load_cases
 
         expanded = load_cases("data/eval/memory_reasoning_heldout_expanded_72.jsonl")
         hard = load_cases("data/eval/memory_reasoning_probe.jsonl")

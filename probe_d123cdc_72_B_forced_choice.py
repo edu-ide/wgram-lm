@@ -31,11 +31,11 @@ from typing import Any, Dict, List, Tuple
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.state_transition_core import StateTransitionCore, N_OPERATIONS
-from qtrm_mm.config import QTRMConfig
+from wgram_lm.state_transition_core import StateTransitionCore, N_OPERATIONS
+from wgram_lm.config import QTRMConfig
 
 ROOT = Path(__file__).resolve().parent
-LOSS_FILE = ROOT / "src" / "qtrm_mm" / "losses" / "equation_state_binding.py"
+LOSS_FILE = ROOT / "src" / "wgram_lm" / "losses" / "equation_state_binding.py"
 _loss_globals: Dict[str, Any] = {"__name__": "equation_state_binding", "__file__": str(LOSS_FILE)}
 with open(LOSS_FILE, "r", encoding="utf-8") as f:
     exec(compile(f.read(), str(LOSS_FILE), "exec"), _loss_globals)

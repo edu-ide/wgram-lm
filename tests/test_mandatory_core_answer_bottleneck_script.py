@@ -1,7 +1,7 @@
 from pathlib import Path
 import unittest
 
-from qtrm_mm.config import load_config
+from wgram_lm.config import load_config
 
 
 class MandatoryCoreAnswerBottleneckScriptTests(unittest.TestCase):
@@ -31,7 +31,7 @@ class MandatoryCoreAnswerBottleneckScriptTests(unittest.TestCase):
         )
         self.assertIn("mandatory_identity_core_causal_s080/last.pt", script)
         self.assertIn("memory_reasoning_canonical_plain_answer.jsonl", script)
-        self.assertIn("qtrm_mm.training.train", script)
+        self.assertIn("wgram_lm.training.train", script)
         self.assertIn("183_run_mandatory_identity_core_candidate_gate.sh", script)
 
 

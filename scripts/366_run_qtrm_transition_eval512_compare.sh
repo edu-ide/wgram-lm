@@ -23,7 +23,7 @@ run_gate() {
   shift
   echo "=== ${out_dir} ==="
   set +e
-  .venv/bin/python scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+  .venv/bin/python scripts/362_train_qwen_backbone_wgram_core_gate.py \
     --model-id "$QWEN_MODEL_ID" \
     --out-dir "$out_dir" \
     --device "$DEVICE" \
@@ -41,12 +41,12 @@ run_gate() {
   echo "exit_code=${code}"
 }
 
-run_gate "local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s${STEPS}_20260515" \
+run_gate "local_eval/qwen_backbone_wgram_qwen_transition_eval512_s${STEPS}_20260515" \
   --core-impl qwen_layer_wrapped \
   --qwen-core-layer-indices 3 \
   --core-adapter-dim 64
 
-run_gate "local_eval/qwen_backbone_qtrm_ouro_transition_l24_eval512_s${STEPS}_20260515" \
+run_gate "local_eval/qwen_backbone_wgram_ouro_transition_l24_eval512_s${STEPS}_20260515" \
   --core-impl ouro_weight_wrapped \
   --ouro-model-id "$OURO_MODEL_ID" \
   --ouro-core-layer-indices 24 \
@@ -57,8 +57,8 @@ import json
 from pathlib import Path
 
 paths = [
-    Path("local_eval/qwen_backbone_qtrm_qwen_transition_eval512_s200_20260515/report.json"),
-    Path("local_eval/qwen_backbone_qtrm_ouro_transition_l24_eval512_s200_20260515/report.json"),
+    Path("local_eval/qwen_backbone_wgram_qwen_transition_eval512_s200_20260515/report.json"),
+    Path("local_eval/qwen_backbone_wgram_ouro_transition_l24_eval512_s200_20260515/report.json"),
 ]
 rows = []
 for path in paths:

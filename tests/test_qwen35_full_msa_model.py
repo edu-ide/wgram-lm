@@ -7,7 +7,7 @@ pytest.importorskip("transformers")
 
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
-from qtrm_mm.qwen35_full_msa import Qwen35FullMsaTextModel
+from wgram_lm.qwen35_full_msa import Qwen35FullMsaTextModel
 
 
 def tiny_config() -> Qwen3_5TextConfig:

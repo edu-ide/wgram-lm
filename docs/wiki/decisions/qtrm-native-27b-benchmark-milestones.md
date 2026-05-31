@@ -221,7 +221,7 @@ language top1 agreement >= 0.50
 Single-seed evidence:
 
 ```text
-local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_adapteronly_stepcond_ad128_s400_selectpair_repair_20260515/report.json
+local_eval/qwen_backbone_wgram_qwen_transition_hardv1_adapteronly_stepcond_ad128_s400_selectpair_repair_20260515/report.json
 
 gain: 0.064453125
 min_family_gain: 0.011764705882352955
@@ -232,7 +232,7 @@ language_top1: 1.0
 Stability evidence:
 
 ```text
-local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_adapteronly_stepcond_ad128_checksum_repair_stability_20260515/report.json
+local_eval/qwen_backbone_wgram_qwen_transition_hardv1_adapteronly_stepcond_ad128_checksum_repair_stability_20260515/report.json
 
 num_seeds: 3
 num_accepted: 1
@@ -443,7 +443,7 @@ server script, local control:
 
 server script, on DGX:
   /mnt/data4tb/qwen36-mtp-llama-server.sh
-  /mnt/data4tb/qtrm_multimodal_memoryos/scripts/407_qwen36_mtp_llama_server_dgx_local.sh
+  /mnt/data4tb/wgram-lm/scripts/407_qwen36_mtp_llama_server_dgx_local.sh
 
 endpoint:
   http://192.168.219.113:18082/v1
@@ -504,7 +504,7 @@ public benchmark parity or full-precision Qwen3.6 parity.
 DGX full-precision command when reachable:
 
 ```bash
-cd /mnt/data4tb/qtrm_multimodal_memoryos
+cd /mnt/data4tb/wgram-lm
 PYTHONPATH=src MODEL_PATH=/home/sk/ws/llm/models/Qwen3.6-27B \
   bash scripts/379_run_m6_qwen36_baseline.sh
 PYTHONPATH=src python scripts/376_build_m6_scoped_raw_reasoning_manifest.py \
@@ -862,7 +862,7 @@ Run:
 
 ```bash
 PYTHONPATH=src .venv/bin/python scripts/372_qtrm_native_27b_milestone_status.py \
-  --bridge-report local_eval/qwen_backbone_qtrm_qwen_transition_hardv1_adapteronly_stepcond_ad128_s400_selectpair_repair_20260515/report.json
+  --bridge-report local_eval/qwen_backbone_wgram_qwen_transition_hardv1_adapteronly_stepcond_ad128_s400_selectpair_repair_20260515/report.json
 ```
 
 The generated report is a target-status ledger, not a training result.

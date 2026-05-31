@@ -8,7 +8,7 @@ from typing import Any, Iterable
 import urllib.parse
 import urllib.request
 
-from qtrm_mm.data.verified_reasoning import (
+from wgram_lm.data.verified_reasoning import (
     DEFAULT_VERIFIED_SOURCES,
     convert_verified_row,
 )

@@ -29,14 +29,14 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from qtrm_mm.eval.general_answer_interface import (
+from wgram_lm.eval.general_answer_interface import (
     answer_aliases,
     answer_kind,
     normalize_answer_text,
     normalized_alias_set,
     summarize_records,
 )
-from qtrm_mm.eval.state_text_speaker import (
+from wgram_lm.eval.state_text_speaker import (
     LowRankVocabLogitAdapter,
     StateTextSpeaker,
     decode_answer_token_ids,
@@ -1464,7 +1464,7 @@ class QwenLmAnswerMouth(nn.Module):
 
     def forward(
         self,
-        qtrm_model: Any,
+        wgram_model: Any,
         readout: torch.Tensor,
         *,
         register_memory: torch.Tensor | None = None,
@@ -1482,7 +1482,7 @@ class QwenLmAnswerMouth(nn.Module):
                 need_weights=False,
             )
             answer_states = self.register_prefix_norm(answer_states + prefix_context)
-        _, qwen_logits = qtrm_model._lm_head_logits_from_state(answer_states)
+        _, qwen_logits = wgram_model._lm_head_logits_from_state(answer_states)
         if self.adapter is not None:
             qwen_logits = qwen_logits + self.adapter(answer_states)
         if self.ledger_token_reader and not bool(ledger_token_reader_off) and digit_memory is not None:
@@ -1539,7 +1539,7 @@ def answer_readout_from_context(
     register_trajectory = context.get("working_register_trajectory")
     if register_trajectory is None:
         raise RuntimeError(
-            "qtrm_model did not return qtrm_working_register_trajectory. "
+            "wgram_model did not return qtrm_working_register_trajectory. "
             "Run with --working-register-enabled."
         )
     readout = context["readout"]
@@ -1708,7 +1708,7 @@ def qwen_lm_mouth_digit_memory(
 
 
 def qwen_lm_mouth_forward(
-    qtrm_model: Any,
+    wgram_model: Any,
     qwen_lm_mouth: QwenLmAnswerMouth,
     context: dict[str, torch.Tensor | None],
     *,
@@ -1729,7 +1729,7 @@ def qwen_lm_mouth_forward(
         typed_register_off=bool(typed_register_off),
     )
     return qwen_lm_mouth(
-        qtrm_model,
+        wgram_model,
         readout,
         register_memory=register_memory,
         digit_memory=digit_memory,
@@ -4721,13 +4721,13 @@ class TypedRegisterAnswerer(nn.Module):
 
 def initialize_char_speaker_from_qwen(
     answerer: TypedRegisterAnswerer,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     allowed_chars: list[str],
 ) -> dict[str, Any]:
     """Initialize the tiny AR speaker with Qwen's known alphabet mouth."""
 
-    qwen = getattr(qtrm_model, "qwen", None)
+    qwen = getattr(wgram_model, "qwen", None)
     if qwen is None:
         return {"enabled": False, "reason": "missing qwen model"}
     input_embeddings = qwen.get_input_embeddings() if hasattr(qwen, "get_input_embeddings") else None
@@ -4807,7 +4807,7 @@ def answerer_forward(
     register_trajectory = context.get("working_register_trajectory")
     if register_trajectory is None:
         raise RuntimeError(
-            "qtrm_model did not return qtrm_working_register_trajectory. "
+            "wgram_model did not return qtrm_working_register_trajectory. "
             "Run with --working-register-enabled."
         )
     readout = answer_readout_from_context(
@@ -5022,7 +5022,7 @@ def typed_primitive_lane_batch_inputs(
 
 def train_epoch(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     answerer: TypedRegisterAnswerer,
     typed_value_trace_head: TypedValueTraceHead | None,
@@ -5045,10 +5045,10 @@ def train_epoch(
     device: torch.device,
 ) -> dict[str, float]:
     if bool(args.train_qtrm_core):
-        qtrm_model.train()
-        qtrm_model.qwen.eval()
+        wgram_model.train()
+        wgram_model.qwen.eval()
     else:
-        qtrm_model.eval()
+        wgram_model.eval()
     answerer.train()
     if typed_value_trace_head is not None:
         typed_value_trace_head.train()
@@ -5130,7 +5130,7 @@ def train_epoch(
     started = time.time()
     for batch in loader:
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=int(args.max_length),
@@ -5249,7 +5249,7 @@ def train_epoch(
                 device=device,
             )
             char_logits = qwen_lm_mouth_forward(
-                qtrm_model,
+                wgram_model,
                 qwen_lm_mouth,
                 context,
                 typed_register_off=False,
@@ -5860,7 +5860,7 @@ def train_epoch(
         if qwen_lm_mouth is not None:
             params.extend(qwen_lm_mouth.parameters())
         if bool(args.train_qtrm_core):
-            params.extend(parameter for parameter in qtrm_model.parameters() if parameter.requires_grad)
+            params.extend(parameter for parameter in wgram_model.parameters() if parameter.requires_grad)
         torch.nn.utils.clip_grad_norm_(params, float(args.grad_clip))
         optimizer.step()
         total_loss += float(loss.detach().cpu()) * len(batch)
@@ -6060,7 +6060,7 @@ def train_epoch(
 @torch.no_grad()
 def evaluate(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     answerer: TypedRegisterAnswerer,
     digit_transition_executor: TypedDigitNextStateExecutor | None,
@@ -6097,7 +6097,7 @@ def evaluate(
     boolean_primitive_lane_off: bool = False,
     symbolic_primitive_lane_off: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    qtrm_model.eval()
+    wgram_model.eval()
     answerer.eval()
     if digit_transition_executor is not None:
         digit_transition_executor.eval()
@@ -6121,7 +6121,7 @@ def evaluate(
     records: list[dict[str, Any]] = []
     for batch in loader:
         context = stage523.thought_context_for_batch(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch,
             max_length=int(args.max_length),
@@ -6252,7 +6252,7 @@ def evaluate(
             if qwen_lm_mouth is None:
                 raise RuntimeError("--qwen-lm-mouth-answerer requires QwenLmAnswerMouth")
             logits = qwen_lm_mouth_forward(
-                qtrm_model,
+                wgram_model,
                 qwen_lm_mouth,
                 context,
                 typed_register_off=bool(typed_register_off),
@@ -6900,7 +6900,7 @@ def main() -> None:
     validate_residual_thought_graft_flags(args)
     validate_qwen_lm_mouth_flags(args)
 
-    qtrm_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
+    wgram_model, tokenizer, load_stats = stage523.build_qtrm(args, device)
     if qwen_lm_mouth_answerer_active(args):
         validate_qwen_lm_answer_target_lengths(
             tokenizer,
@@ -6919,7 +6919,7 @@ def main() -> None:
         for digit in range(10)
     ]
     answerer = TypedRegisterAnswerer(
-        d_state=int(qtrm_model.d_state),
+        d_state=int(wgram_model.d_state),
         vocab_size=len(allowed_chars),
         max_candidates=int(args.max_candidates),
         max_candidate_chars=int(args.max_candidate_chars),
@@ -6944,7 +6944,7 @@ def main() -> None:
     typed_value_trace_head = None
     if float(args.typed_value_trace_weight) > 0.0:
         typed_value_trace_head = TypedValueTraceHead(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             hidden_dim=(
                 int(args.typed_value_trace_hidden_dim)
                 if int(args.typed_value_trace_hidden_dim) > 0
@@ -6955,7 +6955,7 @@ def main() -> None:
     typed_value_digit_trace_head = None
     if float(args.typed_value_digit_trace_weight) > 0.0:
         typed_value_digit_trace_head = TypedValueDigitTraceHead(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             max_digits=int(args.typed_value_digit_trace_digits),
             hidden_dim=(
                 int(args.typed_value_digit_trace_hidden_dim)
@@ -6966,7 +6966,7 @@ def main() -> None:
     typed_digit_register_trace_head = None
     if float(args.typed_digit_register_trace_weight) > 0.0:
         typed_digit_register_trace_head = TypedDigitRegisterTraceHead(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             max_digits=int(args.typed_digit_register_digits),
             hidden_dim=(
                 int(args.typed_digit_register_trace_hidden_dim)
@@ -6977,7 +6977,7 @@ def main() -> None:
     digit_transition_executor = None
     if bool(args.digit_transition_executor):
         digit_transition_executor = TypedDigitNextStateExecutor(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             n_operations=int(args.n_operations),
             source_feature_dim=(
                 int(args.source_number_feature_dim)
@@ -6999,7 +6999,7 @@ def main() -> None:
     procedure_generator = None
     if bool(args.numeric_procedure_generator):
         procedure_generator = ProcedureGenerator(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             n_operations=int(args.n_operations),
             n_actions=int(args.numeric_procedure_actions),
             source_feature_dim=(
@@ -7016,7 +7016,7 @@ def main() -> None:
     learned_numeric_procedure_executor = None
     if bool(args.learned_numeric_procedure_executor):
         learned_numeric_procedure_executor = LearnedNumericProcedureExecutor(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             n_actions=int(args.numeric_procedure_actions),
             source_feature_dim=(
                 int(args.source_number_feature_dim)
@@ -7032,7 +7032,7 @@ def main() -> None:
     typed_primitive_lane_executor = None
     if bool(args.typed_primitive_lane_executor):
         typed_primitive_lane_executor = TypedPrimitiveLaneExecutor(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             n_operations=int(args.n_operations),
             symbolic_vocab_size=len(symbol_vocab),
             hidden_dim=(
@@ -7049,7 +7049,7 @@ def main() -> None:
             else ProcedureChoiceVerifier
         )
         choice_verifier = choice_verifier_cls(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             vocab_size=len(allowed_chars),
             max_choice_chars=int(args.max_candidate_chars),
             hidden_dim=(
@@ -7061,7 +7061,7 @@ def main() -> None:
     digit_ledger_attractor = None
     if bool(args.digit_ledger_attractor):
         digit_ledger_attractor = TypedDigitLedgerAttractor(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             hidden_dim=(
                 int(args.digit_ledger_attractor_hidden_dim)
                 if int(args.digit_ledger_attractor_hidden_dim) > 0
@@ -7073,14 +7073,14 @@ def main() -> None:
     digit_committed_writeback = None
     if bool(args.digit_transition_committed_writeback):
         digit_committed_writeback = TypedDigitCommittedWriteback(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             n_heads=int(args.attn_heads),
             gate_init_bias=float(args.digit_transition_writeback_gate_init_bias),
         ).to(device)
     residual_thought_graft = None
     if bool(args.residual_thought_graft):
         residual_thought_graft = ResidualThoughtGraft(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             hidden_dim=(
                 int(args.residual_thought_graft_hidden_dim)
                 if int(args.residual_thought_graft_hidden_dim) > 0
@@ -7089,9 +7089,9 @@ def main() -> None:
         ).to(device)
     qwen_lm_mouth = None
     if bool(args.qwen_lm_mouth_answerer):
-        lm_head = getattr(qtrm_model.qwen, "lm_head", None)
+        lm_head = getattr(wgram_model.qwen, "lm_head", None)
         if lm_head is None:
-            raise RuntimeError("--qwen-lm-mouth-answerer requires qtrm_model.qwen.lm_head")
+            raise RuntimeError("--qwen-lm-mouth-answerer requires wgram_model.qwen.lm_head")
         digit_token_ids = None
         comma_token_id = None
         eos_token_id = getattr(tokenizer, "eos_token_id", None)
@@ -7102,7 +7102,7 @@ def main() -> None:
             ]
             comma_token_id = qwen_lm_single_token_id(tokenizer, ",", label="comma")
         qwen_lm_mouth = QwenLmAnswerMouth(
-            d_state=int(qtrm_model.d_state),
+            d_state=int(wgram_model.d_state),
             vocab_size=int(lm_head.weight.size(0)),
             max_answer_tokens=int(args.qwen_lm_mouth_max_answer_tokens),
             hidden_dim=(
@@ -7139,7 +7139,7 @@ def main() -> None:
     if bool(args.init_char_speaker_from_qwen):
         char_speaker_init = initialize_char_speaker_from_qwen(
             answerer,
-            qtrm_model,
+            wgram_model,
             tokenizer,
             allowed_chars,
         )
@@ -7167,14 +7167,14 @@ def main() -> None:
     if residual_thought_graft is not None:
         trainable.extend(residual_thought_graft.parameters())
     if bool(args.train_qtrm_core):
-        trainable.extend(parameter for parameter in qtrm_model.parameters() if parameter.requires_grad)
+        trainable.extend(parameter for parameter in wgram_model.parameters() if parameter.requires_grad)
     optimizer = torch.optim.AdamW(trainable, lr=float(args.lr), weight_decay=float(args.weight_decay))
 
     history: list[dict[str, Any]] = []
     best_accuracy = -1.0
     for epoch in range(1, int(args.epochs) + 1):
         train = train_epoch(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             answerer=answerer,
             typed_value_trace_head=typed_value_trace_head,
@@ -7197,7 +7197,7 @@ def main() -> None:
             device=device,
         )
         eval_summary, eval_records = evaluate(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             answerer=answerer,
             digit_transition_executor=digit_transition_executor,
@@ -7219,7 +7219,7 @@ def main() -> None:
         off_summary = None
         if bool(args.eval_typed_register_off):
             off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7241,7 +7241,7 @@ def main() -> None:
         residual_thought_graft_off_summary = None
         if residual_thought_graft is not None and bool(args.eval_residual_thought_graft_off):
             residual_thought_graft_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7268,7 +7268,7 @@ def main() -> None:
             and bool(args.eval_qwen_lm_mouth_ledger_token_reader_off)
         ):
             qwen_lm_mouth_ledger_token_reader_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7295,7 +7295,7 @@ def main() -> None:
             and bool(args.eval_qwen_lm_mouth_direct_ledger_renderer)
         ):
             qwen_lm_mouth_direct_ledger_renderer_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7318,7 +7318,7 @@ def main() -> None:
         transition_off_summary = None
         if digit_transition_executor is not None and bool(args.eval_digit_transition_executor_off):
             transition_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7341,7 +7341,7 @@ def main() -> None:
         column_procedure_off_summary = None
         if digit_transition_executor is not None and bool(args.eval_column_procedure_off):
             column_procedure_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7364,7 +7364,7 @@ def main() -> None:
         numeric_procedure_generator_off_summary = None
         if procedure_generator is not None and bool(args.eval_numeric_procedure_generator_off):
             numeric_procedure_generator_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7387,7 +7387,7 @@ def main() -> None:
         numeric_procedure_executor_off_summary = None
         if learned_numeric_procedure_executor is not None and bool(args.eval_numeric_procedure_executor_off):
             numeric_procedure_executor_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7410,7 +7410,7 @@ def main() -> None:
         attractor_off_summary = None
         if digit_ledger_attractor is not None and bool(args.eval_digit_ledger_attractor_off):
             attractor_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7433,7 +7433,7 @@ def main() -> None:
         writeback_off_summary = None
         if digit_committed_writeback is not None and bool(args.eval_digit_transition_writeback_off):
             writeback_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7456,7 +7456,7 @@ def main() -> None:
         renderer_off_summary = None
         if bool(args.answerer_ledger_causal_renderer) and bool(args.eval_ledger_causal_renderer_off):
             renderer_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7479,7 +7479,7 @@ def main() -> None:
         copy_renderer_off_summary = None
         if bool(args.answerer_ledger_forced_copy_renderer) and bool(args.eval_ledger_forced_copy_renderer_off):
             copy_renderer_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7502,7 +7502,7 @@ def main() -> None:
         pact_renderer_off_summary = None
         if bool(args.answerer_ledger_pact_renderer) and bool(args.eval_ledger_pact_renderer_off):
             pact_renderer_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7528,7 +7528,7 @@ def main() -> None:
             and bool(args.eval_learned_numeric_procedure_renderer_off)
         ):
             learned_numeric_procedure_renderer_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7551,7 +7551,7 @@ def main() -> None:
         typed_primitive_pact_renderer_off_summary = None
         if bool(args.answerer_typed_primitive_pact_renderer) and bool(args.eval_typed_primitive_pact_renderer_off):
             typed_primitive_pact_renderer_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7574,7 +7574,7 @@ def main() -> None:
         learned_primitive_lane_renderer_off_summary = None
         if bool(args.answerer_learned_primitive_lane_renderer) and bool(args.eval_learned_primitive_lane_renderer_off):
             learned_primitive_lane_renderer_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7597,7 +7597,7 @@ def main() -> None:
         choice_verifier_off_summary = None
         if choice_verifier is not None and bool(args.eval_choice_verifier_off):
             choice_verifier_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7623,7 +7623,7 @@ def main() -> None:
             or bool(args.answerer_learned_primitive_lane_renderer)
         ) and bool(args.eval_boolean_primitive_lane_off):
             boolean_primitive_lane_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,
@@ -7649,7 +7649,7 @@ def main() -> None:
             or bool(args.answerer_learned_primitive_lane_renderer)
         ) and bool(args.eval_symbolic_primitive_lane_off):
             symbolic_primitive_lane_off_summary, _ = evaluate(
-                qtrm_model=qtrm_model,
+                wgram_model=wgram_model,
                 tokenizer=tokenizer,
                 answerer=answerer,
                 digit_transition_executor=digit_transition_executor,

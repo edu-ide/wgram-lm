@@ -22,8 +22,8 @@ sys.path.insert(0, str(ROOT))
 
 import torch
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.config import QTRMConfig
+from wgram_lm.blocks import OneBodyParallelHybridBlock
 
 
 def run_recurrent_experiment(

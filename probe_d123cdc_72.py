@@ -15,12 +15,12 @@ from typing import Any, Dict
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.state_transition_core import StateTransitionCore, N_OPERATIONS
-from qtrm_mm.config import QTRMConfig
+from wgram_lm.state_transition_core import StateTransitionCore, N_OPERATIONS
+from wgram_lm.config import QTRMConfig
 
 # Load the equation_state_binding loss exactly as done in the 627 probe at this commit
 ROOT = Path(__file__).resolve().parent
-LOSS_FILE = ROOT / "src" / "qtrm_mm" / "losses" / "equation_state_binding.py"
+LOSS_FILE = ROOT / "src" / "wgram_lm" / "losses" / "equation_state_binding.py"
 _loss_globals: Dict[str, Any] = {"__name__": "equation_state_binding", "__file__": str(LOSS_FILE)}
 with open(LOSS_FILE, "r", encoding="utf-8") as f:
     exec(compile(f.read(), str(LOSS_FILE), "exec"), _loss_globals)
@@ -105,7 +105,7 @@ def main():
         # Crude forced_choice rank using answer_logits as proxy
         if choices and gold in choices and gold_idx >= 0:
             gold_conf = out.answer_logits[0, gold_idx % 10].item()
-            better = sum(1 for j, c in enumerate(choices) if c != gold and 
+            better = sum(1 for j, c in enumerate(choices) if c != gold and
                          out.answer_logits[0, j % 10].item() > gold_conf)
             rank = better + 1
             ranks.append(rank)

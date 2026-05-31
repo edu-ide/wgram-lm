@@ -2,9 +2,9 @@
 
 Current code:
 
-- `src/qtrm_mm/world_model.py`
-- `src/qtrm_mm/losses.py`
-- `src/qtrm_mm/qtrm_model.py`
+- `src/wgram_lm/world_model.py`
+- `src/wgram_lm/losses.py`
+- `src/wgram_lm/wgram_model.py`
 
 Reference source:
 
@@ -52,3 +52,19 @@ Reason:
 - The LeWM head learned the current recursive latent trajectory, but the
   symbolic intermediate-state gate did not improve. Predicting `z_H[t+1]` from
   `z_H[t]` can model the core's own latent motion without improving reasoning.
+
+2026-05-31 correction:
+
+- arXiv:2605.27734 is now adopted as evidence that own-latent prediction is a
+  serious sample-efficiency methodology for discovering hidden hierarchical
+  structure.
+- This does not make the existing world-model branch canonical. It means the
+  next canonical candidate should be a same-body latent-prediction objective
+  whose targets are already on the answer-causal path.
+- Promotion still requires latent-predictor-off ablation and same-LM-head
+  answer improvement, not only lower latent transition loss.
+
+See:
+
+- `docs/wiki/sources/own-latent-prediction-sample-complexity.md`
+- `docs/wiki/decisions/2026-05-31-own-latent-prediction-methodology-ssot.md`

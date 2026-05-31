@@ -6,7 +6,7 @@ This script performs rigorous checks on whether the hybrid block is actually usi
 official implementations when requested.
 
 Run with:
-  /home/tripleyoung/qtrm-workspace/qtrm_multimodal_memoryos/.venv/bin/python \
+  /home/tripleyoung/qtrm-workspace/wgram-lm/.venv/bin/python \
       scripts/verify_official_hybrid_components.py
 
 Part of the strict sequential verification process (2026-05-30).
@@ -21,8 +21,8 @@ sys.path.insert(0, str(ROOT))
 
 import torch
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.config import QTRMConfig
+from wgram_lm.blocks import OneBodyParallelHybridBlock
 
 
 def check_environment():

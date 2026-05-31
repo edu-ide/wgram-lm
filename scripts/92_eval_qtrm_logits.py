@@ -11,16 +11,16 @@ from typing import Iterable
 
 import torch
 
-from qtrm_mm.config import load_config
-from qtrm_mm.diagnostics import (
+from wgram_lm.config import load_config
+from wgram_lm.diagnostics import (
     next_token_diagnostics,
     repetition_stats,
     residual_logit_telemetry,
     topk_token_report,
 )
-from qtrm_mm.eval.general_answer_interface import extract_answer_candidate_text
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
+from wgram_lm.eval.general_answer_interface import extract_answer_candidate_text
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
 
 
 DEFAULT_PROMPTS = [

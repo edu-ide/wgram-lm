@@ -146,7 +146,7 @@ next expected move:
   Then run IMTA-K only after W-style evidence/curiosity gates stop rejecting:
     K=1/3/8 stochastic recurrent trajectories,
     depth scaling,
-    same LM-head answer margin,
+    same LM-head free-generation answer quality,
     checker-off / stochastic-off / one-body-state-off ablations.
   HRM-Text DataIO remains the required language-training contract for any
   one-body language or efficiency claim: DataIO rows -> PrefixLM input_ids,
@@ -155,13 +155,53 @@ next expected move:
   reader, not as a shortcut for current short-context evidence failures.
 
 promote only if:
-  K>1 beats K=1 without oracle-only scoring,
-  answer-attractor margins improve through the same LM head,
+  K>1 beats K=1 in decoded free generation,
+  answer-attractor margins improve decoded same-LM-head answers,
   the gain disappears under the required ablations,
   Stage101B anchor remains accepted,
   DataIO/PrefixLM heldout and free-generation gates do not regress,
   free generation is non-degenerate,
   and any MSA claim passes memory_off/router_off/chunk_shuffle ablations.
+
+current evaluation policy:
+  forced-choice, oracle coverage, selected-vs-oracle, and candidate reranking
+  are historical diagnostics only. Do not use them as promotion scores.
+```
+
+### Own-Latent Prediction Methodology
+
+```text
+file:
+  2026-05-31-own-latent-prediction-methodology-ssot.md
+
+status:
+  active methodology SSOT
+
+current read:
+  arXiv:2605.27734 is adopted as evidence that a model should learn from its
+  own latent states, not only from visible tokens, when the goal is
+  sample-efficient discovery of hierarchical/compositional structure.
+
+  This does not undo the local LeWM demotion. The old LeWM probes showed that
+  latent transition loss can become non-semantic when the target is not
+  answer-causal.
+
+  The conflict-free split is:
+    token/byte CE -> teaches the same LM head to speak,
+    own-latent prediction -> teaches hidden grammar / latent state structure,
+    answer-attractor -> aligns depth states with answer basins,
+    GRAM/PTRM/IMTA -> supplies same-body internal trajectory breadth.
+
+next expected move:
+  First make same-body IMTA/GRAM/PTRM executable in the active BLT path.
+  Then add an own-latent auxiliary over selected-boundary, dechunked, or
+  recurrent core states that already feed the hnet answer path.
+
+promote only if:
+  latent-predictor-off ablation hurts same-LM-head answer quality,
+  token-CE-only baseline is beaten under matched data/optimizer,
+  free generation and repetition gates improve or do not regress,
+  and latent metrics improve together with semantic/answer-causal metrics.
 ```
 
 ### Stage104 BPE Reading-Stability Control
@@ -546,7 +586,7 @@ file:
   docs/wiki/decisions/2026-05-26-stage119-one-body-equation-state-readback.md
   docs/wiki/decisions/stage119/probe_results_2026-05-26.md
   docs/wiki/decisions/stage119/failure_ledger.md
-  src/qtrm_mm/losses/equation_state_binding.py (full)
+  src/wgram_lm/losses/equation_state_binding.py (full)
   scripts/625_train_bpe_gd_preference.py (guarded hook)
   scripts/627_run_stage119_equation_probe.py (self-contained runnable)
 
@@ -579,9 +619,9 @@ status:
   active
 
 current read:
-  Dynamic selective slot updates are now fully integrated and executed inside 
+  Dynamic selective slot updates are now fully integrated and executed inside
   OneBodyParallelHybridBlock.forward at every micro-step during inference.
-  
+
   Heldout 72-case reasoning results (step 50 checkpoint):
     Slots-On (Active Memory): 34.72%
     Slots-Off (Memory Ablated): 29.17%
@@ -620,7 +660,7 @@ current read:
   and trained loop-wise Mythos LoRA adapters to steer the latent manifold under 8 steps of recurrence.
   The S040 config from commit fc8c9133 uses Mythos LoRA rank 8, confirmed by checkpoint tensor shapes
   `(8, 512)`, `(512, 8)`, and `(16, 8)`.
-  
+
   Local causal forced-choice necessity smoke verified the narrow depth signal:
     donor/core-off/depth1 = 0/2
     canonical depth4/depth8 = 2/2
@@ -699,3 +739,36 @@ current read (2026-05-29):
   1. Local Track (RTX 4090): Qwen-2B LoRA + UltraData-SFT-2605. Practical recurrent thought muscle steering using high-quality SFT data.
   2. DGX Track: 1B Byte-Latent (BLT) pretraining from-scratch (240k steps) with online OPUS selection to natively solve vocabulary fragmentation.
   Active processes: `task-2094` downloading UltraData locally (~4.0s/file); `stage95_supervisor_pid=15409` active on DGX Server.
+
+### 82M Dynamic BLT (No LoRA) Milestone & RI Gates Validation
+
+file:
+  0003-82m-dynamic-blt-milestone-ri-gates.md
+
+status:
+  active milestone (Current phase under 82M loop dynamic BLT model)
+
+current read (2026-05-30):
+  Local RTX 4090 dynamic BLT 1k continuation completed with eval loss falling to 2.9197.
+  RI-1 (attractor convergence depth sweep residual 0.0019), RI-3 (stochastic breadth isolation 0.000), and RI-4 (slot ablation robustness loss) gates are MET.
+  Milestone requires final validation comparisons against:
+    1. Fixed-BLT baseline (re-run active locally to bypass pos_embed weight shape mismatches via no-resume-strict)
+    2. Raw-Byte baseline (re-run active locally to bypass FileNotFoundError via eval-epoch 0)
+  Final comparison will produce the data-efficiency capability verdict (RI-5/RI-6/RI-7).
+
+### Local 82M General Reasoning LLM Scratch (Dynamic-BLT + One-Body)
+
+file:
+  0004-local-82m-general-reasoning-llm-scratch.md
+
+status:
+  ✅ Phase 1 completed successfully (2000/2000 steps)
+
+current read (2026-05-30):
+  Phase 1 finished cleanly after ~3 hours on single 4090.
+  Final / best clean_loss: 3.903 (from initial 11.254 at step 0).
+  Dynamic boundary stayed healthy the entire run (compression 2.0–2.8×, boundary_prob_rate evolved from ~0.48 → ~0.19 as the model learned sharper patches).
+  All kernels official_runtime, no OOM/crashes/spam.
+  Best checkpoint ready at local_eval/20260530_82M_GENERAL_LLM_SCRATCH/best_eval_model.pt.
+  Next: Phase 2 attractor finetune on this checkpoint to activate explicit multi-step thinking (RI-style depth scaling).
+  Full details in 0004-local-82m-general-reasoning-llm-scratch.md.

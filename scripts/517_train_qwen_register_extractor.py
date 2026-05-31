@@ -31,7 +31,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 
-from qtrm_mm.qwen_backbone_state_transition import build_qwen_state_transition_model
+from wgram_lm.qwen_backbone_state_transition import build_qwen_state_transition_model
 
 
 def _load_train511() -> Any:
@@ -405,7 +405,7 @@ def shuffled_batches(cases: Sequence[Any], batch_size: int, rng: random.Random) 
 
 def train_epoch(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     extractor: QwenRegisterExtractor,
     optimizer: torch.optim.Optimizer,
@@ -426,7 +426,7 @@ def train_epoch(
         encoded = encode_batch(tokenizer, [case.prompt_text for case in batch_cases], args.max_length, device)
         targets = case_targets(batch_cases, args.max_steps, device)
         with torch.no_grad():
-            hidden = qwen_hidden(qtrm_model, encoded["input_ids"], encoded["attention_mask"])
+            hidden = qwen_hidden(wgram_model, encoded["input_ids"], encoded["attention_mask"])
         outputs = extractor(hidden, encoded["attention_mask"])
         loss, loss_metrics = compute_register_loss(outputs, targets)
         optimizer.zero_grad(set_to_none=True)
@@ -456,7 +456,7 @@ def train_epoch(
 @torch.inference_mode()
 def evaluate_depth(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     extractor: QwenRegisterExtractor,
     depth: int,
@@ -481,7 +481,7 @@ def evaluate_depth(
         batch_cases = cases[start : start + int(args.batch_size)]
         encoded = encode_batch(tokenizer, [case.prompt_text for case in batch_cases], args.max_length, device)
         targets = case_targets(batch_cases, args.max_steps, device)
-        hidden = qwen_hidden(qtrm_model, encoded["input_ids"], encoded["attention_mask"])
+        hidden = qwen_hidden(wgram_model, encoded["input_ids"], encoded["attention_mask"])
         outputs = extractor(hidden, encoded["attention_mask"])
         metrics = prediction_metrics(outputs, targets)
         batch_size = len(batch_cases)
@@ -506,7 +506,7 @@ def evaluate_depth(
             depths=depth_pred,
         )
         candidate_digits = sample_candidate_digits(
-            qtrm_model,
+            wgram_model,
             tokenizer,
             batch_cases,
             samples=args.samples,
@@ -549,7 +549,7 @@ def evaluate_depth(
 
 def evaluate_all(
     *,
-    qtrm_model: Any,
+    wgram_model: Any,
     tokenizer: Any,
     extractor: QwenRegisterExtractor,
     args: argparse.Namespace,
@@ -565,7 +565,7 @@ def evaluate_all(
     register_values: List[float] = []
     for depth in args.eval_depths:
         result = evaluate_depth(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             extractor=extractor,
             depth=int(depth),
@@ -732,7 +732,7 @@ def main() -> None:
     configure_reproducibility(args.seed)
     os.makedirs(args.out_dir, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    qtrm_model, tokenizer = build_qwen_state_transition_model(
+    wgram_model, tokenizer = build_qwen_state_transition_model(
         args.qwen_model_id,
         freeze_qwen=True,
         device=device,
@@ -752,14 +752,14 @@ def main() -> None:
         stochastic_posterior_guidance=args.stochastic_posterior_guidance,
         stochastic_transition_mode=args.stochastic_transition_mode,
     )
-    load_stats = train511.load_flexible_checkpoint(qtrm_model, args.checkpoint, device)
-    override_stats = apply_recurrent_overrides(qtrm_model, args)
-    qtrm_model.eval()
-    for parameter in qtrm_model.parameters():
+    load_stats = train511.load_flexible_checkpoint(wgram_model, args.checkpoint, device)
+    override_stats = apply_recurrent_overrides(wgram_model, args)
+    wgram_model.eval()
+    for parameter in wgram_model.parameters():
         parameter.requires_grad_(False)
 
     extractor = QwenRegisterExtractor(
-        hidden_size=int(qtrm_model.hidden_size),
+        hidden_size=int(wgram_model.hidden_size),
         max_steps=int(args.max_steps),
         num_heads=int(args.num_heads),
         dropout=float(args.dropout),
@@ -795,7 +795,7 @@ def main() -> None:
     history: List[Dict[str, Any]] = []
     for epoch in range(1, int(args.epochs) + 1):
         global_step, train_metrics = train_epoch(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             extractor=extractor,
             optimizer=optimizer,
@@ -819,7 +819,7 @@ def main() -> None:
             flush=True,
         )
         eval_summary = evaluate_all(
-            qtrm_model=qtrm_model,
+            wgram_model=wgram_model,
             tokenizer=tokenizer,
             extractor=extractor,
             args=args,

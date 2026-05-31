@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from qtrm_mm.eval.memory_retrieval import (
+from wgram_lm.eval.memory_retrieval import (
     build_case_prompt_and_workspace_memory,
     load_cases,
     select_evidence_results,

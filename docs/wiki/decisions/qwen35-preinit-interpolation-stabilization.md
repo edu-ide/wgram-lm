@@ -226,7 +226,7 @@ objective or a recurrent trajectory loss, not more low-LR CE continuation.
 Added training-only checksum4 counterfactual augmentation:
 
 ```text
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --checksum-counterfactual-weight
   --checksum-counterfactual-variants
 ```
@@ -451,10 +451,10 @@ Promotion requirement:
 Added model/training hooks:
 
 ```text
-src/qtrm_mm/qwen_backbone_qtrm.py
+src/wgram_lm/qwen_backbone_wgram.py
   exposes qtrm_core_hidden and qtrm_core_delta for diagnostics/training
 
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --checksum-latent-answer-weight
   --checksum-latent-answer-source z_h|delta_h
   --checksum-latent-answer-lr
@@ -515,10 +515,10 @@ implement checksum trajectory supervision:
 Added recurrent step-state exposure and a checksum4 trajectory loss:
 
 ```text
-src/qtrm_mm/qwen_backbone_qtrm.py
+src/wgram_lm/qwen_backbone_wgram.py
   exposes qtrm_core_step_states
 
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --checksum-trajectory-weight
 ```
 
@@ -636,11 +636,11 @@ Promotion requirement:
 Added a preservation-first trajectory carry route:
 
 ```text
-src/qtrm_mm/qwen_backbone_qtrm.py
+src/wgram_lm/qwen_backbone_wgram.py
   --core-trajectory-carry-mode none|mean|learned
   --core-trajectory-carry-gate-init
 
-scripts/362_train_qwen_backbone_qtrm_core_gate.py
+scripts/362_train_qwen_backbone_wgram_core_gate.py
   --eval-force-trajectory-carry-off
 ```
 

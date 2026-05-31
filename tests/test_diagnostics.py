@@ -5,7 +5,7 @@ import torch
 
 class DiagnosticsTests(unittest.TestCase):
     def test_next_token_diagnostics_reports_rank_entropy_and_accuracy(self):
-        from qtrm_mm.diagnostics import next_token_diagnostics
+        from wgram_lm.diagnostics import next_token_diagnostics
 
         logits = torch.full((1, 4, 5), -10.0)
         input_ids = torch.tensor([[0, 2, 3, 4]])
@@ -25,7 +25,7 @@ class DiagnosticsTests(unittest.TestCase):
         self.assertGreater(metrics["loss"], 0.0)
 
     def test_topk_token_report_decodes_tokens(self):
-        from qtrm_mm.diagnostics import topk_token_report
+        from wgram_lm.diagnostics import topk_token_report
 
         class FakeTokenizer:
             def decode(self, token_ids, **kwargs):
@@ -40,7 +40,7 @@ class DiagnosticsTests(unittest.TestCase):
         self.assertGreater(report[0]["prob"], report[1]["prob"])
 
     def test_repetition_stats_focuses_on_completion(self):
-        from qtrm_mm.diagnostics import repetition_stats
+        from wgram_lm.diagnostics import repetition_stats
 
         stats = repetition_stats([7, 8, 8, 8, 4, 5, 4, 5], prompt_len=1)
 

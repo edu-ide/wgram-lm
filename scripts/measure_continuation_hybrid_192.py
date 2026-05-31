@@ -9,7 +9,7 @@ Purpose:
 - Load a real continuation checkpoint (OneBodyParallelHybridBlock stack + RI-4
   SparseSlotRouter + persistent slots after 5.56 gold_structured rehearsal).
 - Drive it as the actual recurrent engine using tight (B, 1, D) proposal shapes
-  that match the real delegation site in qtrm_model.py.
+  that match the real delegation site in wgram_model.py.
 - Separate "scoring" (candidate evaluation) from multi-step "thinking" recurrent
   proposals *with live persistent _ri4_hybrid_recurrent_slot_state carry* within
   each case (exact 192 per-case hygiene: reset only between cases).
@@ -32,8 +32,8 @@ import argparse
 import torch
 from typing import Any, Dict
 
-from src.qtrm_mm.config import QTRMConfig
-from src.qtrm_mm.blocks import OneBodyParallelHybridBlock
+from wgram_lm.config import QTRMConfig
+from wgram_lm.blocks import OneBodyParallelHybridBlock
 from scripts.train_hybrid_ri4_real_continuation_minimal import build_hybrid_stack, ContinuationConfig
 
 import json
@@ -172,7 +172,7 @@ def load_continuation_hybrid(ckpt_path: str, device: str = "cpu", dtype: torch.d
     # Force the internal block flag so that forward returns (x, new_slot_state) instead of (x, None)
     # when we later call with slot_state. Also ensure a router exists on the block for the
     # measurement to exercise the real selective path.
-    from src.qtrm_mm.memory.sparse_slot_router import make_sparse_slot_router
+    from wgram_lm.memory.sparse_slot_router import make_sparse_slot_router
 
     for layer in model:
         if isinstance(layer, OneBodyParallelHybridBlock):
@@ -248,7 +248,7 @@ def run_192_proxy_on_continuation(
 
     A-Mode improved fidelity version (one holistic upgrade):
     - Uses tight recurrent proposal shape (B, 1, D) matching the real delegation site
-      in qtrm_model.py (_compute_answer_state_loop_outputs when hybrid is attached).
+      in wgram_model.py (_compute_answer_state_loop_outputs when hybrid is attached).
     - Clearly separates one "scoring" step (candidate evaluation, fresh state) from
       multiple "thinking" recurrent proposal steps *with persistent slot_state carry*
       within the same case (exact 192 hygiene: reset only between cases).

@@ -28,7 +28,7 @@ compiled prompt tokens
 The code-level source of truth for this contract is:
 
 ```text
-src/qtrm_mm/eval/ssot_contract.py
+src/wgram_lm/eval/ssot_contract.py
 ```
 
 Canonical evals must use:
@@ -70,7 +70,7 @@ autoregressive reasoning model.
 ## DRY
 
 Do not duplicate the canonical answer-path rule in every script. The constants
-live in `qtrm_mm.eval.ssot_contract`:
+live in `wgram_lm.eval.ssot_contract`:
 
 ```text
 CANONICAL_EVIDENCE_INJECTION = "ssot"
@@ -134,7 +134,7 @@ full canonical SSOT greedy path
 Implementation:
 
 ```text
-src/qtrm_mm/losses.py::canonical_causal_ablation_loss
+src/wgram_lm/losses.py::canonical_causal_ablation_loss
 configs/qwen35_2b_4090_canonical_ssot_greedy_causal_s050.yaml
 scripts/168_run_canonical_ssot_greedy_causal_train.sh
 ```
@@ -584,8 +584,8 @@ workspace
 Implementation:
 
 ```text
-src/qtrm_mm/config.py::QTRMConfig.core_output_blend_enabled
-src/qtrm_mm/qtrm_model.py::core_output_blend_gate
+src/wgram_lm/config.py::QTRMConfig.core_output_blend_enabled
+src/wgram_lm/wgram_model.py::core_output_blend_gate
 configs/qwen35_2b_4090_mandatory_identity_core_candidate.yaml
 scripts/183_run_mandatory_identity_core_candidate_gate.sh
 ```
@@ -632,8 +632,8 @@ model.core_enabled: false
 Implementation:
 
 ```text
-src/qtrm_mm/config.py::QTRMConfig.core_enabled
-src/qtrm_mm/qtrm_model.py forward effective disable_core
+src/wgram_lm/config.py::QTRMConfig.core_enabled
+src/wgram_lm/wgram_model.py forward effective disable_core
 configs/qwen35_2b_4090_coreless_workspace_answer_candidate.yaml
 scripts/182_run_coreless_workspace_answer_candidate_gate.sh
 ```

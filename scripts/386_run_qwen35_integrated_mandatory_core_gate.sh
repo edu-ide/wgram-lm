@@ -11,7 +11,7 @@ DEVICE="${DEVICE:-cuda}"
 DTYPE="${DTYPE:-float16}"
 CORE_IMPL="${CORE_IMPL:-qwen_shared_layer_wrapped}"
 
-"${PYTHON}" scripts/362_train_qwen_backbone_qtrm_core_gate.py \
+"${PYTHON}" scripts/362_train_qwen_backbone_wgram_core_gate.py \
   --model-id "${MODEL_ID}" \
   --out-dir "${OUT_DIR}" \
   --device "${DEVICE}" \

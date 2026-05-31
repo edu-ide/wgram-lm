@@ -27,9 +27,9 @@ import torch
 # We will import the old core style when available.
 # For now, this script focuses on making the clean probe runnable against old-style recurrence.
 try:
-    from src.qtrm_mm.core import QTRMRecursiveCore
-    from src.qtrm_mm.config import QTRMConfig
-    from src.qtrm_mm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
+    from wgram_lm.core import QTRMRecursiveCore
+    from wgram_lm.config import QTRMConfig
+    from wgram_lm.rehearsal.adaptive_rehearsal import AdaptiveRehearsal, RehearsalConfig
 except ImportError:
     QTRMRecursiveCore = None
     QTRMConfig = None

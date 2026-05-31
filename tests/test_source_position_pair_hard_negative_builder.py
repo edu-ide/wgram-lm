@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from qtrm_mm.algorithmic_value_state import role_value_targets_from_row
+from wgram_lm.algorithmic_value_state import role_value_targets_from_row
 
 
 def load_module():

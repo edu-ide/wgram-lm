@@ -77,7 +77,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.qtrm_mm.attractor.attractor_solver import (
+from wgram_lm.attractor.attractor_solver import (
     AttractorSolverModule,
     SOTSegmentedSolverTrainer,
     SOTConfig,
@@ -86,8 +86,8 @@ from src.qtrm_mm.attractor.attractor_solver import (
 
 # For Priority 1 (Real proposal engine internalization test)
 try:
-    from src.qtrm_mm.memory.brain_triple_memory import BrainMimeticTripleMemory
-    from src.qtrm_mm.blocks import FastGatedLinearRecurrence, InferenceState
+    from wgram_lm.memory.brain_triple_memory import BrainMimeticTripleMemory
+    from wgram_lm.blocks import FastGatedLinearRecurrence, InferenceState
 except Exception:
     BrainMimeticTripleMemory = None
     FastGatedLinearRecurrence = None
@@ -401,8 +401,8 @@ def main():
         print("[Priority 1 / Roadmap #2] Using RealHybridProposal (OneBodyParallelHybridBlock stack + TripleMemory)")
         try:
             proposal_engine = RealHybridProposal(
-                dim=D, 
-                device=device, 
+                dim=D,
+                device=device,
                 n_layers=1,
                 internal_fast_recurrent=args.internal_fast_recurrent
             ).to(device)

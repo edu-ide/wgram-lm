@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd ~/qtrm-workspace/qtrm_multimodal_memoryos
+cd ~/qtrm-workspace/wgram-lm
 source .venv/bin/activate
 export PYTHONPATH=$PWD/src
 
 python -c "
 import torch
-from qtrm_mm.backends import HAS_FLASH_ATTN, HAS_FLA
-from qtrm_mm.config import load_config
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
-from qtrm_mm.losses import qtrm_smoke_loss
+from wgram_lm.backends import HAS_FLASH_ATTN, HAS_FLA
+from wgram_lm.config import load_config
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
+from wgram_lm.losses import qtrm_smoke_loss
 
 print('=' * 60)
 print('Integration Test: Backend + Donor + Model (4090)')

@@ -4,7 +4,7 @@ from collections import Counter
 
 class MemoryReasoningHeldoutCasesTests(unittest.TestCase):
     def test_heldout_cases_are_valid_balanced_and_disjoint_from_training_probe(self):
-        from qtrm_mm.eval.memory_retrieval import case_task_family, expected_unknown_case, load_cases
+        from wgram_lm.eval.memory_retrieval import case_task_family, expected_unknown_case, load_cases
 
         train_cases = load_cases("data/eval/memory_reasoning_probe.jsonl")
         heldout_cases = load_cases("data/eval/memory_reasoning_heldout_probe.jsonl")

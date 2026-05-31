@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from qtrm_mm.eval.memory_retrieval import (
+from wgram_lm.eval.memory_retrieval import (
     _lex_terms,
     canonical_answer_text,
     case_task_family,

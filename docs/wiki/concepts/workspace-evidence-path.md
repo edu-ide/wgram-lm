@@ -113,14 +113,14 @@ be deterministic annotations/views of the same compiled context.
 
 ## Code
 
-- `src/qtrm_mm/qtrm_model.py`
+- `src/wgram_lm/wgram_model.py`
   - Adds `workspace_text_states`, `workspace_attention_mask`, and
     `disable_workspace_memory_context`.
   - Returns `workspace_memory_token_count` telemetry.
-- `src/qtrm_mm/multimodal_projector.py`
+- `src/wgram_lm/multimodal_projector.py`
   - Adds `feature_mask` so padded evidence states do not become active memory
     tokens.
-- `src/qtrm_mm/eval/memory_retrieval.py`
+- `src/wgram_lm/eval/memory_retrieval.py`
   - Adds `build_shared_evidence_context` and
     `build_case_prompt_and_workspace_memory`.
 - `scripts/95_eval_memory_retrieval.py`
@@ -129,20 +129,20 @@ be deterministic annotations/views of the same compiled context.
   - Keeps `--evidence-injection workspace` and `--evidence-injection dual` as
     probe modes.
   - Adds `qtrm_workspace_memory_off_with_evidence`.
-- `src/qtrm_mm/qtrm_model.py`
+- `src/wgram_lm/wgram_model.py`
   - Adds `evidence_span_reader_context="input"` so the span reader can score
     canonical prompt tokens without a separate workspace evidence text.
-- `src/qtrm_mm/data/jsonl_dataset.py` and `src/qtrm_mm/training/train.py`
+- `src/wgram_lm/data/jsonl_dataset.py` and `src/wgram_lm/training/train.py`
   - Add `workspace_evidence_injection_mode: ssot` for span-reader training
     against canonical prompt-token indices.
 - `scripts/117_run_workspace_evidence_path_probe.sh`
   - Runs the 72-case MemoryOS gate with workspace-only evidence injection.
-- `src/qtrm_mm/data/jsonl_dataset.py`
+- `src/wgram_lm/data/jsonl_dataset.py`
   - Can split `MemoryOS evidence ... User prompt:` rows into visible prompt
     tokens plus `workspace_input_ids`.
   - Supports `workspace_evidence_injection_mode: dual`, which keeps evidence in
     the visible prompt while also emitting workspace evidence tensors.
-- `src/qtrm_mm/training/train.py`
+- `src/wgram_lm/training/train.py`
   - Encodes `workspace_input_ids` with the frozen donor and forwards them as
     `workspace_text_states`.
 - `configs/qwen35_2b_4090_workspace_evidence_path_s050.yaml`

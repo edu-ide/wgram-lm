@@ -9,8 +9,8 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from qtrm_mm.config import load_config
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
+from wgram_lm.config import load_config
+from wgram_lm.wgram_model import QTRMMultimodalModel
 
 
 def load_rows(path: str | Path) -> tuple[torch.Tensor, torch.Tensor]:

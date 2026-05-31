@@ -180,8 +180,8 @@ implemented as a falsifier scaffold
 Implementation:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 scripts/196_train_pure_recursive_depth_supervised.py
 scripts/248_run_qtrm_ouro_future_token_lookahead_s040.sh
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_ouro_future_token_lookahead_s040.yaml
@@ -413,8 +413,8 @@ previous input/generated token embedding
 Files:
 
 ```text
-src/qtrm_mm/config.py
-src/qtrm_mm/qtrm_model.py
+src/wgram_lm/config.py
+src/wgram_lm/wgram_model.py
 configs/qwen35_2b_4090_pure_recursive_transition_joint_dynamic_halt_v3_core_state_only_kiss_prev_token_readout_s040.yaml
 scripts/334_run_prev_token_readout_smoke.sh
 tests/test_prev_token_latent_readout.py
@@ -442,7 +442,7 @@ the readout. Training can then open the previous-token weights.
 Verification so far:
 
 ```text
-.venv/bin/python -m py_compile src/qtrm_mm/qtrm_model.py src/qtrm_mm/config.py \
+.venv/bin/python -m py_compile src/wgram_lm/wgram_model.py src/wgram_lm/config.py \
   scripts/196_train_pure_recursive_depth_supervised.py \
   scripts/330_run_mixed_noncopy_lm_gate.py
 

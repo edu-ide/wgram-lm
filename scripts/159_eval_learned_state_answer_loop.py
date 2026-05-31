@@ -9,17 +9,17 @@ from typing import Any, Iterable
 
 import torch
 
-from qtrm_mm.agentic.cognitive_loop import Action
-from qtrm_mm.agentic.transition_controller import (
+from wgram_lm.agentic.cognitive_loop import Action
+from wgram_lm.agentic.transition_controller import (
     TransitionStateController,
     TransitionStatePredictor,
 )
-from qtrm_mm.config import load_config
-from qtrm_mm.data.jsonl_dataset import (
+from wgram_lm.config import load_config
+from wgram_lm.data.jsonl_dataset import (
     _render_trace_replay_action_input,
     build_text_tokenizer,
 )
-from qtrm_mm.eval.memory_retrieval import (
+from wgram_lm.eval.memory_retrieval import (
     build_case_prompt_and_workspace_memory,
     build_workspace_memory_text,
     canonical_answer_text,
@@ -31,8 +31,8 @@ from qtrm_mm.eval.memory_retrieval import (
     summarize_records,
     target_retrieval_stats,
 )
-from qtrm_mm.qtrm_model import QTRMMultimodalModel
-from qtrm_mm.qwen_donor import QwenDonorAdapter
+from wgram_lm.wgram_model import QTRMMultimodalModel
+from wgram_lm.qwen_donor import QwenDonorAdapter
 
 
 RUNTIME_STATE_SUMMARY = (
