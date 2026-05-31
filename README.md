@@ -76,6 +76,7 @@ or implementation clarity.
 - Security policy: [SECURITY.md](SECURITY.md).
 - Governance and maintainer process: [GOVERNANCE.md](GOVERNANCE.md).
 - Maintainer automation plan: [docs/OSS_MAINTENANCE.md](docs/OSS_MAINTENANCE.md).
+- Public roadmap: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 Routine maintainer work includes reviewing research PRs, keeping architecture
 documents synchronized with code, triaging reproduction failures, checking
@@ -83,6 +84,30 @@ security-sensitive dependency and data-handling changes, and summarizing long
 experiment logs into source-backed reports.
 
 ## Quick start
+
+### 5-minute smoke path
+
+This path checks the public package surface and the donor-free reference
+backends without downloading model weights.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install "torch>=2.3" "numpy>=1.24" "pyyaml>=6.0"
+python -m pip install -e .
+
+PYTHONPATH=src python -m compileall -q src/wgram_lm
+PYTHONPATH=src python -m unittest \
+  tests.test_jepa_world_model \
+  tests.test_memory_scale_plan \
+  tests.test_qwen_backbone_wgram
+```
+
+The smoke path is also the default GitHub Actions gate. It is intentionally
+small enough for contributors to run before opening a pull request.
+
+### Full local environment
 
 ```bash
 bash scripts/00_setup_env.sh
