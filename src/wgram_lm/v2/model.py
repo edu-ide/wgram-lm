@@ -48,6 +48,7 @@ class WGRAMReasoningLMV2(nn.Module):
         response_prediction_mask: torch.Tensor | None = None,
         answer_memory_injection_scale: float | None = None,
         answer_memory_commitment_scale: float | None = None,
+        answer_memory_prompt_context_scale: float | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, dict[str, float | int | str]]:
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
@@ -80,6 +81,7 @@ class WGRAMReasoningLMV2(nn.Module):
             response_prediction_mask=response_prediction_mask,
             answer_memory_injection_scale=answer_memory_injection_scale,
             answer_memory_commitment_scale=answer_memory_commitment_scale,
+            answer_memory_prompt_context_scale=answer_memory_prompt_context_scale,
         )
         latent_out = self.latent_predictor(
             imta_out.chunk_hidden,
@@ -565,6 +567,7 @@ class WGRAMReasoningLMV2(nn.Module):
         response_continue_stop_margin_weight: float | None = None,
         answer_memory_injection_scale: float | None = None,
         answer_memory_commitment_scale: float | None = None,
+        answer_memory_prompt_context_scale: float | None = None,
     ) -> tuple[torch.Tensor, dict[str, float | int | str]]:
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
@@ -576,6 +579,7 @@ class WGRAMReasoningLMV2(nn.Module):
             response_prediction_mask=response_prediction_mask,
             answer_memory_injection_scale=answer_memory_injection_scale,
             answer_memory_commitment_scale=answer_memory_commitment_scale,
+            answer_memory_prompt_context_scale=answer_memory_prompt_context_scale,
         )
         valid = labels != -100
         if bool(valid.any()):

@@ -213,6 +213,7 @@ def build_v2_config_from_args(args: argparse.Namespace, *, vocab_size: int) -> W
         answer_memory_plan_layers=int(args.answer_memory_plan_layers),
         answer_memory_prompt_context_enabled=bool(args.answer_memory_prompt_context),
         answer_memory_prompt_context_gate_init=float(args.answer_memory_prompt_context_gate_init),
+        answer_memory_prompt_context_default_scale=float(args.answer_memory_prompt_context_default_scale),
         answer_memory_aux_loss_weight=float(args.answer_memory_aux_loss_weight),
         answer_memory_confidence_gate_enabled=bool(args.answer_memory_confidence_gate),
         answer_memory_confidence_mode=str(args.answer_memory_confidence_mode),
@@ -611,6 +612,12 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             start_after=int(args.answer_memory_commitment_start_after),
             warmup_steps=int(args.answer_memory_commitment_warmup_steps),
         )
+        effective_answer_memory_prompt_context_scale = scheduled_weight(
+            target=float(args.answer_memory_prompt_context_default_scale),
+            step=int(step),
+            start_after=int(args.answer_memory_prompt_context_start_after),
+            warmup_steps=int(args.answer_memory_prompt_context_warmup_steps),
+        )
         loss, metrics = model.forward_losses(
             input_ids,
             labels,
@@ -622,6 +629,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
             response_continue_stop_margin_weight=float(effective_response_continue_stop_margin_weight),
             answer_memory_injection_scale=float(effective_answer_memory_injection_scale),
             answer_memory_commitment_scale=float(effective_answer_memory_commitment_scale),
+            answer_memory_prompt_context_scale=float(effective_answer_memory_prompt_context_scale),
         )
         if (
             float(args.self_rollout_loss_weight) > 0.0
@@ -650,6 +658,7 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
                     response_continue_stop_margin_weight=float(effective_response_continue_stop_margin_weight),
                     answer_memory_injection_scale=float(effective_answer_memory_injection_scale),
                     answer_memory_commitment_scale=float(effective_answer_memory_commitment_scale),
+                    answer_memory_prompt_context_scale=float(effective_answer_memory_prompt_context_scale),
                 )
                 loss = loss + float(args.self_rollout_loss_weight) * rollout_loss
                 metrics = {
@@ -698,6 +707,11 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
         metrics["answer_memory_commitment_effective_scale"] = float(effective_answer_memory_commitment_scale)
         metrics["answer_memory_commitment_start_after"] = int(args.answer_memory_commitment_start_after)
         metrics["answer_memory_commitment_warmup_steps"] = int(args.answer_memory_commitment_warmup_steps)
+        metrics["answer_memory_prompt_context_effective_scale"] = float(
+            effective_answer_memory_prompt_context_scale
+        )
+        metrics["answer_memory_prompt_context_start_after"] = int(args.answer_memory_prompt_context_start_after)
+        metrics["answer_memory_prompt_context_warmup_steps"] = int(args.answer_memory_prompt_context_warmup_steps)
         raw_loss_value = float(loss.detach().float().cpu().item())
         pending_loss_values.append(float(raw_loss_value))
         pending_metrics = dict(metrics)
@@ -1661,6 +1675,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--answer-memory-plan-layers", type=int, default=1)
     parser.add_argument("--answer-memory-prompt-context", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--answer-memory-prompt-context-gate-init", type=float, default=-1.0)
+    parser.add_argument("--answer-memory-prompt-context-default-scale", type=float, default=1.0)
+    parser.add_argument("--answer-memory-prompt-context-start-after", type=int, default=1)
+    parser.add_argument("--answer-memory-prompt-context-warmup-steps", type=int, default=0)
     parser.add_argument("--answer-memory-aux-loss-weight", type=float, default=0.0)
     parser.add_argument("--answer-memory-confidence-gate", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument(

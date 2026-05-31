@@ -217,6 +217,7 @@ class AnswerMemoryAttractor(nn.Module):
         *,
         injection_scale: float,
         commitment_scale: float,
+        prompt_context_scale: float,
         speaker_norm: nn.Module | None = None,
         lm_head: nn.Module | None = None,
     ) -> tuple[
@@ -235,6 +236,7 @@ class AnswerMemoryAttractor(nn.Module):
             "answer_memory_prompt_context_mode": "disabled",
             "answer_memory_prompt_context_tokens_mean": 0.0,
             "answer_memory_prompt_context_gate_mean": 0.0,
+            "answer_memory_prompt_context_scale": 0.0,
             "answer_memory_prompt_context_delta_norm": 0.0,
             "answer_memory_plan_confidence_mean": 0.0,
             "answer_memory_plan_top1_confidence_mean": 0.0,
@@ -302,8 +304,12 @@ class AnswerMemoryAttractor(nn.Module):
         prompt_context_mode = "disabled"
         prompt_context_tokens_mean = hidden.new_zeros(())
         prompt_context_gate_mean = hidden.new_zeros(())
+        active_prompt_context_scale = max(0.0, float(prompt_context_scale))
         prompt_context_delta_norm = hidden.new_zeros(())
-        if bool(self.config.answer_memory_prompt_context_enabled):
+        if (
+            bool(self.config.answer_memory_prompt_context_enabled)
+            and active_prompt_context_scale > 0.0
+        ):
             seq_positions = torch.arange(hidden.shape[1], dtype=torch.long, device=hidden.device).unsqueeze(0)
             prompt_context_mask = attention_mask.bool() & (
                 seq_positions <= start_positions.unsqueeze(1)
@@ -328,7 +334,9 @@ class AnswerMemoryAttractor(nn.Module):
                 prompt_gate = torch.sigmoid(
                     self.prompt_context_gate(self.prompt_context_gate_norm(gate_input))
                 ).to(hidden.dtype)
-                prompt_delta = prompt_gate * self.prompt_context_proj(attn_out)
+                prompt_delta = (
+                    active_prompt_context_scale * prompt_gate * self.prompt_context_proj(attn_out)
+                )
                 plan_states = plan_states + prompt_delta
                 prompt_context_mode = "same_body_causal_prompt_context_read"
                 valid_prompt_rows = row_has_start
@@ -481,6 +489,7 @@ class AnswerMemoryAttractor(nn.Module):
             "answer_memory_prompt_context_gate_mean": float(
                 prompt_context_gate_mean.detach().cpu().item()
             ),
+            "answer_memory_prompt_context_scale": float(active_prompt_context_scale),
             "answer_memory_prompt_context_delta_norm": float(
                 prompt_context_delta_norm.detach().cpu().item()
             ),
@@ -585,6 +594,7 @@ class CausalByteSpeaker(nn.Module):
         response_prediction_mask: torch.Tensor | None = None,
         answer_memory_injection_scale: float | None = None,
         answer_memory_commitment_scale: float | None = None,
+        answer_memory_prompt_context_scale: float | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, dict[str, float | str]]:
         bridged = dechunked_latent + self.latent_bridge(dechunked_latent)
         byte_gate = torch.sigmoid(self.byte_gate_logit).to(byte_embeddings.dtype)
@@ -633,6 +643,11 @@ class CausalByteSpeaker(nn.Module):
                 float(self.config.answer_memory_commitment_scale)
                 if answer_memory_commitment_scale is None
                 else float(answer_memory_commitment_scale)
+            ),
+            prompt_context_scale=(
+                float(self.config.answer_memory_prompt_context_default_scale)
+                if answer_memory_prompt_context_scale is None
+                else float(answer_memory_prompt_context_scale)
             ),
             speaker_norm=self.norm,
             lm_head=self.head,

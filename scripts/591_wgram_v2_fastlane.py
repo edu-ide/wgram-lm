@@ -149,12 +149,30 @@ def resolve_answer_memory_commitment_schedule(args: argparse.Namespace, *, steps
     }
 
 
+def resolve_answer_memory_prompt_context_schedule(args: argparse.Namespace, *, steps: int) -> dict[str, int | float]:
+    if int(args.answer_memory_prompt_context_start_after) >= 0:
+        start_after = int(args.answer_memory_prompt_context_start_after)
+    else:
+        start_after = max(1, int(round(int(steps) * float(args.answer_memory_prompt_context_start_fraction))))
+    if int(args.answer_memory_prompt_context_warmup_steps) >= 0:
+        warmup_steps = int(args.answer_memory_prompt_context_warmup_steps)
+    else:
+        warmup_steps = max(1, int(round(int(steps) * float(args.answer_memory_prompt_context_warmup_fraction))))
+    return {
+        "start_after": int(start_after),
+        "warmup_steps": int(warmup_steps),
+        "start_fraction": float(args.answer_memory_prompt_context_start_fraction),
+        "warmup_fraction": float(args.answer_memory_prompt_context_warmup_fraction),
+    }
+
+
 def build_train_command(args: argparse.Namespace, out_dir: Path, current_recipe: dict[str, Any]) -> list[str]:
     optimizer_schedule = resolve_optimizer_schedule(args, steps=int(current_recipe["steps"]))
     stop_schedule = resolve_response_stop_schedule(args, steps=int(current_recipe["steps"]))
     continue_schedule = resolve_response_continue_stop_margin_schedule(args, steps=int(current_recipe["steps"]))
     memory_schedule = resolve_answer_memory_injection_schedule(args, steps=int(current_recipe["steps"]))
     commitment_schedule = resolve_answer_memory_commitment_schedule(args, steps=int(current_recipe["steps"]))
+    prompt_context_schedule = resolve_answer_memory_prompt_context_schedule(args, steps=int(current_recipe["steps"]))
     tensorboard_logdir = resolve_tensorboard_logdir(args, out_dir)
     command = [
         sys.executable,
@@ -290,6 +308,12 @@ def build_train_command(args: argparse.Namespace, out_dir: Path, current_recipe:
         str(args.answer_memory_plan_layers),
         "--answer-memory-prompt-context-gate-init",
         str(args.answer_memory_prompt_context_gate_init),
+        "--answer-memory-prompt-context-default-scale",
+        str(args.answer_memory_prompt_context_default_scale),
+        "--answer-memory-prompt-context-start-after",
+        str(prompt_context_schedule["start_after"]),
+        "--answer-memory-prompt-context-warmup-steps",
+        str(prompt_context_schedule["warmup_steps"]),
         "--answer-memory-aux-loss-weight",
         str(args.answer_memory_aux_loss_weight),
         "--answer-memory-confidence-mode",
@@ -430,6 +454,7 @@ def build_fastlane_plan(args: argparse.Namespace) -> dict[str, Any]:
     continue_schedule = resolve_response_continue_stop_margin_schedule(args, steps=int(current_recipe["steps"]))
     memory_schedule = resolve_answer_memory_injection_schedule(args, steps=int(current_recipe["steps"]))
     commitment_schedule = resolve_answer_memory_commitment_schedule(args, steps=int(current_recipe["steps"]))
+    prompt_context_schedule = resolve_answer_memory_prompt_context_schedule(args, steps=int(current_recipe["steps"]))
     train_command = build_train_command(args, out_dir, current_recipe)
     eval_command = build_eval_command(args, out_dir)
     return {
@@ -492,6 +517,11 @@ def build_fastlane_plan(args: argparse.Namespace) -> dict[str, Any]:
             "answer_memory_plan_layers": int(args.answer_memory_plan_layers),
             "answer_memory_prompt_context": bool(args.answer_memory_prompt_context),
             "answer_memory_prompt_context_gate_init": float(args.answer_memory_prompt_context_gate_init),
+            "answer_memory_prompt_context_default_scale": float(args.answer_memory_prompt_context_default_scale),
+            "answer_memory_prompt_context_start_after": int(prompt_context_schedule["start_after"]),
+            "answer_memory_prompt_context_warmup_steps": int(prompt_context_schedule["warmup_steps"]),
+            "answer_memory_prompt_context_start_fraction": float(prompt_context_schedule["start_fraction"]),
+            "answer_memory_prompt_context_warmup_fraction": float(prompt_context_schedule["warmup_fraction"]),
             "answer_memory_aux_loss_weight": float(args.answer_memory_aux_loss_weight),
             "answer_memory_confidence_gate": bool(args.answer_memory_confidence_gate),
             "answer_memory_confidence_mode": str(args.answer_memory_confidence_mode),
@@ -641,8 +671,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--answer-memory-steps", type=int, default=2)
     parser.add_argument("--answer-memory-plan-tokens", type=int, default=4)
     parser.add_argument("--answer-memory-plan-layers", type=int, default=1)
-    parser.add_argument("--answer-memory-prompt-context", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--answer-memory-prompt-context", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--answer-memory-prompt-context-gate-init", type=float, default=-1.0)
+    parser.add_argument("--answer-memory-prompt-context-default-scale", type=float, default=1.0)
+    parser.add_argument("--answer-memory-prompt-context-start-after", type=int, default=-1)
+    parser.add_argument("--answer-memory-prompt-context-warmup-steps", type=int, default=-1)
+    parser.add_argument("--answer-memory-prompt-context-start-fraction", type=float, default=0.35)
+    parser.add_argument("--answer-memory-prompt-context-warmup-fraction", type=float, default=0.30)
     parser.add_argument("--answer-memory-aux-loss-weight", type=float, default=0.15)
     parser.add_argument("--answer-memory-confidence-gate", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument(

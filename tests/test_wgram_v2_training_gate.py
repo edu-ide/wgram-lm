@@ -172,6 +172,7 @@ class WGRAMV2TrainingGateTests(unittest.TestCase):
             self.assertIn("answer_memory_aux_tokens", report["loss_history"][0])
             self.assertIn("answer_memory_prompt_context_mode", report["loss_history"][0])
             self.assertIn("answer_memory_prompt_context_gate_mean", report["loss_history"][0])
+            self.assertIn("answer_memory_prompt_context_effective_scale", report["loss_history"][0])
             self.assertIn("answer_memory_stop_margin_loss", report["loss_history"][0])
             self.assertIn("answer_memory_stop_margin_positions", report["loss_history"][0])
             self.assertIn("answer_memory_commitment_effective_scale", report["loss_history"][0])

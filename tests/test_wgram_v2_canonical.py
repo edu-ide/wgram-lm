@@ -218,6 +218,13 @@ class WGRAMV2CanonicalTests(unittest.TestCase):
             think_steps=2,
             response_prediction_mask=response_prediction_mask,
         )
+        _, _, scheduled_off_metrics = model.forward_logits_and_hidden(
+            input_ids,
+            attention_mask,
+            think_steps=2,
+            response_prediction_mask=response_prediction_mask,
+            answer_memory_prompt_context_scale=0.0,
+        )
         loss, loss_metrics = model.forward_losses(
             input_ids,
             labels,
@@ -244,6 +251,9 @@ class WGRAMV2CanonicalTests(unittest.TestCase):
         )
         self.assertGreater(metrics["answer_memory_prompt_context_tokens_mean"], 0.0)
         self.assertGreater(metrics["answer_memory_prompt_context_gate_mean"], 0.0)
+        self.assertEqual(metrics["answer_memory_prompt_context_scale"], 1.0)
+        self.assertEqual(scheduled_off_metrics["answer_memory_prompt_context_mode"], "disabled")
+        self.assertEqual(scheduled_off_metrics["answer_memory_prompt_context_scale"], 0.0)
         self.assertEqual(
             metrics["answer_memory_commitment_mode"],
             "same_lm_head_answer_prefix_state_commitment",

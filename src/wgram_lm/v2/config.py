@@ -74,6 +74,7 @@ class WGRAMV2Config:
     answer_memory_plan_layers: int = 1
     answer_memory_prompt_context_enabled: bool = False
     answer_memory_prompt_context_gate_init: float = -1.0
+    answer_memory_prompt_context_default_scale: float = 1.0
     answer_memory_aux_loss_weight: float = 0.0
     answer_memory_confidence_gate_enabled: bool = True
     answer_memory_confidence_mode: str = "topk_mass"
@@ -175,6 +176,8 @@ class WGRAMV2Config:
             raise ValueError("answer_memory_plan_layers must be >= 0")
         if float(self.answer_memory_prompt_context_gate_init) > 10.0:
             raise ValueError("answer_memory_prompt_context_gate_init must be <= 10")
+        if float(self.answer_memory_prompt_context_default_scale) < 0.0:
+            raise ValueError("answer_memory_prompt_context_default_scale must be >= 0")
         if float(self.answer_memory_aux_loss_weight) < 0.0:
             raise ValueError("answer_memory_aux_loss_weight must be >= 0")
         if str(self.answer_memory_confidence_mode) not in {

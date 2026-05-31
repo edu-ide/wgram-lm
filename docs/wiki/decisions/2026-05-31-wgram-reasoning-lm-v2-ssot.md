@@ -190,8 +190,10 @@ token_maturation_aux_loss_weight > 0
 answer_memory_steps = 2
 answer_memory_plan_tokens = 4
 answer_memory_plan_layers = 1
-answer_memory_prompt_context = false by default
+answer_memory_prompt_context = true in primary fastlane
 answer_memory_prompt_context_gate_init = -1.0
+answer_memory_prompt_context_default_scale = 1.0
+answer_memory_prompt_context_schedule = plan_grounding_then_prompt_read
 answer_memory_aux_loss_weight > 0
 answer_memory_confidence_gate = same_lm_head_plan_confidence
 answer_memory_commitment_scale = 1.0
@@ -303,7 +305,11 @@ localized.
   same-head self-rollout continuation pass so the decoder sees its own
   generated response prefix during training. The fastlane also uses a
   response-balanced sampler so short direct answers and frequent first digits do
-  not dominate early scratch training. It now defaults to `warmup_cosine`
+  not dominate early scratch training. It now enables prompt-context reads in
+  the answer memory by default, but only through a delayed scale schedule
+  (`start_fraction=0.35`, `warmup_fraction=0.30`) so the plan learns to attach
+  to the question before the answer-prefix injection opens later. It now
+  defaults to `warmup_cosine`
   optimization, `grad_accum_steps=4`, `/tmp/wgram_eval/<run_name>` TensorBoard
   logs, and `/tmp/wgram_aim` Aim tracking;
   these are train-time contract losses, not decode-time anti-repeat penalties.
