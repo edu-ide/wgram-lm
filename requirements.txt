@@ -14,7 +14,7 @@ sentencepiece>=0.2
 protobuf>=5.0
 peft>=0.19
 galore-torch>=1.0
-aim>=3.29
+aim>=3.29.1
 liger-kernel>=0.8.0
 # Optional production backends:
 # flash-attn
